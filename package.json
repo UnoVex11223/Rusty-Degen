@@ -26,7 +26,7 @@
     "passport": "^0.7.0",
     "passport-steam": "^1.0.18",
     "steam-totp": "^2.1.2",
-    "steam-tradeoffer-manager": "^2.11.9",
+    "steam-tradeoffer-manager": "2.11.7",
     "steamcommunity": "^3.48.10"
   },
   "devDependencies": {
