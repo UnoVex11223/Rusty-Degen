@@ -25,6 +25,7 @@
     "node-cache": "5.1.2",
     "passport": "0.7.0",
     "passport-steam": "1.0.18",
+    "socket.io": "^4.7.5",         
     "steam-totp": "2.1.2",
     "steam-tradeoffer-manager": "2.11.7",
     "steamcommunity": "3.46.0"
