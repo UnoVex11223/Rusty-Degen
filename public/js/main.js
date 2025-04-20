@@ -1288,7 +1288,7 @@ function createRouletteItems() {
 
     const rouletteContainer = container.querySelector('.roulette-container');
     const containerWidth = rouletteContainer?.offsetWidth || container.offsetWidth || 1000;
-    const itemWidthWithMargin = 90;
+    const itemWidthWithMargin = 90 + 10;
     const itemsInView = Math.ceil(containerWidth / itemWidthWithMargin);
     const itemsForSpin = 400;
     const totalItemsNeeded = itemsForSpin + (itemsInView * 2);
