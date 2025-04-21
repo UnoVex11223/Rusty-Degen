@@ -233,6 +233,8 @@ code { /* General code tag styling */
     display: flex;
     align-items: center;
     gap: 10px;
+    min-width: 180px; /* Adjust this value as needed */
+    justify-content: flex-end; /* Ensure content aligns right if needed */
 }
 .user-profile {
     display: flex; /* JS toggles display: none */
