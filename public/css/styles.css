@@ -138,7 +138,7 @@
  .header-container {
      display: flex;
      align-items: center;
-     justify-content: space-around; /* Changed from space-between */
+     justify-content: space-around;
      flex-wrap: wrap;
  }
 
@@ -149,20 +149,20 @@
 
  .header-left {
     gap: 20px;
-    flex: 1; /* Added */
-    justify-content: flex-start; /* Added */
+    flex: 1;
+    justify-content: flex-start;
  }
  .header-center {
     flex-grow: 1;
-    flex: 1; /* Added */
+    flex: 1;
     justify-content: center;
     min-width: 0;
-    text-align: center; /* Added */
+    text-align: center;
  }
  .header-right {
     gap: 20px;
-    flex: 1; /* Added */
-    justify-content: flex-end; /* Added */
+    flex: 1;
+    justify-content: flex-end;
  }
 
  .logo h1 {
@@ -229,14 +229,15 @@
 
  /* Jackpot Tab Specific Styles */
  .jackpot-tab {
-     font-size: 1.4rem; /* Bigger */
-     padding: 8px 15px;
-     color: var(--jackpot-tab-color); /* Bright neon green */
+     /* UPDATED: Increased font size */
+     font-size: 1.6rem;
+     /* UPDATED: Adjusted padding for new font size */
+     padding: 10px 15px;
+     color: var(--jackpot-tab-color);
      text-shadow: 0 0 10px var(--jackpot-tab-color), 0 0 15px var(--jackpot-tab-color);
      letter-spacing: 1px;
      font-weight: 700;
-     /* ADDED: Shift 5px to the right */
-     transform: translateX(5px);
+     transform: translateX(5px); /* Kept the 5px shift right */
  }
  .jackpot-tab::after {
      background-color: var(--jackpot-tab-color);
@@ -253,11 +254,10 @@
      display: flex;
      align-items: center;
      gap: 10px;
-     /* Removed min-width to let flex: 1 handle it */
      justify-content: flex-end;
  }
  .user-profile {
-     display: flex; /* JS toggles display: none */
+     display: flex;
      align-items: center;
      gap: 10px;
  }
@@ -267,7 +267,7 @@
      border-radius: 50%;
      border: 2px solid var(--primary-color);
      flex-shrink: 0;
-     object-fit: cover; /* Ensure avatar image covers */
+     object-fit: cover;
  }
  .user-name {
      font-weight: 600;
@@ -294,14 +294,14 @@
      background-color: var(--background-light);
      color: var(--text-primary);
      text-align: center;
-     line-height: 1.2; /* Ensure text vertical align */
+     line-height: 1.2;
  }
  .btn:hover:not(:disabled) {
      transform: translateY(-2px);
      box-shadow: 0 5px 15px rgba(0, 230, 118, 0.3);
  }
  .btn:disabled {
-     background-color: var(--background-light) !important; /* Ensure disabled style overrides */
+     background-color: var(--background-light) !important;
      color: var(--text-secondary) !important;
      cursor: not-allowed;
      transform: none !important;
@@ -402,7 +402,7 @@
  .jackpot-section { /* Container for jackpot header, deposit button, items */
      background-color: var(--background-medium);
      border-radius: 12px;
-     overflow: hidden; /* Important for child rounding */
+     overflow: hidden;
      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
      border: 1px solid var(--border-color);
      position: relative;
@@ -414,12 +414,12 @@
 
  .jackpot-header {
      display: flex;
-     justify-content: space-around; /* Keep space-around */
+     justify-content: space-around;
      align-items: center;
      padding: 20px;
      background: linear-gradient(135deg, var(--background-medium), var(--background-light));
      border-bottom: 1px solid var(--border-color);
-     border-radius: 12px 12px 0 0; /* Round top corners */
+     border-radius: 12px 12px 0 0;
      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
      min-height: 170px;
      position: relative;
@@ -429,7 +429,7 @@
      gap: 20px;
      flex-wrap: wrap;
  }
- .jackpot-header.roulette-mode { /* Style when roulette is active */
+ .jackpot-header.roulette-mode {
      background: linear-gradient(135deg, var(--background-dark), var(--background-medium));
  }
 
@@ -499,7 +499,6 @@
  =========================*/
 
  .inline-roulette {
-     /* display: none; JS toggles */
      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
      background: transparent; z-index: 10; overflow: hidden;
      border-radius: 12px 12px 0 0;
@@ -863,7 +862,6 @@
         flex: 1;
      }
 
-     /* Adjustments for alignment changes */
      .header-left, .header-right {
          justify-content: center;
      }
@@ -876,7 +874,8 @@
      .timer-circle { width: 110px; height: 110px; }
      .timer-text { font-size: 3.1rem; }
      .stat-value { font-size: 3.1rem; }
-     .jackpot-tab { font-size: 1.3rem !important; }
+     /* UPDATED: Increased responsive font size */
+     .jackpot-tab { font-size: 1.5rem !important; }
  }
 
  @media (max-width: 768px) { /* Mobile */
@@ -914,7 +913,8 @@
      .timer-background, .timer-foreground { stroke-width: 6px; }
      .stat-value { font-size: 2.4rem; }
      .value-label, .timer-label, .stat-label { font-size: 0.8rem; }
-     .jackpot-tab { font-size: 1.2rem !important; text-shadow: 0 0 8px var(--jackpot-tab-color); }
+     /* UPDATED: Increased responsive font size */
+     .jackpot-tab { font-size: 1.4rem !important; text-shadow: 0 0 8px var(--jackpot-tab-color); }
      .roulette-container { margin-top: 20px; height: 80px; }
      .roulette-item { width: 70px; height: 70px; margin: 5px; }
      .profile-pic-container { height: 40px; }
@@ -957,7 +957,8 @@
      .user-name { max-width: 100px; }
      .btn-login { padding: 6px 12px; font-size: 0.9rem; }
      .btn-deposit, .btn-secondary { font-size: 1rem; padding: 10px 20px; }
-     .jackpot-tab { font-size: 1.1rem !important; padding: 6px 8px !important; }
+     /* UPDATED: Increased responsive font size and padding */
+     .jackpot-tab { font-size: 1.3rem !important; padding: 8px 10px !important; }
      .jackpot-header { gap: 5px; padding: 10px; flex-direction: column; }
      .jackpot-value, .jackpot-timer, .jackpot-stats { min-width: auto; }
      .jackpot-value h2 { font-size: 2.2rem; }
