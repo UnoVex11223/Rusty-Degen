@@ -1,4 +1,4 @@
-/* styles.css (Refined & Modified for Jackpot Tab Alignment) */
+/* styles.css (Refined & Modified for Stable Centering) */
 
 /*=========================
   VARIABLES & BASE STYLES
@@ -140,9 +140,8 @@ code { /* General code tag styling */
 .header-container {
     display: flex;
     align-items: center;
-    /* justify-content: space-between; <-- REMOVED */
+    justify-content: space-between; /* Keep this for centering approach */
     flex-wrap: wrap;
-    /* gap: 20px; <-- Optional: Add if needed */
 }
 
 .header-left, .header-center, .header-right {
@@ -152,16 +151,15 @@ code { /* General code tag styling */
 
 .header-left { gap: 20px; }
 .header-center {
-    /* flex-grow: 1; <-- REMOVED */
-    /* justify-content: center; <-- REMOVED */
-    /* min-width: 0; <-- REMOVED */
-    /* Keep display: flex and align-items: center from rule above */
+    flex-grow: 1; /* Keep this to take available space */
+    justify-content: center; /* Keep this to center content (the tab) */
+    min-width: 0; /* Keep this for proper flex growing */
 }
 .header-right {
     display: flex; /* Ensure this is flex if not inherited */
     align-items: center; /* Ensure this is set if not inherited */
     gap: 20px;
-    margin-left: auto; /* ADDED to push right */
+    /* margin-left: auto; <-- REMOVE this if added previously */
 }
 
 .logo h1 {
@@ -227,7 +225,7 @@ code { /* General code tag styling */
     text-shadow: 0 0 10px var(--jackpot-tab-color), 0 0 15px var(--jackpot-tab-color);
     letter-spacing: 1px;
     font-weight: 700;
-    /* transform: translateX(-15px); <-- REMOVED */
+    transform: translateX(-15px); /* Keep original transform if desired */
 }
 .jackpot-tab::after {
     background-color: var(--jackpot-tab-color);
@@ -244,8 +242,8 @@ code { /* General code tag styling */
     display: flex;
     align-items: center;
     gap: 10px;
-    min-width: 180px; /* KEPT: Adjust this value as needed for right-side stability */
-    justify-content: flex-end; /* KEPT: Ensure content aligns right if needed */
+    min-width: 180px; /* <<< ADDED/KEPT: Adjust this value as needed */
+    justify-content: flex-end; /* <<< ADDED/KEPT: Ensure content aligns right */
 }
 .user-profile {
     display: flex; /* JS toggles display: none */
@@ -831,25 +829,25 @@ code { /* General code tag styling */
 /*=========================
   RESPONSIVE STYLES
 =========================*/
-
+/* Responsive styles remain largely the same, as they handle layout changes for smaller screens */
 @media (max-width: 992px) { /* Tablet */
-    .header-container { justify-content: space-between; } /* Keep space-between for simpler tablet layout */
-    .header-center { order: 3; width: 100%; justify-content: center; margin-top: 10px; margin-left: 0; position: static; transform: none;} /* Ensure center behaves normally when stacked */
+    .header-container { justify-content: space-between; }
+    .header-center { order: 3; width: 100%; justify-content: center; margin-top: 10px; } /* Center stacks below */
     .header-left { order: 1; }
-    .header-right { order: 2; margin-left: 0; } /* Remove margin-left override */
+    .header-right { order: 2; }
     .primary-nav, .secondary-nav { display: none; } /* Hide side navs on tablet */
     .jackpot-value h2 { font-size: 3.5rem; }
     .timer-circle { width: 110px; height: 110px; }
     .timer-text { font-size: 3.1rem; }
     .stat-value { font-size: 3.1rem; }
-    .jackpot-tab { font-size: 1.3rem !important; transform: none; } /* Reset transform */
+    .jackpot-tab { font-size: 1.3rem !important; transform: translateX(-15px); } /* Keep transform if needed visually */
 }
 
 @media (max-width: 768px) { /* Mobile */
     .header-container { flex-direction: row; justify-content: space-between; } /* Keep horizontal */
-    .header-center { order: 3; width: 100%; margin-top: 10px; margin-left: 0; position: static; transform: none;} /* Nav below */
+    .header-center { order: 3; width: 100%; margin-top: 10px; justify-content: center; } /* Nav below */
     .header-left { order: 1; flex-grow: 1; } /* Logo takes available space left */
-    .header-right { order: 2; flex-shrink: 0; margin-left: 0; } /* User controls don't shrink, remove margin-left */
+    .header-right { order: 2; flex-shrink: 0; } /* User controls don't shrink */
     .primary-nav { display: none; } /* Hide primary nav */
     .secondary-nav { display: flex; } /* Show secondary nav */
     .main-nav a { font-size: 1.1rem; padding: 8px 10px; }
@@ -860,7 +858,7 @@ code { /* General code tag styling */
     .timer-background, .timer-foreground { stroke-width: 6px; }
     .stat-value { font-size: 2.4rem; }
     .value-label, .timer-label, .stat-label { font-size: 0.8rem; }
-    .jackpot-tab { font-size: 1.2rem !important; text-shadow: 0 0 8px var(--jackpot-tab-color); transform: none; } /* Reset transform */
+    .jackpot-tab { font-size: 1.2rem !important; text-shadow: 0 0 8px var(--jackpot-tab-color); transform: translateX(-15px); } /* Keep transform */
     .roulette-container { margin-top: 20px; height: 80px; }
     .roulette-item { width: 70px; height: 70px; margin: 5px; }
     .profile-pic-container { height: 40px; }
@@ -894,7 +892,7 @@ code { /* General code tag styling */
     .user-name { max-width: 100px; }
     .btn-login { padding: 6px 12px; font-size: 0.9rem; }
     .btn-deposit, .btn-secondary { font-size: 1rem; padding: 10px 20px; }
-    .jackpot-tab { font-size: 1.1rem !important; padding: 6px 8px !important; transform: none; } /* Reset transform */
+    .jackpot-tab { font-size: 1.1rem !important; padding: 6px 8px !important; transform: translateX(-15px); } /* Keep transform */
     .jackpot-header { gap: 5px; padding: 10px; flex-direction: column; } /* Stack header items vertically */
     .jackpot-value, .jackpot-timer, .jackpot-stats { min-width: auto; } /* Reset min-width */
     .jackpot-value h2 { font-size: 2.2rem; }
