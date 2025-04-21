@@ -138,8 +138,7 @@
  .header-container {
      display: flex;
      align-items: center;
-     /* CHANGE: Changed from space-between to space-around to match jackpot-header distribution */
-     justify-content: space-around;
+     justify-content: space-around; /* Changed from space-between */
      flex-wrap: wrap;
  }
 
@@ -150,23 +149,20 @@
 
  .header-left {
     gap: 20px;
-    /* ADDED: Give it flex: 1 to balance with center/right and align content left */
-    flex: 1;
-    justify-content: flex-start; /* Align logo/nav to the start */
+    flex: 1; /* Added */
+    justify-content: flex-start; /* Added */
  }
  .header-center {
-    flex-grow: 1; /* Keep grow */
-    /* ADDED: Give it flex: 1 base */
-    flex: 1;
+    flex-grow: 1;
+    flex: 1; /* Added */
     justify-content: center;
     min-width: 0;
-    text-align: center; /* Ensure content inside is centered */
+    text-align: center; /* Added */
  }
  .header-right {
     gap: 20px;
-    /* ADDED: Give it flex: 1 to balance and align content right */
-    flex: 1;
-    justify-content: flex-end; /* Align nav/user controls to the end */
+    flex: 1; /* Added */
+    justify-content: flex-end; /* Added */
  }
 
  .logo h1 {
@@ -239,8 +235,8 @@
      text-shadow: 0 0 10px var(--jackpot-tab-color), 0 0 15px var(--jackpot-tab-color);
      letter-spacing: 1px;
      font-weight: 700;
-     /* REMOVED: Manual transform that caused misalignment */
-     /* transform: translateX(-15px); */
+     /* ADDED: Shift 5px to the right */
+     transform: translateX(5px);
  }
  .jackpot-tab::after {
      background-color: var(--jackpot-tab-color);
@@ -258,8 +254,7 @@
      align-items: center;
      gap: 10px;
      /* Removed min-width to let flex: 1 handle it */
-     /* min-width: 180px; */
-     justify-content: flex-end; /* Ensure content aligns right if needed */
+     justify-content: flex-end;
  }
  .user-profile {
      display: flex; /* JS toggles display: none */
@@ -848,41 +843,35 @@
 
  @media (max-width: 992px) { /* Tablet */
      .header-container {
-        /* Keep space-around for consistency */
         justify-content: space-around;
-        /* Allow items to stack */
         flex-wrap: wrap;
      }
      .header-center {
         order: 3;
-        /* Take full width when wrapped */
         width: 100%;
-        flex-basis: 100%; /* Explicitly set basis */
+        flex-basis: 100%;
         justify-content: center;
         margin-top: 10px;
-        /* Remove flex: 1 when stacked */
         flex: none;
      }
      .header-left {
         order: 1;
-        /* Reset flex when center wraps */
-        flex: 1; /* Maintain flex: 1 for left/right */
+        flex: 1;
      }
      .header-right {
         order: 2;
-        /* Reset flex when center wraps */
-        flex: 1; /* Maintain flex: 1 for left/right */
+        flex: 1;
      }
 
      /* Adjustments for alignment changes */
      .header-left, .header-right {
-         justify-content: center; /* Center content within left/right when center wraps */
+         justify-content: center;
      }
-     .header-left { justify-content: flex-start; } /* Keep logo left */
-     .header-right { justify-content: flex-end; } /* Keep user controls right */
+     .header-left { justify-content: flex-start; }
+     .header-right { justify-content: flex-end; }
 
 
-     .primary-nav, .secondary-nav { display: none; } /* Hide side navs on tablet */
+     .primary-nav, .secondary-nav { display: none; }
      .jackpot-value h2 { font-size: 3.5rem; }
      .timer-circle { width: 110px; height: 110px; }
      .timer-text { font-size: 3.1rem; }
@@ -892,31 +881,31 @@
 
  @media (max-width: 768px) { /* Mobile */
      .header-container {
-         flex-direction: row; /* Keep horizontal */
-         justify-content: space-around; /* Maintain distribution */
-         flex-wrap: wrap; /* Allow wrapping */
+         flex-direction: row;
+         justify-content: space-around;
+         flex-wrap: wrap;
      }
      .header-center {
          order: 3;
          width: 100%;
-         flex-basis: 100%; /* Ensure full width when wrapped */
+         flex-basis: 100%;
          margin-top: 10px;
-         flex: none; /* Override flex: 1 */
+         flex: none;
      }
      .header-left {
          order: 1;
-         flex-grow: 1; /* Logo takes available space left */
-         flex: 1; /* Keep flex: 1 base */
-         justify-content: flex-start; /* Align logo left */
+         flex-grow: 1;
+         flex: 1;
+         justify-content: flex-start;
      }
      .header-right {
          order: 2;
-         flex-shrink: 0; /* User controls don't shrink */
-         flex: 1; /* Keep flex: 1 base */
-         justify-content: flex-end; /* Align controls right */
+         flex-shrink: 0;
+         flex: 1;
+         justify-content: flex-end;
      }
-     .primary-nav { display: none; } /* Hide primary nav */
-     .secondary-nav { display: flex; } /* Show secondary nav */
+     .primary-nav { display: none; }
+     .secondary-nav { display: flex; }
      .main-nav a { font-size: 1.1rem; padding: 8px 10px; }
      .jackpot-header { padding: 15px; gap: 10px; min-height: auto; }
      .jackpot-value h2 { font-size: 2.8rem; }
@@ -939,7 +928,7 @@
      .inventory-items { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); max-height: 250px; }
      .inventory-item img { height: 70px; }
      .selected-items-container { max-height: 200px; }
-     .selected-item { width: 100%; max-width: 150px; align-self: center; } /* Center selected items on mobile */
+     .selected-item { width: 100%; max-width: 150px; align-self: center; }
      .modal-content { max-width: 95%; }
      .modal-header h2 { font-size: 1.2rem; }
      .modal-footer { justify-content: center; flex-wrap: wrap; }
@@ -954,13 +943,11 @@
  @media (max-width: 480px) { /* Small mobile */
      .header-container {
          gap: 5px;
-         /* Allow center to stack again if needed, but prioritize row */
          flex-wrap: wrap;
      }
 
-     /* Ensure left/right still take space */
-     .header-left { flex: 1; min-width: 120px; /* Example min-width */}
-     .header-right { flex: 1; min-width: 150px; /* Example min-width */}
+     .header-left { flex: 1; min-width: 120px; }
+     .header-right { flex: 1; min-width: 150px; }
      .header-center { width: 100%; flex-basis: 100%; flex: none; }
 
 
@@ -971,8 +958,8 @@
      .btn-login { padding: 6px 12px; font-size: 0.9rem; }
      .btn-deposit, .btn-secondary { font-size: 1rem; padding: 10px 20px; }
      .jackpot-tab { font-size: 1.1rem !important; padding: 6px 8px !important; }
-     .jackpot-header { gap: 5px; padding: 10px; flex-direction: column; } /* Stack header items vertically */
-     .jackpot-value, .jackpot-timer, .jackpot-stats { min-width: auto; } /* Reset min-width */
+     .jackpot-header { gap: 5px; padding: 10px; flex-direction: column; }
+     .jackpot-value, .jackpot-timer, .jackpot-stats { min-width: auto; }
      .jackpot-value h2 { font-size: 2.2rem; }
      .timer-circle { width: 70px; height: 70px; }
      .timer-text { font-size: 1.8rem; }
