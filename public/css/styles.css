@@ -504,46 +504,61 @@
      border-radius: 12px 12px 0 0;
  }
  .roulette-container {
-     position: relative; width: 100%; height: 90px; /* Adjust height if needed */ overflow: hidden;
+     position: relative; width: 100%; height: 90px; /* Keep height consistent */ overflow: hidden;
      background-color: rgba(13, 17, 23, 0.7); border-radius: 8px;
-     border: 1px solid var(--border-color); margin: auto; margin-top: 30px; /* Adjust margin-top if needed */
+     border: 1px solid var(--border-color); margin: auto; margin-top: 30px;
      box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6); backdrop-filter: blur(2px);
  }
  .roulette-track {
      display: flex; position: absolute; left: 0; top: 0; height: 100%;
-     padding-left: calc(50% - 45px); padding-right: calc(50% - 45px); /* Adjust padding based on item width */
+     /* Adjust padding based on item width */
+     padding-left: calc(50% - 45px); padding-right: calc(50% - 45px);
      will-change: transform; transition: none;
  }
- .roulette-item {
-     flex: 0 0 auto; width: 90px; height: 80px; /* Adjust height if needed */ margin: 5px;
-     background: rgba(30, 35, 40, 0.8); border-radius: 6px;
-     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); display: flex; flex-direction: column;
-     overflow: hidden; transition: transform 0.3s ease, box-shadow 0.3s ease;
-     border: 2px solid transparent; position: relative; backface-visibility: hidden;
-     align-items: center; /* Center avatar if it's the only content */
-     justify-content: center; /* Center avatar if it's the only content */
- }
- .roulette-item:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6); z-index: 1; }
- /* Removed .profile-pic-container as it might not be needed if structure is simpler */
- .roulette-avatar {
-     width: 60px; /* Adjust size as desired */
-     height: 60px; /* Adjust size as desired */
-     object-fit: cover;
-     display: block;
-     transition: transform 0.3s ease;
-     border-radius: 4px; /* Optional: slightly rounded avatar */
-     border: 1px solid rgba(0,0,0,0.2); /* Optional subtle border */
- }
- .roulette-item:hover .roulette-avatar { transform: scale(1.1); }
- /* Removed .roulette-info as name/percentage are hidden */
 
- /* --- HIDE Name and Percentage in Roulette --- */
+ /* --- MODIFICATION START: Roulette Item Styling --- */
+ .roulette-item {
+     flex: 0 0 auto; /* Keep shrink/grow properties */
+     width: 90px; /* Keep width consistent */
+     height: 80px; /* Keep height consistent */
+     margin: 5px; /* Keep margin for spacing */
+     background: rgba(30, 35, 40, 0.8);
+     border-radius: 6px;
+     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+     overflow: hidden; /* Keep hidden overflow */
+     transition: transform 0.3s ease, box-shadow 0.3s ease;
+     border: 2px solid transparent;
+     position: relative;
+     backface-visibility: hidden;
+     display: flex; /* Use flex to help center content */
+     align-items: center; /* Vertically center content (the image) */
+     justify-content: center; /* Horizontally center content */
+     padding: 0; /* Remove padding if any existed */
+ }
+
+ .roulette-item:hover {
+     transform: translateY(-5px) scale(1.05);
+     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
+     z-index: 1;
+ }
+
+ .roulette-avatar {
+     display: block; /* Ensure it's a block element */
+     width: 100%; /* Fill parent width */
+     height: 100%; /* Fill parent height */
+     object-fit: cover; /* Cover the area, cropping if necessary */
+     transition: transform 0.3s ease;
+     border: none; /* Remove previous border if needed */
+     border-radius: 0; /* Remove previous border-radius if needed */
+ }
+ /* --- MODIFICATION END --- */
+
+ .roulette-item:hover .roulette-avatar { transform: scale(1.1); }
+
  .roulette-name,
  .roulette-percentage {
-     display: none;
+     display: none; /* Keep hidden */
  }
- /* --- End Hide --- */
-
 
  /* Center Ticker Line */
  .roulette-ticker {
@@ -837,7 +852,6 @@
 
  /* Pagination */
  .pagination-container { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
- /* --- UPDATED: Changed pagination-btn to page-button to match JS --- */
  .page-button {
      padding: 6px 10px;
      background-color: var(--background-light);
@@ -902,7 +916,6 @@
      .timer-circle { width: 110px; height: 110px; }
      .timer-text { font-size: 3.1rem; }
      .stat-value { font-size: 3.1rem; }
-     /* UPDATED: Increased responsive font size */
      .jackpot-tab { font-size: 1.5rem !important; }
  }
 
@@ -941,14 +954,15 @@
      .timer-background, .timer-foreground { stroke-width: 6px; }
      .stat-value { font-size: 2.4rem; }
      .value-label, .timer-label, .stat-label { font-size: 0.8rem; }
-     /* UPDATED: Increased responsive font size */
      .jackpot-tab { font-size: 1.4rem !important; text-shadow: 0 0 8px var(--jackpot-tab-color); }
+
+     /* --- Responsive Roulette Adjustments --- */
      .roulette-container { margin-top: 20px; height: 80px; }
-     .roulette-item { width: 70px; height: 70px; margin: 5px; } /* Adjusted height */
-     /* Removed .profile-pic-container rules */
-     .roulette-avatar { width: 50px; height: 50px; } /* Adjusted avatar size */
-     /* .roulette-name, .roulette-percentage are hidden now */
-     .roulette-track { padding-left: calc(50% - 35px); padding-right: calc(50% - 35px); }
+     .roulette-item { width: 70px; height: 70px; margin: 5px; } /* Keep height same as width for square */
+     .roulette-avatar { width: 100%; height: 100%; } /* Ensure avatar fills item */
+     .roulette-track { padding-left: calc(50% - 35px); padding-right: calc(50% - 35px); } /* Adjust padding for new width */
+     /* --- End Responsive Roulette Adjustments --- */
+
      .winner-info { padding: 8px; }
      .winner-avatar { width: 30px; height: 30px; margin-right: 8px;}
      .winner-header h3 { font-size: 1rem; }
@@ -985,7 +999,6 @@
      .user-name { max-width: 100px; }
      .btn-login { padding: 6px 12px; font-size: 0.9rem; }
      .btn-deposit, .btn-secondary { font-size: 1rem; padding: 10px 20px; }
-     /* UPDATED: Increased responsive font size and padding */
      .jackpot-tab { font-size: 1.3rem !important; padding: 8px 10px !important; }
      .jackpot-header { gap: 5px; padding: 10px; flex-direction: column; }
      .jackpot-value, .jackpot-timer, .jackpot-stats { min-width: auto; }
@@ -995,12 +1008,14 @@
      .stat-value { font-size: 1.8rem; margin-top: 0; }
      .timer-background, .timer-foreground { stroke-width: 5px; }
      .value-label, .timer-label, .stat-label { font-size: 0.7rem; }
+
+     /* --- Responsive Roulette Adjustments --- */
      .roulette-container { height: 70px; }
-     .roulette-item { width: 60px; height: 60px; margin: 5px;} /* Adjusted height */
-     /* Removed .profile-pic-container rules */
-     .roulette-avatar { width: 45px; height: 45px; } /* Adjusted avatar size */
-     /* .roulette-name, .roulette-percentage are hidden now */
-     .roulette-track { padding-left: calc(50% - 30px); padding-right: calc(50% - 30px); }
+     .roulette-item { width: 60px; height: 60px; margin: 5px;} /* Keep square */
+     .roulette-avatar { width: 100%; height: 100%; } /* Ensure avatar fills item */
+     .roulette-track { padding-left: calc(50% - 30px); padding-right: calc(50% - 30px); } /* Adjust padding */
+     /* --- End Responsive Roulette Adjustments --- */
+
      .inventory-items { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
      .inventory-item img { height: 60px; }
      .selected-items-container { max-height: 180px; }
