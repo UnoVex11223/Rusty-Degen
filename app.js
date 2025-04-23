@@ -14,7 +14,7 @@ const bodyParser = require('body-parser');
 const SteamTotp = require('steam-totp');
 const axios = require('axios');
 const NodeCache = require('node-cache');
-const helmet = require('helmet');
+const helmet = require('helmet'); // <-- Keep helmet
 const rateLimit = require('express-rate-limit');
 const { body, query, param, validationResult } = require('express-validator');
 require('dotenv').config();
@@ -68,9 +68,66 @@ const io = socketIo(server, { cors: { origin: process.env.SITE_URL || "*", metho
 // Trust proxy if behind one (like Heroku, Nginx) - important for rate limiting IPs correctly
 app.set('trust proxy', 1); // Adjust the number based on your proxy depth
 
-app.use(helmet()); // <-- Sets secure HTTP headers
+// **** CSP Configuration (From Snippet 1) ****
+app.use(
+    helmet.contentSecurityPolicy({
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(), // Start with defaults
+            "default-src": ["'self'"], // Default to self
+            "script-src": ["'self'", "/socket.io/socket.io.js"], // Allow self and socket.io script
+             // Allow inline scripts/event handlers (Less Secure - Recommended to remove inline handlers later)
+            "script-src-attr": ["'self'", "'unsafe-inline'"],
+            "style-src": ["'self'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com", "'unsafe-inline'"], // Allow self, fonts, fontawesome, and inline styles (often needed for dynamic styles)
+            "img-src": [
+                "'self'",
+                "data:", // Allow data URIs
+                "*.steamstatic.com", // Allow avatars/images from any steamstatic subdomain
+                "*.akamai.steamstatic.com" // Allow images from akamai CDN used by Steam
+            ],
+            "font-src": ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"], // Allow self and fonts/fontawesome
+            // Construct connect-src dynamically and safely
+            "connect-src": (() => {
+                const sources = ["'self'"];
+                const siteUrl = process.env.SITE_URL;
+                if (siteUrl) {
+                    try {
+                        const url = new URL(siteUrl);
+                        // Allow WebSocket connections (ws/wss) to the same hostname/port
+                        sources.push(`ws://${url.hostname}${url.port ? `:${url.port}` : ''}`);
+                        sources.push(`wss://${url.hostname}${url.port ? `:${url.port}` : ''}`);
+                        // Allow regular connections to the site URL itself
+                        sources.push(siteUrl);
+                    } catch (e) {
+                        console.error("Invalid SITE_URL for CSP connect-src:", siteUrl, e);
+                    }
+                }
+                // Always allow self
+                // Add rust.scmm.app for price fetching
+                sources.push("https://rust.scmm.app");
+                return sources;
+            })(),
+             "frame-src": ["'self'"], // Adjust if you embed frames
+             "object-src": ["'none'"], // Disallow objects
+             "upgrade-insecure-requests": [], // Enable HTTPS enforcement
+        },
+    })
+);
+// **** End CSP Configuration ****
 
-// Rate Limiting Setup (Using your existing definitions)
+// Add other helmet features if desired (These are generally included by default helmet() call, but keep if explicit control needed)
+// app.use(helmet.dnsPrefetchControl());
+// app.use(helmet.frameguard({ action: 'deny' }));
+// app.use(helmet.hidePoweredBy());
+// app.use(helmet.hsts({ maxAge: 15552000, includeSubDomains: true })); // 180 days
+// app.use(helmet.ieNoOpen());
+// app.use(helmet.noSniff());
+// app.use(helmet.originAgentCluster());
+// app.use(helmet.permittedCrossDomainPolicies());
+// app.use(helmet.referrerPolicy({ policy: 'same-origin' }));
+// app.use(helmet.xssFilter());
+
+
+// Rate Limiting Setup (Using definitions from Snippet 2)
 const generalApiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 100, // Limit each IP to 100 requests per windowMs
@@ -95,7 +152,7 @@ const sensitiveActionLimiter = rateLimit({
     legacyHeaders: false,
 });
 
-// Apply general limiter to API routes (Already present in your code)
+// Apply general limiter to API routes
 app.use('/api/', generalApiLimiter);
 
 // Configure middleware
@@ -203,7 +260,7 @@ const roundSchema = new mongoose.Schema({
     participants: [{
         user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
         itemsValue: { type: Number, required: true, default: 0, min: 0 }, // Total value deposited by user in this round
-        tickets: { type: Number, required: true, default: 0, min: 0 }     // Tickets based on value
+        tickets: { type: Number, required: true, default: 0, min: 0 }      // Tickets based on value
     }],
     winner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true }, // Added index
     winningTicket: { type: Number, min: 0 },
@@ -246,7 +303,7 @@ function generateAuthCode() {
 }
 
 // --- Steam Bot Login ---
-// <<< MODIFICATION START: Enhanced login logic >>>
+// <<< Enhanced login logic from Snippet 2 >>>
 if (isBotConfigured) {
     const loginCredentials = {
         accountName: process.env.STEAM_USERNAME,
@@ -326,7 +383,7 @@ if (isBotConfigured) {
         isBotReady = false;
     }
 } // End if (isBotConfigured)
-// <<< MODIFICATION END: Enhanced login logic >>>
+// <<< End Enhanced login logic >>>
 
 // --- Active Round Data ---
 let currentRound = null;
@@ -335,7 +392,7 @@ let isRolling = false; // Flag to prevent actions during winner selection/payout
 
 // --- Deposit Security Token Store ---
 // TODO: For production robustness, replace this in-memory store with a persistent one
-//        like Redis or a MongoDB collection with a TTL index.
+//       like Redis or a MongoDB collection with a TTL index.
 const depositTokens = {}; // Simple in-memory store { token: { userId, expiry } }
 
 function generateDepositToken(userId) {
@@ -689,8 +746,8 @@ async function endRound() {
         // Use lean() for performance as we modify/calculate based on this data
         const round = await Round.findById(roundMongoId)
             .populate('participants.user') // Populate user data
-            .populate('items')             // Populate item data
-            .lean();                       // <-- Use lean
+            .populate('items')               // Populate item data
+            .lean();                         // <-- Use lean
 
         if (!round) throw new Error(`Round ${roundIdToEnd} data missing after status update.`);
         if (round.status !== 'rolling') { // Double check status after fetch
@@ -925,7 +982,7 @@ async function sendWinningTradeOffer(round, winner, itemsToSend) {
 
 
 // --- Authentication Routes ---
-// Apply auth rate limiter to the login initiation route
+// Apply auth rate limiter to the login initiation route (As per Snippet 1)
 app.get('/auth/steam', authLimiter, passport.authenticate('steam', { failureRedirect: '/' }));
 
 app.get('/auth/steam/return',
@@ -957,7 +1014,7 @@ function ensureAuthenticated(req, res, next) {
     res.status(401).json({ error: 'Not authenticated' });
 }
 
-// Helper Middleware for validation results (Already present in your code)
+// Helper Middleware for validation results
 const handleValidationErrors = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -973,7 +1030,7 @@ app.get('/api/user', ensureAuthenticated, (req, res) => {
     res.json({ _id, steamId, username, avatar, tradeUrl, balance, createdAt });
 });
 
-// POST Update Trade URL (Updated with validation)
+// POST Update Trade URL (Apply sensitiveActionLimiter as per Snippet 1)
 app.post('/api/user/tradeurl',
     sensitiveActionLimiter, // Apply stricter rate limit
     ensureAuthenticated,
@@ -1011,7 +1068,7 @@ app.post('/api/user/tradeurl',
         }
     });
 
-// GET User Inventory
+// GET User Inventory (Includes logging from both snippets)
 app.get('/api/inventory', ensureAuthenticated, async (req, res) => {
     // Check bot readiness before attempting inventory fetch
     if (!isBotReady) {
@@ -1041,14 +1098,14 @@ app.get('/api/inventory', ensureAuthenticated, async (req, res) => {
              // Log only relevant fields of the first item
              const firstItem = inventory[0];
              console.log("Example raw item:", JSON.stringify({
-                assetid: firstItem?.assetid,
-                market_hash_name: firstItem?.market_hash_name,
-                name: firstItem?.name,
-                icon_url: firstItem?.icon_url,
-                tradable: firstItem?.tradable,
-                marketable: firstItem?.marketable,
-                appid: firstItem?.appid,
-                contextid: firstItem?.contextid
+                 assetid: firstItem?.assetid,
+                 market_hash_name: firstItem?.market_hash_name,
+                 name: firstItem?.name,
+                 icon_url: firstItem?.icon_url,
+                 tradable: firstItem?.tradable,
+                 marketable: firstItem?.marketable,
+                 appid: firstItem?.appid,
+                 contextid: firstItem?.contextid
              }, null, 2));
         }
         // **** END LOGGING ****
@@ -1074,7 +1131,7 @@ app.get('/api/inventory', ensureAuthenticated, async (req, res) => {
                     return null; // Skip this item
                 }
                  // Construct image URL
-                const imageUrl = `https://community.akamai.steamstatic.com/economy/image/${item.icon_url}`;
+                 const imageUrl = `https://community.akamai.steamstatic.com/economy/image/${item.icon_url}`;
 
                 return {
                     assetId: item.assetid, // Ensure assetId is included
@@ -1088,12 +1145,12 @@ app.get('/api/inventory', ensureAuthenticated, async (req, res) => {
             })
             .filter(item => item && item.tradable && item.price >= MIN_ITEM_VALUE); // Filter nulls, non-tradables, and low value items
 
-         // **** ADDED LOGGING ****
-         console.log(`Processed validItems count for ${req.user.username}: ${validItems.length}`);
-         if (validItems.length > 0) {
-             console.log("Example processed item:", JSON.stringify(validItems[0], null, 2)); // Log first processed item
-         }
-         // **** END LOGGING ****
+           // **** ADDED LOGGING ****
+           console.log(`Processed validItems count for ${req.user.username}: ${validItems.length}`);
+           if (validItems.length > 0) {
+               console.log("Example processed item:", JSON.stringify(validItems[0], null, 2)); // Log first processed item
+           }
+           // **** END LOGGING ****
 
         res.json(validItems);
 
@@ -1105,7 +1162,7 @@ app.get('/api/inventory', ensureAuthenticated, async (req, res) => {
 });
 
 
-// POST Initiate Deposit Request (Client gets token and bot URL)
+// POST Initiate Deposit Request (Client gets token and bot URL) (Apply sensitiveActionLimiter as per Snippet 1)
 app.post('/api/deposit/initiate',
     sensitiveActionLimiter, // Apply stricter rate limit
     ensureAuthenticated,
@@ -1410,7 +1467,7 @@ if (isBotConfigured && manager) { // Ensure manager is initialized
                             avatar: user.avatar,     // Use user from token verification
                             itemsValue: updatedParticipantData.itemsValue, // Send cumulative value from DB
                             tickets: updatedParticipantData.tickets,       // Send cumulative tickets from DB
-                            totalValue: latestRound.totalValue,           // Send new round total value
+                            totalValue: latestRound.totalValue,            // Send new round total value
                             depositedItems: itemsToProcess.map(i => ({ // Send details of *this* specific deposit
                                 assetId: i.assetId, name: i.name, image: i.image, price: i.price
                             }))
@@ -1636,6 +1693,7 @@ app.get('/api/rounds',
         }
     });
 
+// POST Verify Provably Fair (Apply sensitiveActionLimiter as per Snippet 1)
 app.post('/api/verify',
     sensitiveActionLimiter, // Apply stricter rate limit
     [ // Validation Rules
