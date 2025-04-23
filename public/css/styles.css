@@ -1,1036 +1,1116 @@
-/*=========================
-  VARIABLES & BASE STYLES
- =========================*/
+/* style.css */
 
- :root {
-     --primary-color: #00e676;
-     --primary-dark: #00c853;
-     --primary-light: #69f0ae;
-     --secondary-color: #ff9100;
-     --secondary-dark: #ff6d00;
-     --secondary-light: #ffab40;
-     --background-dark: #0d1117;
-     --background-medium: #161b22;
-     --background-light: #21262d;
-     --text-primary: #ffffff;
-     --text-secondary: #b3b3b3;
-     --text-accent: #69f0ae;
-     --border-color: #30363d;
-     --error-color: #f44336;
-     --success-color: #4caf50;
-     --info-color: #2196f3; /* For info notifications */
-     --jackpot-tab-color: #00ff8c; /* Bright neon green for jackpot tab */
- }
+/* --- Basic Reset & Defaults --- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
- * {
-     margin: 0;
-     padding: 0;
-     box-sizing: border-box;
- }
+:root {
+    /* Define Colors (adjust as needed) */
+    --primary-color: #00bcd4; /* Teal */
+    --secondary-color: #ff9800; /* Orange */
+    --dark-bg: #212529;
+    --medium-bg: #343a40;
+    --light-bg: #f8f9fa;
+    --text-light: #f8f9fa;
+    --text-medium: #adb5bd;
+    --text-dark: #343a40;
+    --success-color: #28a745;
+    --error-color: #dc3545;
+    --info-color: #17a2b8;
+    --border-color: #495057;
 
- body {
-     font-family: 'Rajdhani', sans-serif;
-     background-color: var(--background-dark);
-     color: var(--text-primary);
-     line-height: 1.6;
-     overflow-x: hidden; /* Prevent horizontal scrollbars */
- }
+    /* Define Spacing */
+    --spacing-xs: 4px;
+    --spacing-sm: 8px;
+    --spacing-md: 16px;
+    --spacing-lg: 24px;
+    --spacing-xl: 32px;
 
- .container {
-     width: 100%;
-     max-width: 1200px;
-     margin: 0 auto;
-     padding: 0 15px;
- }
+    /* Define Fonts */
+    --font-family-base: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Example font stack */
+}
 
- /* Typography */
- h1, h2, h3, h4, h5, h6 {
-     font-family: 'Titillium Web', sans-serif;
-     font-weight: 700;
-     margin-bottom: 1rem;
-     color: var(--text-primary); /* Ensure headings are white */
- }
+body {
+    font-family: var(--font-family-base);
+    line-height: 1.6;
+    background-color: var(--dark-bg); /* Dark background for the body */
+    color: var(--text-medium);
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
 
- h1 { font-size: 2.5rem; }
- h2 { font-size: 2rem; }
- h3 { font-size: 1.5rem; }
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
 
- a {
-     text-decoration: none;
-     color: var(--primary-light); /* Default link color */
-     transition: color 0.3s ease;
- }
- a:hover {
-     color: var(--primary-color);
- }
+a:hover {
+    text-decoration: underline;
+}
 
- p {
-     margin-bottom: 1rem; /* Add default spacing for paragraphs */
-     color: var(--text-secondary);
- }
+img {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
 
- code { /* General code tag styling */
-     background-color: var(--background-dark);
-     padding: 3px 6px;
-     border-radius: 4px;
-     font-family: 'JetBrains Mono', monospace;
-     color: var(--secondary-light);
-     font-size: 0.9em;
-     border: 1px solid var(--border-color);
-     word-break: break-all;
- }
+/* --- Layout Containers --- */
+.site-header {
+    background-color: var(--medium-bg);
+    padding: var(--spacing-sm) var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
 
- /*=========================
-  UTILITIES & HELPERS
- =========================*/
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
- /* Visually hidden label */
- .sr-only {
-     position: absolute;
-     width: 1px;
-     height: 1px;
-     padding: 0;
-     margin: -1px;
-     overflow: hidden;
-     clip: rect(0, 0, 0, 0);
-     white-space: nowrap;
-     border-width: 0;
- }
+.logo-container a {
+    color: var(--text-light);
+    font-size: 1.5rem;
+    font-weight: bold;
+    text-decoration: none;
+}
+.logo-container a:hover {
+    text-decoration: none;
+}
 
- /* Custom Scrollbars (Optional but nice) */
- /* Firefox */
- * {
-    scrollbar-width: thin;
-    scrollbar-color: var(--primary-color) var(--background-dark);
- }
- /* Webkit (Chrome, Safari, Edge) */
- ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px; /* For horizontal scrollbars */
- }
- ::-webkit-scrollbar-track {
-    background: var(--background-dark);
-    border-radius: 4px;
- }
- ::-webkit-scrollbar-thumb {
-    background-color: var(--primary-color);
-    border-radius: 4px;
-    border: 2px solid var(--background-dark);
- }
- ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--primary-dark);
- }
 
- /*=========================
-  HEADER & NAVIGATION
- =========================*/
-
- .main-header {
-     background-color: var(--background-medium);
-     padding: 10px 0;
-     border-bottom: 1px solid var(--border-color);
-     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-     position: sticky;
-     top: 0;
-     z-index: 100;
- }
-
- .header-container {
-     display: flex;
-     align-items: center;
-     justify-content: space-around;
-     flex-wrap: wrap;
- }
-
- .header-left, .header-center, .header-right {
-     display: flex;
-     align-items: center;
- }
-
- .header-left {
-    gap: 20px;
-    flex: 1;
-    justify-content: flex-start;
- }
- .header-center {
+.main-container {
     flex-grow: 1;
-    flex: 1;
-    justify-content: center;
-    min-width: 0;
+    width: 100%;
+    max-width: 1300px; /* Max width for main content area */
+    margin: var(--spacing-lg) auto;
+    padding: 0 var(--spacing-lg);
+}
+
+.page-container {
+    width: 100%;
+}
+
+.page-content {
+    padding: var(--spacing-lg) var(--spacing-xl);
+    background-color: var(--medium-bg); /* Darker background for content boxes */
+    border-radius: 8px;
+    margin: var(--spacing-md) auto;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    color: var(--text-light); /* Lighter text on dark background */
+}
+
+.page-content h1,
+.page-content h2,
+.page-content h3 {
+    color: var(--text-light);
+    margin-bottom: var(--spacing-md);
+}
+.page-content h1 {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: var(--spacing-sm);
+    margin-top: 0;
+}
+.page-content p {
+    margin-bottom: var(--spacing-md);
+}
+
+/* --- Header Navigation --- */
+.main-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    background-color: var(--medium-bg); /* Match header */
+    border-radius: 5px;
+    overflow: hidden;
+}
+
+.main-nav li {
+    /* No extra styling needed */
+}
+
+.main-nav a {
+    display: block;
+    padding: 10px 18px; /* Adjust padding */
+    color: var(--text-medium); /* Slightly muted nav text */
+    text-decoration: none;
+    font-weight: 500; /* Medium weight */
+    font-size: 0.95rem;
+    transition: background-color 0.2s ease, color 0.2s ease;
+    border-bottom: 3px solid transparent; /* Space for active indicator */
+    margin-bottom: -1px; /* Align with header border */
+}
+
+.main-nav a:hover {
+    background-color: var(--border-color);
+    color: var(--text-light);
+    text-decoration: none;
+    border-bottom-color: var(--border-color); /* Keep transparent or match background */
+}
+
+.main-nav a.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+    font-weight: 600; /* Bold active */
+    background-color: transparent; /* Ensure no background override */
+}
+
+/* --- User Area --- */
+.user-area {
+    display: flex;
+    align-items: center;
+}
+
+.user-profile-container {
+    display: flex;
+    align-items: center;
+    background-color: var(--border-color);
+    padding: var(--spacing-xs) var(--spacing-sm);
+    border-radius: 20px; /* Pill shape */
+    cursor: pointer;
+    position: relative;
+    transition: background-color 0.2s;
+    color: var(--text-light);
+}
+.user-profile-container:hover,
+.user-profile-container.open {
+    background-color: #5a6268; /* Slightly lighter on hover/open */
+}
+
+.user-avatar-img {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    margin-right: var(--spacing-sm);
+    border: 2px solid var(--text-light);
+}
+
+#userName {
+    font-weight: 500;
+    margin-right: var(--spacing-xs);
+    font-size: 0.9rem;
+}
+
+.dropdown-arrow {
+    font-size: 0.7rem;
+    margin-left: var(--spacing-xs);
+    transition: transform 0.2s ease;
+}
+.user-profile-container.open .dropdown-arrow {
+    transform: rotate(180deg);
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: calc(100% + 5px); /* Position below the profile button */
+    right: 0;
+    background-color: var(--medium-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    z-index: 1010;
+    min-width: 150px;
+    padding: var(--spacing-sm);
+    display: none; /* Controlled by JS */
+}
+
+.dropdown-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    margin: 0; /* Reset button margin */
+    padding: var(--spacing-sm) var(--spacing-md);
+}
+
+/* --- Buttons --- */
+.btn {
+    display: inline-block;
+    padding: 10px 18px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.5;
     text-align: center;
- }
- .header-right {
-    gap: 20px;
+    text-decoration: none;
+    vertical-align: middle;
+    cursor: pointer;
+    user-select: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    transition: color 0.15s ease-in-out, background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+.btn-primary:hover {
+    background-color: #00a5bb; /* Darker shade */
+    border-color: #0097a7;
+    color: #fff;
+    text-decoration: none;
+}
+
+.btn-secondary {
+    color: var(--text-light);
+    background-color: var(--medium-bg);
+    border-color: var(--border-color);
+}
+.btn-secondary:hover {
+    background-color: var(--border-color);
+    border-color: #5a6268;
+    color: var(--text-light);
+    text-decoration: none;
+}
+
+.btn:disabled,
+.btn.deposit-disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    pointer-events: none; /* Make sure clicks don't register */
+}
+
+.btn-small {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+}
+
+/* --- Home Page: Jackpot Header --- */
+.jackpot-header-container {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background-color: var(--medium-bg); /* Slightly different BG? */
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: 8px;
+    margin-bottom: var(--spacing-lg);
+    border: 1px solid var(--border-color);
+    text-align: center;
+    gap: var(--spacing-lg);
+}
+
+.jackpot-value h2, .jackpot-stats h2 {
+    font-size: 0.9rem;
+    color: var(--text-medium);
+    margin-bottom: var(--spacing-xs);
+    text-transform: uppercase;
+    font-weight: 400;
+}
+
+#potValue {
+    font-size: 2rem;
+    font-weight: bold;
+    color: var(--secondary-color); /* Highlight color */
+}
+
+#participantCount {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--text-light);
+}
+
+/* --- Home Page: Timer --- */
+.jackpot-timer {
+    position: relative;
+    width: 100px; /* Adjust size */
+    height: 100px;
+}
+
+.timer-svg {
+    transform: rotate(-90deg); /* Start from top */
+    width: 100%;
+    height: 100%;
+}
+
+.timer-background,
+.timer-foreground {
+    fill: none;
+    stroke-width: 8; /* Stroke width */
+}
+
+.timer-background {
+    stroke: var(--border-color); /* Background circle color */
+}
+
+.timer-foreground {
+    stroke: var(--primary-color); /* Progress color */
+    stroke-linecap: round; /* Rounded end */
+    transition: stroke-dashoffset 0.3s linear;
+}
+
+.timer-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.8rem;
+    font-weight: bold;
+    color: var(--text-light);
+}
+
+/* Timer Pulse Animations */
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}
+@keyframes urgentPulse {
+  0%, 100% { transform: scale(1); color: var(--error-color); }
+  50% { transform: scale(1.1); color: #ff6b6b; }
+}
+
+.timer-pulse {
+    animation: pulse 1.5s infinite ease-in-out;
+}
+.timer-text.urgent-pulse {
+    animation: urgentPulse 0.8s infinite ease-in-out;
+    color: var(--error-color); /* Start red */
+}
+
+/* --- Home Page: Participants Area --- */
+.participants-container {
+    background-color: var(--medium-bg);
+    padding: var(--spacing-md);
+    border-radius: 8px;
+    min-height: 200px; /* Ensure some height */
+    margin-bottom: var(--spacing-lg);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column; /* Items added to top */
+}
+
+.empty-message {
+    text-align: center;
+    color: var(--text-medium);
+    padding: var(--spacing-xl);
+    font-style: italic;
+}
+
+.player-deposit-container {
+    background-color: var(--dark-bg); /* Darker boxes for deposits */
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-bottom: var(--spacing-md);
+    padding: var(--spacing-sm);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.player-deposit-new {
+    opacity: 0;
+    transform: translateX(-20px);
+}
+
+.player-deposit-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+    padding-bottom: var(--spacing-sm);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.player-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: var(--spacing-md);
+    border: 3px solid; /* Color set by JS */
+    flex-shrink: 0;
+}
+
+.player-info {
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.player-name {
+    font-weight: bold;
+    color: var(--text-light);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.9rem;
+}
+
+.player-deposit-value {
+    font-size: 0.85rem;
+    font-weight: 500;
+    /* Color set by JS */
+}
+
+.player-items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(65px, 1fr)); /* Responsive grid */
+    gap: var(--spacing-sm);
+}
+
+.player-deposit-item {
+    background-color: var(--medium-bg);
+    border: 1px solid; /* Color set by JS */
+    border-radius: 4px;
+    padding: var(--spacing-xs);
+    font-size: 0.7rem;
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+}
+
+.player-deposit-item-image {
+    width: 40px; /* Adjust size */
+    height: 40px;
+    object-fit: contain;
+    margin: 0 auto var(--spacing-xs);
+}
+
+.player-deposit-item-info {
+    /* Optional: Display info below image */
+}
+
+.player-deposit-item-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-medium);
+    margin-bottom: 2px;
+}
+
+.player-deposit-item-value {
+    font-weight: bold;
+    font-size: 0.75rem;
+    /* Color set by JS */
+}
+
+.player-deposit-item-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+    min-height: 65px; /* Match item height */
+}
+
+
+/* --- Home Page: Roulette --- */
+.inline-roulette-container {
+    background-color: var(--dark-bg); /* Darker background for roulette */
+    border: 1px solid var(--border-color);
+    padding: var(--spacing-md) 0; /* Padding top/bottom, no side padding for viewport */
+    margin: var(--spacing-lg) 0;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.roulette-viewport {
+    position: relative;
+    width: 100%;
+    height: 70px; /* Adjust height based on item size */
+    overflow: hidden;
+}
+
+.roulette-marker {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px; /* Width of the marker */
+    height: 100%;
+    background-color: var(--secondary-color); /* Highlight color */
+    box-shadow: 0 0 10px var(--secondary-color);
+    z-index: 10;
+    border-radius: 2px;
+}
+
+.roulette-container {
+    height: 100%;
+    position: relative;
+}
+
+.roulette-track {
+    display: flex;
+    height: 100%;
+    position: absolute;
+    left: 0; /* JS will manipulate transform: translateX */
+    will-change: transform; /* Performance hint */
+}
+
+.roulette-item {
+    width: 60px; /* Item width */
+    height: 60px; /* Item height */
+    margin: 5px; /* Margin creates gap */
+    border: 3px solid; /* Color set by JS */
+    border-radius: 6px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--medium-bg);
+    flex-shrink: 0; /* Prevent items from shrinking */
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.roulette-avatar {
+    width: 48px; /* Slightly smaller than item */
+    height: 48px;
+    border-radius: 4px;
+    object-fit: cover;
+    border: 1px solid; /* Color set by JS */
+}
+
+/* Roulette Winner Highlight */
+@keyframes winnerPulse {
+  0%, 100% { box-shadow: 0 0 15px var(--winner-color); transform: scale(1.05); }
+  50% { box-shadow: 0 0 25px var(--winner-color), 0 0 10px var(--winner-color); transform: scale(1.1); }
+}
+/* Style applied by JS, included here for reference */
+/* .winner-highlight {
+    z-index: 5;
+    border-width: 3px;
+    border-color: var(--winner-color);
+    animation: winnerPulse 1.5s infinite;
+    transform: scale(1.05);
+} */
+
+/* Winner Info Box */
+.winner-info-box {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: rgba(40, 40, 40, 0.9); /* Semi-transparent dark */
+    border: 2px solid var(--primary-color);
+    border-radius: 8px;
+    padding: var(--spacing-lg);
+    display: flex; /* Hidden by JS initially */
+    align-items: center;
+    z-index: 20;
+    color: var(--text-light);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translate(-50%, -40%); }
+    to { opacity: 1; transform: translate(-50%, -50%); }
+}
+
+#winnerAvatar {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    margin-right: var(--spacing-lg);
+    border: 3px solid; /* Color set by JS */
+}
+
+.winner-details span {
+    display: block;
+    line-height: 1.4;
+}
+#winnerName {
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-bottom: var(--spacing-xs);
+    /* Color set by JS */
+}
+.winner-label {
+    font-size: 0.9rem;
+    color: var(--text-medium);
+}
+#winnerDeposit, #winnerChance {
+    font-weight: bold;
+    color: var(--text-light);
+    display: inline; /* Keep on same line as label */
+}
+
+/* Confetti */
+.confetti-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    pointer-events: none; /* Don't block interactions */
+    z-index: 15;
+}
+
+.confetti {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background-color: var(--color); /* Set by JS */
+    opacity: 0;
+    animation: confettiFall var(--duration) var(--delay) linear infinite;
+}
+
+@keyframes confettiFall {
+    0% {
+        transform: translateY(-10vh) translateX(var(--fall-x)) rotate(var(--rotation-start));
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(110vh) translateX(var(--fall-x)) rotate(var(--rotation-end));
+        opacity: 0;
+    }
+}
+
+
+/* --- Modals --- */
+.modal {
+    display: none; /* Hidden by default, shown by JS */
+    position: fixed;
+    z-index: 1050; /* High z-index */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.7); /* Dark overlay */
+    /* display: flex; /* Use flex to center content, added by JS */
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background-color: var(--medium-bg);
+    margin: auto;
+    padding: var(--spacing-xl);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    width: 90%;
+    max-width: 600px; /* Default max width */
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+    color: var(--text-light);
+}
+
+.modal-close-btn {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    color: var(--text-medium);
+    font-size: 1.8rem;
+    font-weight: bold;
+    border: none;
+    background: none;
+    cursor: pointer;
+    line-height: 1;
+}
+.modal-close-btn:hover {
+    color: var(--text-light);
+}
+
+.modal-content h2 {
+    margin-top: 0;
+    margin-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: var(--spacing-sm);
+}
+
+/* Trade URL Modal Specific */
+#tradeUrlInput {
+    width: 100%; /* Full width input */
+}
+
+/* Deposit Modal Specific */
+.deposit-modal-content {
+    max-width: 950px; /* Wider for inventory */
+}
+
+.deposit-interface {
+    display: flex;
+    gap: var(--spacing-lg);
+}
+
+.inventory-section, .selection-section {
     flex: 1;
-    justify-content: flex-end;
- }
+    border: 1px solid var(--border-color);
+    padding: var(--spacing-md);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    max-height: 60vh; /* Limit height */
+}
 
- .logo h1 {
-     font-family: 'JetBrains Mono', monospace;
-     font-size: 1.8rem;
-     font-weight: 700;
-     margin: 0;
-     letter-spacing: 1px;
-     text-shadow: 0 0 10px rgba(0, 230, 118, 0.5);
-     color: var(--text-primary);
- }
- .logo span { color: var(--primary-color); }
+.inventory-section h3, .selection-section h3 {
+    margin-top: 0;
+    margin-bottom: var(--spacing-md);
+    font-size: 1.1rem;
+    text-align: center;
+}
 
- /* Navigation Lists */
- .primary-nav ul, .secondary-nav ul, .main-nav ul {
-     list-style: none;
-     display: flex;
-     padding: 0;
-     margin: 0;
-     gap: 15px;
- }
+.item-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); /* Adjust item size */
+    gap: var(--spacing-sm);
+    overflow-y: auto; /* Scrollable item area */
+    flex-grow: 1; /* Take remaining space */
+    padding: var(--spacing-sm);
+    background-color: var(--dark-bg); /* Slightly darker background for grid */
+    min-height: 150px; /* Ensure it has some height */
+}
 
- /* Make sure main nav ul takes available space to center properly */
- .main-nav ul {
-     justify-content: center;
-     width: 100%;
- }
+.inventory-item, .selected-item-display {
+    background-color: var(--medium-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 4px;
+    padding: var(--spacing-sm);
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.1s;
+    position: relative;
+    text-align: center;
+    font-size: 0.75rem;
+}
+.inventory-item:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+}
+.inventory-item.selected {
+    border-color: var(--secondary-color); /* Orange border for selected */
+    box-shadow: 0 0 8px var(--secondary-color);
+}
 
-
- /* General Nav Link Styles */
- .primary-nav a, .secondary-nav a, .main-nav a {
-     font-weight: 600;
-     font-size: 1rem;
-     padding: 8px 10px;
-     border-radius: 4px;
-     transition: all 0.3s ease;
-     position: relative;
-     color: var(--text-secondary);
-     display: block;
+.inventory-item img, .selected-item-display img {
+    width: 50px;
+    height: 50px;
+    object-fit: contain;
+    margin: 0 auto var(--spacing-xs);
+}
+.item-details .item-name, .selected-item-display .item-name {
      white-space: nowrap;
- }
- .primary-nav a:hover, .secondary-nav a:hover, .main-nav a:hover {
-     color: var(--primary-color);
- }
- /* Underline effect */
- .primary-nav a::after, .secondary-nav a::after, .main-nav a::after {
-     content: '';
-     position: absolute;
-     bottom: 0;
-     left: 50%;
-     width: 0;
-     height: 2px;
-     background-color: var(--primary-color);
-     transition: all 0.3s ease;
-     transform: translateX(-50%);
- }
- .primary-nav a:hover::after, .secondary-nav a:hover::after, .main-nav a:hover::after,
- .primary-nav a.active::after, .secondary-nav a.active::after, .main-nav a.active::after {
-     width: 80%;
- }
- .primary-nav a.active, .secondary-nav a.active, .main-nav a.active {
-     color: var(--primary-color); /* Active color */
- }
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--text-light);
+    margin-bottom: 2px;
+}
+.item-details .item-value, .selected-item-display .item-value {
+    font-weight: bold;
+    color: var(--primary-color);
+}
 
- /* Jackpot Tab Specific Styles */
- .jackpot-tab {
-     /* UPDATED: Increased font size */
-     font-size: 1.6rem;
-     /* UPDATED: Adjusted padding for new font size */
-     padding: 10px 15px;
-     color: var(--jackpot-tab-color);
-     text-shadow: 0 0 10px var(--jackpot-tab-color), 0 0 15px var(--jackpot-tab-color);
-     letter-spacing: 1px;
-     font-weight: 700;
-     transform: translateX(5px); /* Kept the 5px shift right */
- }
- .jackpot-tab::after {
-     background-color: var(--jackpot-tab-color);
-     box-shadow: 0 0 8px var(--jackpot-tab-color);
-     height: 3px; /* Thicker underline */
- }
- .jackpot-tab:hover {
-     color: var(--jackpot-tab-color); /* Keep color on hover */
-     text-shadow: 0 0 15px var(--jackpot-tab-color), 0 0 20px var(--jackpot-tab-color);
- }
+.selected-item-display {
+    cursor: default;
+}
+.selected-item-display:hover {
+     transform: none; /* No hover effect */
+}
+.remove-item-btn {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background-color: var(--error-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 1rem;
+    line-height: 18px; /* Center the 'x' */
+    text-align: center;
+    cursor: pointer;
+    padding: 0;
+}
 
- /* User Controls */
- .user-controls {
-     display: flex;
-     align-items: center;
-     gap: 10px;
-     justify-content: flex-end;
- }
- .user-profile {
-     display: flex;
-     align-items: center;
-     gap: 10px;
- }
- .user-avatar {
-     width: 32px;
-     height: 32px;
-     border-radius: 50%;
-     border: 2px solid var(--primary-color);
-     flex-shrink: 0;
-     object-fit: cover;
- }
- .user-name {
-     font-weight: 600;
-     overflow: hidden;
-     text-overflow: ellipsis;
-     max-width: 150px;
- }
+.deposit-summary {
+    margin-top: var(--spacing-md);
+    padding-top: var(--spacing-md);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+}
+#depositButton {
+    margin-top: var(--spacing-md);
+    width: 100%; /* Full width deposit button */
+}
 
- /*=========================
-  BUTTONS
- =========================*/
+/* --- Forms --- */
+.form-group {
+    margin-bottom: var(--spacing-md);
+}
+.form-group label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 500;
+}
+.form-group input[type="text"],
+.form-group input[type="url"],
+.form-group input[type="number"] {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-light);
+    background-color: var(--dark-bg);
+    background-clip: padding-box;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+.form-group input:focus {
+    border-color: var(--primary-color);
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 188, 212, 0.25);
+}
 
- .btn {
-     display: inline-block;
-     padding: 10px 20px;
-     border: none;
-     border-radius: 4px;
-     font-family: 'Rajdhani', sans-serif;
-     font-weight: 600;
-     font-size: 1rem;
-     text-transform: uppercase;
-     cursor: pointer;
-     transition: all 0.3s ease;
-     background-color: var(--background-light);
-     color: var(--text-primary);
-     text-align: center;
-     line-height: 1.2;
- }
- .btn:hover:not(:disabled) {
-     transform: translateY(-2px);
-     box-shadow: 0 5px 15px rgba(0, 230, 118, 0.3);
- }
- .btn:disabled {
-     background-color: var(--background-light) !important;
-     color: var(--text-secondary) !important;
-     cursor: not-allowed;
-     transform: none !important;
-     box-shadow: none !important;
-     opacity: 0.6;
- }
- .btn-primary {
-     background-color: var(--primary-color);
-     color: var(--background-dark);
- }
- .btn-primary:hover:not(:disabled) {
-     background-color: var(--primary-dark);
- }
-
- /* Main Deposit Button (outside modal) & Modal Deposit Button */
- .btn-deposit {
-     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-     color: var(--background-dark);
-     font-size: 1.2rem;
-     padding: 12px 30px;
-     border-radius: 8px;
-     box-shadow: 0 4px 20px rgba(0, 230, 118, 0.4);
-     position: relative;
-     overflow: hidden;
- }
- .btn-deposit:before { /* Shine effect */
-     content: ''; position: absolute; top: 0; left: -100%;
-     width: 100%; height: 100%;
-     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-     transition: left 0.5s ease;
- }
- .btn-deposit:hover:not(:disabled):before { left: 100%; }
-
- /* Secondary Button (Test Buttons) */
- .btn-secondary {
-     background-color: var(--background-light);
-     color: var(--text-primary);
-     border: 1px solid var(--border-color);
-     border-radius: 8px;
-     font-size: 0.9rem;
-     padding: 8px 15px;
- }
- .btn-secondary:hover:not(:disabled) {
-     background-color: var(--background-medium);
-     transform: translateY(-2px);
-     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
- }
-
- /* Login Button */
- .btn-login {
-     background-color: transparent;
-     border: 2px solid var(--primary-color);
-     color: var(--primary-color);
-     padding: 8px 16px;
-     border-radius: 30px;
-     display: flex;
-     align-items: center;
-     gap: 8px;
- }
- .btn-login:hover {
-     background-color: var(--primary-color);
-     color: var(--background-dark);
- }
-
- /* History Table Buttons */
- .btn-details, .btn-verify {
-     padding: 5px 10px;
-     font-size: 0.8rem;
-     margin-right: 5px;
-     margin-bottom: 5px;
-     vertical-align: middle;
- }
- .btn-verify {
-     background-color: var(--secondary-color);
-     color: var(--background-dark);
- }
- .btn-verify:hover:not(:disabled) {
-     background-color: var(--secondary-dark);
- }
-
- /*=========================
-  MAIN CONTENT & SECTIONS
- =========================*/
-
- .main-content {
-     padding: 30px 0;
- }
-
- .content-card { /* Used for About, Roadmap, FAQ, Fair pages */
-     background-color: var(--background-medium);
-     border-radius: 12px;
-     padding: 25px;
-     margin-bottom: 30px;
-     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-     border: 1px solid var(--border-color);
- }
-
- .jackpot-section { /* Container for jackpot header, deposit button, items */
-     background-color: var(--background-medium);
-     border-radius: 12px;
-     overflow: hidden;
-     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-     border: 1px solid var(--border-color);
-     position: relative;
- }
-
- /*=========================
-  JACKPOT HEADER & TIMER
- =========================*/
-
- .jackpot-header {
-     display: flex;
-     justify-content: space-around;
-     align-items: center;
-     padding: 20px;
-     background: linear-gradient(135deg, var(--background-medium), var(--background-light));
-     border-bottom: 1px solid var(--border-color);
-     border-radius: 12px 12px 0 0;
-     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-     min-height: 170px;
-     position: relative;
-     overflow: hidden;
-     z-index: 5;
-     transition: height 0.3s ease, background 0.3s ease;
-     gap: 20px;
-     flex-wrap: wrap;
- }
- .jackpot-header.roulette-mode {
-     background: linear-gradient(135deg, var(--background-dark), var(--background-medium));
- }
-
- /* Jackpot Value */
- .jackpot-value {
-     display: flex; flex-direction: column; align-items: center; text-align: center;
-     flex: 1; min-width: 150px; padding: 10px;
- }
- .jackpot-value h2 {
-     font-size: 4.2rem; font-weight: 700; color: var(--primary-color); margin: 0;
-     font-family: 'JetBrains Mono', monospace; line-height: 1.1;
-     animation: valueGlow 1.8s infinite ease-in-out;
- }
- @keyframes valueGlow {
-     0%, 100% { text-shadow: 0 0 8px rgba(0, 230, 118, 0.4); }
-     50% { text-shadow: 0 0 20px var(--primary-color), 0 0 10px var(--primary-light); }
- }
-
- .value-label, .timer-label, .stat-label {
-     font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase;
-     letter-spacing: 1px; display: block; margin-top: 8px;
- }
-
- /* Timer */
- .jackpot-timer {
-     display: flex; flex-direction: column; align-items: center; text-align: center;
-     flex: 1; min-width: 150px;
- }
- .timer-circle {
-     position: relative; width: 130px; height: 130px; display: flex;
-     justify-content: center; align-items: center; margin: 0 auto;
- }
- .timer-progress { width: 100%; height: 100%; transform: rotate(-90deg); }
- .timer-background, .timer-foreground { fill: none; stroke-width: 8px; }
- .timer-background { stroke: var(--background-light); }
- .timer-foreground {
-     stroke: var(--primary-color); stroke-linecap: round; stroke-dashoffset: 0;
-     transition: stroke-dashoffset 1s linear; filter: drop-shadow(0 0 4px var(--primary-color));
- }
- .timer-text {
-     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-     font-size: 3.8rem; font-weight: 700; color: var(--primary-color);
-     font-family: 'JetBrains Mono', monospace;
- }
- /* Timer animations */
- .timer-pulse { animation: timerPulse 2s infinite ease-in-out; }
- .urgent-pulse {
-     animation: urgentPulse 0.6s infinite ease-in-out;
-     color: var(--error-color) !important;
-     text-shadow: 0 0 5px rgba(244, 67, 54, 0.5);
- }
- @keyframes timerPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
- @keyframes urgentPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.08); } }
-
- /* Stats (Participants) */
- .jackpot-stats {
-     display: flex; flex-direction: column; align-items: center; text-align: center;
-     flex: 1; min-width: 150px;
- }
- .stat-value {
-     font-size: 3.8rem; font-weight: 700; color: var(--text-primary);
-     display: block; line-height: 1.1; margin-top: 10px;
- }
-
- /*=========================
-  ROULETTE ANIMATION
- =========================*/
-
- .inline-roulette {
-     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-     background: transparent; z-index: 10; overflow: hidden;
-     border-radius: 12px 12px 0 0;
- }
- .roulette-container {
-     position: relative; width: 100%; height: 90px; /* Keep height consistent */ overflow: hidden;
-     background-color: rgba(13, 17, 23, 0.7); border-radius: 8px;
-     border: 1px solid var(--border-color); margin: auto; margin-top: 30px;
-     box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6); backdrop-filter: blur(2px);
- }
- .roulette-track {
-     display: flex; position: absolute; left: 0; top: 0; height: 100%;
-     /* Adjust padding based on item width */
-     padding-left: calc(50% - 45px); padding-right: calc(50% - 45px);
-     will-change: transform; transition: none;
- }
-
- .roulette-item {
-     flex: 0 0 auto;
-     width: 90px;
-     height: 80px;
-     margin: 5px;
-     background: rgba(30, 35, 40, 0.8);
-     border-radius: 6px;
-     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-     overflow: hidden;
-     transition: transform 0.3s ease, box-shadow 0.3s ease;
-     border: 2px solid transparent;
-     position: relative;
-     backface-visibility: hidden;
-     display: flex;
-     align-items: center;
-     justify-content: center;
-     padding: 0;
- }
-
- .roulette-item:hover {
-     transform: translateY(-5px) scale(1.05);
-     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
-     z-index: 1;
- }
-
- .roulette-avatar {
-     display: block;
-     width: 100%;
-     height: 100%;
-     object-fit: cover;
-     transition: transform 0.3s ease;
-     border: none;
-     border-radius: 0;
- }
-
- .roulette-item:hover .roulette-avatar { transform: scale(1.1); }
-
- .roulette-name,
- .roulette-percentage {
-     display: none; /* Keep hidden */
- }
-
- /* Center Ticker Line */
- .roulette-ticker {
-     position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-     width: 4px; height: 100%; z-index: 15; pointer-events: none;
- }
- .ticker-line {
-     width: 100%; height: 100%;
-     background: linear-gradient(to bottom, rgba(0,230,118,0), rgba(0,230,118,0.8) 40%, rgba(0,230,118,0.8) 60%, rgba(0,230,118,0));
-     box-shadow: 0 0 10px rgba(0, 230, 118, 0.7);
- }
- .roulette-ticker::before, .roulette-ticker::after { /* Ticker arrows */
-     content: ''; position: absolute; left: 50%; transform: translateX(-50%);
-     width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent;
-     filter: drop-shadow(0 0 3px rgba(0, 230, 118, 0.5));
- }
- .roulette-ticker::before { top: -6px; border-bottom: 8px solid rgba(0, 230, 118, 0.8); }
- .roulette-ticker::after { bottom: -6px; border-top: 8px solid rgba(0, 230, 118, 0.8); }
-
- /* Winner Info Box */
- .winner-info {
-     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-     background: radial-gradient(circle, rgba(20, 25, 30, 0.95), rgba(13, 17, 23, 0.98));
-     padding: 10px; display: flex; flex-direction: column; justify-content: center;
-     align-items: center; text-align: center; box-sizing: border-box;
-     z-index: 20; opacity: 0; display: none; /* JS handles display/fade */
- }
- @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
- .winner-header { display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
- .winner-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary-color); box-shadow: 0 0 10px rgba(0, 230, 118, 0.5); margin-right: 10px; object-fit: cover; flex-shrink: 0; }
- .winner-header h3 { margin: 0; font-size: 1.1rem; /* Color set by JS */ }
- .winner-details { margin-top: 5px; font-size: 0.9rem; }
- .winner-details p { margin: 3px 0; font-size: 0.9rem; }
- .winner-details span { color: var(--primary-light); font-weight: bold; }
- .congrats { font-size: 1.2rem !important; color: var(--primary-color); font-weight: 700; margin-top: 5px !important; text-transform: uppercase; letter-spacing: 2px; animation: colorPulse 3s infinite; text-shadow: 0 0 8px currentColor; }
- @keyframes colorPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-
- /* Return Button (Hidden) */
- .return-btn { display: none !important; }
-
- /* Confetti Container */
- .confetti-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 18; }
- .confetti {
-     position: absolute; width: 8px; height: 8px; background-color: var(--color); /* JS sets --color */
-     top: -20px; opacity: 0.9; animation: confettiFall var(--duration, 3s) linear var(--delay, 0s) forwards;
-     transform-origin: center center;
- }
- @keyframes confettiFall {
-     0% { transform: translateY(0) translateX(0) rotateZ(var(--rotation-start, 0deg)) scale(1); opacity: 0.9; }
-     100% { transform: translateY(200px) translateX(var(--fall-x, 0px)) rotateZ(var(--rotation-end, 720deg)) scale(0.5); opacity: 0; }
- }
-
- /*=========================
-  DEPOSIT & PARTICIPANT ITEMS
- =========================*/
-
- .deposit-button-container {
-     padding: 20px; background-color: var(--background-medium); z-index: 5;
-     position: relative; border-top: 1px solid var(--border-color);
-     display: flex; flex-direction: column; align-items: center; gap: 15px;
- }
- #showDepositModal { width: auto; max-width: 300px; }
- .test-buttons-container { display: flex; gap: 10px; justify-content: center; }
- .test-buttons-container .btn-secondary { width: auto; }
-
- .current-items-section {
-     padding: 20px; z-index: 5; position: relative;
-     background-color: var(--background-medium); border-radius: 0 0 12px 12px;
-     border-top: 1px solid var(--border-color);
- }
- .section-title {
-     font-size: 1.2rem; font-weight: 600; margin-bottom: 20px; color: var(--text-primary);
-     text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-color);
-     padding-bottom: 10px; text-align: center;
- }
- .empty-pot-message {
-     text-align: center; padding: 40px 20px; color: var(--text-secondary); font-size: 1.1rem;
-     background-color: var(--background-light); border-radius: 8px;
-     border: 1px dashed var(--border-color); display: block; margin: 15px 0;
- }
-
- /* Vertical Deposit List */
- /* --- MODIFICATION START: Remove max-height and overflow --- */
- .items-container { /* Main container for deposit blocks */
-     display: flex;
-     flex-direction: column;
-     gap: 15px;
-     /* max-height: 800px; */ /* REMOVED */
-     /* overflow-y: auto; */   /* REMOVED */
-     padding: 10px;
- }
- /* --- MODIFICATION END --- */
-
- /* Individual Player Deposit Block */
- .player-deposit-container {
-     background: linear-gradient(to bottom, var(--background-light), var(--background-medium));
-     border-radius: 8px; padding: 15px; border: 1px solid var(--border-color);
-     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); width: 100%;
-     transition: transform 0.3s ease, box-shadow 0.3s ease;
- }
- .player-deposit-container:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); }
- .player-deposit-header { display: flex; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(48, 54, 61, 0.5); }
- .player-avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 12px; border: 2px solid var(--primary-color); /* Color set by JS */ object-fit: cover; }
- .player-info { flex: 1; min-width: 0; }
- .player-name { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
- .player-deposit-value {
-     font-size: 0.9rem;
-     font-weight: 600; /* Color set by JS */
-     white-space: nowrap; /* Prevent wrapping */
-     overflow: hidden; /* Hide overflow */
-     text-overflow: ellipsis; /* Add ellipsis if too long */
- }
- .player-items-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: flex-start; }
- .player-deposit-item {
-     width: 80px; height: 100px; background: rgba(22, 27, 34, 0.7); border-radius: 5px;
-     overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); transition: transform 0.2s ease;
-     border: 1px solid var(--border-color); flex: 0 0 auto; display: flex; flex-direction: column;
-     border-left-width: 3px; border-left-style: solid; border-color: transparent transparent transparent var(--border-color); /* JS sets left color */
- }
- .player-deposit-item:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 8px rgba(0, 230, 118, 0.2); }
- .player-deposit-item-image { width: 100%; height: 60px; object-fit: contain; background-color: var(--background-medium); border-bottom: 1px solid rgba(48, 54, 61, 0.5); display: block; }
- .player-deposit-item-info { padding: 4px; height: 40px; display: flex; flex-direction: column; justify-content: center; flex-grow: 1; }
- .player-deposit-item-name { font-size: 0.65rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); margin-bottom: 2px; }
- .player-deposit-item-value { font-size: 0.7rem; font-weight: 700; /* Color set by JS */ }
- .player-deposit-item-more { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; padding: 5px; margin-top: 5px; /* Color set by JS */ }
- /* Animation for new deposits */
- @keyframes newDepositPulse { 0% { transform: translateY(20px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
- .player-deposit-new { animation: newDepositPulse 0.5s ease-out forwards; }
-
- /*=========================
-  MODALS
- =========================*/
-
- .modal {
-     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-     background-color: rgba(0, 0, 0, 0.85); display: none; /* JS toggles */
-     justify-content: center; align-items: center; z-index: 1000; padding: 20px;
-     backdrop-filter: blur(5px);
- }
- .modal-content {
-     background-color: var(--background-medium); border-radius: 12px; width: 100%;
-     max-width: 700px; max-height: 90vh; display: flex; flex-direction: column;
-     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); border: 1px solid var(--border-color);
-     animation: modalIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); overflow: hidden;
- }
- .age-verification .modal-content { max-width: 500px; }
- #depositModal .modal-content { max-width: 900px; }
- #tradeUrlModal .modal-content { max-width: 600px; }
- @keyframes modalIn { from { opacity: 0; transform: scale(0.9) translateY(-20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
- .modal-header {
-     padding: 15px 20px; border-bottom: 1px solid var(--border-color); display: flex;
-     justify-content: space-between; align-items: center;
-     background: linear-gradient(135deg, var(--background-medium), var(--background-light));
-     border-radius: 12px 12px 0 0; flex-shrink: 0;
- }
- .modal-header h2 { margin: 0; color: var(--primary-color); font-size: 1.4rem; }
- .close-btn {
-     background: none; border: none; color: var(--text-secondary); font-size: 1.8rem;
-     line-height: 1; cursor: pointer; transition: color 0.3s ease, transform 0.3s ease; padding: 5px;
- }
- .close-btn:hover { color: var(--primary-color); transform: rotate(90deg); }
- .modal-body { padding: 20px; overflow-y: auto; flex-grow: 1; line-height: 1.7; }
- .modal-body p { margin-bottom: 15px; color: var(--text-secondary); }
- .modal-body p:last-child { margin-bottom: 0; }
- .modal-body ul { list-style: disc; margin: 15px 0 15px 25px; padding-left: 15px; }
- .modal-body li { margin-bottom: 8px; color: var(--text-secondary); }
- .modal-footer {
-     padding: 15px 20px; border-top: 1px solid var(--border-color); text-align: right;
-     background-color: var(--background-light); border-radius: 0 0 12px 12px;
-     flex-shrink: 0; display: flex; justify-content: flex-end; gap: 10px;
- }
-
- /* Form Elements */
- .form-group { margin-bottom: 20px; }
- .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: var(--text-primary); }
- .form-group input[type="text"], .form-group input[type="url"], .form-group input[type="password"], .form-group input[type="email"], .form-group textarea {
-     width: 100%; padding: 12px; border: 1px solid var(--border-color);
-     border-radius: 4px; background-color: var(--background-light); color: var(--text-primary);
-     font-family: 'Rajdhani', sans-serif; font-size: 1rem;
-     transition: border-color 0.3s ease, box-shadow 0.3s ease;
- }
- .form-group input:focus, .form-group textarea:focus {
-     border-color: var(--primary-color); outline: none;
-     box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.2);
- }
- .checkbox-container { display: flex; align-items: center; margin: 15px 0; }
- .checkbox-container input[type="checkbox"] { margin-right: 10px; width: 18px; height: 18px; accent-color: var(--primary-color); cursor: pointer; flex-shrink: 0; }
- .checkbox-container label { cursor: pointer; color: var(--text-primary); line-height: 1.3; }
- .help-text { font-size: 0.9rem; color: var(--text-secondary); margin-top: 10px; }
- .help-text a { color: var(--primary-light); text-decoration: underline; }
- .help-text a:hover { color: var(--primary-color); }
-
- /* Inventory Modal Styles */
- .inventory-container { margin-bottom: 20px; }
- .inventory-items {
-     display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px;
-     max-height: 300px; overflow-y: auto; background-color: var(--background-light);
-     padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);
- }
- .empty-inventory-message, .error-message { grid-column: 1 / -1; text-align: center; color: var(--text-secondary); padding: 20px; }
- .error-message { color: var(--error-color); }
- .inventory-item {
-     background-color: var(--background-medium); border-radius: 4px; overflow: hidden; cursor: pointer;
-     transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-     border: 2px solid transparent; display: flex; flex-direction: column;
- }
- .inventory-item:hover { transform: translateY(-3px); }
- .inventory-item.selected { border-color: var(--primary-color); box-shadow: 0 0 15px rgba(0, 230, 118, 0.4); transform: scale(1.03); }
- .inventory-item img { width: 100%; height: 80px; object-fit: contain; background-color: var(--background-dark); display: block; border-bottom: 1px solid var(--border-color); }
- .item-details { padding: 8px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; min-height: 50px; }
- .item-name { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; line-height: 1.2; }
- .inventory-item .item-value { font-size: 0.85rem; font-weight: 700; color: var(--primary-color); text-align: right; margin-top: auto; }
-
- /* Selected Items (Deposit Modal) */
- .selected-items { margin-top: 20px; }
- .selected-items h3 { font-size: 1rem; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; }
- .selected-items-container {
-     display: flex; flex-wrap: wrap; /* Changed back to wrap */ gap: 10px;
-     min-height: 80px; max-height: 180px; overflow-y: auto;
-     background-color: var(--background-light); padding: 10px;
-     border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;
- }
- .selected-item {
-     position: relative; width: 80px; border-radius: 4px; overflow: hidden;
-     background-color: var(--background-medium); border: 1px solid var(--border-color);
-     flex-shrink: 0; display: flex; flex-direction: column;
- }
- .selected-item img { width: 100%; height: 60px; object-fit: contain; background-color: var(--background-dark); display: block; }
- .selected-item-details { padding: 5px; font-size: 0.8rem; text-align: center; flex-grow: 1; }
- .selected-item-value { font-weight: 600; color: var(--primary-color); }
- .remove-item {
-     position: absolute; top: 3px; right: 3px; width: 18px; height: 18px;
-     background-color: rgba(0, 0, 0, 0.7); color: white; border-radius: 50%; border: none;
-     font-size: 10px; line-height: 18px; cursor: pointer; display: flex;
-     align-items: center; justify-content: center; transition: background-color 0.2s ease, transform 0.2s ease;
-     padding: 0; z-index: 1;
- }
- .remove-item:hover { background-color: var(--error-color); transform: scale(1.1); }
- .total-value {
-     display: flex; justify-content: space-between; align-items: center;
-     padding: 10px 15px; background-color: var(--background-light); border-radius: 4px;
-     border: 1px solid var(--border-color); margin-top: 10px; font-weight: 600; font-size: 1.1rem;
- }
- .total-value span:last-child { color: var(--primary-color); font-family: 'JetBrains Mono', monospace; }
-
- /* Loading indicator */
- .loading-indicator {
-     display: none; /* JS toggles */
-     flex-direction: column; align-items: center; justify-content: center;
-     padding: 30px; background-color: transparent; border-radius: 8px;
-     margin: 20px 0; color: var(--text-secondary); grid-column: 1 / -1;
- }
- .spinner {
-     width: 40px; height: 40px; border: 4px solid rgba(0, 230, 118, 0.3);
-     border-radius: 50%; border-top-color: var(--primary-color);
-     animation: spin 1s linear infinite; margin-bottom: 15px;
- }
- @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
- /*=========================
-  STATIC PAGES (FAQ, FAIR, ABOUT, ROADMAP)
- =========================*/
-
- .faq-item, .fair-section { margin-bottom: 30px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; }
- .faq-item:last-child, .fair-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
- .faq-question, .fair-title { font-size: 1.2rem; font-weight: 700; color: var(--primary-color); padding-bottom: 10px; margin-bottom: 10px; display: block; cursor: default; }
- .faq-answer, .fair-content { padding: 0 10px; color: var(--text-secondary); line-height: 1.7; }
- .faq-answer p, .fair-content p { margin-bottom: 12px; }
- .faq-answer ul, .faq-answer ol, .fair-content ul, .fair-content ol { margin: 15px 0 15px 20px; padding-left: 25px; }
- .faq-answer li, .fair-content li { margin-bottom: 10px; }
- .fair-content strong { color: var(--text-accent); font-weight: 600; }
- .fair-content a { color: var(--primary-light); text-decoration: underline; }
- .fair-content a:hover { color: var(--primary-color); }
-
- /* Provably Fair Verification Form & Result */
- .verify-form { background-color: var(--background-light); padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--border-color); }
- .verification-result { margin-top: 15px; padding: 15px; border-radius: 4px; background-color: var(--background-light); display: none; border: 1px solid var(--border-color); line-height: 1.5; }
- .verification-result.loading { background-color: var(--background-medium); border-color: var(--secondary-light); color: var(--text-primary); }
- .verification-result.success { background-color: rgba(0, 230, 118, 0.1); border-color: var(--success-color); color: var(--text-primary); }
- .verification-result.error { background-color: rgba(244, 67, 54, 0.1); border-color: var(--error-color); color: var(--text-primary); }
- .verification-result h4 { margin-top: 0; margin-bottom: 15px; color: var(--primary-color); }
- .verification-result p { margin-bottom: 8px; word-wrap: break-word; }
- .verification-result strong { color: var(--text-accent); }
- .verification-result code.seed-value { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; display: inline-block; }
- .verification-result code.wrap-anywhere { word-break: break-all; }
-
- /* Round History Table */
- .table-container { overflow-x: auto; margin-bottom: 20px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 8px; }
- .history-table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 0.9rem; }
- .history-table th, .history-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; vertical-align: middle; }
- .history-table tr:last-child td { border-bottom: none; }
- .history-table th { background-color: var(--background-medium); color: var(--primary-color); font-weight: 600; text-transform: uppercase; font-size: 0.85rem; position: sticky; top: 0; z-index: 1; }
- .history-table .loading-message, .history-table .no-rounds-message, .history-table .error-message { text-align: center; color: var(--text-secondary); padding: 20px; font-style: italic; white-space: normal; }
- .history-table .error-message { color: var(--error-color); font-style: normal; }
- .history-table tbody tr:hover { background-color: rgba(255, 255, 255, 0.05); }
- .history-table td:last-child { white-space: normal; text-align: right; }
-
- /* Pagination */
- .pagination-container { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
- .page-button {
-     padding: 6px 10px;
-     background-color: var(--background-light);
-     border: 1px solid var(--border-color);
-     border-radius: 4px;
-     color: var(--text-primary);
-     cursor: pointer;
-     transition: all 0.2s ease;
-     font-size: 0.9rem;
- }
- .page-button:hover:not(:disabled) { background-color: var(--primary-dark); color: var(--background-dark); border-color: var(--primary-dark); }
- .page-button.active { background-color: var(--primary-color); color: var(--background-dark); border-color: var(--primary-color); cursor: default; }
- .page-button:disabled { opacity: 0.5; cursor: not-allowed; }
- .page-ellipsis { color: var(--text-secondary); padding: 6px 0; margin: 0 2px; }
-
- /*=========================
-  FOOTER
- =========================*/
-
- .main-footer {
-     background-color: var(--background-medium); text-align: center; padding: 25px 15px;
-     margin-top: 50px; border-top: 1px solid var(--border-color);
-     font-size: 0.9rem; color: var(--text-secondary);
- }
- .main-footer p { margin: 0; }
-
- /*=========================
-  RESPONSIVE STYLES
- =========================*/
-
- @media (max-width: 992px) { /* Tablet */
-     .header-container {
-         justify-content: space-around;
-         flex-wrap: wrap;
-     }
-     .header-center {
-         order: 3;
-         width: 100%;
-         flex-basis: 100%;
-         justify-content: center;
-         margin-top: 10px;
-         flex: none;
-     }
-     .header-left {
-         order: 1;
-         flex: 1;
-     }
-     .header-right {
-         order: 2;
-         flex: 1;
-     }
-
-     .header-left, .header-right {
-          justify-content: center;
-     }
-     .header-left { justify-content: flex-start; }
-     .header-right { justify-content: flex-end; }
+/* Checkbox specific */
+.form-check {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--spacing-md);
+}
+.form-check input[type="checkbox"] {
+    margin-right: var(--spacing-sm);
+    width: 16px;
+    height: 16px;
+}
+.form-check label {
+    margin-bottom: 0; /* Reset label margin */
+    font-weight: normal;
+}
 
 
-     .primary-nav, .secondary-nav { display: none; }
-     .jackpot-value h2 { font-size: 3.5rem; }
-     .timer-circle { width: 110px; height: 110px; }
-     .timer-text { font-size: 3.1rem; }
-     .stat-value { font-size: 3.1rem; }
-     .jackpot-tab { font-size: 1.5rem !important; }
- }
+/* --- Provably Fair Page --- */
+.table-container {
+    overflow-x: auto; /* Allow horizontal scrolling on small screens */
+    margin-bottom: var(--spacing-lg);
+}
+.rounds-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: var(--spacing-md);
+}
+.rounds-table th,
+.rounds-table td {
+    border: 1px solid var(--border-color);
+    padding: var(--spacing-sm) var(--spacing-md);
+    text-align: left;
+    vertical-align: middle;
+}
+.rounds-table th {
+    background-color: var(--dark-bg);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+.rounds-table td {
+    font-size: 0.85rem;
+    color: var(--text-medium);
+}
+.rounds-table tr:nth-child(even) td {
+     background-color: rgba(0, 0, 0, 0.1); /* Subtle striping */
+}
+.rounds-table td.winner-cell {
+    font-weight: bold;
+    color: var(--primary-color);
+}
+.rounds-table .btn-details,
+.rounds-table .btn-verify {
+    margin-right: var(--spacing-xs);
+}
 
- @media (max-width: 768px) { /* Mobile */
-     .header-container {
-         flex-direction: row;
-         justify-content: space-around;
-         flex-wrap: wrap;
-     }
-     .header-center {
-         order: 3;
-         width: 100%;
-         flex-basis: 100%;
-         margin-top: 10px;
-         flex: none;
-     }
-     .header-left {
-         order: 1;
-         flex-grow: 1;
-         flex: 1;
-         justify-content: flex-start;
-     }
-     .header-right {
-         order: 2;
-         flex-shrink: 0;
-         flex: 1;
-         justify-content: flex-end;
-     }
-     .primary-nav { display: none; }
-     .secondary-nav { display: flex; }
-     .main-nav a { font-size: 1.1rem; padding: 8px 10px; }
-     .jackpot-header { padding: 15px; gap: 10px; min-height: auto; }
-     .jackpot-value h2 { font-size: 2.8rem; }
-     .timer-circle { width: 90px; height: 90px; }
-     .timer-text { font-size: 2.4rem; }
-     .timer-background, .timer-foreground { stroke-width: 6px; }
-     .stat-value { font-size: 2.4rem; }
-     .value-label, .timer-label, .stat-label { font-size: 0.8rem; }
-     .jackpot-tab { font-size: 1.4rem !important; text-shadow: 0 0 8px var(--jackpot-tab-color); }
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: var(--spacing-lg);
+}
+.page-button, .page-ellipsis {
+    margin: 0 3px;
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    background-color: var(--medium-bg);
+    color: var(--text-medium);
+    cursor: pointer;
+    border-radius: 3px;
+    font-size: 0.9rem;
+}
+.page-button:disabled, .page-ellipsis {
+    cursor: default;
+    opacity: 0.5;
+    background-color: var(--dark-bg);
+}
+.page-button.active {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+    font-weight: bold;
+    cursor: default;
+}
+.page-button:not(:disabled):not(.active):hover {
+     background-color: var(--border-color);
+     color: var(--text-light);
+}
 
-     .roulette-container { margin-top: 20px; height: 80px; }
-     .roulette-item { width: 70px; height: 70px; margin: 5px; }
-     .roulette-avatar { width: 100%; height: 100%; }
-     .roulette-track { padding-left: calc(50% - 35px); padding-right: calc(50% - 35px); }
+.verification-section {
+    margin-top: var(--spacing-xl);
+    padding-top: var(--spacing-lg);
+    border-top: 1px solid var(--border-color);
+}
+.verification-result {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    border-radius: 5px;
+    border: 1px solid;
+}
+.verification-result.loading {
+    border-color: var(--info-color);
+    background-color: rgba(23, 162, 184, 0.1);
+    color: var(--info-color);
+}
+.verification-result.success {
+    border-color: var(--success-color);
+    background-color: rgba(40, 167, 69, 0.1);
+    color: var(--success-color);
+}
+.verification-result.error {
+    border-color: var(--error-color);
+    background-color: rgba(220, 53, 69, 0.1);
+    color: var(--error-color);
+}
+.verification-result h4 { margin-top: 0; margin-bottom: 10px; }
+.verification-result p { margin-bottom: 5px; }
+.seed-value {
+    font-family: monospace;
+    background-color: var(--dark-bg);
+    padding: 2px 5px;
+    border-radius: 3px;
+    word-break: break-all; /* Wrap long seeds */
+}
 
-     .winner-info { padding: 8px; }
-     .winner-avatar { width: 30px; height: 30px; margin-right: 8px;}
-     .winner-header h3 { font-size: 1rem; }
-     .winner-details p { font-size: 0.8rem; }
-     .inventory-items { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); max-height: 250px; }
-     .inventory-item img { height: 70px; }
-     .selected-items-container { max-height: 200px; }
-     .selected-item { width: 100%; max-width: 150px; align-self: center; }
-     .modal-content { max-width: 95%; }
-     .modal-header h2 { font-size: 1.2rem; }
-     .modal-footer { justify-content: center; flex-wrap: wrap; }
-     .history-table { font-size: 0.85rem; }
-     .history-table th, .history-table td { padding: 10px 8px;}
-     .btn-details, .btn-verify { display: block; width: 100%; margin: 5px 0 0 0; }
-     .history-table td:last-child { text-align: center; }
-     .player-items-grid { justify-content: center; }
-     .player-deposit-container { padding: 10px; }
- }
+/* --- Notification Bar --- */
+#notification-bar {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: var(--spacing-md) var(--spacing-lg);
+    border-radius: 6px;
+    background-color: var(--medium-bg);
+    color: var(--text-light);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+    z-index: 1100;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.4s ease, visibility 0.4s ease, background-color 0.4s ease;
+    max-width: 500px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+}
 
- @media (max-width: 480px) { /* Small mobile */
-     .header-container {
-         gap: 5px;
-         flex-wrap: wrap;
-     }
+#notification-bar.show {
+    opacity: 1;
+    visibility: visible;
+}
 
-     .header-left { flex: 1; min-width: 120px; }
-     .header-right { flex: 1; min-width: 150px; }
-     .header-center { width: 100%; flex-basis: 100%; flex: none; }
+#notification-bar.success {
+    background-color: var(--success-color);
+    border-color: #1e7e34;
+    color: white;
+}
+#notification-bar.error {
+    background-color: var(--error-color);
+    border-color: #b21f2d;
+    color: white;
+}
+#notification-bar.info {
+    background-color: var(--info-color);
+    border-color: #117a8b;
+    color: white;
+}
 
 
-     .logo h1 { font-size: 1.5rem; }
-     .secondary-nav a, .main-nav a { font-size: 0.9rem; padding: 6px 8px; }
-     .user-avatar { width: 28px; height: 28px; }
-     .user-name { max-width: 100px; }
-     .btn-login { padding: 6px 12px; font-size: 0.9rem; }
-     .btn-deposit, .btn-secondary { font-size: 1rem; padding: 10px 20px; }
-     .jackpot-tab { font-size: 1.3rem !important; padding: 8px 10px !important; }
-     .jackpot-header { gap: 5px; padding: 10px; flex-direction: column; }
-     .jackpot-value, .jackpot-timer, .jackpot-stats { min-width: auto; }
-     .jackpot-value h2 { font-size: 2.2rem; }
-     .timer-circle { width: 70px; height: 70px; }
-     .timer-text { font-size: 1.8rem; }
-     .stat-value { font-size: 1.8rem; margin-top: 0; }
-     .timer-background, .timer-foreground { stroke-width: 5px; }
-     .value-label, .timer-label, .stat-label { font-size: 0.7rem; }
+/* --- Utility & Loading --- */
+.loading-indicator, .loading-message {
+    text-align: center;
+    padding: var(--spacing-xl);
+    color: var(--text-medium);
+    font-style: italic;
+}
+.error-message {
+    color: var(--error-color);
+    font-weight: bold;
+    text-align: center;
+    padding: var(--spacing-md);
+}
 
-     .roulette-container { height: 70px; }
-     .roulette-item { width: 60px; height: 60px; margin: 5px;}
-     .roulette-avatar { width: 100%; height: 100%; }
-     .roulette-track { padding-left: calc(50% - 30px); padding-right: calc(50% - 30px); }
 
-     .inventory-items { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
-     .inventory-item img { height: 60px; }
-     .selected-items-container { max-height: 180px; }
-     .selected-item { max-width: 120px; }
-     .history-table th, .history-table td { padding: 8px 6px; font-size: 0.8rem;}
-     .btn-details, .btn-verify { font-size: 0.7rem; padding: 4px 6px;}
-     .modal-body { padding: 15px; }
-     .modal-footer { padding: 10px 15px; }
-     .player-deposit-item { width: 70px; height: 90px; }
-     .player-deposit-item-image { height: 50px; }
-     .player-deposit-item-name { font-size: 0.6rem; }
- }
+/* --- Responsive Adjustments --- */
+@media (max-width: 992px) {
+    .deposit-interface {
+        flex-direction: column;
+    }
+    .inventory-section, .selection-section {
+        max-height: 40vh; /* Adjust height for column layout */
+    }
+    .page-content {
+        padding: var(--spacing-lg);
+    }
+}
 
- /* Initial Page Display (JS controls this) */
- #home-page, #about-page, #roadmap-page, #faq-page, #fair-page {
-     display: none; /* JS's showPage() function controls visibility */
- }
- /* JS should set display: block; for the initial page on load (e.g., #home-page) */
+@media (max-width: 768px) {
+    .header-content {
+        flex-direction: column;
+        align-items: center;
+    }
+    .main-nav ul {
+        justify-content: center;
+        flex-wrap: wrap; /* Allow wrapping if needed */
+        margin-top: var(--spacing-md);
+    }
+    .main-nav a {
+        font-size: 0.9rem;
+        padding: 8px 12px;
+    }
+    .user-area {
+        margin-top: var(--spacing-md);
+    }
+    .jackpot-header-container {
+        flex-direction: column;
+        gap: var(--spacing-lg);
+    }
+    #potValue { font-size: 1.8rem; }
+    .jackpot-timer { width: 80px; height: 80px; }
+    .timer-text { font-size: 1.5rem; }
+
+    /* Stack nav vertically (alternative approach) */
+    /*
+    .main-nav ul {
+        flex-direction: column;
+        border-radius: 0;
+    }
+    .main-nav a {
+        text-align: center;
+        border-bottom: 1px solid #444;
+    }
+    .main-nav li:last-child a {
+        border-bottom: none;
+    }
+    */
+}
+
+@media (max-width: 576px) {
+     .page-content {
+        padding: var(--spacing-md);
+    }
+    .item-grid {
+         grid-template-columns: repeat(auto-fill, minmax(65px, 1fr));
+    }
+    #notification-bar {
+        width: 90%;
+        bottom: 10px;
+    }
+    .modal-content {
+        width: 95%;
+        padding: var(--spacing-lg);
+    }
+}
