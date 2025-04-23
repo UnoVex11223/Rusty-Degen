@@ -10,20 +10,19 @@ const socket = io();
 const CONFIG = {
     ROUND_DURATION: 99, // Timer duration in seconds
     MAX_ITEMS_PER_DEPOSIT: 20, // Max selectable items per deposit action
-    MAX_DISPLAY_DEPOSITS: 10, // Max vertical deposit blocks shown visually (NOW INEFFECTIVE due to code change below)
+    // MAX_DISPLAY_DEPOSITS removed
     MAX_PARTICIPANTS_DISPLAY: 20, // Max participants allowed (should match backend)
     MAX_ITEMS_PER_POT_FRONTEND: 200, // Max items in pot (should match backend)
     ROULETTE_REPETITIONS: 20, // How many times the participant pool is repeated visually in roulette
     SPIN_DURATION_SECONDS: 6.5, // Duration of the main roulette spin animation
     WINNER_DISPLAY_DURATION: 7000, // How long winner info is shown (ms)
     CONFETTI_COUNT: 150, // Number of confetti pieces
-    // Roulette Animation Physics (Adjust for feel)
-    EASE_OUT_POWER: 5, // Higher value = faster initial speed, slower end
-    BOUNCE_ENABLED: false, // Enable/disable landing bounce effect
-    BOUNCE_OVERSHOOT_FACTOR: 0.07, // How much it overshoots before bouncing back (if enabled)
-    BOUNCE_DAMPING: 0.35, // How quickly the bounce settles (if enabled)
-    BOUNCE_FREQUENCY: 3.5, // How many bounces occur (if enabled)
-    LANDING_POSITION_VARIATION: 0.60, // Randomness in landing position (0 to 1, fraction of item width)
+    EASE_OUT_POWER: 5,
+    BOUNCE_ENABLED: false,
+    BOUNCE_OVERSHOOT_FACTOR: 0.07,
+    BOUNCE_DAMPING: 0.35,
+    BOUNCE_FREQUENCY: 3.5,
+    LANDING_POSITION_VARIATION: 0.60,
 };
 
 // User Color Palette (20 distinct colors)
@@ -34,48 +33,50 @@ const COLOR_PALETTE = [
 ];
 
 // --- DOM Element References ---
-// Grouping DOM elements for better organization
+// Updated DOMElements
 const DOMElements = {
     // Navigation
     nav: {
-        homeLink: document.querySelector('.main-nav a.active'), // Assuming first link is home
+        homeLink: document.querySelector('.main-nav a#home-link'), // Specific ID
         faqLink: document.getElementById('faq-link'),
         fairLink: document.getElementById('fair-link'),
         aboutLink: document.getElementById('about-link'),
-        roadmapLink: document.getElementById('roadmap-link'),
+        // roadmapLink removed
+        tosLink: document.getElementById('tos-link'), // Added TOS link
     },
     pages: {
         homePage: document.getElementById('home-page'),
         faqPage: document.getElementById('faq-page'),
         fairPage: document.getElementById('fair-page'),
         aboutPage: document.getElementById('about-page'),
-        roadmapPage: document.getElementById('roadmap-page'),
+        // roadmapPage removed
+        tosPage: document.getElementById('tos-page'), // Added TOS page
     },
     // User Authentication / Profile
     user: {
         loginButton: document.getElementById('loginButton'),
-        userProfile: document.getElementById('userProfile'), // The clickable profile part
+        userProfile: document.getElementById('userProfile'),
         userAvatar: document.getElementById('userAvatar'),
         userName: document.getElementById('userName'),
-        userDropdownMenu: document.getElementById('userDropdownMenu'), // The dropdown menu itself
-        logoutButton: document.getElementById('logoutButton'), // The logout button inside the dropdown
+        userDropdownMenu: document.getElementById('userDropdownMenu'),
+        logoutButton: document.getElementById('logoutButton'),
     },
     // Jackpot Display
     jackpot: {
         potValue: document.getElementById('potValue'),
         timerValue: document.getElementById('timerValue'),
-        timerForeground: document.querySelector('.timer-foreground'), // SVG Circle
+        timerForeground: document.querySelector('.timer-foreground'),
         participantCount: document.getElementById('participantCount'),
-        participantsContainer: document.getElementById('itemsContainer'), // Vertical list container
+        participantsContainer: document.getElementById('itemsContainer'),
         emptyPotMessage: document.getElementById('emptyPotMessage'),
-        jackpotHeader: document.getElementById('jackpotHeader'), // Container for value/timer/stats
+        jackpotHeader: document.getElementById('jackpotHeader'),
     },
     // Deposit Modal & Inventory
     deposit: {
         showDepositModalButton: document.getElementById('showDepositModal'),
         depositModal: document.getElementById('depositModal'),
         closeDepositModalButton: document.getElementById('closeDepositModal'),
-        depositButton: document.getElementById('depositButton'), // The actual "Deposit Items" button inside modal
+        depositButton: document.getElementById('depositButton'),
         inventoryItemsContainer: document.getElementById('inventory-items'),
         selectedItemsContainer: document.getElementById('selectedItems'),
         totalValueDisplay: document.getElementById('totalValue'),
@@ -90,17 +91,17 @@ const DOMElements = {
     },
     // Roulette Animation Elements
     roulette: {
-        inlineRouletteContainer: document.getElementById('inlineRoulette'), // Main container shown during spin
-        rouletteTrack: document.getElementById('rouletteTrack'), // The horizontally scrolling element
-        winnerInfoBox: document.getElementById('winnerInfo'), // Box showing winner details after spin
+        inlineRouletteContainer: document.getElementById('inlineRoulette'),
+        rouletteTrack: document.getElementById('rouletteTrack'),
+        winnerInfoBox: document.getElementById('winnerInfo'),
         winnerAvatar: document.getElementById('winnerAvatar'),
         winnerName: document.getElementById('winnerName'),
-        winnerDeposit: document.getElementById('winnerDeposit'), // Displays winner's deposited value
-        winnerChance: document.getElementById('winnerChance'), // Displays winner's chance
-        returnToJackpotButton: document.getElementById('returnToJackpot'), // Optional button
-        confettiContainer: document.getElementById('confettiContainer'), // For confetti effect
+        winnerDeposit: document.getElementById('winnerDeposit'),
+        winnerChance: document.getElementById('winnerChance'),
+        returnToJackpotButton: document.getElementById('returnToJackpot'),
+        confettiContainer: document.getElementById('confettiContainer'),
     },
-    // Audio Elements (Moved Here)
+    // Audio Elements
     audio: {
         spinSound: document.getElementById('spinSound'),
         depositSound: document.getElementById('depositSound')
@@ -114,7 +115,7 @@ const DOMElements = {
         serverSeedInput: document.getElementById('server-seed'),
         clientSeedInput: document.getElementById('client-seed'),
         verificationResultDisplay: document.getElementById('verification-result'),
-        verificationSection: document.getElementById('provably-fair-verification'), // Section for scrolling
+        verificationSection: document.getElementById('provably-fair-verification'),
     },
     // Age Verification Modal
     ageVerification: {
@@ -123,8 +124,9 @@ const DOMElements = {
         agreeButton: document.getElementById('agreeButton'),
     },
     // General UI
-    notificationBar: document.getElementById('notification-bar'), // Add this div to your HTML for notifications
+    notificationBar: document.getElementById('notification-bar'),
 };
+
 
 // --- Application State ---
 let currentUser = null; // Stores logged-in user data (null if not logged in)
@@ -171,16 +173,19 @@ function showPage(pageElement) {
     if (pageElement) pageElement.style.display = 'block';
 
     // Update active state on navigation links
-    document.querySelectorAll('.main-nav a, a#about-link, a#roadmap-link, a#faq-link, a#fair-link')
+    // Combine selectors to get all relevant nav links
+    document.querySelectorAll('.main-nav a, .primary-nav a, .secondary-nav a')
         .forEach(link => link?.classList.remove('active'));
 
     // Find the corresponding link element to activate
     let activeLink = null;
+    // Updated mapping
     if (pageElement === DOMElements.pages.homePage) activeLink = DOMElements.nav.homeLink;
     else if (pageElement === DOMElements.pages.faqPage) activeLink = DOMElements.nav.faqLink;
     else if (pageElement === DOMElements.pages.fairPage) activeLink = DOMElements.nav.fairLink;
     else if (pageElement === DOMElements.pages.aboutPage) activeLink = DOMElements.nav.aboutLink;
-    else if (pageElement === DOMElements.pages.roadmapPage) activeLink = DOMElements.nav.roadmapLink;
+    // Removed roadmap
+    else if (pageElement === DOMElements.pages.tosPage) activeLink = DOMElements.nav.tosLink; // Added TOS
 
     if (activeLink) activeLink.classList.add('active');
 
@@ -206,9 +211,8 @@ function getUserColor(userId) {
 
 /**
  * Displays a non-blocking notification message.
- * Requires a div with id="notification-bar" in the HTML.
  * @param {string} message - The message to display.
- * @param {string} type - 'success', 'error', or 'info' (for styling). Default 'info'.
+ * @param {string} type - 'success', 'error', or 'info'. Default 'info'.
  * @param {number} duration - How long to show the message (ms). Default 4000.
  */
 function showNotification(message, type = 'info', duration = 4000) {
@@ -217,21 +221,15 @@ function showNotification(message, type = 'info', duration = 4000) {
         console.log(`[${type.toUpperCase()}] ${message}`);
         return;
     }
-
     const bar = DOMElements.notificationBar;
-    // Clear any existing timeout to prevent premature hiding
     if (notificationTimeout) clearTimeout(notificationTimeout);
-
     bar.textContent = message;
-    // Remove previous type classes and add the new one
     bar.className = 'notification-bar'; // Reset classes
-    bar.classList.add(type); // Add the type class for styling
-    bar.classList.add('show'); // Add 'show' class to trigger CSS transition/animation
-
-    // Set a timeout to hide the notification
+    bar.classList.add(type);
+    bar.classList.add('show');
     notificationTimeout = setTimeout(() => {
         bar.classList.remove('show');
-        notificationTimeout = null; // Clear the timeout ID
+        notificationTimeout = null;
     }, duration);
 }
 
@@ -249,95 +247,22 @@ function shuffleArray(array) {
     }
     return array;
 }
-
-// --- Animation Easing Functions ---
-function easeOutAnimation(t) {
-    const clampedT = Math.max(0, Math.min(1, t));
-    return 1 - Math.pow(1 - clampedT, CONFIG.EASE_OUT_POWER);
-}
-
-function calculateBounce(t) {
-    if (!CONFIG.BOUNCE_ENABLED) return 0;
-    const clampedT = Math.max(0, Math.min(1, t));
-    const decay = Math.exp(-clampedT / CONFIG.BOUNCE_DAMPING);
-    const oscillations = Math.sin(clampedT * Math.PI * 2 * CONFIG.BOUNCE_FREQUENCY);
-    return -decay * oscillations;
-}
-
-// --- Color Utility Functions --- (Used for Confetti)
-function getComplementaryColor(hex) {
-    hex = hex.replace('#', '');
-    let r = parseInt(hex.substring(0, 2), 16);
-    let g = parseInt(hex.substring(2, 4), 16);
-    let b = parseInt(hex.substring(4, 6), 16);
-    r = 255 - r; g = 255 - g; b = 255 - b;
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-}
-
-function lightenColor(hex, percent) {
-    hex = hex.replace('#', '');
-    let r = parseInt(hex.substring(0, 2), 16);
-    let g = parseInt(hex.substring(2, 4), 16);
-    let b = parseInt(hex.substring(4, 6), 16);
-    r = Math.min(255, Math.floor(r + (255 - r) * (percent / 100)));
-    g = Math.min(255, Math.floor(g + (255 - g) * (percent / 100)));
-    b = Math.min(255, Math.floor(b + (255 - b) * (percent / 100)));
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-}
-
-function darkenColor(hex, percent) {
-    hex = hex.replace('#', '');
-    let r = parseInt(hex.substring(0, 2), 16);
-    let g = parseInt(hex.substring(2, 4), 16);
-    let b = parseInt(hex.substring(4, 6), 16);
-    r = Math.max(0, Math.floor(r * (1 - percent / 100)));
-    g = Math.max(0, Math.floor(g * (1 - percent / 100)));
-    b = Math.max(0, Math.floor(b * (1 - percent / 100)));
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-}
-
-// --- Add Logout Function ---
-/**
- * Handles the user logout process by calling the backend.
- */
+function easeOutAnimation(t) { const clampedT = Math.max(0, Math.min(1, t)); return 1 - Math.pow(1 - clampedT, CONFIG.EASE_OUT_POWER); }
+function calculateBounce(t) { if (!CONFIG.BOUNCE_ENABLED) return 0; const clampedT = Math.max(0, Math.min(1, t)); const decay = Math.exp(-clampedT / CONFIG.BOUNCE_DAMPING); const oscillations = Math.sin(clampedT * Math.PI * 2 * CONFIG.BOUNCE_FREQUENCY); return -decay * oscillations; }
+function getComplementaryColor(hex) { hex = hex.replace('#', ''); let r = parseInt(hex.substring(0, 2), 16); let g = parseInt(hex.substring(2, 4), 16); let b = parseInt(hex.substring(4, 6), 16); r = 255 - r; g = 255 - g; b = 255 - b; return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`; }
+function lightenColor(hex, percent) { hex = hex.replace('#', ''); let r = parseInt(hex.substring(0, 2), 16); let g = parseInt(hex.substring(2, 4), 16); let b = parseInt(hex.substring(4, 6), 16); r = Math.min(255, Math.floor(r + (255 - r) * (percent / 100))); g = Math.min(255, Math.floor(g + (255 - g) * (percent / 100))); b = Math.min(255, Math.floor(b + (255 - b) * (percent / 100))); return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`; }
+function darkenColor(hex, percent) { hex = hex.replace('#', ''); let r = parseInt(hex.substring(0, 2), 16); let g = parseInt(hex.substring(2, 4), 16); let b = parseInt(hex.substring(4, 6), 16); r = Math.max(0, Math.floor(r * (1 - percent / 100))); g = Math.max(0, Math.floor(g * (1 - percent / 100))); b = Math.max(0, Math.floor(b * (1 - percent / 100))); return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`; }
 async function handleLogout() {
     console.log("Attempting logout...");
     try {
-        const response = await fetch('/logout', {
-            method: 'POST',
-            headers: {
-                // No 'Content-Type' needed for an empty body POST usually
-                // Add CSRF token header if your session setup requires it
-            }
-        });
-
+        const response = await fetch('/logout', { method: 'POST' });
         const result = await response.json();
-
-        if (!response.ok || !result.success) {
-            throw new Error(result.error || 'Logout request failed.');
-        }
-
+        if (!response.ok || !result.success) { throw new Error(result.error || 'Logout request failed.'); }
         console.log('Logout successful.');
-        currentUser = null; // Clear local user state
-        updateUserUI(); // Update header to show login button
-        updateDepositButtonState(); // Update deposit button state
-        showNotification('You have been successfully signed out.', 'success');
-        // Optionally reload the page for a full reset:
-        // window.location.reload();
-
-    } catch (error) {
-        console.error('Logout Error:', error);
-        showNotification(`Logout failed: ${error.message}`, 'error');
-    } finally {
-        // Ensure dropdown is closed after attempt
-        if (DOMElements.user.userDropdownMenu) {
-            DOMElements.user.userDropdownMenu.style.display = 'none';
-            DOMElements.user.userProfile?.setAttribute('aria-expanded', 'false');
-            DOMElements.user.userProfile?.classList.remove('open'); // Optional class for arrow styling
-        }
-    }
+        currentUser = null; updateUserUI(); updateDepositButtonState(); showNotification('You have been successfully signed out.', 'success');
+    } catch (error) { console.error('Logout Error:', error); showNotification(`Logout failed: ${error.message}`, 'error');
+    } finally { if (DOMElements.user.userDropdownMenu) { DOMElements.user.userDropdownMenu.style.display = 'none'; DOMElements.user.userProfile?.setAttribute('aria-expanded', 'false'); DOMElements.user.userProfile?.classList.remove('open'); } }
 }
-
 
 // --- Core Application Logic ---
 
@@ -897,7 +822,7 @@ function updateTimerCircle(timeLeft, totalTime) {
 }
 
 /**
- * --- NEW --- Updates the percentage chance display for all participant blocks.
+ * Updates the percentage chance display for all participant blocks.
  */
 function updateAllParticipantPercentages() {
     if (!currentRound || !currentRound.participants || currentRound.participants.length === 0) {
@@ -935,131 +860,35 @@ function updateAllParticipantPercentages() {
 
 /**
  * Displays the latest deposit as a new block at the TOP of the participants container.
- * --- MODIFIED --- Calculates and includes the initial percentage chance.
- * --- MODIFIED --- Removed logic to limit max displayed blocks.
- * --- MODIFIED --- Removed onerror from player-avatar image tag.
  * @param {object} data - Participant update data.
  */
 function displayLatestDeposit(data) {
     const container = DOMElements.jackpot.participantsContainer;
     const emptyMsg = DOMElements.jackpot.emptyPotMessage;
     if (!container) return;
-
-    if (!data || !data.userId || typeof data.itemsValue !== 'number' || isNaN(data.itemsValue)) {
-        console.error("Invalid data passed to displayLatestDeposit:", data);
-        return;
-    }
-
-    // Play Deposit Sound
-    const depositSfx = DOMElements.audio.depositSound;
-    if (depositSfx) {
-        depositSfx.volume = 0.6;
-        depositSfx.currentTime = 0;
-        depositSfx.play().catch(e => console.error("Error playing deposit sound:", e));
-    }
-
-    const username = data.username || 'Unknown User';
-    // Fallback added here too, ensures `avatar` is always a string
-    const avatar = data.avatar || '/img/default-avatar.png';
-    const value = data.itemsValue; // This deposit's value
-    const items = data.depositedItems || [];
-    const userColor = getUserColor(data.userId);
-
-    // Calculate Percentage for Display
-    const participantData = currentRound.participants.find(p => p.user?.id === data.userId);
-    const cumulativeValue = participantData ? participantData.itemsValue : value;
-    const currentTotalPotValue = Math.max(0.01, currentRound.totalValue || 0.01);
-    const percentage = ((cumulativeValue / currentTotalPotValue) * 100).toFixed(1);
-
-    // Create elements
-    const depositContainer = document.createElement('div');
-    depositContainer.dataset.userId = data.userId;
-    depositContainer.className = 'player-deposit-container player-deposit-new';
-
-    const depositHeader = document.createElement('div');
-    depositHeader.className = 'player-deposit-header';
-
-    // **** MODIFICATION: Removed onerror attribute ****
-    depositHeader.innerHTML = `
-        <img src="${avatar}" alt="${username}" class="player-avatar" loading="lazy"
-             style="border-color: ${userColor};">
-        <div class="player-info">
-            <div class="player-name" title="${username}">${username}</div>
-            <div class="player-deposit-value" style="color: ${userColor}" title="Deposited: $${cumulativeValue.toFixed(2)} | Chance: ${percentage}%">
-                $${cumulativeValue.toFixed(2)} | ${percentage}%
-            </div>
-        </div>`;
-
-    const itemsGrid = document.createElement('div');
-    itemsGrid.className = 'player-items-grid';
-
-    // Add items to grid (same logic as before)
+    if (!data || !data.userId || typeof data.itemsValue !== 'number' || isNaN(data.itemsValue)) { console.error("Invalid data passed to displayLatestDeposit:", data); return; }
+    const depositSfx = DOMElements.audio.depositSound; if (depositSfx) { depositSfx.volume = 0.6; depositSfx.currentTime = 0; depositSfx.play().catch(e => console.error("Error playing deposit sound:", e)); }
+    const username = data.username || 'Unknown User'; const avatar = data.avatar || '/img/default-avatar.png'; const value = data.itemsValue; const items = data.depositedItems || []; const userColor = getUserColor(data.userId);
+    const participantData = currentRound.participants.find(p => p.user?.id === data.userId); const cumulativeValue = participantData ? participantData.itemsValue : value; const currentTotalPotValue = Math.max(0.01, currentRound.totalValue || 0.01); const percentage = ((cumulativeValue / currentTotalPotValue) * 100).toFixed(1);
+    const depositContainer = document.createElement('div'); depositContainer.dataset.userId = data.userId; depositContainer.className = 'player-deposit-container player-deposit-new';
+    const depositHeader = document.createElement('div'); depositHeader.className = 'player-deposit-header';
+    depositHeader.innerHTML = `<img src="${avatar}" alt="${username}" class="player-avatar" loading="lazy" style="border-color: ${userColor};"><div class="player-info"><div class="player-name" title="${username}">${username}</div><div class="player-deposit-value" style="color: ${userColor}" title="Deposited: $${cumulativeValue.toFixed(2)} | Chance: ${percentage}%">$${cumulativeValue.toFixed(2)} | ${percentage}%</div></div>`;
+    const itemsGrid = document.createElement('div'); itemsGrid.className = 'player-items-grid';
     if (items.length > 0) {
-        items.sort((a, b) => (b.price || 0) - (a.price || 0));
-        const displayItems = items.slice(0, CONFIG.MAX_ITEMS_PER_DEPOSIT);
-        displayItems.forEach(item => {
-            if (!item || typeof item.price !== 'number' || isNaN(item.price) || !item.name || !item.image) {
-                console.warn("Skipping invalid item in deposit display:", item); return;
-            }
-            const itemElement = document.createElement('div');
-            itemElement.className = 'player-deposit-item';
-            itemElement.title = `${item.name} ($${item.price.toFixed(2)})`;
-            itemElement.style.borderColor = userColor;
-            // Keep onerror for item images
-            itemElement.innerHTML = `<img src="${item.image}" alt="${item.name}" class="player-deposit-item-image" loading="lazy" onerror="this.onerror=null; this.src='/img/default-item.png';"><div class="player-deposit-item-info"><div class="player-deposit-item-name" title="${item.name}">${item.name}</div><div class="player-deposit-item-value" style="color: ${userColor}">$${item.price.toFixed(2)}</div></div>`;
-            itemsGrid.appendChild(itemElement);
-        });
-        if (items.length > CONFIG.MAX_ITEMS_PER_DEPOSIT) {
-            const moreItems = document.createElement('div');
-            moreItems.className = 'player-deposit-item-more';
-            moreItems.style.color = userColor;
-            moreItems.textContent = `+${items.length - CONFIG.MAX_ITEMS_PER_DEPOSIT} more`;
-            itemsGrid.appendChild(moreItems);
-        }
+        items.sort((a, b) => (b.price || 0) - (a.price || 0)); const displayItems = items.slice(0, CONFIG.MAX_ITEMS_PER_DEPOSIT);
+        displayItems.forEach(item => { if (!item || typeof item.price !== 'number' || isNaN(item.price) || !item.name || !item.image) { console.warn("Skipping invalid item in deposit display:", item); return; } const itemElement = document.createElement('div'); itemElement.className = 'player-deposit-item'; itemElement.title = `${item.name} ($${item.price.toFixed(2)})`; itemElement.style.borderColor = userColor; itemElement.innerHTML = `<img src="${item.image}" alt="${item.name}" class="player-deposit-item-image" loading="lazy" onerror="this.onerror=null; this.src='/img/default-item.png';"><div class="player-deposit-item-info"><div class="player-deposit-item-name" title="${item.name}">${item.name}</div><div class="player-deposit-item-value" style="color: ${userColor}">$${item.price.toFixed(2)}</div></div>`; itemsGrid.appendChild(itemElement); });
+        if (items.length > CONFIG.MAX_ITEMS_PER_DEPOSIT) { const moreItems = document.createElement('div'); moreItems.className = 'player-deposit-item-more'; moreItems.style.color = userColor; moreItems.textContent = `+${items.length - CONFIG.MAX_ITEMS_PER_DEPOSIT} more`; itemsGrid.appendChild(moreItems); }
     }
-
-    // Assemble and insert the deposit block
-    depositContainer.appendChild(depositHeader);
-    depositContainer.appendChild(itemsGrid);
-
-    if (container.firstChild) {
-        container.insertBefore(depositContainer, container.firstChild);
-    } else {
-        container.appendChild(depositContainer);
-    }
-
-    if (emptyMsg) emptyMsg.style.display = 'none'; // Hide empty message
-
-    // Fade-in animation
-    setTimeout(() => {
-        depositContainer.classList.remove('player-deposit-new');
-    }, 500);
-
-    /* --- MODIFICATION START: Removed block limiting max display deposits ---
-    // Limit displayed deposit blocks
-    const currentDepositBlocks = container.querySelectorAll('.player-deposit-container');
-    if (currentDepositBlocks.length > CONFIG.MAX_DISPLAY_DEPOSITS) {
-        const blocksToRemove = currentDepositBlocks.length - CONFIG.MAX_DISPLAY_DEPOSITS;
-        for (let i = 0; i < blocksToRemove; i++) {
-            const oldestBlock = container.querySelector('.player-deposit-container:last-child');
-            if (oldestBlock && oldestBlock !== depositContainer) {
-                oldestBlock.style.transition = 'opacity 0.3s ease-out';
-                oldestBlock.style.opacity = '0';
-                setTimeout(() => {
-                    if (oldestBlock.parentNode === container) {
-                        oldestBlock.remove();
-                    }
-                }, 300);
-            }
-        }
-    }
-    --- MODIFICATION END --- */
+    depositContainer.appendChild(depositHeader); depositContainer.appendChild(itemsGrid);
+    if (container.firstChild) { container.insertBefore(depositContainer, container.firstChild); } else { container.appendChild(depositContainer); }
+    if (emptyMsg) emptyMsg.style.display = 'none';
+    setTimeout(() => { depositContainer.classList.remove('player-deposit-new'); }, 500);
+    // Removed block limiting logic
 }
 
 
 /**
  * Handles incoming participant update data from the server via Socket.IO.
- * --- MODIFIED --- Calls updateAllParticipantPercentages after processing.
  * @param {object} data - Data received from the 'participantUpdated' socket event.
  */
 function handleNewDeposit(data) {
@@ -1295,8 +1124,6 @@ function startClientTimer(initialTime = CONFIG.ROUND_DURATION) {
 
 /**
  * Creates the visual items (player avatars) for the roulette animation track.
- * --- MODIFIED --- Removed name and percentage from item HTML.
- * --- MODIFIED --- Removed onerror from roulette-avatar image tag.
  */
 function createRouletteItems() {
     const track = DOMElements.roulette.rouletteTrack;
@@ -1379,7 +1206,6 @@ function createRouletteItems() {
         itemElement.style.borderColor = userColor;
 
         // Only include avatar image
-        // **** MODIFICATION: Removed onerror attribute ****
         itemElement.innerHTML = `
               <img class="roulette-avatar" src="${avatar}" alt="${username}" loading="lazy"
                    style="border-color:${userColor}">
@@ -2105,21 +1931,43 @@ function setupSocketConnection() {
 
 
 // --- Event Listener Setup ---
+// Updated setupEventListeners
 function setupEventListeners() {
-    Object.entries(DOMElements.nav).forEach(([key, element]) => { if (element && DOMElements.pages[key.replace('Link', 'Page')]) { element.addEventListener('click', (e) => { e.preventDefault(); showPage(DOMElements.pages[key.replace('Link', 'Page')]); }); } });
+    // Original nav links (excluding roadmap)
+    if (DOMElements.nav.homeLink && DOMElements.pages.homePage) { DOMElements.nav.homeLink.addEventListener('click', (e) => { e.preventDefault(); showPage(DOMElements.pages.homePage); }); }
+    if (DOMElements.nav.faqLink && DOMElements.pages.faqPage) { DOMElements.nav.faqLink.addEventListener('click', (e) => { e.preventDefault(); showPage(DOMElements.pages.faqPage); }); }
+    if (DOMElements.nav.fairLink && DOMElements.pages.fairPage) { DOMElements.nav.fairLink.addEventListener('click', (e) => { e.preventDefault(); showPage(DOMElements.pages.fairPage); }); }
+    if (DOMElements.nav.aboutLink && DOMElements.pages.aboutPage) { DOMElements.nav.aboutLink.addEventListener('click', (e) => { e.preventDefault(); showPage(DOMElements.pages.aboutPage); }); }
+    // Added TOS link
+    if (DOMElements.nav.tosLink && DOMElements.pages.tosPage) { DOMElements.nav.tosLink.addEventListener('click', (e) => { e.preventDefault(); showPage(DOMElements.pages.tosPage); }); }
+
+    // User controls
     DOMElements.user.loginButton?.addEventListener('click', () => { if (localStorage.getItem('ageVerified') === 'true') { console.log("Age already verified, proceeding to Steam login."); window.location.href = '/auth/steam'; } else { console.log("Age not verified, showing verification modal."); const { checkbox: ageCheckbox, agreeButton: ageAgreeButton } = DOMElements.ageVerification; if (ageCheckbox) ageCheckbox.checked = false; if (ageAgreeButton) ageAgreeButton.disabled = true; showModal(DOMElements.ageVerification.modal); } });
     DOMElements.user.userProfile?.addEventListener('click', (e) => { e.stopPropagation(); const menu = DOMElements.user.userDropdownMenu; const profileButton = DOMElements.user.userProfile; if (menu) { const isVisible = menu.style.display === 'block'; menu.style.display = isVisible ? 'none' : 'block'; profileButton?.setAttribute('aria-expanded', !isVisible); profileButton?.classList.toggle('open', !isVisible); } });
     DOMElements.user.userProfile?.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.target.click(); } });
     DOMElements.user.logoutButton?.addEventListener('click', (e) => { e.stopPropagation(); handleLogout(); }); DOMElements.user.logoutButton?.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleLogout(); } });
+
+    // Deposit modal
     DOMElements.deposit.showDepositModalButton?.addEventListener('click', () => { const button = DOMElements.deposit.showDepositModalButton; if (button.disabled) { showNotification(button.title || 'Deposits are currently closed.', 'info'); return; } if (!currentUser) { showNotification('Login Required: Please log in first.', 'error'); return; } if (!currentUser.tradeUrl) { if (DOMElements.tradeUrl.tradeUrlInput) DOMElements.tradeUrl.tradeUrlInput.value = currentUser.tradeUrl || ''; showModal(DOMElements.tradeUrl.tradeUrlModal); return; } showModal(DOMElements.deposit.depositModal); loadUserInventory(); });
     DOMElements.deposit.closeDepositModalButton?.addEventListener('click', () => hideModal(DOMElements.deposit.depositModal)); DOMElements.deposit.depositButton?.addEventListener('click', submitDeposit);
+
+    // Trade URL modal
     DOMElements.tradeUrl.closeTradeUrlModalButton?.addEventListener('click', () => hideModal(DOMElements.tradeUrl.tradeUrlModal)); DOMElements.tradeUrl.saveTradeUrlButton?.addEventListener('click', saveUserTradeUrl);
+
+    // Age verification modal
     const { modal: ageModal, checkbox: ageCheckbox, agreeButton: ageAgreeButton } = DOMElements.ageVerification; if (ageModal && ageCheckbox && ageAgreeButton) { ageCheckbox.addEventListener('change', () => { ageAgreeButton.disabled = !ageCheckbox.checked; }); ageAgreeButton.addEventListener('click', () => { if (ageCheckbox.checked) { localStorage.setItem('ageVerified', 'true'); hideModal(ageModal); console.log("Age verification agreed. Proceeding to Steam login."); window.location.href = '/auth/steam'; } }); ageAgreeButton.disabled = !ageCheckbox.checked; }
+
+    // Test buttons
     document.getElementById('testSpinButton')?.addEventListener('click', testRouletteAnimation); document.getElementById('testDepositButton')?.addEventListener('click', testDeposit);
+
+    // Provably Fair
     DOMElements.provablyFair.verifyButton?.addEventListener('click', verifyRound);
+
+    // Global listeners (click outside dropdown, escape key, spacebar for test spin)
     window.addEventListener('click', (e) => { const menu = DOMElements.user.userDropdownMenu; const profile = DOMElements.user.userProfile; if (menu && profile && menu.style.display === 'block' && !profile.contains(e.target) && !menu.contains(e.target)) { menu.style.display = 'none'; profile.setAttribute('aria-expanded', 'false'); profile.classList.remove('open'); } if (e.target === DOMElements.deposit.depositModal) hideModal(DOMElements.deposit.depositModal); if (e.target === DOMElements.tradeUrl.tradeUrlModal) hideModal(DOMElements.tradeUrl.tradeUrlModal); });
     document.addEventListener('keydown', function (event) { const menu = DOMElements.user.userDropdownMenu; if (event.key === 'Escape' && menu && menu.style.display === 'block') { menu.style.display = 'none'; DOMElements.user.userProfile?.setAttribute('aria-expanded', 'false'); DOMElements.user.userProfile?.classList.remove('open'); DOMElements.user.userProfile?.focus(); } if (event.code === 'Space' && DOMElements.pages.homePage?.style.display === 'block' && !isSpinning && !document.querySelector('.modal[style*="display: flex"]') && !['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(document.activeElement?.tagName)) { console.log("Spacebar pressed for test spin."); testRouletteAnimation(); event.preventDefault(); } });
 }
+
 
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
@@ -2127,7 +1975,7 @@ document.addEventListener('DOMContentLoaded', () => {
     checkLoginStatus();
     setupEventListeners();
     setupSocketConnection();
-    showPage(DOMElements.pages.homePage);
+    showPage(DOMElements.pages.homePage); // Show home page initially
     initiateNewRoundVisualReset();
 });
 
