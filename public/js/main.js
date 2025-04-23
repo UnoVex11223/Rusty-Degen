@@ -102,8 +102,8 @@ const DOMElements = {
     },
     // Audio Elements (Moved Here)
     audio: {
-         spinSound: document.getElementById('spinSound'),
-         depositSound: document.getElementById('depositSound')
+          spinSound: document.getElementById('spinSound'),
+          depositSound: document.getElementById('depositSound')
     },
     // Provably Fair Elements
     provablyFair: {
@@ -399,6 +399,8 @@ async function checkLoginStatus() {
             }
         } else {
             currentUser = await response.json();
+            // *** Debugging Step for Avatar Issue: Check received data ***
+            console.log('User data received from /api/user:', currentUser);
             console.log('User logged in:', currentUser?.username);
         }
     } catch (error) {
@@ -420,6 +422,8 @@ function updateUserUI() {
     if (!userProfile || !loginButton || !userAvatar || !userName) return;
 
     if (currentUser) {
+        // *** Debugging Step for Avatar Issue: Check the URL being set ***
+        console.log('Setting avatar src in updateUserUI:', currentUser.avatar || '/img/default-avatar.png');
         userAvatar.src = currentUser.avatar || '/img/default-avatar.png';
         userName.textContent = currentUser.username || 'User';
         loginButton.style.display = 'none';
@@ -1281,7 +1285,7 @@ function startClientTimer(initialTime = CONFIG.ROUND_DURATION) {
 
 /**
  * Creates the visual items (player avatars) for the roulette animation track.
- * --- MODIFIED --- Removed name and percentage from item HTML.
+ * --- MODIFIED --- Changed alt text to be generic.
  */
 function createRouletteItems() {
     const track = DOMElements.roulette.rouletteTrack;
@@ -1355,18 +1359,20 @@ function createRouletteItems() {
         const userId = participant.user.id;
         const userColor = getUserColor(userId);
         const avatar = participant.user.avatar || '/img/default-avatar.png';
-        const username = participant.user.username || 'Unknown User';
+        // const username = participant.user.username || 'Unknown User'; // Username not used in alt text now
 
         const itemElement = document.createElement('div');
         itemElement.className = 'roulette-item';
         itemElement.dataset.userId = userId;
         itemElement.style.borderColor = userColor;
 
-        // Only include avatar image
+        // === CHANGE HERE ===
+        // Only include avatar image, changed alt text
         itemElement.innerHTML = `
-             <img class="roulette-avatar" src="${avatar}" alt="${username}" loading="lazy"
-                   onerror="this.onerror=null; this.src='/img/default-avatar.png';" style="border-color:${userColor}">
-             `;
+            <img class="roulette-avatar" src="${avatar}" alt="Participant Avatar" loading="lazy"
+                 onerror="this.onerror=null; this.src='/img/default-avatar.png';" style="border-color:${userColor}">
+            `;
+        // === END CHANGE ===
 
         fragment.appendChild(itemElement);
     }
@@ -2066,7 +2072,7 @@ function setupSocketConnection() {
         else if (currentRound.status === 'pending') { console.log("Received pending round state."); initiateNewRoundVisualReset(); if(DOMElements.jackpot.timerValue) DOMElements.jackpot.timerValue.textContent = "Waiting"; updateDepositButtonState(); }
         const container = DOMElements.jackpot.participantsContainer;
         if(container && data.participants?.length > 0) { // Render existing deposits only if container is empty initially
-             if (container.children.length === 1 && container.children[0] === DOMElements.jackpot.emptyPotMessage) { // Check if only empty message is present
+            if (container.children.length === 1 && container.children[0] === DOMElements.jackpot.emptyPotMessage) { // Check if only empty message is present
                 console.log("Rendering existing deposits from full round data."); container.innerHTML = ''; if (DOMElements.jackpot.emptyPotMessage) DOMElements.jackpot.emptyPotMessage.style.display = 'none';
                 const sortedParticipants = [...data.participants].sort((a,b) => 0); // Add sorting if needed
                 sortedParticipants.forEach(p => { const participantItems = data.items?.filter(item => item.owner === p.user?.id) || []; displayLatestDeposit({ userId: p.user.id, username: p.user.username, avatar: p.user.avatar, itemsValue: p.itemsValue, depositedItems: participantItems }); const element = container.querySelector(`.player-deposit-container[data-user-id="${p.user.id}"]`); if (element) element.classList.remove('player-deposit-new'); });
