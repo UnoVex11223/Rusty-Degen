@@ -138,31 +138,30 @@
  .header-container {
      display: flex;
      align-items: center;
-     justify-content: space-around;
+     justify-content: space-around; /* Use space-around for better distribution */
      flex-wrap: wrap;
  }
 
+ /* Adjust flex properties for better alignment */
  .header-left, .header-center, .header-right {
      display: flex;
      align-items: center;
  }
 
  .header-left {
-    gap: 20px;
-    flex: 1;
-    justify-content: flex-start;
+    gap: 20px; /* Keep gap for items inside */
+    /* Removed flex: 1, let content decide width initially */
  }
  .header-center {
-    flex-grow: 1;
-    flex: 1;
-    justify-content: center;
-    min-width: 0;
+    flex-grow: 1; /* Allow center nav to take up space */
+    justify-content: center; /* Center the main nav */
+    min-width: 0; /* Prevent flex items from overflowing */
     text-align: center;
  }
  .header-right {
-    gap: 20px;
-    flex: 1;
-    justify-content: flex-end;
+    gap: 20px; /* Keep gap for items inside */
+    justify-content: flex-end; /* Align items to the right */
+    /* Removed flex: 1 */
  }
 
  .logo h1 {
@@ -182,13 +181,13 @@
      display: flex;
      padding: 0;
      margin: 0;
-     gap: 15px;
+     gap: 15px; /* Spacing between nav items */
  }
 
- /* Make sure main nav ul takes available space to center properly */
+ /* Ensure main nav ul centers correctly */
  .main-nav ul {
      justify-content: center;
-     width: 100%;
+     width: 100%; /* Take full width of its container */
  }
 
 
@@ -201,8 +200,8 @@
      transition: all 0.3s ease;
      position: relative;
      color: var(--text-secondary);
-     display: block;
-     white-space: nowrap;
+     display: block; /* Ensure link takes up space */
+     white-space: nowrap; /* Prevent wrapping */
  }
  .primary-nav a:hover, .secondary-nav a:hover, .main-nav a:hover {
      color: var(--primary-color);
@@ -230,13 +229,13 @@
  /* Jackpot Tab Specific Styles */
  .jackpot-tab {
      /* UPDATED: Increased font size */
-     font-size: 1.6rem;
+     font-size: 1.6rem !important; /* Use !important if needed to override */
      /* UPDATED: Adjusted padding for new font size */
-     padding: 10px 15px;
+     padding: 10px 15px !important; /* Use !important if needed to override */
      color: var(--jackpot-tab-color);
      text-shadow: 0 0 10px var(--jackpot-tab-color), 0 0 15px var(--jackpot-tab-color);
      letter-spacing: 1px;
-     font-weight: 700;
+     font-weight: 700 !important; /* Ensure weight is applied */
      transform: translateX(5px); /* Kept the 5px shift right */
  }
  .jackpot-tab::after {
@@ -254,12 +253,22 @@
      display: flex;
      align-items: center;
      gap: 10px;
-     justify-content: flex-end;
+ }
+ /* Container for profile + dropdown */
+ .user-profile-container {
+    position: relative; /* Needed for dropdown positioning */
  }
  .user-profile {
      display: flex;
      align-items: center;
      gap: 10px;
+     cursor: pointer; /* Indicate it's clickable */
+     padding: 5px; /* Add some padding for easier clicking */
+     border-radius: 4px;
+     transition: background-color 0.2s ease;
+ }
+ .user-profile:hover, .user-profile.open {
+    background-color: var(--background-light);
  }
  .user-avatar {
      width: 32px;
@@ -267,14 +276,62 @@
      border-radius: 50%;
      border: 2px solid var(--primary-color);
      flex-shrink: 0;
-     object-fit: cover;
+     object-fit: cover; /* Ensure image covers space */
  }
  .user-name {
      font-weight: 600;
      overflow: hidden;
      text-overflow: ellipsis;
-     max-width: 150px;
+     max-width: 150px; /* Limit width */
+     white-space: nowrap; /* Prevent wrapping */
  }
+ .dropdown-arrow {
+    font-size: 0.7em;
+    margin-left: 5px;
+    transition: transform 0.3s ease;
+ }
+ .user-profile.open .dropdown-arrow {
+    transform: rotate(180deg);
+ }
+
+ /* Dropdown Menu */
+ .dropdown-menu {
+    position: absolute;
+    top: 100%; /* Position below the profile button */
+    right: 0;
+    background-color: var(--background-medium);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    z-index: 110; /* Above header content */
+    min-width: 150px;
+    padding: 5px 0;
+    display: none; /* Hidden by default */
+ }
+ .dropdown-item {
+    display: flex; /* Use flex for icon alignment */
+    align-items: center;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    padding: 10px 15px;
+    text-align: left;
+    width: 100%;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-family: 'Rajdhani', sans-serif;
+    transition: background-color 0.2s ease, color 0.2s ease;
+ }
+ .dropdown-item:hover {
+    background-color: var(--background-light);
+    color: var(--text-primary);
+ }
+ .dropdown-item .icon {
+    margin-right: 10px;
+    width: 16px; /* Ensure consistent icon spacing */
+    text-align: center;
+ }
+
 
  /*=========================
   BUTTONS
@@ -294,11 +351,11 @@
      background-color: var(--background-light);
      color: var(--text-primary);
      text-align: center;
-     line-height: 1.2;
+     line-height: 1.2; /* Ensure text vertical alignment */
  }
  .btn:hover:not(:disabled) {
      transform: translateY(-2px);
-     box-shadow: 0 5px 15px rgba(0, 230, 118, 0.3);
+     box-shadow: 0 5px 15px rgba(0, 230, 118, 0.3); /* Primary color shadow */
  }
  .btn:disabled {
      background-color: var(--background-light) !important;
@@ -314,6 +371,7 @@
  }
  .btn-primary:hover:not(:disabled) {
      background-color: var(--primary-dark);
+     box-shadow: 0 5px 15px rgba(0, 230, 118, 0.4); /* Brighter shadow for primary */
  }
 
  /* Main Deposit Button (outside modal) & Modal Deposit Button */
@@ -324,8 +382,8 @@
      padding: 12px 30px;
      border-radius: 8px;
      box-shadow: 0 4px 20px rgba(0, 230, 118, 0.4);
-     position: relative;
-     overflow: hidden;
+     position: relative; /* Needed for pseudo-element */
+     overflow: hidden; /* Contain the shine effect */
  }
  .btn-deposit:before { /* Shine effect */
      content: ''; position: absolute; top: 0; left: -100%;
@@ -334,20 +392,25 @@
      transition: left 0.5s ease;
  }
  .btn-deposit:hover:not(:disabled):before { left: 100%; }
+ .btn-deposit:hover:not(:disabled) {
+    transform: translateY(-2px) scale(1.02); /* Add slight scale */
+    box-shadow: 0 8px 25px rgba(0, 230, 118, 0.5); /* Enhance shadow on hover */
+ }
 
  /* Secondary Button (Test Buttons) */
  .btn-secondary {
      background-color: var(--background-light);
      color: var(--text-primary);
      border: 1px solid var(--border-color);
-     border-radius: 8px;
+     border-radius: 8px; /* Match deposit button */
      font-size: 0.9rem;
      padding: 8px 15px;
  }
  .btn-secondary:hover:not(:disabled) {
      background-color: var(--background-medium);
      transform: translateY(-2px);
-     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); /* Darker shadow */
+     border-color: var(--primary-light); /* Add subtle highlight */
  }
 
  /* Login Button */
@@ -356,7 +419,7 @@
      border: 2px solid var(--primary-color);
      color: var(--primary-color);
      padding: 8px 16px;
-     border-radius: 30px;
+     border-radius: 30px; /* Pill shape */
      display: flex;
      align-items: center;
      gap: 8px;
@@ -364,15 +427,19 @@
  .btn-login:hover {
      background-color: var(--primary-color);
      color: var(--background-dark);
+     transform: translateY(-2px) scale(1.03);
+     box-shadow: 0 4px 12px rgba(0, 230, 118, 0.3);
  }
+ .btn-login .fa-steam { font-size: 1.2em; }
 
  /* History Table Buttons */
  .btn-details, .btn-verify {
      padding: 5px 10px;
      font-size: 0.8rem;
      margin-right: 5px;
-     margin-bottom: 5px;
+     margin-bottom: 5px; /* Add bottom margin for wrap */
      vertical-align: middle;
+     border-radius: 4px;
  }
  .btn-verify {
      background-color: var(--secondary-color);
@@ -380,7 +447,14 @@
  }
  .btn-verify:hover:not(:disabled) {
      background-color: var(--secondary-dark);
+     box-shadow: 0 3px 10px rgba(255, 109, 0, 0.3); /* Orange shadow */
  }
+ .btn-details:hover:not(:disabled) {
+     background-color: var(--primary-dark);
+     color: var(--background-dark);
+     border-color: var(--primary-dark);
+ }
+
 
  /*=========================
   MAIN CONTENT & SECTIONS
@@ -390,10 +464,10 @@
      padding: 30px 0;
  }
 
- .content-card { /* Used for About, Roadmap, FAQ, Fair pages */
+ .content-card { /* Used for About, Roadmap, FAQ, Fair, TOS pages */
      background-color: var(--background-medium);
      border-radius: 12px;
-     padding: 25px;
+     padding: 30px; /* Increased padding */
      margin-bottom: 30px;
      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
      border: 1px solid var(--border-color);
@@ -402,10 +476,10 @@
  .jackpot-section { /* Container for jackpot header, deposit button, items */
      background-color: var(--background-medium);
      border-radius: 12px;
-     overflow: hidden;
+     overflow: hidden; /* Important for nested border-radius */
      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
      border: 1px solid var(--border-color);
-     position: relative;
+     position: relative; /* For absolute positioning inside */
  }
 
  /*=========================
@@ -414,29 +488,30 @@
 
  .jackpot-header {
      display: flex;
-     justify-content: space-around;
+     justify-content: space-around; /* Space out elements */
      align-items: center;
      padding: 20px;
      background: linear-gradient(135deg, var(--background-medium), var(--background-light));
      border-bottom: 1px solid var(--border-color);
-     border-radius: 12px 12px 0 0;
+     border-radius: 12px 12px 0 0; /* Match parent radius */
      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-     min-height: 170px;
-     position: relative;
-     overflow: hidden;
-     z-index: 5;
+     min-height: 170px; /* Ensure minimum height */
+     position: relative; /* For inline roulette */
+     overflow: hidden; /* Contain absolute children */
+     z-index: 5; /* Below modals but above content */
      transition: height 0.3s ease, background 0.3s ease;
-     gap: 20px;
-     flex-wrap: wrap;
+     gap: 20px; /* Gap between elements */
+     flex-wrap: wrap; /* Allow wrapping on smaller screens */
  }
  .jackpot-header.roulette-mode {
+     /* Less intense background during roulette */
      background: linear-gradient(135deg, var(--background-dark), var(--background-medium));
  }
 
  /* Jackpot Value */
  .jackpot-value {
      display: flex; flex-direction: column; align-items: center; text-align: center;
-     flex: 1; min-width: 150px; padding: 10px;
+     flex: 1; min-width: 150px; padding: 10px; /* Padding around value */
  }
  .jackpot-value h2 {
      font-size: 4.2rem; font-weight: 700; color: var(--primary-color); margin: 0;
@@ -482,7 +557,7 @@
      text-shadow: 0 0 5px rgba(244, 67, 54, 0.5);
  }
  @keyframes timerPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
- @keyframes urgentPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.08); } }
+ @keyframes urgentPulse { 0%, 100% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 50% { opacity: 0.8; transform: translate(-50%, -50%) scale(1.08); } }
 
  /* Stats (Participants) */
  .jackpot-stats {
@@ -491,7 +566,7 @@
  }
  .stat-value {
      font-size: 3.8rem; font-weight: 700; color: var(--text-primary);
-     display: block; line-height: 1.1; margin-top: 10px;
+     display: block; line-height: 1.1; margin-top: 10px; /* Align baseline better */
  }
 
  /*=========================
@@ -500,62 +575,64 @@
 
  .inline-roulette {
      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-     background: transparent; z-index: 10; overflow: hidden;
-     border-radius: 12px 12px 0 0;
+     background: transparent; /* Let header background show */ z-index: 10; overflow: hidden;
+     border-radius: 12px 12px 0 0; /* Match header */
+     display: flex; /* Center content vertically */
+     align-items: center; /* Center content vertically */
+     justify-content: center; /* Center content horizontally */
  }
  .roulette-container {
-     position: relative; width: 100%; height: 90px; /* Keep height consistent */ overflow: hidden;
+     position: relative; width: 95%; /* Adjust width as needed */ max-width: 900px; height: 90px; /* Keep height consistent */ overflow: hidden;
      background-color: rgba(13, 17, 23, 0.7); border-radius: 8px;
-     border: 1px solid var(--border-color); margin: auto; margin-top: 30px;
-     box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6); backdrop-filter: blur(2px);
+     border: 1px solid var(--border-color); margin: auto; /* Centered */
+     box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6); backdrop-filter: blur(3px); /* Slight blur */
  }
  .roulette-track {
      display: flex; position: absolute; left: 0; top: 0; height: 100%;
-     /* Adjust padding based on item width */
-     padding-left: calc(50% - 45px); padding-right: calc(50% - 45px);
-     will-change: transform; transition: none;
+     /* Padding based on item width (60px + 10px margin = 70px / 2 = 35px) */
+     padding-left: calc(50% - 35px); padding-right: calc(50% - 35px);
+     will-change: transform; transition: none; /* JS handles animation */
  }
 
  .roulette-item {
-     flex: 0 0 auto;
-     width: 90px;
-     height: 80px;
-     margin: 5px;
+     flex: 0 0 auto; /* Prevent stretching */
+     width: 60px; /* Adjusted size */
+     height: 60px; /* Adjusted size */
+     margin: 15px 5px; /* Center vertically within 90px container */
      background: rgba(30, 35, 40, 0.8);
      border-radius: 6px;
      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
      overflow: hidden;
      transition: transform 0.3s ease, box-shadow 0.3s ease;
-     border: 2px solid transparent;
+     border: 2px solid transparent; /* Placeholder for highlight */
      position: relative;
-     backface-visibility: hidden;
-     display: flex;
-     align-items: center;
-     justify-content: center;
-     padding: 0;
+     backface-visibility: hidden; /* Optimize animation */
+     display: flex; align-items: center; justify-content: center;
+     padding: 0; /* Remove padding if image fills */
  }
 
  .roulette-item:hover {
      transform: translateY(-5px) scale(1.05);
      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.6);
-     z-index: 1;
+     z-index: 1; /* Bring hovered item to front */
  }
 
  .roulette-avatar {
      display: block;
      width: 100%;
      height: 100%;
-     object-fit: cover;
+     object-fit: cover; /* Ensure avatar covers the area */
      transition: transform 0.3s ease;
-     border: none;
-     border-radius: 0;
+     border: none; /* Remove default border */
+     border-radius: 0; /* Reset radius if needed */
  }
 
  .roulette-item:hover .roulette-avatar { transform: scale(1.1); }
 
+ /* Hidden by default */
  .roulette-name,
  .roulette-percentage {
-     display: none; /* Keep hidden */
+     display: none;
  }
 
  /* Center Ticker Line */
@@ -589,7 +666,7 @@
  .winner-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary-color); box-shadow: 0 0 10px rgba(0, 230, 118, 0.5); margin-right: 10px; object-fit: cover; flex-shrink: 0; }
  .winner-header h3 { margin: 0; font-size: 1.1rem; /* Color set by JS */ }
  .winner-details { margin-top: 5px; font-size: 0.9rem; }
- .winner-details p { margin: 3px 0; font-size: 0.9rem; }
+ .winner-details p { margin: 3px 0; font-size: 0.9rem; color: var(--text-secondary); }
  .winner-details span { color: var(--primary-light); font-weight: bold; }
  .congrats { font-size: 1.2rem !important; color: var(--primary-color); font-weight: 700; margin-top: 5px !important; text-transform: uppercase; letter-spacing: 2px; animation: colorPulse 3s infinite; text-shadow: 0 0 8px currentColor; }
  @keyframes colorPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
@@ -609,22 +686,25 @@
      100% { transform: translateY(200px) translateX(var(--fall-x, 0px)) rotateZ(var(--rotation-end, 720deg)) scale(0.5); opacity: 0; }
  }
 
+ /* Winner Highlight Style (Applied via JS) */
+ /* .winner-highlight defined dynamically in JS */
+
  /*=========================
   DEPOSIT & PARTICIPANT ITEMS
  =========================*/
 
  .deposit-button-container {
      padding: 20px; background-color: var(--background-medium); z-index: 5;
-     position: relative; border-top: 1px solid var(--border-color);
+     position: relative; /* Ensure it's above items */ border-top: 1px solid var(--border-color);
      display: flex; flex-direction: column; align-items: center; gap: 15px;
  }
  #showDepositModal { width: auto; max-width: 300px; }
- .test-buttons-container { display: flex; gap: 10px; justify-content: center; }
- .test-buttons-container .btn-secondary { width: auto; }
+ .test-buttons-container { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+ .test-buttons-container .btn-secondary { width: auto; margin-bottom: 5px; }
 
  .current-items-section {
      padding: 20px; z-index: 5; position: relative;
-     background-color: var(--background-medium); border-radius: 0 0 12px 12px;
+     background-color: var(--background-medium); border-radius: 0 0 12px 12px; /* Match parent */
      border-top: 1px solid var(--border-color);
  }
  .section-title {
@@ -637,18 +717,17 @@
      background-color: var(--background-light); border-radius: 8px;
      border: 1px dashed var(--border-color); display: block; margin: 15px 0;
  }
+ .empty-pot-message p { margin: 0; }
 
  /* Vertical Deposit List */
- /* --- MODIFICATION START: Remove max-height and overflow --- */
+ /* --- REMOVED max-height and overflow --- */
  .items-container { /* Main container for deposit blocks */
      display: flex;
      flex-direction: column;
      gap: 15px;
-     /* max-height: 800px; */ /* REMOVED */
-     /* overflow-y: auto; */   /* REMOVED */
-     padding: 10px;
+     /* Removed max-height & overflow-y */
+     padding: 10px; /* Add padding around items */
  }
- /* --- MODIFICATION END --- */
 
  /* Individual Player Deposit Block */
  .player-deposit-container {
@@ -659,8 +738,8 @@
  }
  .player-deposit-container:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); }
  .player-deposit-header { display: flex; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(48, 54, 61, 0.5); }
- .player-avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 12px; border: 2px solid var(--primary-color); /* Color set by JS */ object-fit: cover; }
- .player-info { flex: 1; min-width: 0; }
+ .player-avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 12px; border: 2px solid var(--primary-color); /* Color set by JS */ object-fit: cover; flex-shrink: 0; }
+ .player-info { flex: 1; min-width: 0; } /* Prevent overflow */
  .player-name { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
  .player-deposit-value {
      font-size: 0.9rem;
@@ -669,19 +748,20 @@
      overflow: hidden; /* Hide overflow */
      text-overflow: ellipsis; /* Add ellipsis if too long */
  }
- .player-items-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: flex-start; }
+ .player-items-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: flex-start; /* Align items to start */ }
  .player-deposit-item {
      width: 80px; height: 100px; background: rgba(22, 27, 34, 0.7); border-radius: 5px;
      overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); transition: transform 0.2s ease;
      border: 1px solid var(--border-color); flex: 0 0 auto; display: flex; flex-direction: column;
+     /* Use border-left for color coding */
      border-left-width: 3px; border-left-style: solid; border-color: transparent transparent transparent var(--border-color); /* JS sets left color */
  }
  .player-deposit-item:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4), 0 0 8px rgba(0, 230, 118, 0.2); }
  .player-deposit-item-image { width: 100%; height: 60px; object-fit: contain; background-color: var(--background-medium); border-bottom: 1px solid rgba(48, 54, 61, 0.5); display: block; }
  .player-deposit-item-info { padding: 4px; height: 40px; display: flex; flex-direction: column; justify-content: center; flex-grow: 1; }
- .player-deposit-item-name { font-size: 0.65rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); margin-bottom: 2px; }
+ .player-deposit-item-name { font-size: 0.65rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); margin-bottom: 2px; line-height: 1.2; }
  .player-deposit-item-value { font-size: 0.7rem; font-weight: 700; /* Color set by JS */ }
- .player-deposit-item-more { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; padding: 5px; margin-top: 5px; /* Color set by JS */ }
+ .player-deposit-item-more { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; padding: 5px; margin-top: 5px; /* Color set by JS */ text-align: center; width: 100%; }
  /* Animation for new deposits */
  @keyframes newDepositPulse { 0% { transform: translateY(20px); opacity: 0; } 100% { transform: translateY(0); opacity: 1; } }
  .player-deposit-new { animation: newDepositPulse 0.5s ease-out forwards; }
@@ -702,9 +782,11 @@
      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); border: 1px solid var(--border-color);
      animation: modalIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); overflow: hidden;
  }
+ /* Specific Modal Sizes */
  .age-verification .modal-content { max-width: 500px; }
  #depositModal .modal-content { max-width: 900px; }
  #tradeUrlModal .modal-content { max-width: 600px; }
+
  @keyframes modalIn { from { opacity: 0; transform: scale(0.9) translateY(-20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
  .modal-header {
      padding: 15px 20px; border-bottom: 1px solid var(--border-color); display: flex;
@@ -744,13 +826,20 @@
  }
  .checkbox-container { display: flex; align-items: center; margin: 15px 0; }
  .checkbox-container input[type="checkbox"] { margin-right: 10px; width: 18px; height: 18px; accent-color: var(--primary-color); cursor: pointer; flex-shrink: 0; }
- .checkbox-container label { cursor: pointer; color: var(--text-primary); line-height: 1.3; }
+ .checkbox-container label { cursor: pointer; color: var(--text-primary); line-height: 1.3; margin-bottom: 0; } /* Remove default p margin */
  .help-text { font-size: 0.9rem; color: var(--text-secondary); margin-top: 10px; }
  .help-text a { color: var(--primary-light); text-decoration: underline; }
  .help-text a:hover { color: var(--primary-color); }
 
  /* Inventory Modal Styles */
  .inventory-container { margin-bottom: 20px; }
+ .inventory-container h3 { /* Style inventory title */
+     font-size: 1.1rem;
+     color: var(--text-primary);
+     margin-bottom: 15px;
+     padding-bottom: 5px;
+     border-bottom: 1px solid var(--border-color);
+ }
  .inventory-items {
      display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px;
      max-height: 300px; overflow-y: auto; background-color: var(--background-light);
@@ -774,27 +863,33 @@
  .selected-items { margin-top: 20px; }
  .selected-items h3 { font-size: 1rem; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; }
  .selected-items-container {
-     display: flex; flex-wrap: wrap; /* Changed back to wrap */ gap: 10px;
+     display: flex; flex-wrap: wrap; gap: 10px;
      min-height: 80px; max-height: 180px; overflow-y: auto;
      background-color: var(--background-light); padding: 10px;
      border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;
  }
- .selected-item {
+ /* Style for the selected item display in the bottom section */
+ .selected-item-display { /* Use this class instead of .selected-item for bottom display */
      position: relative; width: 80px; border-radius: 4px; overflow: hidden;
      background-color: var(--background-medium); border: 1px solid var(--border-color);
      flex-shrink: 0; display: flex; flex-direction: column;
+     cursor: pointer; /* Allow clicking to remove */
  }
- .selected-item img { width: 100%; height: 60px; object-fit: contain; background-color: var(--background-dark); display: block; }
- .selected-item-details { padding: 5px; font-size: 0.8rem; text-align: center; flex-grow: 1; }
- .selected-item-value { font-weight: 600; color: var(--primary-color); }
- .remove-item {
+ .selected-item-display img { width: 100%; height: 60px; object-fit: contain; background-color: var(--background-dark); display: block; }
+ .selected-item-display .item-name { /* Reuse item-name style */
+    font-size: 0.7rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 2px; line-height: 1.1; padding: 3px 5px 0; text-align: center;
+ }
+ .selected-item-display .item-value { /* Reuse item-value style */
+    font-size: 0.75rem; font-weight: 700; color: var(--primary-color); text-align: center; padding: 0 5px 3px;
+ }
+ .remove-item-btn { /* Class name used in JS */
      position: absolute; top: 3px; right: 3px; width: 18px; height: 18px;
      background-color: rgba(0, 0, 0, 0.7); color: white; border-radius: 50%; border: none;
      font-size: 10px; line-height: 18px; cursor: pointer; display: flex;
      align-items: center; justify-content: center; transition: background-color 0.2s ease, transform 0.2s ease;
      padding: 0; z-index: 1;
  }
- .remove-item:hover { background-color: var(--error-color); transform: scale(1.1); }
+ .remove-item-btn:hover { background-color: var(--error-color); transform: scale(1.1); }
  .total-value {
      display: flex; justify-content: space-between; align-items: center;
      padding: 10px 15px; background-color: var(--background-light); border-radius: 4px;
@@ -807,7 +902,7 @@
      display: none; /* JS toggles */
      flex-direction: column; align-items: center; justify-content: center;
      padding: 30px; background-color: transparent; border-radius: 8px;
-     margin: 20px 0; color: var(--text-secondary); grid-column: 1 / -1;
+     margin: 20px 0; color: var(--text-secondary); grid-column: 1 / -1; /* Span grid if inside */
  }
  .spinner {
      width: 40px; height: 40px; border: 4px solid rgba(0, 230, 118, 0.3);
@@ -816,32 +911,122 @@
  }
  @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
- /*=========================
-  STATIC PAGES (FAQ, FAIR, ABOUT, ROADMAP)
- =========================*/
+/*=========================
+ STATIC PAGES (FAQ, FAIR, ABOUT, TOS) - Refined Styles
+=========================*/
 
- .faq-item, .fair-section { margin-bottom: 30px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; }
- .faq-item:last-child, .fair-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
- .faq-question, .fair-title { font-size: 1.2rem; font-weight: 700; color: var(--primary-color); padding-bottom: 10px; margin-bottom: 10px; display: block; cursor: default; }
- .faq-answer, .fair-content { padding: 0 10px; color: var(--text-secondary); line-height: 1.7; }
- .faq-answer p, .fair-content p { margin-bottom: 12px; }
- .faq-answer ul, .faq-answer ol, .fair-content ul, .fair-content ol { margin: 15px 0 15px 20px; padding-left: 25px; }
- .faq-answer li, .fair-content li { margin-bottom: 10px; }
- .fair-content strong { color: var(--text-accent); font-weight: 600; }
- .fair-content a { color: var(--primary-light); text-decoration: underline; }
- .fair-content a:hover { color: var(--primary-color); }
+/* Increase spacing below each section for better readability */
+.faq-item, .fair-section {
+    margin-bottom: 35px; /* Increased from 30px */
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 25px; /* Increased from 20px */
+}
+.faq-item:last-child, .fair-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
 
- /* Provably Fair Verification Form & Result */
- .verify-form { background-color: var(--background-light); padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--border-color); }
+/* Style section titles consistently */
+.faq-question, .fair-title {
+    font-size: 1.3rem; /* Slightly larger */
+    font-weight: 700;
+    color: var(--primary-color);
+    padding-bottom: 12px; /* Increased padding */
+    margin-bottom: 15px; /* Increased margin */
+    display: block;
+    cursor: default;
+    border-top: 1px solid rgba(48, 54, 61, 0.5); /* Subtle top border */
+    padding-top: 15px; /* Add padding above */
+    position: relative; /* For potential future icon pseudo-elements */
+}
+/* Remove top border from the very first title in a card */
+.content-card > h1 + .fair-section > .fair-title,
+.content-card > h1 + .faq-item > .faq-question {
+    border-top: none;
+    padding-top: 0;
+}
+/* Style the H3 inside roadmap/about */
+.fair-content h3 {
+    font-size: 1.1rem;
+    color: var(--primary-light);
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-weight: 600;
+}
+
+/* Ensure content padding and line height are comfortable */
+.faq-answer, .fair-content {
+    padding: 0 10px; /* Keep horizontal padding */
+    color: var(--text-secondary);
+    line-height: 1.7; /* Good line height */
+}
+
+.faq-answer p, .fair-content p {
+    margin-bottom: 15px; /* Slightly more space between paragraphs */
+}
+
+/* Style lists clearly */
+.faq-answer ul, .faq-answer ol, .fair-content ul, .fair-content ol {
+    margin: 15px 0 20px 20px; /* Keep left margin, increase bottom margin */
+    padding-left: 25px;
+}
+
+.faq-answer li, .fair-content li {
+    margin-bottom: 10px; /* Good spacing */
+    padding-left: 5px; /* Add slight indent from bullet */
+}
+/* Style bullet points for ul */
+.fair-content ul li::marker {
+    color: var(--primary-light);
+}
+
+/* Keep consistent styling for emphasis and links */
+.fair-content strong {
+    color: var(--text-accent);
+    font-weight: 600;
+}
+
+.fair-content a {
+    color: var(--primary-light);
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    transition: color 0.2s ease;
+}
+
+.fair-content a:hover {
+    color: var(--primary-color);
+    text-decoration: none; /* Optional: remove underline on hover */
+}
+
+/* Style the verification form for clarity */
+.verify-form {
+    background-color: var(--background-light);
+    padding: 25px; /* More padding */
+    border-radius: 8px;
+    margin: 25px 0; /* More vertical margin */
+    border: 1px solid var(--border-color);
+}
+/* Style the TOS last updated date */
+#tos-page .content-card > p:first-of-type {
+    text-align: center;
+    margin-bottom: 25px;
+    font-style: italic;
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+ /* Provably Fair Verification Result */
  .verification-result { margin-top: 15px; padding: 15px; border-radius: 4px; background-color: var(--background-light); display: none; border: 1px solid var(--border-color); line-height: 1.5; }
  .verification-result.loading { background-color: var(--background-medium); border-color: var(--secondary-light); color: var(--text-primary); }
  .verification-result.success { background-color: rgba(0, 230, 118, 0.1); border-color: var(--success-color); color: var(--text-primary); }
  .verification-result.error { background-color: rgba(244, 67, 54, 0.1); border-color: var(--error-color); color: var(--text-primary); }
- .verification-result h4 { margin-top: 0; margin-bottom: 15px; color: var(--primary-color); }
- .verification-result p { margin-bottom: 8px; word-wrap: break-word; }
+ .verification-result h4 { margin-top: 0; margin-bottom: 15px; color: var(--primary-color); font-size: 1.1rem; }
+ .verification-result p { margin-bottom: 8px; word-wrap: break-word; font-size: 0.95rem; }
  .verification-result strong { color: var(--text-accent); }
- .verification-result code.seed-value { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; display: inline-block; }
- .verification-result code.wrap-anywhere { word-break: break-all; }
+ .verification-result code.seed-value { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; display: inline-block; margin: 2px 0; }
+ .verification-result code.wrap-anywhere { word-break: break-all; } /* Ensure long combined seeds wrap */
 
  /* Round History Table */
  .table-container { overflow-x: auto; margin-bottom: 20px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 8px; }
@@ -888,34 +1073,31 @@
 
  @media (max-width: 992px) { /* Tablet */
      .header-container {
-         justify-content: space-around;
-         flex-wrap: wrap;
+         justify-content: space-between; /* Adjust spacing */
+         align-items: center; /* Center vertically */
      }
-     .header-center {
+     .header-center { /* Jackpot tab */
+         order: 1; /* Move to start */
+         flex-grow: 0;
+         margin-right: auto; /* Push other items right */
+         flex: 0 1 auto; /* Don't grow, shrink if needed */
+     }
+     .header-left { /* Logo */
+        order: 2;
+        flex: 1; /* Allow logo to take space */
+        justify-content: center; /* Center logo */
+        min-width: 150px; /* Give logo some minimum space */
+     }
+     .header-right { /* User controls + secondary nav */
          order: 3;
-         width: 100%;
-         flex-basis: 100%;
-         justify-content: center;
-         margin-top: 10px;
-         flex: none;
-     }
-     .header-left {
-         order: 1;
-         flex: 1;
-     }
-     .header-right {
-         order: 2;
-         flex: 1;
+         flex: 0 1 auto; /* Don't grow, shrink */
+         justify-content: flex-end;
      }
 
-     .header-left, .header-right {
-          justify-content: center;
-     }
-     .header-left { justify-content: flex-start; }
-     .header-right { justify-content: flex-end; }
+     .primary-nav { display: none; } /* Primary nav hidden */
+     .secondary-nav { display: flex; } /* Secondary nav shows */
 
-
-     .primary-nav, .secondary-nav { display: none; }
+     /* Adjust Jackpot Header */
      .jackpot-value h2 { font-size: 3.5rem; }
      .timer-circle { width: 110px; height: 110px; }
      .timer-text { font-size: 3.1rem; }
@@ -924,86 +1106,96 @@
  }
 
  @media (max-width: 768px) { /* Mobile */
-     .header-container {
-         flex-direction: row;
-         justify-content: space-around;
-         flex-wrap: wrap;
-     }
-     .header-center {
-         order: 3;
-         width: 100%;
-         flex-basis: 100%;
-         margin-top: 10px;
-         flex: none;
-     }
-     .header-left {
-         order: 1;
-         flex-grow: 1;
-         flex: 1;
-         justify-content: flex-start;
-     }
-     .header-right {
-         order: 2;
-         flex-shrink: 0;
-         flex: 1;
-         justify-content: flex-end;
-     }
-     .primary-nav { display: none; }
-     .secondary-nav { display: flex; }
-     .main-nav a { font-size: 1.1rem; padding: 8px 10px; }
-     .jackpot-header { padding: 15px; gap: 10px; min-height: auto; }
-     .jackpot-value h2 { font-size: 2.8rem; }
-     .timer-circle { width: 90px; height: 90px; }
-     .timer-text { font-size: 2.4rem; }
-     .timer-background, .timer-foreground { stroke-width: 6px; }
-     .stat-value { font-size: 2.4rem; }
-     .value-label, .timer-label, .stat-label { font-size: 0.8rem; }
-     .jackpot-tab { font-size: 1.4rem !important; text-shadow: 0 0 8px var(--jackpot-tab-color); }
+    .header-container {
+        gap: 10px; /* Add gap for wrapping */
+    }
+    .header-center { /* Jackpot tab */
+        order: 1;
+        width: auto; /* Let content size it */
+        flex-basis: auto;
+        margin-right: 0;
+        flex-grow: 0;
+    }
+    .header-left { /* Logo */
+        order: 2;
+        flex: 1 1 auto; /* Allow grow/shrink */
+        justify-content: center; /* Center logo */
+        min-width: 0; /* Allow shrinking */
+        text-align: center;
+    }
+    .header-right { /* User + Secondary Nav */
+        order: 3;
+        width: 100%; /* Take full width below */
+        flex-basis: 100%;
+        margin-top: 10px;
+        justify-content: space-between; /* Space out nav and user */
+        flex: none; /* Don't flex */
+        gap: 15px;
+    }
 
-     .roulette-container { margin-top: 20px; height: 80px; }
-     .roulette-item { width: 70px; height: 70px; margin: 5px; }
-     .roulette-avatar { width: 100%; height: 100%; }
-     .roulette-track { padding-left: calc(50% - 35px); padding-right: calc(50% - 35px); }
+    .main-nav a { font-size: 1.1rem; padding: 8px 10px; } /* Jackpot tab sizing if needed */
 
-     .winner-info { padding: 8px; }
-     .winner-avatar { width: 30px; height: 30px; margin-right: 8px;}
-     .winner-header h3 { font-size: 1rem; }
-     .winner-details p { font-size: 0.8rem; }
-     .inventory-items { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); max-height: 250px; }
-     .inventory-item img { height: 70px; }
-     .selected-items-container { max-height: 200px; }
-     .selected-item { width: 100%; max-width: 150px; align-self: center; }
-     .modal-content { max-width: 95%; }
-     .modal-header h2 { font-size: 1.2rem; }
-     .modal-footer { justify-content: center; flex-wrap: wrap; }
-     .history-table { font-size: 0.85rem; }
-     .history-table th, .history-table td { padding: 10px 8px;}
-     .btn-details, .btn-verify { display: block; width: 100%; margin: 5px 0 0 0; }
-     .history-table td:last-child { text-align: center; }
-     .player-items-grid { justify-content: center; }
-     .player-deposit-container { padding: 10px; }
+    /* Adjust Jackpot Header */
+    .jackpot-header { padding: 15px; gap: 15px; min-height: auto; }
+    .jackpot-value h2 { font-size: 2.8rem; }
+    .timer-circle { width: 90px; height: 90px; }
+    .timer-text { font-size: 2.4rem; }
+    .timer-background, .timer-foreground { stroke-width: 6px; }
+    .stat-value { font-size: 2.4rem; }
+    .value-label, .timer-label, .stat-label { font-size: 0.8rem; }
+    .jackpot-tab { font-size: 1.4rem !important; text-shadow: 0 0 8px var(--jackpot-tab-color); }
+
+    /* Adjust Roulette */
+    .roulette-container { margin-top: 20px; height: 80px; width: 98%; }
+    .roulette-item { width: 50px; height: 50px; margin: 15px 4px; } /* Smaller items */
+    .roulette-track { padding-left: calc(50% - 29px); padding-right: calc(50% - 29px); } /* Adjust padding */
+
+    /* Winner Info Adjustments */
+    .winner-info { padding: 8px; }
+    .winner-avatar { width: 30px; height: 30px; margin-right: 8px;}
+    .winner-header h3 { font-size: 1rem; }
+    .winner-details p { font-size: 0.8rem; }
+
+    /* Modal & Inventory Adjustments */
+    .inventory-items { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); max-height: 250px; }
+    .inventory-item img { height: 70px; }
+    .selected-items-container { max-height: 160px; } /* Adjust height */
+    /* .selected-item-display { width: 70px; }  Adjust width if needed */
+    .modal-content { max-width: 95%; }
+    .modal-header h2 { font-size: 1.2rem; }
+    .modal-footer { justify-content: center; flex-wrap: wrap; }
+
+    /* History Table */
+    .history-table { font-size: 0.85rem; }
+    .history-table th, .history-table td { padding: 10px 8px;}
+    .btn-details, .btn-verify { display: inline-block; width: auto; margin: 5px 5px 0 0; } /* Keep inline but allow wrap */
+    .history-table td:last-child { text-align: right; } /* Keep actions right */
+
+    /* Deposit Blocks */
+    .player-items-grid { justify-content: center; } /* Center items on mobile */
+    .player-deposit-container { padding: 10px; }
  }
 
  @media (max-width: 480px) { /* Small mobile */
      .header-container {
          gap: 5px;
-         flex-wrap: wrap;
+         justify-content: space-between;
      }
-
-     .header-left { flex: 1; min-width: 120px; }
-     .header-right { flex: 1; min-width: 150px; }
-     .header-center { width: 100%; flex-basis: 100%; flex: none; }
-
+     .header-center { order: 1; flex-grow: 0; } /* Jackpot tab first */
+     .header-left { order: 2; flex: 1; justify-content: center; } /* Logo centered */
+     .header-right { order: 3; width: 100%; margin-top: 8px; justify-content: center; } /* User controls centered below */
+     .secondary-nav { display: none; } /* Hide secondary nav on smallest */
 
      .logo h1 { font-size: 1.5rem; }
-     .secondary-nav a, .main-nav a { font-size: 0.9rem; padding: 6px 8px; }
      .user-avatar { width: 28px; height: 28px; }
      .user-name { max-width: 100px; }
      .btn-login { padding: 6px 12px; font-size: 0.9rem; }
      .btn-deposit, .btn-secondary { font-size: 1rem; padding: 10px 20px; }
      .jackpot-tab { font-size: 1.3rem !important; padding: 8px 10px !important; }
-     .jackpot-header { gap: 5px; padding: 10px; flex-direction: column; }
-     .jackpot-value, .jackpot-timer, .jackpot-stats { min-width: auto; }
+
+     /* Jackpot Header stacked */
+     .jackpot-header { gap: 15px; padding: 15px; flex-direction: column; }
+     .jackpot-value, .jackpot-timer, .jackpot-stats { min-width: auto; flex: none; }
      .jackpot-value h2 { font-size: 2.2rem; }
      .timer-circle { width: 70px; height: 70px; }
      .timer-text { font-size: 1.8rem; }
@@ -1011,26 +1203,77 @@
      .timer-background, .timer-foreground { stroke-width: 5px; }
      .value-label, .timer-label, .stat-label { font-size: 0.7rem; }
 
+     /* Roulette */
      .roulette-container { height: 70px; }
-     .roulette-item { width: 60px; height: 60px; margin: 5px;}
-     .roulette-avatar { width: 100%; height: 100%; }
-     .roulette-track { padding-left: calc(50% - 30px); padding-right: calc(50% - 30px); }
+     .roulette-item { width: 45px; height: 45px; margin: 12.5px 3px; } /* Adjust size/margin */
+     .roulette-track { padding-left: calc(50% - 25.5px); padding-right: calc(50% - 25.5px); } /* Adjust padding */
 
+     /* Inventory/Modals */
      .inventory-items { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
      .inventory-item img { height: 60px; }
-     .selected-items-container { max-height: 180px; }
-     .selected-item { max-width: 120px; }
-     .history-table th, .history-table td { padding: 8px 6px; font-size: 0.8rem;}
-     .btn-details, .btn-verify { font-size: 0.7rem; padding: 4px 6px;}
+     .selected-items-container { max-height: 150px; } /* Adjust height */
+     /* .selected-item-display { width: 60px; } Adjust if needed */
      .modal-body { padding: 15px; }
      .modal-footer { padding: 10px 15px; }
+
+     /* History Table */
+     .history-table th, .history-table td { padding: 8px 6px; font-size: 0.8rem;}
+     .btn-details, .btn-verify { font-size: 0.7rem; padding: 4px 6px;}
+
+     /* Deposit Blocks */
      .player-deposit-item { width: 70px; height: 90px; }
      .player-deposit-item-image { height: 50px; }
      .player-deposit-item-name { font-size: 0.6rem; }
  }
 
  /* Initial Page Display (JS controls this) */
- #home-page, #about-page, #roadmap-page, #faq-page, #fair-page {
+ #home-page, #about-page, #faq-page, #fair-page, #tos-page { /* Added #tos-page */
      display: none; /* JS's showPage() function controls visibility */
  }
  /* JS should set display: block; for the initial page on load (e.g., #home-page) */
+
+ /* Notification Bar Style */
+ .notification-bar {
+    position: fixed;
+    top: -100px; /* Start hidden above */
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 600px;
+    padding: 15px 20px;
+    background-color: var(--background-light);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-top: none; /* No top border */
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    text-align: center;
+    z-index: 1100; /* Above everything else */
+    transition: top 0.5s ease-in-out;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    white-space: pre-wrap; /* Allow line breaks from \n */
+ }
+ .notification-bar.show {
+    top: 0; /* Slide in from top */
+ }
+ .notification-bar.success {
+    background-color: rgba(76, 175, 80, 0.9); /* Success color with opacity */
+    border-color: var(--success-color);
+    color: #ffffff;
+ }
+ .notification-bar.error {
+     background-color: rgba(244, 67, 54, 0.9); /* Error color with opacity */
+     border-color: var(--error-color);
+     color: #ffffff;
+ }
+ .notification-bar.info {
+     background-color: rgba(33, 150, 243, 0.9); /* Info color with opacity */
+     border-color: var(--info-color);
+     color: #ffffff;
+ }
+ .notification-bar.warning { /* Added warning style */
+     background-color: rgba(255, 152, 0, 0.9); /* Secondary/orange color with opacity */
+     border-color: var(--secondary-color);
+     color: var(--background-dark); /* Dark text on orange */
+ }
