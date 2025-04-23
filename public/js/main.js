@@ -591,7 +591,7 @@ function addSelectedItemElement(item) {
         <div class="item-name" title="${item.name}">${item.name}</div>
         <div class="item-value">$${item.price.toFixed(2)}</div>
         <button class="remove-item-btn" title="Remove ${item.name}" data-asset-id="${item.assetId}" aria-label="Remove ${item.name}">&times;</button>
-       `; // Added a remove button
+        `; // Added a remove button
 
     // Add listener to remove button
     selectedElement.querySelector('.remove-item-btn')?.addEventListener('click', (e) => {
@@ -1288,11 +1288,11 @@ function createRouletteItems() {
 
     const rouletteContainer = container.querySelector('.roulette-container');
     const containerWidth = rouletteContainer?.offsetWidth || container.offsetWidth || 1000;
-    const itemWidthWithMargin = 90 + 10;
+    const itemWidthWithMargin = 90 + 10; // Assuming 90px width + 5px margin each side
     const itemsInView = Math.ceil(containerWidth / itemWidthWithMargin);
-    const itemsForSpin = 400;
-    const totalItemsNeeded = itemsForSpin + (itemsInView * 2);
-    const itemsToCreate = Math.max(totalItemsNeeded, 500);
+    const itemsForSpin = 400; // Number of items to spin past (adjust for speed/duration)
+    const totalItemsNeeded = itemsForSpin + (itemsInView * 2); // Ensure enough items for wrap-around feel
+    const itemsToCreate = Math.max(totalItemsNeeded, 500); // Ensure a minimum number
 
     console.log(`Targeting ${itemsToCreate} roulette items for smooth animation.`);
 
@@ -1319,7 +1319,7 @@ function createRouletteItems() {
         // Use the simpler structure if defined in CSS (adjust HTML generation)
          itemElement.innerHTML = `
              <img class="roulette-avatar" src="${avatar}" alt="${username}" loading="lazy"
-                  onerror="this.onerror=null; this.src='/img/default-avatar.png';" style="border-color:${userColor}">
+                   onerror="this.onerror=null; this.src='/img/default-avatar.png';" style="border-color:${userColor}">
              <div class="roulette-name" title="${username}">${username}</div>
              <div class="roulette-percentage" style="color:${userColor}">${percentage}%</div>`;
 
@@ -1376,7 +1376,7 @@ function handleWinnerAnnouncement(data) {
 
     setTimeout(() => {
         startRouletteAnimation({ winner: winnerDetails });
-    }, 500);
+    }, 500); // Delay to allow view switch animation
 }
 
 
@@ -1395,27 +1395,29 @@ function switchToRouletteView() {
     const timerDisplay = header.querySelector('.jackpot-timer');
     const statsDisplay = header.querySelector('.jackpot-stats');
 
+    // Fade out header elements
     [valueDisplay, timerDisplay, statsDisplay].forEach(el => {
         if (el) {
             el.style.transition = 'opacity 0.5s ease';
             el.style.opacity = '0';
-            setTimeout(() => { el.style.display = 'none'; }, 500);
+            setTimeout(() => { el.style.display = 'none'; }, 500); // Hide after fade
         }
     });
 
-    header.classList.add('roulette-mode');
-    rouletteContainer.style.display = 'block'; // Changed from 'flex' to 'block' if it's just a container
+    header.classList.add('roulette-mode'); // Apply class for background/height changes
+    rouletteContainer.style.display = 'block'; // Show roulette
     rouletteContainer.style.opacity = '0';
-    rouletteContainer.style.transform = 'translateY(20px)';
+    rouletteContainer.style.transform = 'translateY(20px)'; // Start slightly down
 
+    // Fade in roulette
     setTimeout(() => {
         rouletteContainer.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
         rouletteContainer.style.opacity = '1';
         rouletteContainer.style.transform = 'translateY(0)';
-    }, 600);
+    }, 600); // Stagger fade in
 
     if (DOMElements.roulette.returnToJackpotButton) {
-        DOMElements.roulette.returnToJackpotButton.style.display = 'none';
+        DOMElements.roulette.returnToJackpotButton.style.display = 'none'; // Ensure hidden initially
     }
 }
 
@@ -1439,12 +1441,12 @@ function startRouletteAnimation(winnerData) {
 
     isSpinning = true;
     updateDepositButtonState();
-    spinStartTime = 0;
+    spinStartTime = 0; // Reset spin start time tracker
 
-    if (DOMElements.roulette.winnerInfoBox) DOMElements.roulette.winnerInfoBox.style.display = 'none';
+    if (DOMElements.roulette.winnerInfoBox) DOMElements.roulette.winnerInfoBox.style.display = 'none'; // Hide previous winner info
 
-    clearConfetti();
-    createRouletteItems();
+    clearConfetti(); // Clear any leftover confetti
+    createRouletteItems(); // Build the items in the track
 
     const winnerParticipantData = findWinnerFromData(winnerData);
     if (!winnerParticipantData) {
@@ -1468,6 +1470,7 @@ function startRouletteAnimation(winnerData) {
         console.warn("Spin sound element not found.");
     }
 
+    // Delay slightly to allow items to render before selecting winner element
     setTimeout(() => {
         const track = DOMElements.roulette.rouletteTrack;
         const items = track?.querySelectorAll('.roulette-item');
@@ -1479,18 +1482,22 @@ function startRouletteAnimation(winnerData) {
             return;
         }
 
-        const minIndexPercent = 0.65;
-        const maxIndexPercent = 0.85;
+        // --- Select Winning Element ---
+        // Prefer selecting a winner element further down the track for a better visual spin
+        const minIndexPercent = 0.65; // Start searching 65% of the way through
+        const maxIndexPercent = 0.85; // Stop searching 85% of the way through
         const minIndex = Math.floor(items.length * minIndexPercent);
         const maxIndex = Math.floor(items.length * maxIndexPercent);
 
         let winnerItemsIndices = [];
         for (let i = minIndex; i <= maxIndex; i++) {
+            // Check if element exists and matches winner ID
             if (items[i]?.dataset?.userId === winnerParticipantData.user.id) {
                 winnerItemsIndices.push(i);
             }
         }
 
+        // Fallback: If no winner items found in the preferred range, search the entire track
         if (winnerItemsIndices.length === 0) {
             console.warn(`No winner items found in preferred range [${minIndex}-${maxIndex}]. Expanding search.`);
             for (let i = 0; i < items.length; i++) {
@@ -1502,30 +1509,37 @@ function startRouletteAnimation(winnerData) {
 
         let winningElement, targetIndex;
         if (winnerItemsIndices.length === 0) {
+            // Critical Fallback: If still no matching items (shouldn't happen if createRouletteItems worked)
             console.error(`No items found matching winner ID ${winnerParticipantData.user.id}. Using fallback index.`);
-            targetIndex = Math.max(0, Math.min(items.length - 1, Math.floor(items.length * 0.75)));
+            targetIndex = Math.max(0, Math.min(items.length - 1, Math.floor(items.length * 0.75))); // Land somewhere predictable
             winningElement = items[targetIndex];
             if (!winningElement) {
+                // If even the fallback fails, something is seriously wrong
                 console.error('Fallback winning element is invalid!');
                 isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
             }
         } else {
+            // Select a random index from the found winner indices
             targetIndex = winnerItemsIndices[Math.floor(Math.random() * winnerItemsIndices.length)];
             winningElement = items[targetIndex];
             if (!winningElement) {
-                console.error(`Selected winning element at index ${targetIndex} is invalid!`);
-                isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
+                 console.error(`Selected winning element at index ${targetIndex} is invalid!`);
+                 isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
             }
         }
+        // --- End Select Winning Element ---
 
         console.log(`Selected winning element at index ${targetIndex} of ${items.length} total items`);
+
+        // Initiate the animation towards the selected element
         handleRouletteSpinAnimation(winningElement, winnerParticipantData);
-    }, 100);
+    }, 100); // 100ms delay
 }
 
 
 /**
  * Handles the core requestAnimationFrame loop for the roulette spin.
+ * Calculates the target position (with adjusted variation) and animates towards it.
  * @param {HTMLElement} winningElement - The target DOM element.
  * @param {object} winner - Winner data { user, value, percentage }.
  */
@@ -1540,29 +1554,62 @@ function handleRouletteSpinAnimation(winningElement, winner) {
     }
 
     const containerWidth = container.offsetWidth;
-    const itemWidth = winningElement.offsetWidth || 90;
+    const itemWidth = winningElement.offsetWidth || 90; // Get the actual width
     const itemOffsetLeft = winningElement.offsetLeft;
 
+    // Calculate the offset needed to perfectly center the item under the ticker
     const centerOffset = (containerWidth / 2) - (itemWidth / 2);
-    const positionVariation = (Math.random() * 2 - 1) * (itemWidth * CONFIG.LANDING_POSITION_VARIATION);
-    const targetScrollPosition = -(itemOffsetLeft - centerOffset) + positionVariation;
-    const finalTargetPosition = targetScrollPosition;
+    const perfectCenterScrollPosition = -(itemOffsetLeft - centerOffset);
 
+    // --- ADJUSTED VARIATION LOGIC START ---
+
+    // 1. Calculate the initially desired random variation based on the full config (0.60)
+    const initialVariation = (Math.random() * 2 - 1) * (itemWidth * CONFIG.LANDING_POSITION_VARIATION);
+
+    // 2. Determine the maximum *absolute* variation allowed to keep the ticker over the item.
+    //    Use slightly less than half the item width (e.g., 0.49) to avoid landing exactly on the pixel edge.
+    const maxAllowedAbsVariation = itemWidth * 0.49; // Ticker can land near the edge
+
+    // 3. Check if the initial variation falls into a "gap zone"
+    let finalVariation;
+    if (Math.abs(initialVariation) <= maxAllowedAbsVariation) {
+        // Safe: The ticker lands over the item. Use the original calculated variation.
+        finalVariation = initialVariation;
+    } else {
+        // Unsafe: The ticker would land over a gap.
+        // Snap the variation to the maximum allowed value (the edge of the item).
+        // Use Math.sign to preserve the original direction (left or right gap).
+        finalVariation = Math.sign(initialVariation) * maxAllowedAbsVariation;
+        // Optional logging:
+        // console.log(`Initial variation ${initialVariation.toFixed(2)} too large, snapping to edge: ${finalVariation.toFixed(2)}`);
+    }
+
+    // 4. Calculate the final target scroll position using the (potentially adjusted) finalVariation
+    const targetScrollPosition = perfectCenterScrollPosition + finalVariation;
+
+    // --- ADJUSTED VARIATION LOGIC END ---
+
+    const finalTargetPosition = targetScrollPosition; // This is the definitive end point for the animation.
+
+    // Animation parameters based on the final target
     const startPosition = parseFloat(track.style.transform?.match(/translateX\(([-.\d]+)px\)/)?.[1] || '0');
     const duration = CONFIG.SPIN_DURATION_SECONDS * 1000;
     const bounceDuration = CONFIG.BOUNCE_ENABLED ? 1200 : 0;
     const totalAnimationTime = duration + bounceDuration;
+    // IMPORTANT: Calculate totalDistance based on the potentially adjusted finalTargetPosition
     const totalDistance = finalTargetPosition - startPosition;
-    const overshootAmount = totalDistance * CONFIG.BOUNCE_OVERSHOOT_FACTOR;
+    const overshootAmount = totalDistance * CONFIG.BOUNCE_OVERSHOOT_FACTOR; // Ensure this is recalculated if bounce is used
 
     let startTime = performance.now();
+    spinStartTime = startTime; // Store globally if needed elsewhere
     let lastPosition = startPosition;
     let lastTimestamp = startTime;
 
-    track.style.transition = 'none';
+    track.style.transition = 'none'; // Ensure direct transform manipulation
 
+    // Animation loop function
     function animateRoulette(timestamp) {
-        if (!isSpinning) {
+        if (!isSpinning) { // Check if spin was cancelled
             console.log("Animation loop stopped: isSpinning false.");
             if (animationFrameId) cancelAnimationFrame(animationFrameId);
             animationFrameId = null;
@@ -1573,34 +1620,38 @@ function handleRouletteSpinAnimation(winningElement, winner) {
         let currentPosition;
         let animationFinished = false;
 
-        if (elapsed <= duration) {
+        // Calculate position based on easing and bounce (if enabled)
+        if (elapsed <= duration) { // Main easing phase
             const animationPhaseProgress = elapsed / duration;
             const easedProgress = easeOutAnimation(animationPhaseProgress);
             currentPosition = startPosition + totalDistance * easedProgress;
-        } else if (CONFIG.BOUNCE_ENABLED && elapsed <= totalAnimationTime) {
+        } else if (CONFIG.BOUNCE_ENABLED && elapsed <= totalAnimationTime) { // Bounce phase
             const bouncePhaseProgress = (elapsed - duration) / bounceDuration;
             const bounceDisplacementFactor = calculateBounce(bouncePhaseProgress);
             currentPosition = finalTargetPosition - (overshootAmount * bounceDisplacementFactor);
-        } else {
+        } else { // Animation time exceeded
             currentPosition = finalTargetPosition;
             animationFinished = true;
         }
 
+        // Apply the calculated position
         track.style.transform = `translateX(${currentPosition}px)`;
 
         lastPosition = currentPosition;
         lastTimestamp = timestamp;
 
+        // Continue or finalize
         if (!animationFinished) {
             animationFrameId = requestAnimationFrame(animateRoulette);
         } else {
             console.log("Animation finished naturally in loop.");
             animationFrameId = null;
-            finalizeSpin(winningElement, winner);
+            finalizeSpin(winningElement, winner); // Call the next step
         }
     }
 
-    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    // Start the animation loop
+    if (animationFrameId) cancelAnimationFrame(animationFrameId); // Clear any previous frame
     animationFrameId = requestAnimationFrame(animateRoulette);
 }
 
@@ -1611,6 +1662,7 @@ function handleRouletteSpinAnimation(winningElement, winner) {
  * @param {object} winner - Winner data { user, value, percentage }.
  */
 function finalizeSpin(winningElement, winner) {
+    // Prevent double execution or running with invalid data
     if ((!isSpinning && winningElement?.classList.contains('winner-highlight')) || !winningElement || !winner?.user) {
         console.log("FinalizeSpin called, but seems already finalized or data invalid.");
         if (isSpinning) { isSpinning = false; updateDepositButtonState(); resetToJackpotView(); }
@@ -1620,9 +1672,10 @@ function finalizeSpin(winningElement, winner) {
     console.log("Finalizing spin: Applying highlight.");
     const userColor = getUserColor(winner.user.id);
 
+    // Add highlight class and inject dynamic CSS for the pulse animation with the winner's color
     winningElement.classList.add('winner-highlight');
     const styleId = 'winner-pulse-style';
-    document.getElementById(styleId)?.remove();
+    document.getElementById(styleId)?.remove(); // Remove previous style if exists
 
     const style = document.createElement('style');
     style.id = styleId;
@@ -1630,7 +1683,7 @@ function finalizeSpin(winningElement, winner) {
         .winner-highlight {
             z-index: 5; border-width: 3px; border-color: ${userColor};
             animation: winnerPulse 1.5s infinite; --winner-color: ${userColor};
-            transform: scale(1.05);
+            transform: scale(1.05); /* Optional: Keep slightly scaled */
         }
         @keyframes winnerPulse {
             0%, 100% { box-shadow: 0 0 15px var(--winner-color); transform: scale(1.05); }
@@ -1638,9 +1691,10 @@ function finalizeSpin(winningElement, winner) {
         }`;
     document.head.appendChild(style);
 
+    // Short delay before showing winner info box for visual effect
     setTimeout(() => {
         handleSpinEnd(winningElement, winner);
-    }, 300);
+    }, 300); // 300ms delay
 }
 
 
@@ -1652,67 +1706,80 @@ function finalizeSpin(winningElement, winner) {
 function handleSpinEnd(winningElement, winner) {
     if (!winningElement || !winner?.user) {
         console.error("handleSpinEnd called with invalid data/element.");
-        if (!isSpinning) return;
+        if (!isSpinning) return; // Already stopped
         isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
     }
 
-    if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
+    if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; } // Ensure animation frame is stopped
 
     console.log("Handling spin end: Displaying winner info and confetti.");
 
     const { winnerInfoBox, winnerAvatar, winnerName, winnerDeposit, winnerChance } = DOMElements.roulette;
+
+    // Check if all necessary winner display elements exist
     if (winnerInfoBox && winnerAvatar && winnerName && winnerDeposit && winnerChance) {
         const userColor = getUserColor(winner.user.id);
 
+        // Populate winner details
         winnerAvatar.src = winner.user.avatar || '/img/default-avatar.png';
         winnerAvatar.alt = winner.user.username || 'Winner';
         winnerAvatar.style.borderColor = userColor;
-        winnerAvatar.style.boxShadow = `0 0 15px ${userColor}`;
+        winnerAvatar.style.boxShadow = `0 0 15px ${userColor}`; // Add glow effect
 
         winnerName.textContent = winner.user.username || 'Winner';
-        winnerName.style.color = userColor;
+        winnerName.style.color = userColor; // Set name color
 
         const depositValueStr = `$${(winner.value || 0).toFixed(2)}`;
         const chanceValueStr = `${(winner.percentage || 0).toFixed(2)}%`;
 
+        // Clear previous text for typing effect
         winnerDeposit.textContent = '';
         winnerChance.textContent = '';
 
-        winnerInfoBox.style.display = 'flex'; // Changed from block to flex
-        winnerInfoBox.style.opacity = '0';
-        winnerInfoBox.style.animation = 'fadeIn 0.5s ease forwards';
+        // Display and animate winner box
+        winnerInfoBox.style.display = 'flex'; // Use flex for alignment
+        winnerInfoBox.style.opacity = '0'; // Start transparent
+        winnerInfoBox.style.animation = 'fadeIn 0.5s ease forwards'; // Apply fade-in animation
 
+        // Typing effect for details after fade-in
         setTimeout(() => {
-            let depositIndex = 0; let chanceIndex = 0; const typeDelay = 35;
+            let depositIndex = 0; let chanceIndex = 0; const typeDelay = 35; // Typing speed
+            // Clear any potentially lingering intervals
             if (window.typeDepositInterval) clearInterval(window.typeDepositInterval);
             if (window.typeChanceInterval) clearInterval(window.typeChanceInterval);
 
+            // Type out deposit value
             window.typeDepositInterval = setInterval(() => {
                 if (depositIndex < depositValueStr.length) {
                     winnerDeposit.textContent += depositValueStr[depositIndex]; depositIndex++;
                 } else {
                     clearInterval(window.typeDepositInterval); window.typeDepositInterval = null;
+                    // Type out chance value after deposit is done
                     window.typeChanceInterval = setInterval(() => {
                         if (chanceIndex < chanceValueStr.length) {
                             winnerChance.textContent += chanceValueStr[chanceIndex]; chanceIndex++;
                         } else {
                             clearInterval(window.typeChanceInterval); window.typeChanceInterval = null;
+                            // Launch confetti after typing finishes
                             setTimeout(() => { launchConfetti(userColor); }, 200);
+                            // Officially mark spinning as false
                             isSpinning = false;
-                            updateDepositButtonState();
+                            updateDepositButtonState(); // Update button state now
                             console.log("isSpinning set to false after winner display/confetti.");
+                            // Schedule return to jackpot view
                             setTimeout(resetToJackpotView, CONFIG.WINNER_DISPLAY_DURATION);
                         }
                     }, typeDelay);
                 }
             }, typeDelay);
-        }, 500);
+        }, 500); // Delay typing until fade-in is complete
 
     } else {
+        // Fallback if elements are missing
         console.error("Winner info display elements missing.");
-        isSpinning = false;
+        isSpinning = false; // Still mark as not spinning
         updateDepositButtonState();
-        resetToJackpotView();
+        resetToJackpotView(); // Reset view immediately
     }
 }
 
@@ -1724,38 +1791,42 @@ function handleSpinEnd(winningElement, winner) {
 function launchConfetti(mainColor = '#00e676') {
     const container = DOMElements.roulette.confettiContainer;
     if (!container) return;
-    clearConfetti();
+    clearConfetti(); // Clear previous confetti first
 
+    // Generate a color palette based on the winner's color
     const baseColor = mainColor;
     const complementaryColor = getComplementaryColor(baseColor);
     const lighterColor = lightenColor(baseColor, 30);
     const darkerColor = darkenColor(baseColor, 30);
     const colors = [baseColor, lighterColor, darkerColor, complementaryColor, '#ffffff', lightenColor(complementaryColor, 20)];
 
+    // Create confetti elements
     for (let i = 0; i < CONFIG.CONFETTI_COUNT; i++) {
         const confetti = document.createElement('div');
         confetti.className = 'confetti';
 
+        // Randomize position, animation duration, delay, color, size, shape, rotation
         confetti.style.left = `${Math.random() * 100}%`;
-        const animDuration = 2 + Math.random() * 3;
-        const animDelay = Math.random() * 1.5;
+        const animDuration = 2 + Math.random() * 3; // Duration between 2s and 5s
+        const animDelay = Math.random() * 1.5; // Delay up to 1.5s
 
         confetti.style.setProperty('--duration', `${animDuration}s`);
         confetti.style.setProperty('--delay', `${animDelay}s`);
         const color = colors[Math.floor(Math.random() * colors.length)];
         confetti.style.setProperty('--color', color);
 
-        const size = Math.random() * 8 + 4;
+        const size = Math.random() * 8 + 4; // Size between 4px and 12px
         confetti.style.width = `${size}px`;
         confetti.style.height = `${size}px`;
 
         const rotationStart = Math.random() * 360;
-        const rotationEnd = rotationStart + (Math.random() - 0.5) * 720;
-        const fallX = (Math.random() - 0.5) * 100;
+        const rotationEnd = rotationStart + (Math.random() - 0.5) * 720; // Random rotation +/- 360deg
+        const fallX = (Math.random() - 0.5) * 100; // Horizontal drift
         confetti.style.setProperty('--fall-x', `${fallX}px`);
         confetti.style.setProperty('--rotation-start', `${rotationStart}deg`);
         confetti.style.setProperty('--rotation-end', `${rotationEnd}deg`);
 
+        // Randomly make some circular
         if (Math.random() < 0.5) confetti.style.borderRadius = '50%';
 
         container.appendChild(confetti);
@@ -1768,10 +1839,12 @@ function launchConfetti(mainColor = '#00e676') {
  */
 function clearConfetti() {
     if (DOMElements.roulette.confettiContainer) DOMElements.roulette.confettiContainer.innerHTML = '';
-    document.getElementById('winner-pulse-style')?.remove();
+    document.getElementById('winner-pulse-style')?.remove(); // Remove injected style
+    // Remove highlight class from any previously highlighted items
     document.querySelectorAll('.roulette-item.winner-highlight').forEach(el => {
         el.classList.remove('winner-highlight');
-        el.style.transform = '';
+        el.style.transform = ''; // Reset any transform
+        // Reset border color based on user or make transparent
         if (el.dataset?.userId) el.style.borderColor = getUserColor(el.dataset.userId);
         else el.style.borderColor = 'transparent';
     });
@@ -1783,6 +1856,7 @@ function clearConfetti() {
 function resetToJackpotView() {
     console.log("Resetting to jackpot view...");
 
+    // --- Clear Timers & Intervals ---
     if (animationFrameId) cancelAnimationFrame(animationFrameId); animationFrameId = null;
     if (window.soundFadeInInterval) clearInterval(window.soundFadeInInterval); window.soundFadeInInterval = null;
     if (window.soundFadeOutInterval) clearInterval(window.soundFadeOutInterval); window.soundFadeOutInterval = null;
@@ -1790,8 +1864,9 @@ function resetToJackpotView() {
     if (window.typeChanceInterval) clearInterval(window.typeChanceInterval); window.typeChanceInterval = null;
     if (roundTimer) clearInterval(roundTimer); roundTimer = null;
     timerActive = false;
+    // --- End Clear Timers ---
 
-    isSpinning = false;
+    isSpinning = false; // Ensure state is reset
     spinStartTime = 0;
 
     const header = DOMElements.jackpot.jackpotHeader;
@@ -1803,51 +1878,57 @@ function resetToJackpotView() {
         return;
     }
 
-    const sound = DOMElements.audio.spinSound; // Use updated reference
+    // Reset sound properties for next spin
+    const sound = DOMElements.audio.spinSound;
     if (sound) {
-        // Reset properties for the *next* spin, but don't affect current playback
         sound.volume = 1.0;
         sound.playbackRate = 1.0;
     }
 
+    // Fade out roulette elements
     rouletteContainer.style.transition = 'opacity 0.5s ease';
     rouletteContainer.style.opacity = '0';
     if (winnerInfoBox.style.display !== 'none') {
         winnerInfoBox.style.transition = 'opacity 0.3s ease';
         winnerInfoBox.style.opacity = '0';
     }
-    clearConfetti();
+    clearConfetti(); // Clear confetti and winner highlight styles
 
+    // After fade out, reset layout and fade in jackpot header elements
     setTimeout(() => {
-        header.classList.remove('roulette-mode');
-        track.style.transition = 'none';
-        track.style.transform = 'translateX(0)';
-        track.innerHTML = '';
-        rouletteContainer.style.display = 'none';
-        winnerInfoBox.style.display = 'none';
-        winnerInfoBox.style.opacity = '';
-        winnerInfoBox.style.animation = '';
+        header.classList.remove('roulette-mode'); // Reset header background/height
+        track.style.transition = 'none'; // Prevent animation on reset
+        track.style.transform = 'translateX(0)'; // Reset scroll position
+        track.innerHTML = ''; // Clear roulette items
+        rouletteContainer.style.display = 'none'; // Hide roulette container
+        winnerInfoBox.style.display = 'none'; // Hide winner box
+        winnerInfoBox.style.opacity = ''; // Reset opacity
+        winnerInfoBox.style.animation = ''; // Remove animation
 
+        // Get jackpot header elements
         const valueDisplay = header.querySelector('.jackpot-value');
         const timerDisplay = header.querySelector('.jackpot-timer');
         const statsDisplay = header.querySelector('.jackpot-stats');
 
+        // Restore and fade in header elements with stagger
         [valueDisplay, timerDisplay, statsDisplay].forEach((el, index) => {
             if (el) {
                 // Ensure display style matches CSS (flex or block etc.)
                 const computedStyle = window.getComputedStyle(el);
                 el.style.display = computedStyle.display !== 'none' ? computedStyle.display : 'flex'; // Default to flex if hidden
-                el.style.opacity = '0';
-                setTimeout(() => {
+                el.style.opacity = '0'; // Start transparent
+                setTimeout(() => { // Stagger fade-in
                     el.style.transition = 'opacity 0.5s ease';
                     el.style.opacity = '1';
                 }, 50 + index * 50);
             }
         });
 
+        // Reset visual state for a new round (pot, participants list)
         initiateNewRoundVisualReset();
         updateDepositButtonState(); // Update button state AFTER resetting
 
+        // Request fresh data from server
         if (socket.connected) {
             console.log("Requesting fresh round data after reset.");
             socket.emit('requestRoundData');
@@ -1855,7 +1936,7 @@ function resetToJackpotView() {
             console.warn("Socket not connected, skipping requestRoundData after reset.");
         }
 
-    }, 500);
+    }, 500); // Delay matches fade-out duration
 }
 
 
@@ -1865,6 +1946,7 @@ function resetToJackpotView() {
 function initiateNewRoundVisualReset() {
     console.log("Initiating visual reset for new round display");
 
+    // Reset Timer UI
     updateTimerUI(CONFIG.ROUND_DURATION);
     if (DOMElements.jackpot.timerValue) {
         DOMElements.jackpot.timerValue.classList.remove('urgent-pulse', 'timer-pulse');
@@ -1872,21 +1954,23 @@ function initiateNewRoundVisualReset() {
     if (roundTimer) clearInterval(roundTimer); roundTimer = null;
     timerActive = false;
 
+    // Reset Participants List
     const container = DOMElements.jackpot.participantsContainer;
     const emptyMsg = DOMElements.jackpot.emptyPotMessage;
     if (container && emptyMsg) {
-        container.innerHTML = '';
-        if (!container.contains(emptyMsg)) container.appendChild(emptyMsg);
-        emptyMsg.style.display = 'block';
+        container.innerHTML = ''; // Clear existing deposit blocks
+        if (!container.contains(emptyMsg)) container.appendChild(emptyMsg); // Ensure empty message exists
+        emptyMsg.style.display = 'block'; // Show empty message
     }
 
+    // Reset Pot Value and Participant Count Display
     if (DOMElements.jackpot.potValue) DOMElements.jackpot.potValue.textContent = "$0.00";
     if (DOMElements.jackpot.participantCount) {
         DOMElements.jackpot.participantCount.textContent = `0/${CONFIG.MAX_PARTICIPANTS_DISPLAY}`;
     }
 
-    userColorMap.clear();
-    updateDepositButtonState();
+    userColorMap.clear(); // Clear user color mappings for the new round
+    updateDepositButtonState(); // Update deposit button based on reset state
 }
 
 /**
@@ -1901,26 +1985,31 @@ function findWinnerFromData(winnerData) {
         return null;
     }
 
+    // Ensure local round data is available
     if (!currentRound || !currentRound.participants) {
         console.warn("Missing currentRound/participants data for findWinnerFromData.");
+        // Attempt to return basic info if passed directly in winnerData
         if (winnerData.winner) return { user: { ...winnerData.winner }, percentage: 0, value: 0 };
         return null;
     }
 
+    // Find the participant object in the local round data
     const winnerParticipant = currentRound.participants.find(p => p.user?.id === winnerId);
 
     if (!winnerParticipant) {
         console.warn(`Winner ID ${winnerId} not found in local participants.`);
+        // Attempt to return basic info if passed directly
         if (winnerData.winner) return { user: { ...winnerData.winner }, percentage: 0, value: 0 };
         return null;
     }
 
+    // Calculate percentage based on local round data
     const totalValue = Math.max(0.01, currentRound.totalValue || 0.01);
     const participantValue = winnerParticipant.itemsValue || 0;
     const percentage = (participantValue / totalValue) * 100;
 
     return {
-        user: { ...winnerParticipant.user },
+        user: { ...winnerParticipant.user }, // Return a copy of user details
         percentage: percentage || 0,
         value: participantValue
     };
@@ -1940,6 +2029,7 @@ function testRouletteAnimation() {
 
     let testData = currentRound;
 
+    // Use mock data if no current round data exists
     if (!testData || !testData.participants || testData.participants.length === 0) {
         console.log('Using sample Rust test data for animation...');
         testData = {
@@ -1951,7 +2041,8 @@ function testRouletteAnimation() {
             ],
             items: [ { owner: 'rust_user_1', name: 'Assault Rifle', price: 50.00, image: '/img/default-item.png' }, /* ... more items ... */ ]
         };
-        currentRound = testData;
+        currentRound = testData; // Use this mock data as the current round for the test
+        // Visually reset and populate based on mock data
         initiateNewRoundVisualReset();
         updateRoundUI();
         if (currentRound.participants?.length > 0) {
@@ -1960,19 +2051,23 @@ function testRouletteAnimation() {
                 const userItems = currentRound.items?.filter(item => item.owner === p.user?.id) || [];
                 const mockDepositData = { userId: p.user.id, username: p.user.username, avatar: p.user.avatar, itemsValue: p.itemsValue, depositedItems: userItems };
                 displayLatestDeposit(mockDepositData);
+                // Remove animation class immediately for test setup
                 const element = DOMElements.jackpot.participantsContainer?.querySelector(`.player-deposit-container[data-user-id="${p.user.id}"]`);
                 if (element) element.classList.remove('player-deposit-new');
             });
         }
     } else {
+        // Ensure status is suitable for starting a spin if using real data
         currentRound.status = 'active';
     }
 
+    // Ensure there are participants to choose from
     if (!currentRound?.participants?.length > 0) {
         showNotification('Test Error: No participants available for test spin.', 'error');
         return;
     }
 
+    // Select a random winner from the participants
     const idx = Math.floor(Math.random() * currentRound.participants.length);
     const winningParticipant = currentRound.participants[idx];
 
@@ -1982,13 +2077,15 @@ function testRouletteAnimation() {
         return;
     }
 
+    // Prepare mock winner data structure similar to server event
     const mockWinnerData = {
         roundId: currentRound.roundId,
-        winner: winningParticipant.user,
-        winningTicket: Math.floor(Math.random() * (winningParticipant.tickets || 1)) + 1
+        winner: winningParticipant.user, // Pass the user object
+        winningTicket: Math.floor(Math.random() * (winningParticipant.tickets || 1)) + 1 // Mock ticket
     };
 
     console.log('Test Winner Selected:', mockWinnerData.winner.username);
+    // Trigger the winner announcement flow with mock data
     handleWinnerAnnouncement(mockWinnerData);
 }
 
@@ -2011,6 +2108,7 @@ async function verifyRound() {
     const clientSeed = clientSeedInput.value.trim();
     const resultEl = verificationResultDisplay;
 
+    // Frontend validation
     let validationError = null;
     if (!roundId || !serverSeed || !clientSeed) {
         validationError = 'Please fill in all fields (Round ID, Server Seed, Client Seed).';
@@ -2019,6 +2117,7 @@ async function verifyRound() {
     } else if (clientSeed.length === 0) {
         validationError = 'Client Seed cannot be empty.';
     }
+    // Add more client seed validation if needed
 
     if (validationError) {
         resultEl.style.display = 'block';
@@ -2028,10 +2127,12 @@ async function verifyRound() {
     }
 
     try {
+        // Show loading state
         resultEl.style.display = 'block';
         resultEl.className = 'verification-result loading';
         resultEl.innerHTML = '<p>Verifying...</p>';
 
+        // Call backend API
         const response = await fetch('/api/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -2044,6 +2145,7 @@ async function verifyRound() {
             throw new Error(result.error || `Verification failed (${response.status})`);
         }
 
+        // Display result
         resultEl.className = `verification-result ${result.verified ? 'success' : 'error'}`;
         let html = `<h4>Result (Round #${result.roundId || roundId})</h4>`;
 
@@ -2093,41 +2195,47 @@ async function loadPastRounds(page = 1) {
     }
 
     try {
+        // Show loading state
         tableBody.innerHTML = '<tr><td colspan="5" class="loading-message">Loading round history...</td></tr>';
-        paginationContainer.innerHTML = '';
+        paginationContainer.innerHTML = ''; // Clear old pagination
 
-        const response = await fetch(`/api/rounds?page=${page}&limit=10`);
+        // Fetch data
+        const response = await fetch(`/api/rounds?page=${page}&limit=10`); // Use limit from backend default or config
 
         if (!response.ok) {
             throw new Error(`Failed to load round history (${response.status})`);
         }
         const data = await response.json();
 
+        // Validate received data
         if (!data || !Array.isArray(data.rounds) || typeof data.currentPage !== 'number' || typeof data.totalPages !== 'number') {
             throw new Error('Invalid rounds data received from server.');
         }
 
-        tableBody.innerHTML = '';
+        tableBody.innerHTML = ''; // Clear loading message
 
+        // Populate table
         if (data.rounds.length === 0) {
             const message = (page === 1) ? 'No past rounds found.' : 'No rounds found on this page.';
             tableBody.innerHTML = `<tr><td colspan="5" class="no-rounds-message">${message}</td></tr>`;
         } else {
             data.rounds.forEach(round => {
                 const row = document.createElement('tr');
-                row.dataset.roundId = round.roundId;
+                row.dataset.roundId = round.roundId; // Store round ID for potential actions
 
+                // Format date safely
                 let date = 'N/A';
-                const timeToFormat = round.completedTime || round.endTime;
+                const timeToFormat = round.completedTime || round.endTime; // Prefer completed time
                 if (timeToFormat) {
                     try {
                         const d = new Date(timeToFormat);
-                        if (!isNaN(d.getTime())) {
+                        if (!isNaN(d.getTime())) { // Check if date is valid
                             date = d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
                         }
                     } catch (e) { console.error("Date formatting error:", e); }
                 }
 
+                // Escape seeds for use in onclick attribute (simple escaping)
                 const serverSeedStr = (round.serverSeed || '').replace(/'/g, "\\'");
                 const clientSeedStr = (round.clientSeed || '').replace(/'/g, "\\'");
                 const roundIdStr = round.roundId || 'N/A';
@@ -2146,6 +2254,7 @@ async function loadPastRounds(page = 1) {
                 tableBody.appendChild(row);
             });
         }
+        // Create pagination controls
         createPagination(data.currentPage, data.totalPages);
     } catch (error) {
         tableBody.innerHTML = `<tr><td colspan="5" class="error-message">Error loading rounds: ${error.message}</td></tr>`;
@@ -2155,7 +2264,7 @@ async function loadPastRounds(page = 1) {
 
 
 /**
- * Populates the verification form fields.
+ * Populates the verification form fields. Made globally accessible via window.
  * @param {string} roundId
  * @param {string} serverSeed
  * @param {string} clientSeed
@@ -2167,17 +2276,19 @@ window.populateVerificationFields = function(roundId, serverSeed, clientSeed) {
     if (serverSeedInput) serverSeedInput.value = serverSeed || '';
     if (clientSeedInput) clientSeedInput.value = clientSeed || '';
 
+    // Scroll to the verification section
     if (verificationSection) {
         verificationSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
+    // Notify if seed isn't revealed yet
     if (!serverSeed && roundId && roundId !== 'N/A') {
         showNotification(`Info: Server Seed for Round #${roundId} is revealed after the round ends.`, 'info');
     }
 };
 
 /**
- * Placeholder function to show round details.
+ * Placeholder function to show round details. Made globally accessible via window.
  * @param {string} roundId
  */
 window.showRoundDetails = async function(roundId) {
@@ -2187,7 +2298,9 @@ window.showRoundDetails = async function(roundId) {
         return;
     }
     showNotification(`Workspaceing details for round #${roundId}... (Implementation needed)`, 'info');
-    // Future implementation: Fetch details and display in a modal
+    // Future implementation:
+    // 1. Fetch detailed round data from a specific API endpoint `/api/round/${roundId}`
+    // 2. Populate and display a modal with participants, items, seeds, winner info etc.
 };
 
 
@@ -2199,51 +2312,67 @@ window.showRoundDetails = async function(roundId) {
 function createPagination(currentPage, totalPages) {
     const container = DOMElements.provablyFair.roundsPagination;
     if (!container) return;
-    container.innerHTML = '';
+    container.innerHTML = ''; // Clear previous pagination
 
-    if (totalPages <= 1) return;
+    if (totalPages <= 1) return; // No pagination needed for 1 page or less
 
-    const maxPagesToShow = 5;
+    const maxPagesToShow = 5; // Number of page buttons to show (including ellipsis)
 
+    // Helper to create buttons or ellipsis
     const createButton = (text, page, isActive = false, isDisabled = false, isEllipsis = false) => {
         if (isEllipsis) {
             const span = document.createElement('span');
             span.className = 'page-ellipsis'; span.textContent = '...'; return span;
         }
         const button = document.createElement('button');
-        button.className = `btn pagination-btn ${isActive ? 'active' : ''}`; // Added 'btn' class
+        // Ensure class matches CSS style definition
+        button.className = `page-button ${isActive ? 'active' : ''}`; // Use 'page-button' class from CSS
         button.textContent = text; button.disabled = isDisabled;
         if (!isDisabled && typeof page === 'number') {
+            // Add event listener to load the corresponding page
             button.addEventListener('click', (e) => { e.preventDefault(); loadPastRounds(page); });
         }
         return button;
     };
 
+    // Previous Button
     container.appendChild(createButton('« Prev', currentPage - 1, false, currentPage <= 1));
 
+    // Page Number Buttons Logic
     if (totalPages <= maxPagesToShow) {
+        // Show all pages if total is less than or equal to max
         for (let i = 1; i <= totalPages; i++) container.appendChild(createButton(i, i, i === currentPage));
     } else {
-        const pages = []; pages.push(1);
-        const rangePadding = Math.floor((maxPagesToShow - 3) / 2);
+        // Complex pagination with ellipsis
+        const pages = []; pages.push(1); // Always show page 1
+        const rangePadding = Math.floor((maxPagesToShow - 3) / 2); // How many pages around current page
         let rangeStart = Math.max(2, currentPage - rangePadding);
         let rangeEnd = Math.min(totalPages - 1, currentPage + rangePadding);
         const rangeLength = rangeEnd - rangeStart + 1;
-        const needed = (maxPagesToShow - 3);
+        const needed = (maxPagesToShow - 3); // Number of slots for middle pages + potential ellipsis
+
+        // Adjust range if it's too small near the beginning or end
         if (rangeLength < needed) {
             if (currentPage < totalPages / 2) rangeEnd = Math.min(totalPages - 1, rangeEnd + (needed - rangeLength));
             else rangeStart = Math.max(2, rangeStart - (needed - rangeLength));
         }
+
+        // Add start ellipsis if needed
         if (rangeStart > 2) pages.push('...');
+        // Add middle page numbers
         for (let i = rangeStart; i <= rangeEnd; i++) pages.push(i);
+        // Add end ellipsis if needed
         if (rangeEnd < totalPages - 1) pages.push('...');
-        pages.push(totalPages);
+        pages.push(totalPages); // Always show last page
+
+        // Create buttons/ellipsis from the calculated pages array
         pages.forEach(page => {
-            if (page === '...') container.appendChild(createButton('...', null, false, true, true));
-            else container.appendChild(createButton(page, page, page === currentPage));
+            if (page === '...') container.appendChild(createButton('...', null, false, true, true)); // Ellipsis is disabled span
+            else container.appendChild(createButton(page, page, page === currentPage)); // Page number button
         });
     }
 
+    // Next Button
     container.appendChild(createButton('Next »', currentPage + 1, false, currentPage >= totalPages));
 }
 
@@ -2253,35 +2382,37 @@ function setupSocketConnection() {
     socket.on('connect', () => {
         console.log('Socket connected:', socket.id);
         showNotification('Connected to server.', 'success', 2000);
-        socket.emit('requestRoundData');
+        socket.emit('requestRoundData'); // Request initial data on connect
     });
 
     socket.on('disconnect', (reason) => {
         console.log('Socket disconnected:', reason);
         showNotification('Disconnected from server. Attempting to reconnect...', 'error', 5000);
-        updateDepositButtonState();
+        updateDepositButtonState(); // Update button state on disconnect
     });
 
     socket.on('connect_error', (error) => {
         console.error('Socket connection error:', error);
         showNotification('Connection Error. Please refresh.', 'error', 10000);
-        updateDepositButtonState();
+        updateDepositButtonState(); // Update button state on error
     });
 
     // --- Round Lifecycle Events ---
     socket.on('roundCreated', (data) => {
         console.log('New round created:', data);
-        currentRound = data;
-        resetToJackpotView();
-        updateRoundUI();
-        updateDepositButtonState(); // Called within reset, but ensure final state is correct
+        currentRound = data; // Store new round data
+        resetToJackpotView(); // Visually reset the UI for the new round
+        updateRoundUI(); // Update display with initial round data (likely 0 value)
+        updateDepositButtonState(); // Update button state based on new round
     });
 
     socket.on('participantUpdated', (data) => {
         console.log('Participant updated:', data);
+        // Ensure update is for the current round
         if (currentRound && currentRound.roundId === data.roundId) {
-            handleNewDeposit(data);
+            handleNewDeposit(data); // Process and display the new deposit
         } else if (!currentRound && data.roundId) {
+            // If client missed round creation, request full data
             console.warn("Participant update for unknown round. Requesting full data.");
             socket.emit('requestRoundData');
         }
@@ -2290,21 +2421,23 @@ function setupSocketConnection() {
     socket.on('roundRolling', (data) => {
         console.log('Round rolling event received:', data);
         if (currentRound && currentRound.roundId === data.roundId) {
-            timerActive = false;
+            timerActive = false; // Stop client timer visually
             if (roundTimer) { clearInterval(roundTimer); roundTimer = null; }
-            if (DOMElements.jackpot.timerValue) DOMElements.jackpot.timerValue.textContent = "Rolling";
-            if (DOMElements.jackpot.timerForeground) updateTimerCircle(0, CONFIG.ROUND_DURATION);
-            currentRound.status = 'rolling';
-            updateDepositButtonState();
+            if (DOMElements.jackpot.timerValue) DOMElements.jackpot.timerValue.textContent = "Rolling"; // Update timer text
+            if (DOMElements.jackpot.timerForeground) updateTimerCircle(0, CONFIG.ROUND_DURATION); // Reset timer circle
+            currentRound.status = 'rolling'; // Update local status
+            updateDepositButtonState(); // Disable deposits
         }
     });
 
     socket.on('roundWinner', (data) => {
         console.log('Round winner received:', data);
+        // Ensure winner info is for the current round
         if (currentRound && currentRound.roundId === data.roundId) {
+            // Store winner data locally if not already present
             if (!currentRound.winner) currentRound.winner = data.winner;
-            currentRound.status = 'rolling';
-            handleWinnerAnnouncement(data);
+            currentRound.status = 'rolling'; // Ensure status reflects rolling phase
+            handleWinnerAnnouncement(data); // Trigger the visual roulette animation
         } else {
             console.warn("Received winner for mismatched round ID.");
         }
@@ -2313,19 +2446,21 @@ function setupSocketConnection() {
     socket.on('roundCompleted', (data) => {
         console.log('Round completed event received:', data);
         if (currentRound && currentRound.roundId === data.roundId) {
-            currentRound.status = 'completed';
+            currentRound.status = 'completed'; // Mark round as completed locally
+            // Store revealed seeds if provided
             if(data.serverSeed) currentRound.serverSeed = data.serverSeed;
             if(data.clientSeed) currentRound.clientSeed = data.clientSeed;
         }
+        // Update button state (deposits should remain closed)
         updateDepositButtonState();
     });
 
     socket.on('roundError', (data) => {
         console.error('Round Error event received:', data);
         if (currentRound && currentRound.roundId === data.roundId) {
-            currentRound.status = 'error';
+            currentRound.status = 'error'; // Mark round as errored
             showNotification(`Round Error: ${data.error || 'Unknown error.'}`, 'error');
-            updateDepositButtonState();
+            updateDepositButtonState(); // Update button state
         }
     });
 
@@ -2338,63 +2473,72 @@ function setupSocketConnection() {
             return;
         }
 
-        currentRound = data;
-        updateRoundUI();
-        updateDepositButtonState();
+        currentRound = data; // Update local round state with full data
+        updateRoundUI(); // Update main UI elements
+        updateDepositButtonState(); // Update deposit button state
 
+        // --- Sync Timer and UI State based on received data ---
         if (currentRound.status === 'rolling' || currentRound.status === 'completed') {
+            // If round is already rolling or completed when client connects/syncs
             if (!isSpinning && currentRound.winner) {
+                // If winner is known and animation isn't running, start it
                 console.log("Connected mid-round with winner known, triggering animation.");
                 handleWinnerAnnouncement(currentRound);
             } else if (!isSpinning) {
+                // If rolling/completed but no winner (or already spinning), just ensure view is reset
                  console.log("Connected after round ended or rolling. Resetting view.");
                  resetToJackpotView(); // Ensure view is reset if connected post-spin
             }
         } else if (currentRound.status === 'active') {
+            // If round is active, sync the timer
             if (currentRound.participants?.length >= 1 && currentRound.timeLeft > 0 && !timerActive) {
+                // Start/resume client timer if participants exist and time remains
                 console.log(`Received active round data. Starting/syncing timer from ${currentRound.timeLeft}s.`);
                 timerActive = true;
                 startClientTimer(currentRound.timeLeft || CONFIG.ROUND_DURATION);
             } else if (currentRound.timeLeft <= 0 && timerActive) {
+                // If server says time is up, stop client timer
                 console.log("Server data indicates time up, stopping client timer.");
                 timerActive = false;
                 if (roundTimer) clearInterval(roundTimer); roundTimer = null;
                 updateTimerUI(0);
                 updateDepositButtonState();
             } else if (currentRound.participants?.length === 0 && timerActive) {
+                // If server says no participants, stop client timer (shouldn't be running anyway)
                  console.log("Server data indicates no participants, stopping client timer.");
                  timerActive = false;
                  if (roundTimer) clearInterval(roundTimer); roundTimer = null;
-                 updateTimerUI(CONFIG.ROUND_DURATION);
+                 updateTimerUI(CONFIG.ROUND_DURATION); // Reset timer display visually
                  updateDepositButtonState();
             }
         } else if (currentRound.status === 'pending') {
+            // If round is pending, reset visuals and show waiting state
             console.log("Received pending round state.");
             initiateNewRoundVisualReset();
             if(DOMElements.jackpot.timerValue) DOMElements.jackpot.timerValue.textContent = "Waiting";
             updateDepositButtonState();
         }
+        // --- End Sync Logic ---
 
-        // Re-render deposits based on full round data if needed (e.g., on fresh connect)
-        // This assumes `data.participants` includes `depositedItems` per participant or `data.items` is populated
+        // Re-render deposits if client connects mid-round and list is empty
         const container = DOMElements.jackpot.participantsContainer;
         if(container && container.children.length === 0 && data.participants?.length > 0) {
             console.log("Rendering existing deposits from full round data.");
             container.innerHTML = ''; // Clear empty message if present
             if (DOMElements.jackpot.emptyPotMessage) DOMElements.jackpot.emptyPotMessage.style.display = 'none';
-            // Sort participants for consistent display (e.g., by entry time or value)
-            const sortedParticipants = [...data.participants].sort((a,b) => /* Add sorting logic if needed, e.g., first deposit time */ 0);
+            // Sort participants for consistent display (e.g., by entry time - needs timestamp from backend)
+            const sortedParticipants = [...data.participants].sort((a,b) => 0); // Replace 0 with sorting logic if needed
             sortedParticipants.forEach(p => {
-                // Find items associated with this participant from the main items list if structured that way
+                // Find items associated with this participant from the main items list
                 const participantItems = data.items?.filter(item => item.owner === p.user?.id) || [];
-                displayLatestDeposit({ // Simulate the deposit event structure
+                displayLatestDeposit({ // Simulate the deposit event structure for rendering
                     userId: p.user.id,
                     username: p.user.username,
                     avatar: p.user.avatar,
                     itemsValue: p.itemsValue, // This should be their *total* value for this render pass
                     depositedItems: participantItems // Pass the found items
                 });
-                 // Remove animation class immediately
+                 // Remove animation class immediately as these are existing deposits
                  const element = container.querySelector(`.player-deposit-container[data-user-id="${p.user.id}"]`);
                  if (element) element.classList.remove('player-deposit-new');
             });
@@ -2408,6 +2552,7 @@ function setupSocketConnection() {
     // --- Other Events ---
     socket.on('tradeOfferSent', (data) => {
         console.log('Trade offer sent event received:', data);
+        // Notify the specific user if they are the current user
         if (currentUser && data.userId === currentUser._id) {
             showNotification('Trade Offer Sent: Check Steam for your winnings!', 'success');
         }
@@ -2460,16 +2605,17 @@ function setupEventListeners() {
 
     // User Profile Dropdown Toggle
     DOMElements.user.userProfile?.addEventListener('click', (e) => {
-        e.stopPropagation();
+        e.stopPropagation(); // Prevent window click from closing immediately
         const menu = DOMElements.user.userDropdownMenu;
         const profileButton = DOMElements.user.userProfile;
         if (menu) {
             const isVisible = menu.style.display === 'block';
             menu.style.display = isVisible ? 'none' : 'block';
             profileButton?.setAttribute('aria-expanded', !isVisible);
-            profileButton?.classList.toggle('open', !isVisible);
+            profileButton?.classList.toggle('open', !isVisible); // For arrow styling
         }
     });
+    // Allow keyboard activation of dropdown
     DOMElements.user.userProfile?.addEventListener('keydown', (e) => {
          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.target.click(); }
     });
@@ -2481,17 +2627,21 @@ function setupEventListeners() {
     // Deposit Modal Trigger Button
     DOMElements.deposit.showDepositModalButton?.addEventListener('click', () => {
         const button = DOMElements.deposit.showDepositModalButton;
+        // Check if button is disabled (and show reason)
         if (button.disabled) {
             showNotification(button.title || 'Deposits are currently closed.', 'info'); return;
         }
+        // Check login status
         if (!currentUser) {
             showNotification('Login Required: Please log in first.', 'error'); return;
         }
+        // Check if Trade URL is set, prompt if not
         if (!currentUser.tradeUrl) {
-            // Pre-fill trade URL modal if opened this way
+            // Pre-fill trade URL modal if opened this way (optional)
              if(DOMElements.tradeUrl.tradeUrlInput) DOMElements.tradeUrl.tradeUrlInput.value = currentUser.tradeUrl || '';
             showModal(DOMElements.tradeUrl.tradeUrlModal); return;
         }
+        // All checks passed, show deposit modal and load inventory
         showModal(DOMElements.deposit.depositModal);
         loadUserInventory();
     });
@@ -2526,59 +2676,64 @@ function setupEventListeners() {
         });
 
         // Ensure button is initially disabled if checkbox isn't checked by default
-        // (This applies when the modal is setup, not just on change)
         ageAgreeButton.disabled = !ageCheckbox.checked;
     }
     // --- END OF MODIFIED AGE VERIFICATION LOGIC ---
 
 
-    // Test Buttons
+    // Test Buttons (Optional: remove for production)
     document.getElementById('testSpinButton')?.addEventListener('click', testRouletteAnimation);
     document.getElementById('testDepositButton')?.addEventListener('click', testDeposit);
 
     // Provably Fair Verify Button
     DOMElements.provablyFair.verifyButton?.addEventListener('click', verifyRound);
 
-    // Combined window click listener
+    // --- Global Listeners ---
+    // Close dropdown when clicking outside
     window.addEventListener('click', (e) => {
-        // Close dropdown
         const menu = DOMElements.user.userDropdownMenu;
         const profile = DOMElements.user.userProfile;
+        // Check if menu exists, is visible, and click was outside profile & menu
         if (menu && profile && menu.style.display === 'block' && !profile.contains(e.target) && !menu.contains(e.target)) {
             menu.style.display = 'none';
             profile.setAttribute('aria-expanded', 'false');
             profile.classList.remove('open');
         }
 
-        // Close modals
+        // Close modals when clicking on the backdrop (the modal element itself)
         if (e.target === DOMElements.deposit.depositModal) hideModal(DOMElements.deposit.depositModal);
         if (e.target === DOMElements.tradeUrl.tradeUrlModal) hideModal(DOMElements.tradeUrl.tradeUrlModal);
-        // Close age modal if clicked outside (but NOT if it was triggered by login button - only manually opened one)
-        // if (e.target === DOMElements.ageVerification.modal) hideModal(DOMElements.ageVerification.modal);
-        // ... other modal closing logic if needed ...
+        // Note: Don't close age modal on backdrop click, force explicit agreement
     });
 
-    // Combined document keydown listener
-    document.addEventListener('keydown', function(event) { // Changed 'e' to 'event' for clarity
+    // Keyboard listeners (e.g., Escape key for modals/dropdown)
+    document.addEventListener('keydown', function(event) {
         // Close dropdown with Escape key
         const menu = DOMElements.user.userDropdownMenu;
         if (event.key === 'Escape' && menu && menu.style.display === 'block') {
             menu.style.display = 'none';
             DOMElements.user.userProfile?.setAttribute('aria-expanded', 'false');
             DOMElements.user.userProfile?.classList.remove('open');
-            DOMElements.user.userProfile?.focus();
+            DOMElements.user.userProfile?.focus(); // Return focus
         }
 
-        // Existing Spacebar test (check conditions carefully)
+        // Close open modals with Escape key (optional)
+        // if (event.key === 'Escape') {
+        //    if (DOMElements.deposit.depositModal.style.display === 'flex') hideModal(DOMElements.deposit.depositModal);
+        //    if (DOMElements.tradeUrl.tradeUrlModal.style.display === 'flex') hideModal(DOMElements.tradeUrl.tradeUrlModal);
+        //    // Add other modals if needed
+        // }
+
+        // Spacebar test trigger (Ensure conditions prevent accidental triggers)
         if (event.code === 'Space' &&
-            DOMElements.pages.homePage?.style.display === 'block' &&
-            !isSpinning &&
-            !document.querySelector('.modal[style*="display: flex"]') &&
-            !['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName))
+            DOMElements.pages.homePage?.style.display === 'block' && // Only on home page
+            !isSpinning && // Only if not already spinning
+            !document.querySelector('.modal[style*="display: flex"]') && // Only if no modal is open
+            !['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(document.activeElement?.tagName)) // Only if not focused on interactive element
         {
             console.log("Spacebar pressed for test spin.");
             testRouletteAnimation();
-            event.preventDefault();
+            event.preventDefault(); // Prevent default space action (e.g., scrolling)
         }
     });
 }
@@ -2587,19 +2742,14 @@ function setupEventListeners() {
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM fully loaded and parsed.");
 
-    // --- REMOVED INITIAL AGE CHECK ---
-    /*
-    if (DOMElements.ageVerification.modal && !localStorage.getItem('ageVerified')) {
-        showModal(DOMElements.ageVerification.modal);
-    }
-    */
-    // --- END REMOVED BLOCK ---
+    // Age verification check is now integrated into the login button flow,
+    // so no initial modal display is needed here unless desired for other reasons.
 
-    checkLoginStatus();
-    setupEventListeners(); // setupEventListeners now contains the updated login/age verification logic
-    setupSocketConnection();
-    showPage(DOMElements.pages.homePage);
-    initiateNewRoundVisualReset();
+    checkLoginStatus(); // Check if user is already logged in via session
+    setupEventListeners(); // Setup all interactive element listeners
+    setupSocketConnection(); // Establish WebSocket connection
+    showPage(DOMElements.pages.homePage); // Show the main jackpot page initially
+    initiateNewRoundVisualReset(); // Set initial visual state (0 pot, etc.)
 });
 
 console.log("main.js loaded.");
