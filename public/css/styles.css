@@ -516,24 +516,23 @@
      will-change: transform; transition: none;
  }
 
- /* --- MODIFICATION START: Roulette Item Styling --- */
  .roulette-item {
-     flex: 0 0 auto; /* Keep shrink/grow properties */
-     width: 90px; /* Keep width consistent */
-     height: 80px; /* Keep height consistent */
-     margin: 5px; /* Keep margin for spacing */
+     flex: 0 0 auto;
+     width: 90px;
+     height: 80px;
+     margin: 5px;
      background: rgba(30, 35, 40, 0.8);
      border-radius: 6px;
      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-     overflow: hidden; /* Keep hidden overflow */
+     overflow: hidden;
      transition: transform 0.3s ease, box-shadow 0.3s ease;
      border: 2px solid transparent;
      position: relative;
      backface-visibility: hidden;
-     display: flex; /* Use flex to help center content */
-     align-items: center; /* Vertically center content (the image) */
-     justify-content: center; /* Horizontally center content */
-     padding: 0; /* Remove padding if any existed */
+     display: flex;
+     align-items: center;
+     justify-content: center;
+     padding: 0;
  }
 
  .roulette-item:hover {
@@ -543,15 +542,14 @@
  }
 
  .roulette-avatar {
-     display: block; /* Ensure it's a block element */
-     width: 100%; /* Fill parent width */
-     height: 100%; /* Fill parent height */
-     object-fit: cover; /* Cover the area, cropping if necessary */
+     display: block;
+     width: 100%;
+     height: 100%;
+     object-fit: cover;
      transition: transform 0.3s ease;
-     border: none; /* Remove previous border if needed */
-     border-radius: 0; /* Remove previous border-radius if needed */
+     border: none;
+     border-radius: 0;
  }
- /* --- MODIFICATION END --- */
 
  .roulette-item:hover .roulette-avatar { transform: scale(1.1); }
 
@@ -641,10 +639,16 @@
  }
 
  /* Vertical Deposit List */
+ /* --- MODIFICATION START: Remove max-height and overflow --- */
  .items-container { /* Main container for deposit blocks */
-     display: flex; flex-direction: column; gap: 15px; max-height: 800px;
-     overflow-y: auto; padding: 10px;
+     display: flex;
+     flex-direction: column;
+     gap: 15px;
+     /* max-height: 800px; */ /* REMOVED */
+     /* overflow-y: auto; */   /* REMOVED */
+     padding: 10px;
  }
+ /* --- MODIFICATION END --- */
 
  /* Individual Player Deposit Block */
  .player-deposit-container {
@@ -956,12 +960,10 @@
      .value-label, .timer-label, .stat-label { font-size: 0.8rem; }
      .jackpot-tab { font-size: 1.4rem !important; text-shadow: 0 0 8px var(--jackpot-tab-color); }
 
-     /* --- Responsive Roulette Adjustments --- */
      .roulette-container { margin-top: 20px; height: 80px; }
-     .roulette-item { width: 70px; height: 70px; margin: 5px; } /* Keep height same as width for square */
-     .roulette-avatar { width: 100%; height: 100%; } /* Ensure avatar fills item */
-     .roulette-track { padding-left: calc(50% - 35px); padding-right: calc(50% - 35px); } /* Adjust padding for new width */
-     /* --- End Responsive Roulette Adjustments --- */
+     .roulette-item { width: 70px; height: 70px; margin: 5px; }
+     .roulette-avatar { width: 100%; height: 100%; }
+     .roulette-track { padding-left: calc(50% - 35px); padding-right: calc(50% - 35px); }
 
      .winner-info { padding: 8px; }
      .winner-avatar { width: 30px; height: 30px; margin-right: 8px;}
@@ -1009,12 +1011,10 @@
      .timer-background, .timer-foreground { stroke-width: 5px; }
      .value-label, .timer-label, .stat-label { font-size: 0.7rem; }
 
-     /* --- Responsive Roulette Adjustments --- */
      .roulette-container { height: 70px; }
-     .roulette-item { width: 60px; height: 60px; margin: 5px;} /* Keep square */
-     .roulette-avatar { width: 100%; height: 100%; } /* Ensure avatar fills item */
-     .roulette-track { padding-left: calc(50% - 30px); padding-right: calc(50% - 30px); } /* Adjust padding */
-     /* --- End Responsive Roulette Adjustments --- */
+     .roulette-item { width: 60px; height: 60px; margin: 5px;}
+     .roulette-avatar { width: 100%; height: 100%; }
+     .roulette-track { padding-left: calc(50% - 30px); padding-right: calc(50% - 30px); }
 
      .inventory-items { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
      .inventory-item img { height: 60px; }
