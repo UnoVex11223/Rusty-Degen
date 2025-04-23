@@ -102,8 +102,8 @@ const DOMElements = {
     },
     // Audio Elements (Moved Here)
     audio: {
-          spinSound: document.getElementById('spinSound'),
-          depositSound: document.getElementById('depositSound')
+         spinSound: document.getElementById('spinSound'),
+         depositSound: document.getElementById('depositSound')
     },
     // Provably Fair Elements
     provablyFair: {
@@ -399,9 +399,8 @@ async function checkLoginStatus() {
             }
         } else {
             currentUser = await response.json();
-            // *** Debugging Step for Avatar Issue: Check received data ***
-            console.log('User data received from /api/user:', currentUser);
             console.log('User logged in:', currentUser?.username);
+            // console.log('Initial currentUser data:', currentUser); // DEBUG: Check avatar URL here
         }
     } catch (error) {
         console.error('Error checking login status:', error);
@@ -422,9 +421,9 @@ function updateUserUI() {
     if (!userProfile || !loginButton || !userAvatar || !userName) return;
 
     if (currentUser) {
-        // *** Debugging Step for Avatar Issue: Check the URL being set ***
-        console.log('Setting avatar src in updateUserUI:', currentUser.avatar || '/img/default-avatar.png');
-        userAvatar.src = currentUser.avatar || '/img/default-avatar.png';
+        // DEBUG: Log the avatar URL being set
+        // console.log(`Updating user UI - Avatar URL: ${currentUser.avatar}`);
+        userAvatar.src = currentUser.avatar || '/img/default-avatar.png'; // JS Fallback
         userName.textContent = currentUser.username || 'User';
         loginButton.style.display = 'none';
         userProfile.style.display = 'flex'; // Show the profile block
@@ -518,13 +517,14 @@ function displayInventoryItems() {
         itemElement.dataset.image = item.image;
         itemElement.dataset.price = item.price.toFixed(2);
 
+        // *** MODIFICATION START: Removed onerror ***
         itemElement.innerHTML = `
-            <img src="${item.image}" alt="${item.name}" loading="lazy"
-                 onerror="this.onerror=null; this.src='/img/default-item.png';">
+            <img src="${item.image}" alt="${item.name}" loading="lazy">
             <div class="item-details">
                 <div class="item-name" title="${item.name}">${item.name}</div>
                 <div class="item-value">$${item.price.toFixed(2)}</div>
             </div>`;
+        // *** MODIFICATION END ***
 
         // Check if item is already selected (e.g., if modal was reopened)
         if (selectedItemsList.some(selected => selected.assetId === item.assetId)) {
@@ -589,13 +589,15 @@ function addSelectedItemElement(item) {
     // Use a more specific class if needed, or reuse inventory-item style with adjustments
     selectedElement.className = 'selected-item-display'; // Use the class defined in CSS
     selectedElement.dataset.assetId = item.assetId;
+
+    // *** MODIFICATION START: Removed onerror ***
     selectedElement.innerHTML = `
-        <img src="${item.image}" alt="${item.name}" loading="lazy"
-             onerror="this.onerror=null; this.src='/img/default-item.png';">
+        <img src="${item.image}" alt="${item.name}" loading="lazy">
         <div class="item-name" title="${item.name}">${item.name}</div>
         <div class="item-value">$${item.price.toFixed(2)}</div>
         <button class="remove-item-btn" title="Remove ${item.name}" data-asset-id="${item.assetId}" aria-label="Remove ${item.name}">&times;</button>
         `; // Added a remove button
+    // *** MODIFICATION END ***
 
     // Add listener to remove button
     selectedElement.querySelector('.remove-item-btn')?.addEventListener('click', (e) => {
@@ -943,6 +945,8 @@ function displayLatestDeposit(data) {
         console.error("Invalid data passed to displayLatestDeposit:", data);
         return;
     }
+     // DEBUG: Log avatar URL received for deposit display
+     // console.log(`Displaying deposit for ${data.username} - Avatar URL received: ${data.avatar}`);
 
     // Play Deposit Sound
     const depositSfx = DOMElements.audio.depositSound;
@@ -953,7 +957,7 @@ function displayLatestDeposit(data) {
     }
 
     const username = data.username || 'Unknown User';
-    const avatar = data.avatar || '/img/default-avatar.png';
+    const avatar = data.avatar || '/img/default-avatar.png'; // JS Fallback
     const value = data.itemsValue; // This deposit's value
     const items = data.depositedItems || [];
     const userColor = getUserColor(data.userId);
@@ -971,15 +975,17 @@ function displayLatestDeposit(data) {
 
     const depositHeader = document.createElement('div');
     depositHeader.className = 'player-deposit-header';
+
+    // *** MODIFICATION START: Removed onerror from participant avatar ***
     depositHeader.innerHTML = `
-        <img src="${avatar}" alt="${username}" class="player-avatar" loading="lazy"
-             onerror="this.onerror=null; this.src='/img/default-avatar.png';" style="border-color: ${userColor};">
+        <img src="${avatar}" alt="${username}" class="player-avatar" loading="lazy" style="border-color: ${userColor};">
         <div class="player-info">
             <div class="player-name" title="${username}">${username}</div>
             <div class="player-deposit-value" style="color: ${userColor}" title="Deposited: $${cumulativeValue.toFixed(2)} | Chance: ${percentage}%">
                 $${cumulativeValue.toFixed(2)} | ${percentage}%
             </div>
         </div>`;
+    // *** MODIFICATION END ***
 
     const itemsGrid = document.createElement('div');
     itemsGrid.className = 'player-items-grid';
@@ -996,7 +1002,16 @@ function displayLatestDeposit(data) {
             itemElement.className = 'player-deposit-item';
             itemElement.title = `${item.name} ($${item.price.toFixed(2)})`;
             itemElement.style.borderColor = userColor;
-            itemElement.innerHTML = `<img src="${item.image}" alt="${item.name}" class="player-deposit-item-image" loading="lazy" onerror="this.onerror=null; this.src='/img/default-item.png';"><div class="player-deposit-item-info"><div class="player-deposit-item-name" title="${item.name}">${item.name}</div><div class="player-deposit-item-value" style="color: ${userColor}">$${item.price.toFixed(2)}</div></div>`;
+
+            // *** MODIFICATION START: Removed onerror from participant item image ***
+            itemElement.innerHTML = `
+                <img src="${item.image}" alt="${item.name}" class="player-deposit-item-image" loading="lazy">
+                <div class="player-deposit-item-info">
+                    <div class="player-deposit-item-name" title="${item.name}">${item.name}</div>
+                    <div class="player-deposit-item-value" style="color: ${userColor}">$${item.price.toFixed(2)}</div>
+                </div>`;
+            // *** MODIFICATION END ***
+
             itemsGrid.appendChild(itemElement);
         });
         if (items.length > CONFIG.MAX_ITEMS_PER_DEPOSIT) {
@@ -1025,25 +1040,7 @@ function displayLatestDeposit(data) {
         depositContainer.classList.remove('player-deposit-new');
     }, 500);
 
-    /* --- MODIFICATION START: Removed block limiting max display deposits ---
-    // Limit displayed deposit blocks
-    const currentDepositBlocks = container.querySelectorAll('.player-deposit-container');
-    if (currentDepositBlocks.length > CONFIG.MAX_DISPLAY_DEPOSITS) {
-        const blocksToRemove = currentDepositBlocks.length - CONFIG.MAX_DISPLAY_DEPOSITS;
-        for (let i = 0; i < blocksToRemove; i++) {
-            const oldestBlock = container.querySelector('.player-deposit-container:last-child');
-            if (oldestBlock && oldestBlock !== depositContainer) {
-                oldestBlock.style.transition = 'opacity 0.3s ease-out';
-                oldestBlock.style.opacity = '0';
-                setTimeout(() => {
-                    if (oldestBlock.parentNode === container) {
-                        oldestBlock.remove();
-                    }
-                }, 300);
-            }
-        }
-    }
-    --- MODIFICATION END --- */
+    /* --- Removed block limiting max display deposits (code was already commented out) --- */
 }
 
 
@@ -1098,7 +1095,7 @@ function handleNewDeposit(data) {
             user: {
                 id: data.userId,
                 username: data.username || 'Unknown User',
-                avatar: data.avatar || '/img/default-avatar.png'
+                avatar: data.avatar || '/img/default-avatar.png' // JS Fallback
             },
             itemsValue: data.itemsValue,
             tickets: data.tickets
@@ -1194,7 +1191,7 @@ function testDeposit() {
         roundId: currentRound.roundId,
         userId: mockUserId,
         username: mockUsername,
-        avatar: mockAvatar,
+        avatar: mockAvatar, // Use the potentially problematic avatar
         itemsValue: randomValue, // Value of *this* deposit
         tickets: cumulativeTickets, // Participant's *new total* tickets
         totalValue: newTotalValue, // *New* total pot value
@@ -1228,7 +1225,7 @@ function testDeposit() {
         mockDepositData.depositedItems.push({
             assetId: `test_asset_${Math.floor(Math.random() * 100000)}`,
             name: rustItemNames[Math.floor(Math.random() * rustItemNames.length)],
-            image: `/img/default-item.png`,
+            image: `/img/default-item.png`, // Use default for item test
             price: itemValue
         });
     }
@@ -1285,7 +1282,7 @@ function startClientTimer(initialTime = CONFIG.ROUND_DURATION) {
 
 /**
  * Creates the visual items (player avatars) for the roulette animation track.
- * --- MODIFIED --- Changed alt text to be generic.
+ * --- MODIFIED --- Removed name and percentage from item HTML.
  */
 function createRouletteItems() {
     const track = DOMElements.roulette.rouletteTrack;
@@ -1358,21 +1355,20 @@ function createRouletteItems() {
 
         const userId = participant.user.id;
         const userColor = getUserColor(userId);
-        const avatar = participant.user.avatar || '/img/default-avatar.png';
-        // const username = participant.user.username || 'Unknown User'; // Username not used in alt text now
+        const avatar = participant.user.avatar || '/img/default-avatar.png'; // JS Fallback
+        const username = participant.user.username || 'Unknown User';
 
         const itemElement = document.createElement('div');
         itemElement.className = 'roulette-item';
         itemElement.dataset.userId = userId;
         itemElement.style.borderColor = userColor;
 
-        // === CHANGE HERE ===
-        // Only include avatar image, changed alt text
+        // *** MODIFICATION START: Removed onerror from roulette avatar ***
+        // Only include avatar image
         itemElement.innerHTML = `
-            <img class="roulette-avatar" src="${avatar}" alt="Participant Avatar" loading="lazy"
-                 onerror="this.onerror=null; this.src='/img/default-avatar.png';" style="border-color:${userColor}">
+            <img class="roulette-avatar" src="${avatar}" alt="${username}" loading="lazy" style="border-color:${userColor}">
             `;
-        // === END CHANGE ===
+        // *** MODIFICATION END ***
 
         fragment.appendChild(itemElement);
     }
@@ -1415,6 +1411,8 @@ function handleWinnerAnnouncement(data) {
     }
 
     console.log(`Winner announced: ${winnerDetails.username}. Preparing roulette...`);
+     // DEBUG: Log winner avatar URL before spin
+     // console.log(`Winner Announcement - Avatar URL: ${winnerDetails.avatar}`);
 
     if (timerActive) {
         timerActive = false;
@@ -1692,7 +1690,9 @@ function handleSpinEnd(winningElement, winner) {
     const { winnerInfoBox, winnerAvatar, winnerName, winnerDeposit, winnerChance } = DOMElements.roulette;
     if (winnerInfoBox && winnerAvatar && winnerName && winnerDeposit && winnerChance) {
         const userColor = getUserColor(winner.user.id);
-        winnerAvatar.src = winner.user.avatar || '/img/default-avatar.png';
+        // DEBUG: Log winner avatar URL just before setting it
+        // console.log(`Handling Spin End - Winner Avatar URL: ${winner.user.avatar}`);
+        winnerAvatar.src = winner.user.avatar || '/img/default-avatar.png'; // JS Fallback
         winnerAvatar.alt = winner.user.username || 'Winner';
         winnerAvatar.style.borderColor = userColor;
         winnerAvatar.style.boxShadow = `0 0 15px ${userColor}`;
@@ -1884,7 +1884,7 @@ function testRouletteAnimation() {
         testData = {
             roundId: `test-${Date.now()}`, status: 'active', totalValue: 215.50,
             participants: [ { user: { id: 'rust_user_1', username: 'Scrap King', avatar: 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg' }, itemsValue: 150.25, tickets: 15025 }, { user: { id: 'rust_user_2', username: 'Foundation Wipe', avatar: 'https://avatars.steamstatic.com/bb8a0a497b4b1f46b96b6b0775e9368fc8c5c3b4_full.jpg' }, itemsValue: 45.75, tickets: 4575 }, { user: { id: 'rust_user_3', username: 'Heli Enjoyer', avatar: 'https://avatars.steamstatic.com/3c4c5a7c9968414c3a1ddd1e73cb8e6aeeec5f32_full.jpg' }, itemsValue: 19.50, tickets: 1950 } ],
-            items: [ { owner: 'rust_user_1', name: 'Assault Rifle', price: 50.00, image: '/img/default-item.png' } ]
+            items: [ { owner: 'rust_user_1', name: 'Assault Rifle', price: 50.00, image: '/img/default-item.png' } ] // Use default item image
         };
         currentRound = testData;
         initiateNewRoundVisualReset(); updateRoundUI();
@@ -2020,7 +2020,7 @@ window.populateVerificationFields = function(roundId, serverSeed, clientSeed) {
 window.showRoundDetails = async function(roundId) {
     console.log(`Showing details for round ${roundId}`);
     if (!roundId || roundId === 'N/A') { showNotification('Info: Invalid Round ID for details.', 'info'); return; }
-    showNotification(`Workspaceing details for round #${roundId}... (Implementation needed)`, 'info');
+    showNotification(`Loading details for round #${roundId}... (Implementation needed)`, 'info');
     // Future implementation needed
 };
 
@@ -2072,11 +2072,11 @@ function setupSocketConnection() {
         else if (currentRound.status === 'pending') { console.log("Received pending round state."); initiateNewRoundVisualReset(); if(DOMElements.jackpot.timerValue) DOMElements.jackpot.timerValue.textContent = "Waiting"; updateDepositButtonState(); }
         const container = DOMElements.jackpot.participantsContainer;
         if(container && data.participants?.length > 0) { // Render existing deposits only if container is empty initially
-            if (container.children.length === 1 && container.children[0] === DOMElements.jackpot.emptyPotMessage) { // Check if only empty message is present
-                console.log("Rendering existing deposits from full round data."); container.innerHTML = ''; if (DOMElements.jackpot.emptyPotMessage) DOMElements.jackpot.emptyPotMessage.style.display = 'none';
-                const sortedParticipants = [...data.participants].sort((a,b) => 0); // Add sorting if needed
-                sortedParticipants.forEach(p => { const participantItems = data.items?.filter(item => item.owner === p.user?.id) || []; displayLatestDeposit({ userId: p.user.id, username: p.user.username, avatar: p.user.avatar, itemsValue: p.itemsValue, depositedItems: participantItems }); const element = container.querySelector(`.player-deposit-container[data-user-id="${p.user.id}"]`); if (element) element.classList.remove('player-deposit-new'); });
-                updateAllParticipantPercentages(); // Update all percentages after rendering
+             if (container.children.length === 1 && container.children[0] === DOMElements.jackpot.emptyPotMessage) { // Check if only empty message is present
+                 console.log("Rendering existing deposits from full round data."); container.innerHTML = ''; if (DOMElements.jackpot.emptyPotMessage) DOMElements.jackpot.emptyPotMessage.style.display = 'none';
+                 const sortedParticipants = [...data.participants].sort((a,b) => 0); // Add sorting if needed
+                 sortedParticipants.forEach(p => { const participantItems = data.items?.filter(item => item.owner === p.user?.id) || []; displayLatestDeposit({ userId: p.user.id, username: p.user.username, avatar: p.user.avatar, itemsValue: p.itemsValue, depositedItems: participantItems }); const element = container.querySelector(`.player-deposit-container[data-user-id="${p.user.id}"]`); if (element) element.classList.remove('player-deposit-new'); });
+                 updateAllParticipantPercentages(); // Update all percentages after rendering
             }
         } else if (container && data.participants?.length === 0) { initiateNewRoundVisualReset(); } // Ensure reset if no participants
     });
