@@ -515,7 +515,7 @@ code { /* General code tag styling */
 /* UPDATED General Content Card Improvements */
 .content-card {
     max-width: 900px;
-    margin: 30px auto; /* Add margin for spacing */
+    margin: 30px auto;
     background: linear-gradient(135deg, var(--background-medium), var(--background-light));
     border-radius: 12px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
@@ -558,21 +558,21 @@ code { /* General code tag styling */
     border-bottom: 1px solid var(--border-color);
     border-radius: 12px 12px 0 0;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    min-height: 170px; /* <<< RESTORED/ENSURE Minimum height */
+    min-height: 170px; /* <<< Base min-height */
     position: relative;
     overflow: hidden;
     z-index: 5;
-    transition: height 0.5s ease, min-height 0.5s ease, background 0.3s ease; /* Added min-height */
+    transition: height 0.5s ease, min-height 0.5s ease, background 0.3s ease; /* Smooth transition */
     flex-wrap: wrap;
 }
 
 .jackpot-header.roulette-mode {
     background: linear-gradient(135deg, var(--background-dark), var(--background-medium));
-    height: 130px; /* <<< ADDED Explicit height for roulette */
-    min-height: 130px; /* <<< ADDED Ensure min-height matches */
-    align-items: center; /* <<< ADDED Ensure vertical centering */
-    padding-top: 0; /* Optional */
-    padding-bottom: 0; /* Optional */
+    height: 140px; /* <<< INCREASED Explicit height for roulette mode */
+    min-height: 140px; /* <<< Ensure min-height matches */
+    align-items: center; /* Ensure vertical centering */
+    padding-top: 0; /* Adjust padding if needed */
+    padding-bottom: 0;
 }
 
 .jackpot-timer, .jackpot-value, .jackpot-stats {
@@ -584,6 +584,7 @@ code { /* General code tag styling */
     text-align: center;
     flex: 1 1 170px;
     padding: 15px 5px;
+    /* Fixed height removed */
 }
 
 .jackpot-value h2 {
@@ -1161,14 +1162,14 @@ code { /* General code tag styling */
 #fair-page .content-card {
     padding-bottom: 40px;
 }
-#fair-page #provably-fair-verification { /* Target section by ID */
+#fair-page #provably-fair-verification {
     background-color: rgba(22, 27, 34, 0.4);
     border-radius: 8px;
     padding: 25px;
     margin-top: 30px;
     border: 1px solid var(--border-color);
 }
-#fair-page .verify-form { /* Target form by class */
+#fair-page .verify-form {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 20px;
@@ -1188,24 +1189,24 @@ code { /* General code tag styling */
     background-color: var(--background-light);
     border: 1px solid var(--border-color);
 }
-#fair-page .history-table { /* Target table by class */
+#fair-page .history-table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 25px;
     background-color: rgba(22, 27, 34, 0.4);
 }
 #fair-page .history-table th,
-#fair-page .history-table td { /* Target cells by class */
+#fair-page .history-table td {
     padding: 12px 15px;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
 }
-#fair-page .history-table th { /* Target header by class */
+#fair-page .history-table th {
     background-color: var(--background-light);
     color: var(--primary-color);
     font-weight: 600;
 }
-#fair-page .history-table tr:hover { /* Target row by class */
+#fair-page .history-table tr:hover {
     background-color: var(--background-light);
 }
 /* End Provably Fair Page */
@@ -1394,7 +1395,7 @@ code { /* General code tag styling */
     .player-items-grid { justify-content: center; }
     .player-deposit-container { padding: 10px; }
 
-    /* --- NEW Content Tab Responsive --- */
+    /* --- Content Tab Responsive --- */
     .content-card {
         padding: 20px;
         border-radius: 8px;
