@@ -53,7 +53,7 @@ h1, h2, h3, h4, h5, h6 {
 
 h1 { font-size: 2.5rem; }
 h2 { font-size: 2rem; }
-h3 { font-size: 1.5rem; }
+h3 { font-size: 1.5rem; } /* Default h3 size */
 
 a {
     text-decoration: none;
@@ -525,7 +525,7 @@ code { /* General code tag styling */
 .content-card { /* Used for About, TOS, FAQ, Fair pages */
     background-color: var(--background-medium);
     border-radius: 12px;
-    padding: 25px;
+    padding: 30px; /* Increased padding slightly */
     margin-bottom: 30px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     border: 1px solid var(--border-color);
@@ -991,21 +991,86 @@ code { /* General code tag styling */
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 /*=========================
- STATIC PAGES (FAQ, FAIR, ABOUT, TOS)
+ STATIC PAGES (FAQ, FAIR, ABOUT, TOS) - UPDATED FOR CONSISTENCY
  =========================*/
 
-.faq-item, .fair-section { margin-bottom: 30px; border-bottom: 1px solid var(--border-color); padding-bottom: 20px; }
-.faq-item:last-child, .fair-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-.faq-question, .fair-title { font-size: 1.2rem; font-weight: 700; color: var(--primary-color); padding-bottom: 10px; margin-bottom: 10px; display: block; cursor: default; }
-.faq-answer, .fair-content { padding: 0 10px; color: var(--text-secondary); line-height: 1.7; }
-.faq-answer p, .fair-content p { margin-bottom: 12px; }
-.faq-answer ul, .faq-answer ol, .fair-content ul, .fair-content ol { margin: 15px 0 15px 20px; padding-left: 25px; }
-.faq-answer li, .fair-content li { margin-bottom: 10px; }
-.fair-content strong { color: var(--text-accent); font-weight: 600; }
-.fair-content a { color: var(--primary-light); text-decoration: underline; }
-.fair-content a:hover { color: var(--primary-color); }
+/* NEW: Common container for sections within static content cards */
+.content-section {
+    margin-bottom: 30px; /* Spacing between sections */
+    padding-bottom: 25px; /* Space before the border */
+    border-bottom: 1px solid var(--border-color); /* Separator line */
+    line-height: 1.7; /* Consistent line height for content */
+}
+.content-card > .content-section:last-child {
+    margin-bottom: 0; /* Remove margin for the last section */
+    padding-bottom: 0; /* Remove padding for the last section */
+    border-bottom: none; /* Remove border for the last section */
+}
 
-/* Provably Fair Verification Form & Result */
+/* NEW: Common style for section titles */
+.content-section-title {
+    font-size: 1.3rem; /* Slightly larger, consistent title size */
+    font-weight: 700;
+    color: var(--primary-color); /* Use primary color for titles */
+    margin-bottom: 15px; /* Space below title */
+    padding-bottom: 8px; /* Small space before potential underline/content */
+    display: block; /* Ensure block display */
+}
+
+/* NEW: Common style for the main body/content of a section */
+.content-section-body {
+    padding: 0 5px; /* Slight horizontal padding for readability */
+    color: var(--text-secondary); /* Default text color */
+}
+.content-section-body p {
+    margin-bottom: 12px; /* Consistent paragraph spacing */
+}
+.content-section-body p:last-child {
+    margin-bottom: 0;
+}
+.content-section-body ul,
+.content-section-body ol {
+    margin: 15px 0 15px 25px; /* Standard list margins */
+    padding-left: 20px; /* Standard list padding */
+}
+.content-section-body li {
+    margin-bottom: 10px; /* Consistent list item spacing */
+}
+.content-section-body strong {
+    color: var(--text-accent); /* Accent color for emphasis */
+    font-weight: 600;
+}
+.content-section-body a {
+    color: var(--primary-light); /* Standard link color */
+    text-decoration: underline;
+}
+.content-section-body a:hover {
+    color: var(--primary-color); /* Standard link hover color */
+}
+.content-section-body code { /* Keep code styling consistent */
+    background-color: var(--background-dark);
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--secondary-light);
+    font-size: 0.9em;
+    border: 1px solid var(--border-color);
+    word-break: break-all;
+}
+
+/* Remove old specific styles (these are now handled by the common classes above) */
+/* .faq-item, .fair-section { ... } */
+/* .faq-question, .fair-title { ... } */
+/* .faq-answer, .fair-content { ... } */
+/* .faq-answer p, .fair-content p { ... } */
+/* .faq-answer ul, .faq-answer ol, .fair-content ul, .fair-content ol { ... } */
+/* .faq-answer li, .fair-content li { ... } */
+/* .fair-content strong { ... } */
+/* .fair-content a { ... } */
+/* .fair-content a:hover { ... } */
+
+
+/* Provably Fair Verification Form & Result - KEEP THESE AS IS */
 .verify-form { background-color: var(--background-light); padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--border-color); }
 .verification-result { margin-top: 15px; padding: 15px; border-radius: 4px; background-color: var(--background-light); display: none; border: 1px solid var(--border-color); line-height: 1.5; }
 .verification-result.loading { background-color: var(--background-medium); border-color: var(--secondary-light); color: var(--text-primary); }
@@ -1017,7 +1082,7 @@ code { /* General code tag styling */
 .verification-result code.seed-value { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; display: inline-block; }
 .verification-result code.wrap-anywhere { word-break: break-all; }
 
-/* Round History Table */
+/* Round History Table - KEEP THESE AS IS */
 .table-container { overflow-x: auto; margin-bottom: 20px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 8px; }
 .history-table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 0.9rem; }
 .history-table th, .history-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; vertical-align: middle; }
@@ -1028,22 +1093,14 @@ code { /* General code tag styling */
 .history-table tbody tr:hover { background-color: rgba(255, 255, 255, 0.05); }
 .history-table td:last-child { white-space: normal; text-align: right; }
 
-/* Pagination */
+/* Pagination - KEEP AS IS */
 .pagination-container { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
-.page-button {
-    padding: 6px 10px;
-    background-color: var(--background-light);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    color: var(--text-primary);
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-size: 0.9rem;
-}
+.page-button { padding: 6px 10px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary); cursor: pointer; transition: all 0.2s ease; font-size: 0.9rem; }
 .page-button:hover:not(:disabled) { background-color: var(--primary-dark); color: var(--background-dark); border-color: var(--primary-dark); }
 .page-button.active { background-color: var(--primary-color); color: var(--background-dark); border-color: var(--primary-color); cursor: default; }
 .page-button:disabled { opacity: 0.5; cursor: not-allowed; }
 .page-ellipsis { color: var(--text-secondary); padding: 6px 0; margin: 0 2px; }
+
 
 /*=========================
  FOOTER
