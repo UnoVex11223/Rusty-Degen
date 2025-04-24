@@ -512,14 +512,30 @@ code { /* General code tag styling */
     padding: 30px 0;
 }
 
-.content-card { /* Used for About, TOS, FAQ, Fair pages */
-    background-color: var(--background-medium);
+/* UPDATED General Content Card Improvements */
+.content-card {
+    /* max-width previously not set, now constrained */
+    max-width: 900px; /* NEW */
+    margin: 30px auto; /* UPDATED: Add top/bottom margin */
+    background: linear-gradient(135deg, var(--background-medium), var(--background-light)); /* NEW: Gradient background */
     border-radius: 12px;
-    padding: 30px;
-    margin-bottom: 30px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     border: 1px solid var(--border-color);
+    overflow: hidden; /* NEW: Ensure content respects border-radius */
+    padding: 30px;
 }
+
+/* NEW: Styling for H1 inside content cards */
+.content-card h1 {
+    color: var(--primary-color);
+    font-size: 2.2rem;
+    margin-bottom: 25px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 15px;
+    text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
+}
+
 
 .jackpot-section { /* Container for jackpot header, deposit button, items */
     background-color: var(--background-medium);
@@ -534,13 +550,13 @@ code { /* General code tag styling */
  JACKPOT HEADER & TIMER
  =========================*/
 
-/* --- REFINED Alignment Fix 1 --- */
+/* Using REFINED Styles from previous step */
 .jackpot-header {
     display: flex;
-    justify-content: center; /* Center the group */
-    align-items: center; /* Align items vertically if they wrap */
-    gap: 30px; /* Adjusted gap */
-    padding: 25px 20px; /* Keep */
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    padding: 25px 20px;
     background: linear-gradient(135deg, var(--background-medium), var(--background-light));
     border-bottom: 1px solid var(--border-color);
     border-radius: 12px 12px 0 0;
@@ -549,26 +565,23 @@ code { /* General code tag styling */
     overflow: hidden;
     z-index: 5;
     transition: height 0.3s ease, background 0.3s ease;
-    flex-wrap: wrap; /* Allow wrapping */
+    flex-wrap: wrap;
 }
 .jackpot-header.roulette-mode {
     background: linear-gradient(135deg, var(--background-dark), var(--background-medium));
 }
 
-/* --- REFINED Alignment Fix 2 --- */
 .jackpot-timer, .jackpot-value, .jackpot-stats {
-    min-width: 170px; /* Adjusted base width */
+    min-width: 170px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    text-align: center; /* Ensure labels inside are centered */
-    flex: 1 1 170px; /* Allow shrink/grow from base */
-    padding: 15px 5px; /* Added padding */
-    /* Removed fixed height */
+    text-align: center;
+    flex: 1 1 170px;
+    padding: 15px 5px;
 }
 
-/* Jackpot Value Specifics (Keep h2 styles here) */
 .jackpot-value h2 {
     font-size: 4.2rem; font-weight: 700; color: var(--primary-color); margin: 0;
     font-family: 'JetBrains Mono', monospace; line-height: 1.1;
@@ -579,10 +592,9 @@ code { /* General code tag styling */
     50% { text-shadow: 0 0 20px var(--primary-color), 0 0 10px var(--primary-light); }
 }
 
-/* Timer Specifics (Keep timer circle/text styles here) */
 .timer-circle {
     position: relative; width: 130px; height: 130px; display: flex;
-    justify-content: center; align-items: center; margin: 0 auto 10px auto; /* Add bottom margin */
+    justify-content: center; align-items: center; margin: 0 auto 10px auto;
 }
 .timer-progress { width: 100%; height: 100%; transform: rotate(-90deg); }
 .timer-background, .timer-foreground { fill: none; stroke-width: 8px; }
@@ -605,17 +617,15 @@ code { /* General code tag styling */
 @keyframes timerPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 @keyframes urgentPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.08); } }
 
-/* Stats Specifics (Keep stat value styles here) */
 .stat-value {
     font-size: 3.8rem; font-weight: 700; color: var(--text-primary);
     display: block; line-height: 1.1; margin-top: 10px;
 }
 
-/* REFINED Labels Alignment Fix */
 .value-label, .timer-label, .stat-label {
-    margin-top: 10px; /* Consistent margin */
-    font-size: 0.9rem; /* Consistent size */
-    letter-spacing: 1px; /* Consistent spacing */
+    margin-top: 10px;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
     color: var(--text-secondary);
     text-transform: uppercase;
     display: block;
@@ -741,34 +751,31 @@ code { /* General code tag styling */
  DEPOSIT & PARTICIPANT ITEMS
  =========================*/
 
-/* --- REFINED Alignment Fix 3 --- */
+/* Using REFINED Styles from previous step */
 .deposit-button-container {
-    padding: 25px; /* Keep padding */
+    padding: 25px;
     background-color: var(--background-medium);
     z-index: 5;
     position: relative;
     border-top: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    align-items: center; /* Center button horizontally */
+    align-items: center;
     gap: 15px;
 }
 
-/* REFINED Deposit Button Specifics */
 #showDepositModal {
-    width: 280px; /* Fixed width */
-    padding: 14px 30px; /* Custom padding */
+    width: 280px;
+    padding: 14px 30px;
     max-width: none;
-    /* margin: 0 auto; */ /* Removed - handled by parent align-items */
-    /* Inherits .btn, .btn-deposit styles */
+    /* Inherits .btn, .btn-deposit */
 }
 
 .test-buttons-container { display: flex; gap: 10px; justify-content: center; }
 .test-buttons-container .btn-secondary { width: auto; }
 
-/* --- REFINED Alignment Fix 4 --- */
 .current-items-section {
-    padding: 25px; /* Match padding */
+    padding: 25px;
     z-index: 5;
     position: relative;
     background-color: var(--background-medium);
@@ -778,13 +785,13 @@ code { /* General code tag styling */
 .section-title { /* Applies to "CURRENT ITEMS IN POT" */
     font-size: 1.2rem;
     font-weight: 600;
-    margin-bottom: 25px; /* Increased margin */
+    margin-bottom: 25px;
     color: var(--text-primary);
     text-transform: uppercase;
-    letter-spacing: 1.2px; /* Adjusted spacing */
+    letter-spacing: 1.2px;
     border-bottom: 1px solid var(--border-color);
-    padding-bottom: 12px; /* Adjusted padding */
-    text-align: center; /* Center text */
+    padding-bottom: 12px;
+    text-align: center;
 }
 .empty-pot-message {
     text-align: center; padding: 40px 20px; color: var(--text-secondary); font-size: 1.1rem;
@@ -997,40 +1004,54 @@ code { /* General code tag styling */
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 /*=========================
- STATIC PAGES (FAQ, FAIR, ABOUT, TOS) - Using Consistent Structure
+ STATIC PAGES (FAQ, FAIR, ABOUT, TOS) - Incorporating Visual Improvements
  =========================*/
 
+/* UPDATED Content Section Base */
 .content-section {
     margin-bottom: 30px;
-    padding-bottom: 25px;
-    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 20px; /* Adjusted padding */
+    border-bottom: 1px solid rgba(48, 54, 61, 0.5); /* Adjusted border */
     line-height: 1.7;
 }
-.content-card > .content-section:last-child {
+/* NEW Last child rule */
+.content-section:last-child {
+    border-bottom: none;
     margin-bottom: 0;
     padding-bottom: 0;
-    border-bottom: none;
 }
 
+/* UPDATED Content Section Title */
 .content-section-title {
-    font-size: 1.3rem;
+    /* font-size: 1.3rem; */ /* Overridden by new */
+    font-size: 1.4rem; /* NEW size */
     font-weight: 700;
-    color: var(--primary-color);
+    /* color: var(--primary-color); */ /* Overridden by new */
+    color: var(--text-primary); /* NEW color */
     margin-bottom: 15px;
-    padding-bottom: 8px;
-    display: block;
+    padding-left: 12px; /* NEW padding */
+    border-left: 3px solid var(--primary-color); /* NEW border */
+    /* Removed display: block and padding-bottom from previous refinement */
 }
 
+/* UPDATED Content Section Body */
 .content-section-body {
-    padding: 0 5px;
+    padding: 0 15px; /* Adjusted padding */
+    /* color: var(--text-secondary); */ /* Moved to paragraph */
+    /* Removed padding: 0 5px; */
+}
+/* NEW Paragraph styling within content body */
+.content-section-body p {
+    margin-bottom: 15px;
+    line-height: 1.7;
     color: var(--text-secondary);
 }
-.content-section-body p {
-    margin-bottom: 12px;
-}
+/* NEW Last paragraph rule */
 .content-section-body p:last-child {
     margin-bottom: 0;
 }
+
+/* Base list styling within content body */
 .content-section-body ul,
 .content-section-body ol {
     margin: 15px 0 15px 25px;
@@ -1039,6 +1060,7 @@ code { /* General code tag styling */
 .content-section-body li {
     margin-bottom: 10px;
 }
+/* Base strong/link/code styling within content body */
 .content-section-body strong {
     color: var(--text-accent);
     font-weight: 600;
@@ -1061,7 +1083,145 @@ code { /* General code tag styling */
     word-break: break-all;
 }
 
-/* Provably Fair Verification Form & Result - KEEP THESE AS IS */
+/* --- Page Specific Improvements --- */
+
+/* About Page */
+#about-page .content-section-body p {
+    text-align: justify;
+    padding: 0 5px; /* Specific padding for about page paragraphs */
+}
+#about-page .content-section-title {
+    color: var(--primary-light); /* Different title color for About */
+}
+
+/* TOS Page */
+#tos-page .content-section {
+    background-color: rgba(22, 27, 34, 0.4); /* Section background */
+    border-radius: 8px;
+    padding: 20px; /* Override base padding */
+    margin-bottom: 25px;
+    border: 1px solid var(--border-color); /* Override base border */
+    border-bottom: 1px solid var(--border-color); /* Keep bottom border */
+}
+#tos-page .content-section:last-child {
+    border-bottom: 1px solid var(--border-color); /* Ensure last one also has border */
+}
+#tos-page .content-section-title {
+    margin-top: 0; /* Reset margin */
+    border-left: 3px solid var(--secondary-color); /* Different border color */
+}
+#tos-page ul { /* Target lists specifically within TOS */
+    margin-left: 20px;
+    margin-bottom: 15px;
+    list-style-type: disc; /* Ensure disc */
+}
+#tos-page ul li {
+    margin-bottom: 10px;
+    color: var(--text-secondary);
+}
+
+/* FAQ Page */
+#faq-page .content-section {
+    background-color: rgba(22, 27, 34, 0.4);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color); /* Keep border */
+}
+#faq-page .content-section:last-child {
+    border-bottom: 1px solid var(--border-color);
+}
+#faq-page .content-section:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+}
+#faq-page .content-section-title {
+    color: var(--secondary-color); /* Different title color */
+    cursor: pointer;
+    display: flex; /* Use flex for icon alignment */
+    align-items: center;
+    justify-content: space-between; /* Push icon to the right */
+    border-left: none; /* Remove left border */
+    padding-left: 0; /* Remove left padding */
+}
+#faq-page .content-section-title::after { /* +/- icon */
+    content: '+';
+    font-size: 1.5rem;
+    color: var(--primary-color);
+    transition: transform 0.3s ease;
+}
+#faq-page .content-section.active .content-section-title::after {
+    content: '-';
+    transform: rotate(180deg);
+}
+/* #faq-page .content-section-body { display: none; } */ /* JS should handle visibility */
+/* #faq-page .content-section.active .content-section-body { display: block; } */
+
+/* Provably Fair Page */
+#fair-page .content-card {
+    padding-bottom: 40px; /* Extra padding at the bottom */
+}
+/* Target the verification section using its ID */
+#fair-page #provably-fair-verification {
+    background-color: rgba(22, 27, 34, 0.4);
+    border-radius: 8px;
+    padding: 25px;
+    margin-top: 30px;
+    border: 1px solid var(--border-color);
+}
+/* Target the form within that section */
+#fair-page .verify-form { /* Adjusted selector */
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Two columns for form */
+    gap: 20px;
+    margin-bottom: 25px; /* Space below form */
+    /* Remove background/border from base .verify-form */
+    background-color: transparent;
+    padding: 0;
+    border: none;
+    margin: 0 0 25px 0; /* Reset margin */
+}
+#fair-page .form-group {
+    margin-bottom: 0; /* Remove bottom margin from form groups in this grid */
+}
+/* Target verification result within the fair page */
+#fair-page .verification-result {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 6px;
+    background-color: var(--background-light);
+    border: 1px solid var(--border-color);
+}
+/* Target the history table within the fair page */
+#fair-page .history-table { /* More specific selector */
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 25px;
+    background-color: rgba(22, 27, 34, 0.4); /* Table background */
+}
+#fair-page .history-table th,
+#fair-page .history-table td { /* Specific selector */
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+#fair-page .history-table th { /* Specific selector */
+    background-color: var(--background-light);
+    color: var(--primary-color);
+    font-weight: 600;
+}
+#fair-page .history-table tr:hover { /* Specific selector */
+    background-color: var(--background-light);
+}
+/* End Provably Fair Page */
+
+
+/* --- End Page Specific Improvements --- */
+
+
+/* Provably Fair Verification Form & Result - Base styles (kept for potential use elsewhere) */
 .verify-form { background-color: var(--background-light); padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--border-color); }
 .verification-result { margin-top: 15px; padding: 15px; border-radius: 4px; background-color: var(--background-light); display: none; border: 1px solid var(--border-color); line-height: 1.5; }
 .verification-result.loading { background-color: var(--background-medium); border-color: var(--secondary-light); color: var(--text-primary); }
@@ -1073,7 +1233,7 @@ code { /* General code tag styling */
 .verification-result code.seed-value { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; display: inline-block; }
 .verification-result code.wrap-anywhere { word-break: break-all; }
 
-/* Round History Table - KEEP THESE AS IS */
+/* Round History Table - Base styles (kept for potential use elsewhere) */
 .table-container { overflow-x: auto; margin-bottom: 20px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 8px; }
 .history-table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 0.9rem; }
 .history-table th, .history-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; vertical-align: middle; }
@@ -1142,8 +1302,7 @@ code { /* General code tag styling */
     .stat-value { font-size: 3.1rem; }
     .jackpot-tab { font-size: 1.5rem !important; }
 
-    /* Roulette responsive adjustments - matching original */
-    .roulette-item { width: 70px; height: 70px; margin: 10px 4px; } /* Adjusted height slightly */
+    .roulette-item { width: 70px; height: 70px; margin: 10px 4px; }
     .roulette-track { padding-left: calc(50% - 35px); padding-right: calc(50% - 35px); }
 }
 
@@ -1190,24 +1349,20 @@ code { /* General code tag styling */
     }
     .main-nav a { font-size: 1.1rem; padding: 8px 10px; }
 
-    /* --- REFINED Responsive Alignment Fix 5 --- */
+    /* Jackpot Responsive */
     .jackpot-header {
-        gap: 15px; /* Reduce gap */
-        padding: 20px 15px; /* Adjust padding */
-        /* min-height: auto; */ /* Already handled by removing fixed height earlier */
+        gap: 15px;
+        padding: 20px 15px;
     }
-     /* Grouped selector for responsive jackpot sections */
     .jackpot-timer, .jackpot-value, .jackpot-stats {
-        min-width: 130px; /* Allow smaller base width */
-        flex-basis: 130px; /* Adjust flex-basis */
-        height: auto; /* Ensure height is auto */
+        min-width: 130px;
+        flex-basis: 130px;
+        height: auto;
     }
     #showDepositModal {
-        width: 80%; /* More fluid width */
-        max-width: 280px; /* Constrain max size */
+        width: 80%;
+        max-width: 280px;
     }
-    /* --- End REFINED Responsive Alignment Fix 5 --- */
-
     .jackpot-value h2 { font-size: 2.8rem; }
     .timer-circle { width: 90px; height: 90px; }
     .timer-text { font-size: 2.4rem; }
@@ -1216,15 +1371,16 @@ code { /* General code tag styling */
     .value-label, .timer-label, .stat-label { font-size: 0.8rem; }
     .jackpot-tab { font-size: 1.4rem !important; text-shadow: 0 0 8px var(--jackpot-tab-color); }
 
+    /* Roulette Responsive */
     .roulette-container { margin-top: 20px; height: 80px; width: 95%; }
     .roulette-item { width: 70px; height: 70px; margin: 5px; border-radius: 6px;}
     .roulette-track { padding-left: calc(50% - 35px); padding-right: calc(50% - 35px); }
-
-
     .winner-info { padding: 8px; }
     .winner-avatar { width: 30px; height: 30px; margin-right: 8px;}
     .winner-header h3 { font-size: 1rem; }
     .winner-details p { font-size: 0.8rem; }
+
+    /* Inventory/Modal Responsive */
     .inventory-items { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); max-height: 250px; }
     .inventory-item img { height: 70px; }
     .selected-items-container { max-height: 200px; }
@@ -1233,16 +1389,37 @@ code { /* General code tag styling */
     .selected-item-display .item-name { font-size: 0.6rem; }
     .selected-item-display .item-value { font-size: 0.65rem; }
     .remove-item-btn { width: 16px; height: 16px; font-size: 9px; line-height: 16px; }
-
     .modal-content { max-width: 95%; }
     .modal-header h2 { font-size: 1.2rem; }
     .modal-footer { justify-content: center; flex-wrap: wrap; }
+
+    /* History Table Responsive */
     .history-table { font-size: 0.85rem; }
     .history-table th, .history-table td { padding: 10px 8px;}
     .btn-details, .btn-verify { display: block; width: 100%; margin: 5px 0 0 0; }
     .history-table td:last-child { text-align: center; }
+
+    /* Participant Display Responsive */
     .player-items-grid { justify-content: center; }
     .player-deposit-container { padding: 10px; }
+
+    /* --- NEW Content Tab Responsive --- */
+    .content-card {
+        padding: 20px;
+        border-radius: 8px;
+        margin-left: auto; /* Ensure centering respects main container padding */
+        margin-right: auto;
+    }
+    .content-card h1 {
+        font-size: 1.8rem;
+    }
+    .content-section-title {
+        font-size: 1.2rem;
+    }
+    #fair-page .verify-form { /* Adjusted selector */
+        grid-template-columns: 1fr; /* Stack form fields */
+    }
+    /* --- End Content Tab Responsive --- */
 }
 
 @media (max-width: 480px) { /* Small mobile */
@@ -1264,24 +1441,21 @@ code { /* General code tag styling */
     .btn-deposit, .btn-secondary { font-size: 1rem; padding: 10px 20px; }
     .jackpot-tab { font-size: 1.3rem !important; padding: 8px 10px !important; }
 
-    /* --- REFINED Small Mobile Alignment --- */
     .jackpot-header {
-        flex-direction: column; /* Keep column direction */
-        gap: 20px; /* Adjusted vertical gap */
-        padding: 15px; /* Adjust padding */
+        flex-direction: column;
+        gap: 20px;
+        padding: 15px; /* Adjusted padding */
     }
     .jackpot-timer, .jackpot-value, .jackpot-stats {
-         width: 100%; /* Keep full width */
-         min-width: auto; /* Keep reset */
-         flex-basis: auto; /* Keep reset */
-         height: auto; /* Ensure height auto */
+         width: 100%;
+         min-width: auto;
+         flex-basis: auto;
+         height: auto;
     }
     #showDepositModal {
-        width: 90%; /* Keep fluid width */
-        max-width: 280px; /* Keep max width */
+        width: 90%;
+        max-width: 280px;
      }
-     /* --- End REFINED Small Mobile Alignment --- */
-
     .jackpot-value h2 { font-size: 2.2rem; }
     .timer-circle { width: 70px; height: 70px; }
     .timer-text { font-size: 1.8rem; }
@@ -1292,7 +1466,6 @@ code { /* General code tag styling */
     .roulette-container { height: 70px; }
     .roulette-item { width: 60px; height: 60px; margin: 5px; border-radius: 6px;}
     .roulette-track { padding-left: calc(50% - 30px); padding-right: calc(50% - 30px); }
-
 
     .inventory-items { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
     .inventory-item img { height: 60px; }
