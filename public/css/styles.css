@@ -453,7 +453,7 @@ code { /* General code tag styling */
     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
     color: var(--background-dark);
     font-size: 1.2rem;
-    padding: 12px 30px;
+    padding: 12px 30px; /* Base padding */
     border-radius: 8px;
     box-shadow: 0 4px 20px rgba(0, 230, 118, 0.4);
     position: relative;
@@ -544,37 +544,43 @@ code { /* General code tag styling */
  JACKPOT HEADER & TIMER
  =========================*/
 
+/* --- Alignment Fix 1 & Existing Styles --- */
 .jackpot-header {
     display: flex;
-    justify-content: space-around;
-    align-items: center; /* Vertically centers the blocks */
-    padding: 20px;
+    /* justify-content: space-around; */ /* Original */
+    justify-content: center; /* CHANGE: Better alignment */
+    align-items: center;
+    /* padding: 20px; */ /* Original */
+    padding: 25px 20px; /* CHANGE: Slightly increase vertical padding */
     background: linear-gradient(135deg, var(--background-medium), var(--background-light));
     border-bottom: 1px solid var(--border-color);
     border-radius: 12px 12px 0 0;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    min-height: 170px;
+    min-height: 170px; /* Original min-height */
     position: relative;
     overflow: hidden;
     z-index: 5;
     transition: height 0.3s ease, background 0.3s ease;
-    gap: 20px;
+    /* gap: 20px; */ /* Original */
+    gap: 40px; /* CHANGE: Increase gap */
     flex-wrap: wrap;
 }
 .jackpot-header.roulette-mode {
     background: linear-gradient(135deg, var(--background-dark), var(--background-medium));
 }
 
-/* Jackpot Value */
+/* --- Alignment Fix 2 & Jackpot Value --- */
 .jackpot-value {
-    display: flex;
-    flex-direction: column;
-    align-items: center; /* Horizontally centers content in the column */
-    justify-content: center; /* Vertically centers content in the column */ /* ADDED */
-    text-align: center;
-    flex: 1;
-    min-width: 150px;
-    padding: 10px;
+    display: flex; /* Keep */
+    flex-direction: column; /* Keep */
+    align-items: center; /* Keep */
+    justify-content: center; /* Keep */
+    text-align: center; /* Keep */
+    flex: 1; /* Keep */
+    padding: 10px; /* Keep */
+    /* min-width: 150px; */ /* Original */
+    min-width: 180px; /* CHANGE: Standardize width */
+    height: 170px; /* CHANGE: Set fixed height */
 }
 .jackpot-value h2 {
     font-size: 4.2rem; font-weight: 700; color: var(--primary-color); margin: 0;
@@ -586,20 +592,17 @@ code { /* General code tag styling */
     50% { text-shadow: 0 0 20px var(--primary-color), 0 0 10px var(--primary-light); }
 }
 
-.value-label, .timer-label, .stat-label {
-    font-size: 0.9rem; color: var(--text-secondary); text-transform: uppercase;
-    letter-spacing: 1px; display: block; margin-top: 8px;
-}
-
-/* Timer */
+/* --- Alignment Fix 2 & Timer --- */
 .jackpot-timer {
-    display: flex;
-    flex-direction: column;
-    align-items: center; /* Horizontally centers content in the column */
-    justify-content: center; /* Vertically centers content in the column */ /* ADDED */
-    text-align: center;
-    flex: 1;
-    min-width: 150px;
+    display: flex; /* Keep */
+    flex-direction: column; /* Keep */
+    align-items: center; /* Keep */
+    justify-content: center; /* Keep */
+    text-align: center; /* Keep */
+    flex: 1; /* Keep */
+    /* min-width: 150px; */ /* Original */
+    min-width: 180px; /* CHANGE: Standardize width */
+    height: 170px; /* CHANGE: Set fixed height */
 }
 .timer-circle {
     position: relative; width: 130px; height: 130px; display: flex;
@@ -626,20 +629,35 @@ code { /* General code tag styling */
 @keyframes timerPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 @keyframes urgentPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.08); } }
 
-/* Stats (Participants) */
+/* --- Alignment Fix 2 & Stats --- */
 .jackpot-stats {
-    display: flex;
-    flex-direction: column;
-    align-items: center; /* Horizontally centers content in the column */
-    justify-content: center; /* Vertically centers content in the column */ /* ADDED */
-    text-align: center;
-    flex: 1;
-    min-width: 150px;
+    display: flex; /* Keep */
+    flex-direction: column; /* Keep */
+    align-items: center; /* Keep */
+    justify-content: center; /* Keep */
+    text-align: center; /* Keep */
+    flex: 1; /* Keep */
+    /* min-width: 150px; */ /* Original */
+    min-width: 180px; /* CHANGE: Standardize width */
+    height: 170px; /* CHANGE: Set fixed height */
 }
 .stat-value {
     font-size: 3.8rem; font-weight: 700; color: var(--text-primary);
-    display: block; line-height: 1.1; margin-top: 10px;
+    display: block; line-height: 1.1; margin-top: 10px; /* Keep margin-top here */
 }
+
+/* Labels Alignment Fix */
+.value-label, .timer-label, .stat-label {
+    /* margin-top: 8px; */ /* Original */
+    margin-top: 10px; /* CHANGE: Consistent margin */
+    /* font-size: 0.9rem; */ /* Original - Redundant with new */
+    font-size: 0.9rem; /* CHANGE: Ensure consistency */
+    color: var(--text-secondary); text-transform: uppercase;
+    /* letter-spacing: 1px; */ /* Original - Redundant with new */
+    letter-spacing: 1px; /* CHANGE: Ensure consistency */
+    display: block;
+}
+
 
 /*=========================
  ROULETTE ANIMATION
@@ -761,24 +779,57 @@ code { /* General code tag styling */
  DEPOSIT & PARTICIPANT ITEMS
  =========================*/
 
+/* --- Alignment Fix 3 & Existing Styles --- */
 .deposit-button-container {
-    padding: 20px; background-color: var(--background-medium); z-index: 5;
-    position: relative; border-top: 1px solid var(--border-color);
-    display: flex; flex-direction: column; align-items: center; gap: 15px;
+    /* padding: 20px; */ /* Original */
+    padding: 25px; /* CHANGE: Increase padding */
+    background-color: var(--background-medium);
+    z-index: 5;
+    position: relative;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Keep flex alignment */
+    gap: 15px;
+    /* text-align: center; */ /* CHANGE: Added, but likely redundant with flex */
 }
-#showDepositModal { width: auto; max-width: 300px; }
+
+/* New rule for Deposit Button ID */
+#showDepositModal {
+    /* width: auto; max-width: 300px; */ /* Original inherited sizing */
+    width: 280px; /* CHANGE: Fixed width */
+    margin: 0 auto; /* CHANGE: Center the button */
+    padding: 14px 30px; /* CHANGE: Slightly larger padding (overrides .btn-deposit) */
+    max-width: none; /* Override max-width if necessary */
+}
+
 .test-buttons-container { display: flex; gap: 10px; justify-content: center; }
 .test-buttons-container .btn-secondary { width: auto; }
 
+/* --- Alignment Fix 4 & Existing Styles --- */
 .current-items-section {
-    padding: 20px; z-index: 5; position: relative;
-    background-color: var(--background-medium); border-radius: 0 0 12px 12px;
+    /* padding: 20px; */ /* Original */
+    padding: 25px; /* CHANGE: Match padding */
+    z-index: 5;
+    position: relative;
+    background-color: var(--background-medium);
+    border-radius: 0 0 12px 12px;
     border-top: 1px solid var(--border-color);
 }
-.section-title {
-    font-size: 1.2rem; font-weight: 600; margin-bottom: 20px; color: var(--text-primary);
-    text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border-color);
-    padding-bottom: 10px; text-align: center;
+.section-title { /* Applied to "CURRENT ITEMS IN POT" */
+    /* font-size: 1.2rem; */ /* Original - Redundant */
+    font-size: 1.2rem; /* CHANGE: Ensure consistency */
+    font-weight: 600;
+    /* margin-bottom: 20px; */ /* Original */
+    margin-bottom: 25px; /* CHANGE: Increase margin */
+    color: var(--text-primary);
+    text-transform: uppercase;
+    /* letter-spacing: 1px; */ /* Original */
+    letter-spacing: 1.2px; /* CHANGE: Increase spacing */
+    border-bottom: 1px solid var(--border-color);
+    /* padding-bottom: 10px; */ /* Original */
+    padding-bottom: 12px; /* CHANGE: Increase padding */
+    text-align: center;
 }
 .empty-pot-message {
     text-align: center; padding: 40px 20px; color: var(--text-secondary); font-size: 1.1rem;
@@ -1199,7 +1250,20 @@ code { /* General code tag styling */
     }
     .main-nav a { font-size: 1.1rem; padding: 8px 10px; }
 
-    .jackpot-header { padding: 15px; gap: 10px; min-height: auto; }
+    /* --- Responsive Alignment Fix 5 --- */
+    .jackpot-header {
+        padding: 15px;
+        /* gap: 10px; */ /* Original */
+        gap: 25px; /* CHANGE: Reduce gap */
+        min-height: auto;
+    }
+     /* Grouped selector for responsive jackpot sections */
+    .jackpot-timer, .jackpot-value, .jackpot-stats {
+        min-width: 150px; /* CHANGE: Slightly smaller on mobile */
+        height: auto; /* CHANGE: Allow height to adjust */
+    }
+    /* --- End Responsive Alignment Fix 5 --- */
+
     .jackpot-value h2 { font-size: 2.8rem; }
     .timer-circle { width: 90px; height: 90px; }
     .timer-text { font-size: 2.4rem; }
@@ -1256,8 +1320,8 @@ code { /* General code tag styling */
     .btn-login { padding: 6px 12px; font-size: 0.9rem; }
     .btn-deposit, .btn-secondary { font-size: 1rem; padding: 10px 20px; }
     .jackpot-tab { font-size: 1.3rem !important; padding: 8px 10px !important; }
-    .jackpot-header { gap: 5px; padding: 10px; flex-direction: column; }
-    .jackpot-value, .jackpot-timer, .jackpot-stats { min-width: auto; flex: 1; width: 100%; }
+    .jackpot-header { gap: 5px; padding: 10px; flex-direction: column; } /* Keep column direction */
+    .jackpot-value, .jackpot-timer, .jackpot-stats { min-width: auto; flex: 1; width: 100%; height: auto; } /* Apply height auto here too */
     .jackpot-value h2 { font-size: 2.2rem; }
     .timer-circle { width: 70px; height: 70px; }
     .timer-text { font-size: 1.8rem; }
