@@ -191,9 +191,9 @@ code { /* General code tag styling */
 .header-container {
     display: flex;
     align-items: center;
-    justify-content: space-between; /* Changed for better default spacing */
+    justify-content: space-between;
     flex-wrap: wrap;
-    gap: 15px; /* Added gap for spacing between flex items */
+    gap: 15px;
 }
 
 .header-left, .header-center, .header-right {
@@ -202,28 +202,23 @@ code { /* General code tag styling */
 }
 
 .header-left {
-    display: flex;
-    align-items: center;
-    gap: 20px; /* Gap between logo and nav */
-    flex: 1; /* Allow it to grow */
-    min-width: 0; /* Prevent overflow issues */
+    gap: 20px;
+    flex: 1;
+    min-width: 0;
     justify-content: flex-start;
 }
 
 .header-center {
-    flex-grow: 2; /* Allow center to take more space */
-    display: flex;
+    flex-grow: 2;
     justify-content: center;
     min-width: 0;
-    text-align: center; /* For text alignment within */
+    text-align: center;
 }
 
 .header-right {
-    display: flex;
-    align-items: center;
-    gap: 20px; /* Gap between nav and user controls */
-    flex: 1; /* Allow it to grow */
-    min-width: 0; /* Prevent overflow issues */
+    gap: 20px;
+    flex: 1;
+    min-width: 0;
     justify-content: flex-end;
 }
 
@@ -235,7 +230,7 @@ code { /* General code tag styling */
     letter-spacing: 1px;
     text-shadow: 0 0 10px rgba(0, 230, 118, 0.5);
     color: var(--text-primary);
-    white-space: nowrap; /* Prevent logo from wrapping */
+    white-space: nowrap;
 }
 .logo span { color: var(--primary-color); }
 
@@ -248,12 +243,10 @@ code { /* General code tag styling */
     gap: 15px;
 }
 
-/* Make sure main nav ul takes available space to center properly */
 .main-nav ul {
-    justify-content: center; /* Center items within the nav */
+    justify-content: center;
     width: 100%;
 }
-
 
 /* General Nav Link Styles */
 .primary-nav a, .secondary-nav a, .main-nav a {
@@ -270,7 +263,6 @@ code { /* General code tag styling */
 .primary-nav a:hover, .secondary-nav a:hover, .main-nav a:hover {
     color: var(--primary-color);
 }
-/* Underline effect */
 .primary-nav a::after, .secondary-nav a::after, .main-nav a::after {
     content: '';
     position: absolute;
@@ -287,26 +279,25 @@ code { /* General code tag styling */
     width: 80%;
 }
 .primary-nav a.active, .secondary-nav a.active, .main-nav a.active {
-    color: var(--primary-color); /* Active color */
+    color: var(--primary-color);
 }
 
 /* Jackpot Tab Specific Styles */
 .jackpot-tab {
-    font-size: 1.6rem; /* Increased from 1.4rem */
-    padding: 10px 15px; /* Adjusted padding */
+    font-size: 1.6rem;
+    padding: 10px 15px;
     color: var(--jackpot-tab-color);
     text-shadow: 0 0 10px var(--jackpot-tab-color), 0 0 15px var(--jackpot-tab-color);
     letter-spacing: 1px;
     font-weight: 700;
-    /* transform: translateX(5px); Removed the slight shift right */
 }
 .jackpot-tab::after {
     background-color: var(--jackpot-tab-color);
     box-shadow: 0 0 8px var(--jackpot-tab-color);
-    height: 3px; /* Thicker underline */
+    height: 3px;
 }
 .jackpot-tab:hover {
-    color: var(--jackpot-tab-color); /* Keep color on hover */
+    color: var(--jackpot-tab-color);
     text-shadow: 0 0 15px var(--jackpot-tab-color), 0 0 20px var(--jackpot-tab-color);
 }
 
@@ -314,12 +305,12 @@ code { /* General code tag styling */
 .user-controls {
     display: flex;
     align-items: center;
-    gap: 15px; /* Increased gap slightly */
-    justify-content: flex-end; /* Ensure aligned to the right */
+    gap: 15px;
+    justify-content: flex-end;
 }
 
 .user-profile-container {
-    position: relative; /* Needed for dropdown positioning */
+    position: relative;
 }
 
 .user-profile {
@@ -327,14 +318,13 @@ code { /* General code tag styling */
     align-items: center;
     gap: 10px;
     cursor: pointer;
-    padding: 5px; /* Add padding for easier clicking */
+    padding: 5px;
     border-radius: 4px;
     transition: background-color 0.2s ease;
 }
 .user-profile:hover, .user-profile:focus {
     background-color: var(--background-light);
 }
-/* Style for the dropdown arrow */
 .dropdown-arrow {
     font-size: 0.7rem;
     margin-left: 5px;
@@ -358,30 +348,30 @@ code { /* General code tag styling */
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 150px;
-    color: var(--text-primary); /* Ensure name is visible */
+    color: var(--text-primary);
     white-space: nowrap;
 }
 
 /* Dropdown Menu Styles */
 .dropdown-menu {
     position: absolute;
-    top: 100%; /* Position below the profile button */
+    top: 100%;
     right: 0;
     background-color: var(--background-light);
     border: 1px solid var(--border-color);
     border-radius: 6px;
     min-width: 160px;
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-    z-index: 110; /* Ensure it's above other header elements */
+    z-index: 110;
     padding: 5px 0;
-    margin-top: 5px; /* Small gap */
-    display: none; /* Hidden by default */
+    margin-top: 5px;
+    display: none;
 }
 
 .dropdown-item {
-    display: flex; /* Use flex for icon alignment */
+    display: flex;
     align-items: center;
-    gap: 10px; /* Gap between icon and text */
+    gap: 10px;
     padding: 10px 15px;
     background: none;
     border: none;
@@ -398,13 +388,13 @@ code { /* General code tag styling */
 .dropdown-item:hover, .dropdown-item:focus {
     background-color: var(--background-medium);
     color: var(--primary-light);
-    outline: none; /* Remove default focus outline */
+    outline: none;
 }
 
 .dropdown-item .icon {
-    width: 16px; /* Fixed width for icon */
+    width: 16px;
     text-align: center;
-    color: var(--text-accent); /* Accent color for icon */
+    color: var(--text-accent);
     flex-shrink: 0;
 }
 
@@ -525,7 +515,7 @@ code { /* General code tag styling */
 .content-card { /* Used for About, TOS, FAQ, Fair pages */
     background-color: var(--background-medium);
     border-radius: 12px;
-    padding: 30px; /* Increased padding slightly */
+    padding: 30px;
     margin-bottom: 30px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     border: 1px solid var(--border-color);
@@ -544,44 +534,41 @@ code { /* General code tag styling */
  JACKPOT HEADER & TIMER
  =========================*/
 
-/* --- Alignment Fix 1 & Existing Styles --- */
+/* --- REFINED Alignment Fix 1 --- */
 .jackpot-header {
     display: flex;
-    /* justify-content: space-around; */ /* Original */
-    justify-content: center; /* CHANGE: Better alignment */
-    align-items: center;
-    /* padding: 20px; */ /* Original */
-    padding: 25px 20px; /* CHANGE: Slightly increase vertical padding */
+    justify-content: center; /* Center the group */
+    align-items: center; /* Align items vertically if they wrap */
+    gap: 30px; /* Adjusted gap */
+    padding: 25px 20px; /* Keep */
     background: linear-gradient(135deg, var(--background-medium), var(--background-light));
     border-bottom: 1px solid var(--border-color);
     border-radius: 12px 12px 0 0;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    min-height: 170px; /* Original min-height */
     position: relative;
     overflow: hidden;
     z-index: 5;
     transition: height 0.3s ease, background 0.3s ease;
-    /* gap: 20px; */ /* Original */
-    gap: 40px; /* CHANGE: Increase gap */
-    flex-wrap: wrap;
+    flex-wrap: wrap; /* Allow wrapping */
 }
 .jackpot-header.roulette-mode {
     background: linear-gradient(135deg, var(--background-dark), var(--background-medium));
 }
 
-/* --- Alignment Fix 2 & Jackpot Value --- */
-.jackpot-value {
-    display: flex; /* Keep */
-    flex-direction: column; /* Keep */
-    align-items: center; /* Keep */
-    justify-content: center; /* Keep */
-    text-align: center; /* Keep */
-    flex: 1; /* Keep */
-    padding: 10px; /* Keep */
-    /* min-width: 150px; */ /* Original */
-    min-width: 180px; /* CHANGE: Standardize width */
-    height: 170px; /* CHANGE: Set fixed height */
+/* --- REFINED Alignment Fix 2 --- */
+.jackpot-timer, .jackpot-value, .jackpot-stats {
+    min-width: 170px; /* Adjusted base width */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center; /* Ensure labels inside are centered */
+    flex: 1 1 170px; /* Allow shrink/grow from base */
+    padding: 15px 5px; /* Added padding */
+    /* Removed fixed height */
 }
+
+/* Jackpot Value Specifics (Keep h2 styles here) */
 .jackpot-value h2 {
     font-size: 4.2rem; font-weight: 700; color: var(--primary-color); margin: 0;
     font-family: 'JetBrains Mono', monospace; line-height: 1.1;
@@ -592,21 +579,10 @@ code { /* General code tag styling */
     50% { text-shadow: 0 0 20px var(--primary-color), 0 0 10px var(--primary-light); }
 }
 
-/* --- Alignment Fix 2 & Timer --- */
-.jackpot-timer {
-    display: flex; /* Keep */
-    flex-direction: column; /* Keep */
-    align-items: center; /* Keep */
-    justify-content: center; /* Keep */
-    text-align: center; /* Keep */
-    flex: 1; /* Keep */
-    /* min-width: 150px; */ /* Original */
-    min-width: 180px; /* CHANGE: Standardize width */
-    height: 170px; /* CHANGE: Set fixed height */
-}
+/* Timer Specifics (Keep timer circle/text styles here) */
 .timer-circle {
     position: relative; width: 130px; height: 130px; display: flex;
-    justify-content: center; align-items: center; margin: 0 auto;
+    justify-content: center; align-items: center; margin: 0 auto 10px auto; /* Add bottom margin */
 }
 .timer-progress { width: 100%; height: 100%; transform: rotate(-90deg); }
 .timer-background, .timer-foreground { fill: none; stroke-width: 8px; }
@@ -629,35 +605,21 @@ code { /* General code tag styling */
 @keyframes timerPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 @keyframes urgentPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.08); } }
 
-/* --- Alignment Fix 2 & Stats --- */
-.jackpot-stats {
-    display: flex; /* Keep */
-    flex-direction: column; /* Keep */
-    align-items: center; /* Keep */
-    justify-content: center; /* Keep */
-    text-align: center; /* Keep */
-    flex: 1; /* Keep */
-    /* min-width: 150px; */ /* Original */
-    min-width: 180px; /* CHANGE: Standardize width */
-    height: 170px; /* CHANGE: Set fixed height */
-}
+/* Stats Specifics (Keep stat value styles here) */
 .stat-value {
     font-size: 3.8rem; font-weight: 700; color: var(--text-primary);
-    display: block; line-height: 1.1; margin-top: 10px; /* Keep margin-top here */
+    display: block; line-height: 1.1; margin-top: 10px;
 }
 
-/* Labels Alignment Fix */
+/* REFINED Labels Alignment Fix */
 .value-label, .timer-label, .stat-label {
-    /* margin-top: 8px; */ /* Original */
-    margin-top: 10px; /* CHANGE: Consistent margin */
-    /* font-size: 0.9rem; */ /* Original - Redundant with new */
-    font-size: 0.9rem; /* CHANGE: Ensure consistency */
-    color: var(--text-secondary); text-transform: uppercase;
-    /* letter-spacing: 1px; */ /* Original - Redundant with new */
-    letter-spacing: 1px; /* CHANGE: Ensure consistency */
+    margin-top: 10px; /* Consistent margin */
+    font-size: 0.9rem; /* Consistent size */
+    letter-spacing: 1px; /* Consistent spacing */
+    color: var(--text-secondary);
+    text-transform: uppercase;
     display: block;
 }
-
 
 /*=========================
  ROULETTE ANIMATION
@@ -674,25 +636,25 @@ code { /* General code tag styling */
 .roulette-container {
     position: relative; width: 90%;
     max-width: 1000px;
-    height: 90px; overflow: hidden; /* Fixed height */
+    height: 90px; overflow: hidden;
     background-color: rgba(13, 17, 23, 0.7); border-radius: 8px;
     border: 1px solid var(--border-color);
     box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6); backdrop-filter: blur(2px);
 }
 .roulette-track {
     display: flex; position: absolute; left: 0; top: 0; height: 100%;
-    padding-left: calc(50% - 45px); /* (90px item width / 2) */
+    padding-left: calc(50% - 45px);
     padding-right: calc(50% - 45px);
     will-change: transform; transition: none;
 }
 
 .roulette-item {
     flex: 0 0 auto;
-    width: 90px; /* Original width */
-    height: 80px; /* Original height */
-    margin: 5px; /* Original margin */
+    width: 90px;
+    height: 80px;
+    margin: 5px;
     background: rgba(30, 35, 40, 0.8);
-    border-radius: 6px; /* Original border-radius */
+    border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
     overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -779,57 +741,50 @@ code { /* General code tag styling */
  DEPOSIT & PARTICIPANT ITEMS
  =========================*/
 
-/* --- Alignment Fix 3 & Existing Styles --- */
+/* --- REFINED Alignment Fix 3 --- */
 .deposit-button-container {
-    /* padding: 20px; */ /* Original */
-    padding: 25px; /* CHANGE: Increase padding */
+    padding: 25px; /* Keep padding */
     background-color: var(--background-medium);
     z-index: 5;
     position: relative;
     border-top: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    align-items: center; /* Keep flex alignment */
+    align-items: center; /* Center button horizontally */
     gap: 15px;
-    /* text-align: center; */ /* CHANGE: Added, but likely redundant with flex */
 }
 
-/* New rule for Deposit Button ID */
+/* REFINED Deposit Button Specifics */
 #showDepositModal {
-    /* width: auto; max-width: 300px; */ /* Original inherited sizing */
-    width: 280px; /* CHANGE: Fixed width */
-    margin: 0 auto; /* CHANGE: Center the button */
-    padding: 14px 30px; /* CHANGE: Slightly larger padding (overrides .btn-deposit) */
-    max-width: none; /* Override max-width if necessary */
+    width: 280px; /* Fixed width */
+    padding: 14px 30px; /* Custom padding */
+    max-width: none;
+    /* margin: 0 auto; */ /* Removed - handled by parent align-items */
+    /* Inherits .btn, .btn-deposit styles */
 }
 
 .test-buttons-container { display: flex; gap: 10px; justify-content: center; }
 .test-buttons-container .btn-secondary { width: auto; }
 
-/* --- Alignment Fix 4 & Existing Styles --- */
+/* --- REFINED Alignment Fix 4 --- */
 .current-items-section {
-    /* padding: 20px; */ /* Original */
-    padding: 25px; /* CHANGE: Match padding */
+    padding: 25px; /* Match padding */
     z-index: 5;
     position: relative;
     background-color: var(--background-medium);
     border-radius: 0 0 12px 12px;
     border-top: 1px solid var(--border-color);
 }
-.section-title { /* Applied to "CURRENT ITEMS IN POT" */
-    /* font-size: 1.2rem; */ /* Original - Redundant */
-    font-size: 1.2rem; /* CHANGE: Ensure consistency */
+.section-title { /* Applies to "CURRENT ITEMS IN POT" */
+    font-size: 1.2rem;
     font-weight: 600;
-    /* margin-bottom: 20px; */ /* Original */
-    margin-bottom: 25px; /* CHANGE: Increase margin */
+    margin-bottom: 25px; /* Increased margin */
     color: var(--text-primary);
     text-transform: uppercase;
-    /* letter-spacing: 1px; */ /* Original */
-    letter-spacing: 1.2px; /* CHANGE: Increase spacing */
+    letter-spacing: 1.2px; /* Adjusted spacing */
     border-bottom: 1px solid var(--border-color);
-    /* padding-bottom: 10px; */ /* Original */
-    padding-bottom: 12px; /* CHANGE: Increase padding */
-    text-align: center;
+    padding-bottom: 12px; /* Adjusted padding */
+    text-align: center; /* Center text */
 }
 .empty-pot-message {
     text-align: center; padding: 40px 20px; color: var(--text-secondary); font-size: 1.1rem;
@@ -1042,63 +997,60 @@ code { /* General code tag styling */
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 /*=========================
- STATIC PAGES (FAQ, FAIR, ABOUT, TOS) - UPDATED FOR CONSISTENCY
+ STATIC PAGES (FAQ, FAIR, ABOUT, TOS) - Using Consistent Structure
  =========================*/
 
-/* NEW: Common container for sections within static content cards */
 .content-section {
-    margin-bottom: 30px; /* Spacing between sections */
-    padding-bottom: 25px; /* Space before the border */
-    border-bottom: 1px solid var(--border-color); /* Separator line */
-    line-height: 1.7; /* Consistent line height for content */
+    margin-bottom: 30px;
+    padding-bottom: 25px;
+    border-bottom: 1px solid var(--border-color);
+    line-height: 1.7;
 }
 .content-card > .content-section:last-child {
-    margin-bottom: 0; /* Remove margin for the last section */
-    padding-bottom: 0; /* Remove padding for the last section */
-    border-bottom: none; /* Remove border for the last section */
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
 }
 
-/* NEW: Common style for section titles */
 .content-section-title {
-    font-size: 1.3rem; /* Slightly larger, consistent title size */
+    font-size: 1.3rem;
     font-weight: 700;
-    color: var(--primary-color); /* Use primary color for titles */
-    margin-bottom: 15px; /* Space below title */
-    padding-bottom: 8px; /* Small space before potential underline/content */
-    display: block; /* Ensure block display */
+    color: var(--primary-color);
+    margin-bottom: 15px;
+    padding-bottom: 8px;
+    display: block;
 }
 
-/* NEW: Common style for the main body/content of a section */
 .content-section-body {
-    padding: 0 5px; /* Slight horizontal padding for readability */
-    color: var(--text-secondary); /* Default text color */
+    padding: 0 5px;
+    color: var(--text-secondary);
 }
 .content-section-body p {
-    margin-bottom: 12px; /* Consistent paragraph spacing */
+    margin-bottom: 12px;
 }
 .content-section-body p:last-child {
     margin-bottom: 0;
 }
 .content-section-body ul,
 .content-section-body ol {
-    margin: 15px 0 15px 25px; /* Standard list margins */
-    padding-left: 20px; /* Standard list padding */
+    margin: 15px 0 15px 25px;
+    padding-left: 20px;
 }
 .content-section-body li {
-    margin-bottom: 10px; /* Consistent list item spacing */
+    margin-bottom: 10px;
 }
 .content-section-body strong {
-    color: var(--text-accent); /* Accent color for emphasis */
+    color: var(--text-accent);
     font-weight: 600;
 }
 .content-section-body a {
-    color: var(--primary-light); /* Standard link color */
+    color: var(--primary-light);
     text-decoration: underline;
 }
 .content-section-body a:hover {
-    color: var(--primary-color); /* Standard link hover color */
+    color: var(--primary-color);
 }
-.content-section-body code { /* Keep code styling consistent */
+.content-section-body code {
     background-color: var(--background-dark);
     padding: 3px 6px;
     border-radius: 4px;
@@ -1108,18 +1060,6 @@ code { /* General code tag styling */
     border: 1px solid var(--border-color);
     word-break: break-all;
 }
-
-/* Remove old specific styles (these are now handled by the common classes above) */
-/* .faq-item, .fair-section { ... } */
-/* .faq-question, .fair-title { ... } */
-/* .faq-answer, .fair-content { ... } */
-/* .faq-answer p, .fair-content p { ... } */
-/* .faq-answer ul, .faq-answer ol, .fair-content ul, .fair-content ol { ... } */
-/* .faq-answer li, .fair-content li { ... } */
-/* .fair-content strong { ... } */
-/* .fair-content a { ... } */
-/* .fair-content a:hover { ... } */
-
 
 /* Provably Fair Verification Form & Result - KEEP THESE AS IS */
 .verify-form { background-color: var(--background-light); padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--border-color); }
@@ -1250,19 +1190,23 @@ code { /* General code tag styling */
     }
     .main-nav a { font-size: 1.1rem; padding: 8px 10px; }
 
-    /* --- Responsive Alignment Fix 5 --- */
+    /* --- REFINED Responsive Alignment Fix 5 --- */
     .jackpot-header {
-        padding: 15px;
-        /* gap: 10px; */ /* Original */
-        gap: 25px; /* CHANGE: Reduce gap */
-        min-height: auto;
+        gap: 15px; /* Reduce gap */
+        padding: 20px 15px; /* Adjust padding */
+        /* min-height: auto; */ /* Already handled by removing fixed height earlier */
     }
      /* Grouped selector for responsive jackpot sections */
     .jackpot-timer, .jackpot-value, .jackpot-stats {
-        min-width: 150px; /* CHANGE: Slightly smaller on mobile */
-        height: auto; /* CHANGE: Allow height to adjust */
+        min-width: 130px; /* Allow smaller base width */
+        flex-basis: 130px; /* Adjust flex-basis */
+        height: auto; /* Ensure height is auto */
     }
-    /* --- End Responsive Alignment Fix 5 --- */
+    #showDepositModal {
+        width: 80%; /* More fluid width */
+        max-width: 280px; /* Constrain max size */
+    }
+    /* --- End REFINED Responsive Alignment Fix 5 --- */
 
     .jackpot-value h2 { font-size: 2.8rem; }
     .timer-circle { width: 90px; height: 90px; }
@@ -1273,8 +1217,7 @@ code { /* General code tag styling */
     .jackpot-tab { font-size: 1.4rem !important; text-shadow: 0 0 8px var(--jackpot-tab-color); }
 
     .roulette-container { margin-top: 20px; height: 80px; width: 95%; }
-    /* Roulette responsive adjustments - matching original */
-    .roulette-item { width: 70px; height: 70px; margin: 5px; border-radius: 6px;} /* Reverted to 70x70 */
+    .roulette-item { width: 70px; height: 70px; margin: 5px; border-radius: 6px;}
     .roulette-track { padding-left: calc(50% - 35px); padding-right: calc(50% - 35px); }
 
 
@@ -1320,8 +1263,25 @@ code { /* General code tag styling */
     .btn-login { padding: 6px 12px; font-size: 0.9rem; }
     .btn-deposit, .btn-secondary { font-size: 1rem; padding: 10px 20px; }
     .jackpot-tab { font-size: 1.3rem !important; padding: 8px 10px !important; }
-    .jackpot-header { gap: 5px; padding: 10px; flex-direction: column; } /* Keep column direction */
-    .jackpot-value, .jackpot-timer, .jackpot-stats { min-width: auto; flex: 1; width: 100%; height: auto; } /* Apply height auto here too */
+
+    /* --- REFINED Small Mobile Alignment --- */
+    .jackpot-header {
+        flex-direction: column; /* Keep column direction */
+        gap: 20px; /* Adjusted vertical gap */
+        padding: 15px; /* Adjust padding */
+    }
+    .jackpot-timer, .jackpot-value, .jackpot-stats {
+         width: 100%; /* Keep full width */
+         min-width: auto; /* Keep reset */
+         flex-basis: auto; /* Keep reset */
+         height: auto; /* Ensure height auto */
+    }
+    #showDepositModal {
+        width: 90%; /* Keep fluid width */
+        max-width: 280px; /* Keep max width */
+     }
+     /* --- End REFINED Small Mobile Alignment --- */
+
     .jackpot-value h2 { font-size: 2.2rem; }
     .timer-circle { width: 70px; height: 70px; }
     .timer-text { font-size: 1.8rem; }
@@ -1330,8 +1290,7 @@ code { /* General code tag styling */
     .value-label, .timer-label, .stat-label { font-size: 0.7rem; }
 
     .roulette-container { height: 70px; }
-    /* Roulette responsive adjustments - matching original */
-    .roulette-item { width: 60px; height: 60px; margin: 5px; border-radius: 6px;} /* Reverted to 60x60 */
+    .roulette-item { width: 60px; height: 60px; margin: 5px; border-radius: 6px;}
     .roulette-track { padding-left: calc(50% - 30px); padding-right: calc(50% - 30px); }
 
 
