@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Titillium+Web:wght@300;400;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    </head>
+</head>
 <body>
 
     <div id="notification-bar" class="notification-bar"></div>
@@ -122,24 +122,82 @@
                 </nav>
 
                 <div class="user-controls">
-                    <button class="btn btn-login" id="loginButton">
-                        <i class="fa-brands fa-steam"></i> Sign in
+                    <button class="btn btn-steam" id="loginButton">
+                      <i class="fa-brands fa-steam"></i>
+                      <span>Sign in with Steam</span>
                     </button>
 
                     <div class="user-profile-container">
-                        <div class="user-profile" id="userProfile" style="display: none;" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0">
-                            <img src="/img/default-avatar.png" alt="User Avatar" class="user-avatar" id="userAvatar">
-                            <span class="user-name" id="userName">PlayerName</span>
-                            <span class="dropdown-arrow" aria-hidden="true">▼</span>
+                      <div class="user-profile" id="userProfile" style="display: none;" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0">
+                        <div class="user-avatar-container">
+                          <img src="/img/default-avatar.png" alt="User Avatar" class="user-avatar" id="userAvatar">
+                          <div class="user-status online" id="userStatusIndicator"></div>
+                        </div>
+                        <div class="user-info">
+                          <span class="user-name" id="userName">PlayerName</span>
+                          <span class="dropdown-arrow" aria-hidden="true">▼</span>
+                        </div>
+                      </div>
+
+                      <div class="dropdown-menu" id="userDropdownMenu" style="display: none;" role="menu">
+                        <div class="dropdown-header">
+                          <div class="dropdown-user-info">
+                            <img src="/img/default-avatar.png" alt="User Avatar" class="dropdown-avatar" id="dropdownAvatar">
+                            <div class="dropdown-user-details">
+                              <span class="dropdown-user-name" id="dropdownUserName">PlayerName</span>
+                              <span class="dropdown-user-id" id="dropdownUserId">ID: Loading...</span>
+                            </div>
+                          </div>
                         </div>
 
-                        <div class="dropdown-menu" id="userDropdownMenu" style="display: none;" role="menu">
-                            <button class="dropdown-item" id="logoutButton" role="menuitem">
-                                <i class="fas fa-sign-out-alt icon"></i> Sign Out
-                            </button>
+                        <div class="dropdown-stats">
+                          <div class="stat-item">
+                            <i class="fas fa-wallet icon"></i>
+                            <div class="stat-details">
+                              <span class="stat-label">Total Deposited</span>
+                              <span class="stat-value" id="totalDeposited">$0.00</span>
                             </div>
+                          </div>
+                          <div class="stat-item">
+                            <i class="fas fa-trophy icon"></i>
+                            <div class="stat-details">
+                              <span class="stat-label">Total Won</span>
+                              <span class="stat-value" id="totalWon">$0.00</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div class="dropdown-section">
+                          <div class="dropdown-section-header">
+                            <i class="fas fa-exchange-alt icon"></i>
+                            <span>Trade URL</span>
+                          </div>
+                          <div class="trade-url-container">
+                            <input type="text" id="dropdownTradeUrlInput" class="trade-url-input" placeholder="Enter your Steam Trade URL" readonly>
+                            <button class="btn btn-edit-url" id="editTradeUrlBtn" aria-label="Edit Trade URL">
+                              <i class="fas fa-edit"></i> </button>
+                          </div>
+                          <div class="trade-url-help">
+                            <a href="https://steamcommunity.com/my/tradeoffers/privacy" target="_blank" rel="noopener noreferrer">
+                              <i class="fas fa-question-circle"></i> Where to find my Trade URL?
+                            </a>
+                          </div>
+                        </div>
+
+                        <div class="dropdown-actions">
+                          <button class="dropdown-item" id="profileButton" role="menuitem">
+                            <i class="fas fa-user icon"></i> View Profile
+                          </button>
+                          <button class="dropdown-item" id="historyButton" role="menuitem">
+                            <i class="fas fa-history icon"></i> Bet History
+                          </button>
+                          <button class="dropdown-item" id="logoutButton" role="menuitem">
+                            <i class="fas fa-sign-out-alt icon"></i> Sign Out
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                </div>
+                    </div>
             </div>
         </div>
     </header>
@@ -193,7 +251,9 @@
                             </div>
 
                             <audio id="spinSound" src="spin-sound.mp3" preload="auto"></audio>
-                            <audio id="depositSound" src="deposit-join.mp3" preload="auto"></audio> <button class="btn btn-primary return-btn" id="returnToJackpot" style="display: none;">Return</button> </div> </div> <div class="deposit-button-container" id="depositBtnContainer">
+                            <audio id="depositSound" src="deposit-join.mp3" preload="auto"></audio>
+                            <button class="btn btn-primary return-btn" id="returnToJackpot" style="display: none;">Return</button>
+                        </div> </div> <div class="deposit-button-container" id="depositBtnContainer">
                         <button class="btn btn-deposit" id="showDepositModal" title="Log in to deposit" disabled>DEPOSIT SKINS</button>
                         <div class="test-buttons-container">
                             <button class="btn btn-secondary" id="testSpinButton">Test Roulette</button>
@@ -223,7 +283,7 @@
                             <p>Unlike many gambling platforms that are run by large teams with significant backing, Rusty Degen is entirely developed, maintained, and operated by a single person - me. This project has been an incredible learning experience, allowing me to apply theoretical knowledge to a real-world application while creating something for a community I deeply care about.</p>
                         </div>
                     </div>
-                    </div>
+                 </div>
             </section>
 
             <section id="tos-page" style="display: none;">
@@ -265,9 +325,24 @@
                             <p>A commission (typically 0-10%) is applied to each jackpot round's total value to support site maintenance, development, and operational costs. This fee is deducted from the item pool before the winner receives the remaining items.</p>
                         </div>
                     </div>
-                  
                     <div class="content-section">
-                        <h3 class="content-section-title">5. Amendments to Terms</h3>
+                        <h3 class="content-section-title">5. Technical Issues and Support Claims</h3>
+                        <div class="content-section-body">
+                             <p>If you believe a loss occurred due to a verifiable error within Rusty Degen's systems (e.g., software bug, server issue), you must report it to our support channel (specified elsewhere, e.g., Discord) within 12 hours of the event.</p>
+                             <p>Claims require detailed information (round ID, time, issue description). Rusty Degen will investigate reasonable claims but retains sole discretion in determining the resolution, which may or may not include compensation.</p>
+                             <p>We recommend withdrawing valuable winnings quickly to avoid potential issues.</p>
+                         </div>
+                    </div>
+                    <div class="content-section">
+                        <h3 class="content-section-title">6. Intellectual Property</h3>
+                         <div class="content-section-body">
+                             <p>All materials on this Website, including design, code, text, graphics, and logos, are owned by or licensed to Rusty Degen and protected by intellectual property laws.</p>
+                             <p>Unauthorized copying, distribution, or modification of any Website content is forbidden without explicit written permission.</p>
+                             <p>Information on the Website is for general use and may change without notice.</p>
+                         </div>
+                    </div>
+                    <div class="content-section">
+                        <h3 class="content-section-title">7. Amendments to Terms</h3>
                         <div class="content-section-body">
                             <p>Rusty Degen may revise these Terms at any time. Updated Terms become effective upon posting on the Website. Continuing to use the Service after changes means you accept the revised Terms.</p>
                         </div>
