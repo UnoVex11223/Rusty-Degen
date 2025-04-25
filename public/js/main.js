@@ -1,4 +1,5 @@
 // main.js - Rust Jackpot Frontend Logic (Combined with Profile Dropdown)
+// Modifications: Removed Steam ID display, Profile button, History button JS logic.
 
 // Ensure Socket.IO client library is loaded before this script
 // Example: <script src="/socket.io/socket.io.js"></script>
@@ -62,13 +63,13 @@ const DOMElements = {
         // Dropdown Specific Elements
         dropdownAvatar: document.getElementById('dropdownAvatar'),
         dropdownUserName: document.getElementById('dropdownUserName'),
-        dropdownUserId: document.getElementById('dropdownUserId'),
+        // dropdownUserId: document.getElementById('dropdownUserId'), // REMOVED
         totalDeposited: document.getElementById('totalDeposited'),
         totalWon: document.getElementById('totalWon'),
         tradeUrlInput: document.getElementById('tradeUrlInput'), // Trade URL input inside dropdown
         editTradeUrlBtn: document.getElementById('editTradeUrlBtn'), // Edit/Save button for Trade URL
-        profileButton: document.getElementById('profileButton'), // Link to profile page (inside dropdown)
-        historyButton: document.getElementById('historyButton'), // Link to history page (inside dropdown)
+        // profileButton: document.getElementById('profileButton'), // REMOVED
+        // historyButton: document.getElementById('historyButton'), // REMOVED
         logoutButton: document.getElementById('logoutButton'), // The logout button inside the dropdown
     },
     // Jackpot Display
@@ -92,13 +93,6 @@ const DOMElements = {
         totalValueDisplay: document.getElementById('totalValue'),
         inventoryLoadingIndicator: document.getElementById('inventory-loading'),
     },
-    // Trade URL Modal (Potentially deprecated if dropdown handles it entirely)
-    // tradeUrl: {
-    //     tradeUrlModal: document.getElementById('tradeUrlModal'),
-    //     closeTradeUrlModalButton: document.getElementById('closeTradeUrlModal'),
-    //     tradeUrlInput: document.getElementById('tradeUrlInput'), // This ID is now likely used by the dropdown
-    //     saveTradeUrlButton: document.getElementById('saveTradeUrl'),
-    // },
     // Roulette Animation Elements
     roulette: {
         inlineRouletteContainer: document.getElementById('inlineRoulette'), // Main container shown during spin
@@ -445,9 +439,10 @@ async function checkLoginStatus() {
  * MERGED FUNCTIONALITY FROM manu.js and main.js
  */
 function updateUserUI() {
+    // Destructure elements needed, EXCLUDING removed ones (dropdownUserId)
     const { loginButton, userProfile, userAvatar, userName, userDropdownMenu,
-            dropdownAvatar, dropdownUserName, dropdownUserId,
-            totalDeposited, totalWon, tradeUrlInput, editTradeUrlBtn // Added dropdown elements
+            dropdownAvatar, dropdownUserName,
+            totalDeposited, totalWon, tradeUrlInput, editTradeUrlBtn
     } = DOMElements.user;
 
     if (!loginButton || !userProfile) return; // Essential elements must exist
@@ -463,8 +458,7 @@ function updateUserUI() {
         // --- Dropdown Elements ---
         if (dropdownAvatar) dropdownAvatar.src = currentUser.avatar || '/img/default-avatar.png';
         if (dropdownUserName) dropdownUserName.textContent = currentUser.username || 'User';
-        // Use the user's actual Steam ID if available from the backend login check
-        if (dropdownUserId) dropdownUserId.textContent = `ID: ${currentUser.steamId || 'N/A'}`;
+        // --- REMOVED Steam ID Update ---
         // Use actual stats if available, otherwise show defaults or mock values
         if (totalDeposited) totalDeposited.textContent = `$${(currentUser.totalDeposited || 0).toFixed(2)}`;
         if (totalWon) totalWon.textContent = `$${(currentUser.totalWon || 0).toFixed(2)}`;
@@ -712,6 +706,8 @@ function updateTotalValue() {
     depositButton.disabled = selectedItemsList.length === 0;
 }
 
+// main.js - Part 2 (Modified - Continued)
+
 /**
  * Handles the deposit submission process.
  * Initiates the deposit with the backend and instructs the user on the trade offer process.
@@ -844,7 +840,7 @@ function updateTimerUI(timeLeft) {
       } else if (currentRound && currentRound.status === 'pending') {
           displayValue = "Waiting"; // Show waiting if server says pending
       } else if (!currentRound) {
-           displayValue = "--"; // Default if no round data yet
+          displayValue = "--"; // Default if no round data yet
       }
 
     timerValue.textContent = displayValue;
@@ -2660,9 +2656,9 @@ function setupEventListeners() {
     });
 
     // --- User Profile Dropdown Listeners ---
+    // Destructure only the needed elements, EXCLUDING removed ones
     const { userProfile, userDropdownMenu, logoutButton,
-            editTradeUrlBtn, tradeUrlInput: dropdownTradeUrlInput,
-            profileButton, historyButton
+            editTradeUrlBtn, tradeUrlInput: dropdownTradeUrlInput
           } = DOMElements.user;
 
     // Toggle dropdown menu
@@ -2743,19 +2739,9 @@ function setupEventListeners() {
         });
     }
 
-    // Profile Button (inside dropdown)
-    profileButton?.addEventListener('click', () => {
-        console.log('Navigating to profile page... (Implement navigation)');
-        // Example: window.location.href = '/profile'; or use showPage if it's an SPA section
-        if (userDropdownMenu) userDropdownMenu.style.display = 'none'; // Close dropdown
-    });
+    // --- REMOVED Profile Button Listener ---
+    // --- REMOVED History Button Listener ---
 
-    // History Button (inside dropdown)
-    historyButton?.addEventListener('click', () => {
-        console.log('Navigating to history page... (Implement navigation)');
-        // Example: window.location.href = '/history'; or use showPage if it's an SPA section
-        if (userDropdownMenu) userDropdownMenu.style.display = 'none'; // Close dropdown
-    });
     // --- End User Profile Dropdown Listeners ---
 
 
@@ -2784,10 +2770,6 @@ function setupEventListeners() {
     // Deposit Modal Controls
     DOMElements.deposit.closeDepositModalButton?.addEventListener('click', () => hideModal(DOMElements.deposit.depositModal));
     DOMElements.deposit.depositButton?.addEventListener('click', submitDeposit);
-
-    // Trade URL Modal Controls (Keep if modal still exists as fallback, otherwise remove)
-    // DOMElements.tradeUrl.closeTradeUrlModalButton?.addEventListener('click', () => hideModal(DOMElements.tradeUrl.tradeUrlModal));
-    // DOMElements.tradeUrl.saveTradeUrlButton?.addEventListener('click', saveUserTradeUrl); // This function might need removal/adaptation
 
     // Age Verification Modal Controls
     const { modal: ageModal, checkbox: ageCheckbox, agreeButton: ageAgreeButton } = DOMElements.ageVerification;
@@ -2827,7 +2809,6 @@ function setupEventListeners() {
         }
         // Close modals on backdrop click
         if (e.target === DOMElements.deposit.depositModal) hideModal(DOMElements.deposit.depositModal);
-        // if (e.target === DOMElements.tradeUrl.tradeUrlModal) hideModal(DOMElements.tradeUrl.tradeUrlModal); // Remove if modal is gone
         if (e.target === DOMElements.ageVerification.modal) {
             // Optional: Decide if clicking backdrop closes age verification
             // hideModal(DOMElements.ageVerification.modal);
@@ -2880,4 +2861,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-console.log("main.js (Combined Version) loaded.");
+console.log("main.js (Combined Version, Modified) loaded.");
