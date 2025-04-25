@@ -309,9 +309,11 @@ code { /* General code tag styling */
     justify-content: flex-end;
 }
 
+/* *** MODIFICATION START: Added position: relative *** */
 .user-profile-container {
-    position: relative;
+    position: relative; /* Needed for absolute positioning of the child dropdown */
 }
+/* *** MODIFICATION END *** */
 
 /* --- Enhanced User Profile Button (Replaces old .user-profile) --- */
 .user-profile {
@@ -396,19 +398,33 @@ code { /* General code tag styling */
 }
 
 /* --- Enhanced Dropdown Menu (Replaces old .dropdown-menu) --- */
+/* *** MODIFICATION START: Applied pop-out styles *** */
 .dropdown-menu {
-    position: absolute;
-    top: calc(100% + 8px); /* Position below button with gap */
-    right: 0;
-    background-color: var(--background-medium);
+    /* Core Pop-out Styling */
+    display: none; /* JS toggles this to 'block' */
+    position: absolute; /* Changed from previous */
+    top: calc(100% + 8px); /* Position below the profile button container + 8px gap */
+    right: 0; /* Align to the right edge of the container */
+    z-index: 1000; /* High value to ensure it's on top */
+
+    /* Appearance */
+    background-color: var(--background-medium); /* Explicit background */
     border: 1px solid var(--border-color);
     border-radius: 8px; /* Slightly more rounded */
-    min-width: 280px; /* Wider dropdown */
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); /* Stronger shadow */
-    z-index: 1000; /* Ensure high z-index */
+    min-width: 280px; /* Wider dropdown */
     overflow: hidden; /* Clip content to border-radius */
-    display: none;
+
+    /* Kept from previous */
+    /* padding: 0; (This was in suggestion, but keep existing section padding below) */
+
+    /* Add transitions for smooth show/hide (optional - requires JS change too) */
+    /* transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out; */
+    /* opacity: 0; */
+    /* transform: translateY(-10px); */
 }
+/* *** MODIFICATION END *** */
+
 
 /* --- NEW Dropdown Sections --- */
 /* Dropdown Header */
@@ -440,10 +456,13 @@ code { /* General code tag styling */
     color: var(--text-primary);
     margin-bottom: 2px;
 }
+/* REMOVED .dropdown-user-id styling as element is removed */
+/*
 .dropdown-user-id {
     font-size: 0.8rem;
     color: var(--text-secondary);
 }
+*/
 
 /* Stats Section */
 .dropdown-stats {
@@ -451,7 +470,6 @@ code { /* General code tag styling */
     grid-template-columns: 1fr 1fr; /* Two columns for stats */
     gap: 1px; /* Use gap for borders */
     background-color: var(--border-color); /* Background acts as border */
-    /* margin-bottom: 1px; */ /* Optional: if border needed below */
 }
 .stat-item {
     background-color: var(--background-medium); /* Background for each item */
@@ -487,7 +505,7 @@ code { /* General code tag styling */
 }
 
 /* Trade URL Section */
-.dropdown-section {
+.dropdown-section { /* General section styling reused */
     padding: 15px;
     border-bottom: 1px solid var(--border-color);
 }
@@ -508,7 +526,7 @@ code { /* General code tag styling */
     gap: 8px;
     margin-bottom: 8px;
 }
-.trade-url-input {
+.trade-url-input { /* Styles #tradeUrlInput specifically within the dropdown */
     flex-grow: 1;
     padding: 8px 10px;
     background-color: var(--background-dark);
@@ -523,7 +541,8 @@ code { /* General code tag styling */
     outline: none;
     box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.2);
 }
-.btn-edit-url { /* Style for Edit/Save button */
+/* Style for Edit/Save button (#editTradeUrlBtn) */
+.btn-edit-url {
     padding: 8px;
     background-color: var(--background-light);
     color: var(--primary-color);
@@ -534,11 +553,17 @@ code { /* General code tag styling */
     display: flex; /* For icon alignment */
     align-items: center;
     justify-content: center;
+    flex-shrink: 0; /* Prevent shrinking */
 }
 .btn-edit-url:hover {
     background-color: var(--primary-color);
     color: var(--background-dark);
 }
+.btn-edit-url i { /* Ensure icon fits */
+    font-size: 0.9em;
+    vertical-align: middle;
+}
+
 .trade-url-help {
     font-size: 0.8rem;
     text-align: right;
@@ -556,9 +581,10 @@ code { /* General code tag styling */
 /* Action Buttons Section */
 .dropdown-actions {
     padding: 5px 0; /* Padding around the action items */
+    border-bottom: none; /* Ensure no border if it's the last section */
 }
 
-/* UPDATED Dropdown Item (for Profile, Sign Out etc.) */
+/* UPDATED Dropdown Item (Applies to any remaining items like potential future links) */
 .dropdown-item {
     display: flex;
     align-items: center;
@@ -590,23 +616,40 @@ code { /* General code tag styling */
 }
 
 /* Logout button specific styling */
-#logoutButton {
+#logoutButton { /* Target by ID now */
+    /* Re-use .dropdown-item styles and override */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 15px;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-size: 0.95rem;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    /* Logout specific */
     border-top: 1px solid var(--border-color); /* Separator */
     margin-top: 5px; /* Space above separator */
-    color: #f44336; /* Red color for logout */
+    color: #f44336 !important; /* Red color for logout, use important if needed*/
 }
-#logoutButton .icon {
-    color: #f44336; /* Match text color */
+#logoutButton .icon { /* Style icon if present */
+    color: #f44336 !important; /* Match text color */
+     width: 20px;
+     text-align: center;
+     transition: color 0.2s ease;
 }
 #logoutButton:hover {
-    background-color: rgba(244, 67, 54, 0.1); /* Light red background on hover */
-    color: #f44336; /* Keep text red on hover */
+    background-color: rgba(244, 67, 54, 0.1) !important; /* Light red background on hover */
+    color: #f44336 !important; /* Keep text red on hover */
 }
 #logoutButton:hover .icon {
-    color: #f44336; /* Keep icon red on hover */
+    color: #f44336 !important; /* Keep icon red on hover */
 }
 /* --- END NEW Dropdown Sections --- */
-
 
 /*=========================
  BUTTONS (Continued - Base styles)
@@ -640,6 +683,36 @@ code { /* General code tag styling */
     box-shadow: none !important;
     opacity: 0.6;
 }
+
+/* *** MODIFICATION START: Added specific styles for #loginButton *** */
+#loginButton {
+    /* Inherits .btn styles but adds specific overrides for size */
+    padding: 5px 12px; /* Reduced padding */
+    font-size: 0.9rem; /* Slightly smaller font */
+    height: auto; /* Auto height based on padding */
+    line-height: normal; /* Normal line height */
+    margin-left: 10px; /* Optional space from tabs */
+    vertical-align: middle; /* Align with adjacent elements */
+    /* Assume it also has .btn-primary or similar for color */
+    background-color: #4CAF50; /* Example Steam green */
+    color: white;
+    display: inline-flex; /* Use flex if icon is present */
+    align-items: center;
+    white-space: nowrap; /* Prevent wrapping */
+    /* Override hover effect slightly if needed */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); /* Smaller shadow */
+}
+#loginButton:hover:not(:disabled) {
+    transform: translateY(-1px); /* Less hover movement */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+#loginButton i { /* Optional icon styling */
+  margin-right: 6px;
+  font-size: 1em; /* Match button font size */
+}
+/* *** MODIFICATION END *** */
+
+
 .btn-primary {
     background-color: var(--primary-color);
     color: var(--background-dark);
@@ -846,16 +919,16 @@ code { /* General code tag styling */
 }
 .roulette-track {
     display: flex; position: absolute; left: 0; top: 0; height: 100%;
-    padding-left: calc(50% - 45px);
+    padding-left: calc(50% - 45px); /* (Item width + margin) / 2 */
     padding-right: calc(50% - 45px);
     will-change: transform; transition: none;
 }
 
 .roulette-item {
     flex: 0 0 auto;
-    width: 90px;
-    height: 80px;
-    margin: 5px;
+    width: 90px; /* Updated width */
+    height: 80px; /* Updated height */
+    margin: 5px; /* Keep margin */
     background: rgba(30, 35, 40, 0.8);
     border-radius: 6px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
@@ -867,7 +940,7 @@ code { /* General code tag styling */
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0;
+    padding: 0; /* Reset padding */
 }
 
 .roulette-item:hover {
@@ -882,8 +955,8 @@ code { /* General code tag styling */
     height: 100%;
     object-fit: cover;
     transition: transform 0.3s ease;
-    border: none;
-    border-radius: 0;
+    border: none; /* Ensure no border on image */
+    border-radius: 0; /* Image shouldn't be rounded */
 }
 
 .roulette-item:hover .roulette-avatar { transform: scale(1.1); }
@@ -1432,256 +1505,4 @@ code { /* General code tag styling */
 .page-button:disabled { opacity: 0.5; cursor: not-allowed; }
 .page-ellipsis { color: var(--text-secondary); padding: 6px 0; margin: 0 2px; }
 
-
-/*=========================
- FOOTER
- =========================*/
-
-.main-footer {
-    background-color: var(--background-medium); text-align: center; padding: 25px 15px;
-    margin-top: 50px; border-top: 1px solid var(--border-color);
-    font-size: 0.9rem; color: var(--text-secondary);
-}
-.main-footer p { margin: 0; }
-
-/*=========================
- RESPONSIVE STYLES
- =========================*/
-
-@media (max-width: 992px) { /* Tablet */
-    .header-container {
-        justify-content: space-between;
-        gap: 10px;
-    }
-    .header-left {
-        order: 1;
-        flex-grow: 0;
-        flex-shrink: 1;
-    }
-    .header-center {
-        order: 3;
-        width: 100%;
-        flex-basis: 100%;
-        justify-content: center;
-        margin-top: 10px;
-        flex-grow: 1;
-        padding: 5px 0;
-    }
-    .header-right {
-        order: 2;
-        flex-grow: 0;
-        flex-shrink: 0;
-    }
-
-    .primary-nav { display: none; }
-    .secondary-nav { display: flex; }
-
-    .jackpot-value h2 { font-size: 3.5rem; }
-    .timer-circle { width: 110px; height: 110px; }
-    .timer-text { font-size: 3.1rem; }
-    .stat-value { font-size: 3.1rem; }
-    .jackpot-tab { font-size: 1.5rem !important; }
-
-    .roulette-item { width: 70px; height: 70px; margin: 10px 4px; }
-    .roulette-track { padding-left: calc(50% - 35px); padding-right: calc(50% - 35px); }
-}
-
-@media (max-width: 768px) { /* Mobile */
-    .header-container {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        gap: 5px;
-    }
-    .header-left {
-        order: 1;
-        flex: 0 1 auto;
-    }
-    .header-center {
-        order: 3;
-        width: 100%;
-        flex-basis: 100%;
-        margin-top: 10px;
-        padding: 5px 0;
-    }
-    .header-right {
-        order: 2;
-        flex: 0 1 auto;
-    }
-
-    .primary-nav { display: none; }
-    .secondary-nav {
-        display: flex;
-        width: 100%;
-        justify-content: center;
-        margin-top: 10px;
-        order: 4;
-        border-top: 1px solid var(--border-color);
-        padding-top: 10px;
-    }
-    .secondary-nav ul {
-        justify-content: space-around;
-        width: 100%;
-    }
-    .secondary-nav a {
-        font-size: 0.9rem;
-        padding: 6px 5px;
-    }
-    .main-nav a { font-size: 1.1rem; padding: 8px 10px; }
-
-    /* Jackpot Responsive */
-    .jackpot-header {
-        gap: 15px;
-        padding: 20px 15px;
-    }
-    .jackpot-timer, .jackpot-value, .jackpot-stats {
-        min-width: 130px;
-        flex-basis: 130px;
-        height: auto;
-    }
-    #showDepositModal {
-        width: 80%;
-        max-width: 280px;
-    }
-    .jackpot-value h2 { font-size: 2.8rem; }
-    .timer-circle { width: 90px; height: 90px; }
-    .timer-text { font-size: 2.4rem; }
-    .timer-background, .timer-foreground { stroke-width: 6px; }
-    .stat-value { font-size: 2.4rem; }
-    .value-label, .timer-label, .stat-label { font-size: 0.8rem; }
-    .jackpot-tab { font-size: 1.4rem !important; text-shadow: 0 0 8px var(--jackpot-tab-color); }
-
-    /* Roulette Responsive */
-    .roulette-container { margin-top: 20px; height: 80px; width: 95%; }
-    .roulette-item { width: 70px; height: 70px; margin: 5px; border-radius: 6px;}
-    .roulette-track { padding-left: calc(50% - 35px); padding-right: calc(50% - 35px); }
-    .winner-info { padding: 8px; }
-    .winner-avatar { width: 30px; height: 30px; margin-right: 8px;}
-    .winner-header h3 { font-size: 1rem; }
-    .winner-details p { font-size: 0.8rem; }
-
-    /* Inventory/Modal Responsive */
-    .inventory-items { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); max-height: 250px; }
-    .inventory-item img { height: 70px; }
-    .selected-items-container { max-height: 200px; }
-    .selected-item-display { width: 70px; }
-    .selected-item-display img { height: 50px; }
-    .selected-item-display .item-name { font-size: 0.6rem; }
-    .selected-item-display .item-value { font-size: 0.65rem; }
-    .remove-item-btn { width: 16px; height: 16px; font-size: 9px; line-height: 16px; }
-    .modal-content { max-width: 95%; }
-    .modal-header h2 { font-size: 1.2rem; }
-    .modal-footer { justify-content: center; flex-wrap: wrap; }
-
-    /* History Table Responsive */
-    .history-table { font-size: 0.85rem; }
-    .history-table th, .history-table td { padding: 10px 8px;}
-    .btn-details, .btn-verify { display: block; width: 100%; margin: 5px 0 0 0; }
-    .history-table td:last-child { text-align: center; }
-
-    /* Participant Display Responsive */
-    .player-items-grid { justify-content: center; }
-    .player-deposit-container { padding: 10px; }
-
-    /* --- Content Tab Responsive --- */
-    .content-card {
-        padding: 20px;
-        border-radius: 8px;
-        margin-left: auto;
-        margin-right: auto;
-    }
-    .content-card h1 {
-        font-size: 1.8rem;
-    }
-    .content-section-title {
-        font-size: 1.2rem;
-    }
-    #fair-page .verify-form { /* Adjusted selector */
-        grid-template-columns: 1fr; /* Stack form fields */
-    }
-
-    /* --- NEW Dropdown Responsive --- */
-    .dropdown-menu {
-        position: fixed; /* Change to fixed for easier positioning */
-        top: 60px; /* Adjust top offset as needed */
-        right: 10px;
-        left: 10px;
-        width: calc(100% - 20px); /* Full width minus padding */
-        max-width: 400px; /* Limit max width */
-        margin: 0 auto; /* Center horizontally */
-    }
-    /* --- End Content Tab & Dropdown Responsive --- */
-}
-
-@media (max-width: 480px) { /* Small mobile */
-    .header-container {
-        gap: 5px;
-        justify-content: space-between;
-    }
-
-    .header-left { flex: 0 1 auto; }
-    .header-right { flex: 0 1 auto; }
-    .header-center { width: 100%; flex-basis: 100%; flex: none; }
-    .secondary-nav { order: 4; margin-top: 8px; padding-top: 8px; }
-    .secondary-nav a { font-size: 0.8rem; padding: 5px; }
-
-    .logo h1 { font-size: 1.5rem; }
-    .user-avatar { width: 28px; height: 28px; } /* Adjust avatar size */
-    .user-name { max-width: 100px; }
-    .btn-login {
-        padding: 6px 12px; /* Keep smaller padding */
-        font-size: 0.9rem; /* Keep smaller font */
-    }
-    .btn-deposit, .btn-secondary { font-size: 1rem; padding: 10px 20px; }
-    .jackpot-tab { font-size: 1.3rem !important; padding: 8px 10px !important; }
-
-    .jackpot-header {
-        flex-direction: column;
-        gap: 20px;
-        padding: 15px;
-    }
-    .jackpot-timer, .jackpot-value, .jackpot-stats {
-         width: 100%;
-         min-width: auto;
-         flex-basis: auto;
-         height: auto;
-    }
-    #showDepositModal {
-        width: 90%;
-        max-width: 280px;
-     }
-    .jackpot-value h2 { font-size: 2.2rem; }
-    .timer-circle { width: 70px; height: 70px; }
-    .timer-text { font-size: 1.8rem; }
-    .stat-value { font-size: 1.8rem; margin-top: 0; }
-    .timer-background, .timer-foreground { stroke-width: 5px; }
-    .value-label, .timer-label, .stat-label { font-size: 0.7rem; }
-
-    .roulette-container { height: 70px; }
-    .roulette-item { width: 60px; height: 60px; margin: 5px; border-radius: 6px;}
-    .roulette-track { padding-left: calc(50% - 30px); padding-right: calc(50% - 30px); }
-
-    .inventory-items { grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); }
-    .inventory-item img { height: 60px; }
-    .selected-items-container { max-height: 180px; }
-    .selected-item-display { width: 60px; }
-    .selected-item-display img { height: 40px; }
-    .selected-item-display .item-name { font-size: 0.55rem; }
-    .selected-item-display .item-value { font-size: 0.6rem; }
-
-    .history-table th, .history-table td { padding: 8px 6px; font-size: 0.8rem;}
-    .btn-details, .btn-verify { font-size: 0.7rem; padding: 4px 6px;}
-    .modal-body { padding: 15px; }
-    .modal-footer { padding: 10px 15px; }
-    .player-deposit-item { width: 70px; height: 90px; }
-    .player-deposit-item-image { height: 50px; }
-    .player-deposit-item-name { font-size: 0.6rem; }
-}
-
-
-/* Initial Page Display (JS controls this) */
-#home-page, #about-page, #tos-page, #faq-page, #fair-page {
-    display: none; /* JS's showPage() function controls visibility */
-}
-/* JS should set display: block; for the initial page on load (e.g., #home-page) */
-
+/* (Code continues in the next part) */
