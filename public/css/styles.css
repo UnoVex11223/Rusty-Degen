@@ -472,21 +472,34 @@ code { /* General code tag styling */
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
-/* Login Button */
+/* --- UPDATED Login Button --- */
 .btn-login {
     background-color: transparent;
     border: 2px solid var(--primary-color);
     color: var(--primary-color);
-    padding: 8px 16px;
-    border-radius: 30px;
+    /* padding: 8px 16px; */ /* Original */
+    padding: 7px 15px; /* CHANGE: Slightly smaller padding */
+    border-radius: 30px; /* Keep rounded */
     display: flex;
-    align-items: center;
-    gap: 8px;
+    align-items: center; /* Keep vertical alignment */
+    gap: 8px; /* Keep gap */
+    font-size: 0.95rem; /* CHANGE: Slightly smaller font */
+    transition: background-color 0.2s ease, color 0.2s ease; /* ADDED: Smooth transition */
+    /* Inherits base .btn styles like font-family, weight, uppercase */
+    line-height: 1.2; /* Ensure line-height consistency */
+    text-transform: uppercase; /* Ensure uppercase if desired */
 }
 .btn-login:hover {
     background-color: var(--primary-color);
     color: var(--background-dark);
+    /* Inherits transform/shadow from base .btn:hover */
 }
+/* Ensure icon size is appropriate */
+.btn-login i {
+    font-size: 1.1em; /* Adjust icon size relative to text if needed */
+}
+/* --- END UPDATED Login Button --- */
+
 
 /* History Table Buttons */
 .btn-details, .btn-verify {
@@ -568,7 +581,7 @@ code { /* General code tag styling */
 
 .jackpot-header.roulette-mode {
     background: linear-gradient(135deg, var(--background-dark), var(--background-medium));
-    height: 140px; /* <<< INCREASED Explicit height for roulette mode */
+    height: 140px; /* <<< Explicit height for roulette mode */
     min-height: 140px; /* <<< Ensure min-height matches */
     align-items: center; /* Ensure vertical centering */
     padding-top: 0; /* Adjust padding if needed */
@@ -1429,7 +1442,10 @@ code { /* General code tag styling */
     .logo h1 { font-size: 1.5rem; }
     .user-avatar { width: 28px; height: 28px; }
     .user-name { max-width: 100px; }
-    .btn-login { padding: 6px 12px; font-size: 0.9rem; }
+    .btn-login {
+        padding: 6px 12px; /* Keep smaller padding */
+        font-size: 0.9rem; /* Keep smaller font */
+    }
     .btn-deposit, .btn-secondary { font-size: 1rem; padding: 10px 20px; }
     .jackpot-tab { font-size: 1.3rem !important; padding: 8px 10px !important; }
 
@@ -1482,3 +1498,4 @@ code { /* General code tag styling */
     display: none; /* JS's showPage() function controls visibility */
 }
 /* JS should set display: block; for the initial page on load (e.g., #home-page) */
+
