@@ -1,4 +1,4 @@
-// main.js - Rust Jackpot Frontend Logic
+// main.js - Rust Jackpot Frontend Logic (Combined with Profile Dropdown)
 
 // Ensure Socket.IO client library is loaded before this script
 // Example: <script src="/socket.io/socket.io.js"></script>
@@ -36,30 +36,39 @@ const COLOR_PALETTE = [
 // --- DOM Element References ---
 // Grouping DOM elements for better organization
 const DOMElements = {
-    // Navigation (Roadmap removed, TOS added)
+    // Navigation
     nav: {
         homeLink: document.getElementById('home-link'), // Assuming jackpot tab is home
         aboutLink: document.getElementById('about-link'),
-        tosLink: document.getElementById('tos-link'), // Added
+        tosLink: document.getElementById('tos-link'),
         faqLink: document.getElementById('faq-link'),
         fairLink: document.getElementById('fair-link'),
-        // roadmapLink: document.getElementById('roadmap-link'), // Removed
     },
     pages: {
         homePage: document.getElementById('home-page'),
         aboutPage: document.getElementById('about-page'),
-        tosPage: document.getElementById('tos-page'), // Added
+        tosPage: document.getElementById('tos-page'),
         faqPage: document.getElementById('faq-page'),
         fairPage: document.getElementById('fair-page'),
-        // roadmapPage: document.getElementById('roadmap-page'), // Removed
     },
-    // User Authentication / Profile
+    // User Authentication / Profile (Includes Dropdown Elements)
     user: {
         loginButton: document.getElementById('loginButton'),
         userProfile: document.getElementById('userProfile'), // The clickable profile part
-        userAvatar: document.getElementById('userAvatar'),
-        userName: document.getElementById('userName'),
+        userAvatar: document.getElementById('userAvatar'), // Avatar in the header
+        userName: document.getElementById('userName'), // Name in the header
         userDropdownMenu: document.getElementById('userDropdownMenu'), // The dropdown menu itself
+
+        // Dropdown Specific Elements
+        dropdownAvatar: document.getElementById('dropdownAvatar'),
+        dropdownUserName: document.getElementById('dropdownUserName'),
+        dropdownUserId: document.getElementById('dropdownUserId'),
+        totalDeposited: document.getElementById('totalDeposited'),
+        totalWon: document.getElementById('totalWon'),
+        tradeUrlInput: document.getElementById('tradeUrlInput'), // Trade URL input inside dropdown
+        editTradeUrlBtn: document.getElementById('editTradeUrlBtn'), // Edit/Save button for Trade URL
+        profileButton: document.getElementById('profileButton'), // Link to profile page (inside dropdown)
+        historyButton: document.getElementById('historyButton'), // Link to history page (inside dropdown)
         logoutButton: document.getElementById('logoutButton'), // The logout button inside the dropdown
     },
     // Jackpot Display
@@ -83,13 +92,13 @@ const DOMElements = {
         totalValueDisplay: document.getElementById('totalValue'),
         inventoryLoadingIndicator: document.getElementById('inventory-loading'),
     },
-    // Trade URL Modal
-    tradeUrl: {
-        tradeUrlModal: document.getElementById('tradeUrlModal'),
-        closeTradeUrlModalButton: document.getElementById('closeTradeUrlModal'),
-        tradeUrlInput: document.getElementById('tradeUrlInput'),
-        saveTradeUrlButton: document.getElementById('saveTradeUrl'),
-    },
+    // Trade URL Modal (Potentially deprecated if dropdown handles it entirely)
+    // tradeUrl: {
+    //     tradeUrlModal: document.getElementById('tradeUrlModal'),
+    //     closeTradeUrlModalButton: document.getElementById('closeTradeUrlModal'),
+    //     tradeUrlInput: document.getElementById('tradeUrlInput'), // This ID is now likely used by the dropdown
+    //     saveTradeUrlButton: document.getElementById('saveTradeUrl'),
+    // },
     // Roulette Animation Elements
     roulette: {
         inlineRouletteContainer: document.getElementById('inlineRoulette'), // Main container shown during spin
@@ -104,8 +113,8 @@ const DOMElements = {
     },
     // Audio Elements
     audio: {
-         spinSound: document.getElementById('spinSound'),
-         depositSound: document.getElementById('depositSound')
+        spinSound: document.getElementById('spinSound'),
+        depositSound: document.getElementById('depositSound')
     },
     // Provably Fair Elements
     provablyFair: {
@@ -173,7 +182,6 @@ function showPage(pageElement) {
     if (pageElement) pageElement.style.display = 'block';
 
     // Update active state on navigation links
-    // Added DOMElements.nav.tosLink to querySelectorAll
     document.querySelectorAll('.main-nav a, .secondary-nav a, .primary-nav a')
         .forEach(link => link?.classList.remove('active'));
 
@@ -181,10 +189,9 @@ function showPage(pageElement) {
     let activeLink = null;
     if (pageElement === DOMElements.pages.homePage) activeLink = DOMElements.nav.homeLink;
     else if (pageElement === DOMElements.pages.aboutPage) activeLink = DOMElements.nav.aboutLink;
-    else if (pageElement === DOMElements.pages.tosPage) activeLink = DOMElements.nav.tosLink; // Added TOS
+    else if (pageElement === DOMElements.pages.tosPage) activeLink = DOMElements.nav.tosLink;
     else if (pageElement === DOMElements.pages.faqPage) activeLink = DOMElements.nav.faqLink;
     else if (pageElement === DOMElements.pages.fairPage) activeLink = DOMElements.nav.fairLink;
-    // Removed condition for roadmapPage
 
     if (activeLink) activeLink.classList.add('active');
 
@@ -211,7 +218,7 @@ function getUserColor(userId) {
 
 /**
  * Displays a non-blocking notification message.
- * Requires a div with id="notification-bar" in the HTML.
+ * Uses the notificationBar element defined in DOMElements.
  * @param {string} message - The message to display.
  * @param {string} type - 'success', 'error', or 'info' (for styling). Default 'info'.
  * @param {number} duration - How long to show the message (ms). Default 4000.
@@ -301,7 +308,7 @@ function darkenColor(hex, percent) {
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
-// --- Add Logout Function ---
+// --- Logout Function ---
 /**
  * Handles the user logout process by calling the backend.
  */
@@ -322,10 +329,9 @@ async function handleLogout() {
         }
 
         const result = await response.json();
-        if (!result.success) {
+         if (!result.success) {
              throw new Error(result.error || 'Logout unsuccessful according to server.');
-        }
-
+         }
 
         console.log('Logout successful.');
         currentUser = null; // Clear local user state
@@ -340,10 +346,11 @@ async function handleLogout() {
         showNotification(`Logout failed: ${error.message}`, 'error');
     } finally {
         // Ensure dropdown is closed after attempt
-        if (DOMElements.user.userDropdownMenu) {
-            DOMElements.user.userDropdownMenu.style.display = 'none';
-            DOMElements.user.userProfile?.setAttribute('aria-expanded', 'false');
-            DOMElements.user.userProfile?.classList.remove('open'); // Optional class for arrow styling
+        const { userDropdownMenu, userProfile } = DOMElements.user;
+        if (userDropdownMenu) {
+            userDropdownMenu.style.display = 'none';
+            userProfile?.setAttribute('aria-expanded', 'false');
+            userProfile?.classList.remove('open'); // Optional class for arrow styling
         }
     }
 }
@@ -409,6 +416,17 @@ async function checkLoginStatus() {
             }
         } else {
             currentUser = await response.json();
+            // Manually add mock stats if backend doesn't provide them yet
+            // Remove these lines once your backend provides real stats
+            if (currentUser && currentUser.totalDeposited === undefined) {
+                currentUser.totalDeposited = Math.random() * 2000; // Mock data
+            }
+            if (currentUser && currentUser.totalWon === undefined) {
+                 currentUser.totalWon = Math.random() * 3000; // Mock data
+            }
+             if (currentUser && !currentUser.steamId) {
+                 currentUser.steamId = `mock_${Math.floor(Math.random() * 100000000)}`; // Mock data
+             }
             console.log('User logged in:', currentUser?.username);
         }
     } catch (error) {
@@ -416,25 +434,52 @@ async function checkLoginStatus() {
         currentUser = null;
         showNotification(`Error checking login: ${error.message}`, 'error');
     } finally {
-        updateUserUI(); // Update profile/login button visibility
+        updateUserUI(); // Update profile/login button visibility and dropdown content
         updateDepositButtonState(); // Update deposit button based on login status
     }
 }
 
 /**
- * Updates the user profile section (avatar, name) or shows the login button.
+ * Updates the user profile section (header avatar/name, dropdown content)
+ * or shows the login button, based on the currentUser state.
+ * MERGED FUNCTIONALITY FROM manu.js and main.js
  */
 function updateUserUI() {
-    const { loginButton, userProfile, userAvatar, userName, userDropdownMenu } = DOMElements.user;
-    if (!userProfile || !loginButton || !userAvatar || !userName) return;
+    const { loginButton, userProfile, userAvatar, userName, userDropdownMenu,
+            dropdownAvatar, dropdownUserName, dropdownUserId,
+            totalDeposited, totalWon, tradeUrlInput, editTradeUrlBtn // Added dropdown elements
+    } = DOMElements.user;
+
+    if (!loginButton || !userProfile) return; // Essential elements must exist
 
     if (currentUser) {
-        userAvatar.src = currentUser.avatar || '/img/default-avatar.png';
-        userName.textContent = currentUser.username || 'User';
+        // --- Header Elements ---
+        if (userAvatar) userAvatar.src = currentUser.avatar || '/img/default-avatar.png';
+        if (userName) userName.textContent = currentUser.username || 'User';
         loginButton.style.display = 'none';
         userProfile.style.display = 'flex'; // Show the profile block
         userProfile.setAttribute('aria-disabled', 'false'); // Enable profile button
+
+        // --- Dropdown Elements ---
+        if (dropdownAvatar) dropdownAvatar.src = currentUser.avatar || '/img/default-avatar.png';
+        if (dropdownUserName) dropdownUserName.textContent = currentUser.username || 'User';
+        // Use the user's actual Steam ID if available from the backend login check
+        if (dropdownUserId) dropdownUserId.textContent = `ID: ${currentUser.steamId || 'N/A'}`;
+        // Use actual stats if available, otherwise show defaults or mock values
+        if (totalDeposited) totalDeposited.textContent = `$${(currentUser.totalDeposited || 0).toFixed(2)}`;
+        if (totalWon) totalWon.textContent = `$${(currentUser.totalWon || 0).toFixed(2)}`;
+        if (tradeUrlInput) tradeUrlInput.value = currentUser.tradeUrl || '';
+
+        // Ensure trade URL input starts as read-only in the dropdown
+        if (tradeUrlInput) tradeUrlInput.readOnly = true;
+        if (editTradeUrlBtn) {
+            editTradeUrlBtn.innerHTML = '<i class="fas fa-edit"></i>'; // Set to edit icon
+            editTradeUrlBtn.title = 'Edit Trade URL';
+            editTradeUrlBtn.disabled = false; // Ensure button is enabled
+        }
+
     } else {
+        // --- User Logged Out ---
         loginButton.style.display = 'flex'; // Show login button
         userProfile.style.display = 'none'; // Hide profile block
         userProfile.setAttribute('aria-disabled', 'true'); // Disable profile button
@@ -718,7 +763,6 @@ async function submitDeposit() {
         }
 
         // Step 2: Construct the trade offer URL and instructions for the user
-        // Client doesn't need to construct the URL, just needs token and base URL
         console.log("Deposit Token:", depositToken);
         console.log("Bot Trade URL:", botTradeUrl);
 
@@ -731,17 +775,6 @@ async function submitDeposit() {
             `The deposit will be processed once the trade is accepted with the correct message.`;
 
         showNotification(instructionMessage, 'info', 15000); // Show for longer duration
-
-        // Optionally try to open the trade URL in a new tab (popup blockers might interfere)
-        // window.open(`${botTradeUrl}&message=${encodeURIComponent(depositToken)}`, '_blank');
-
-        // Provide a clickable link inside the modal or notification if possible
-        // Example (requires adding a placeholder element):
-        // const tradeLinkPlaceholder = document.getElementById('tradeLinkPlaceholder');
-        // if (tradeLinkPlaceholder) {
-        //     tradeLinkPlaceholder.innerHTML = `<p>Open trade: <a href="${botTradeUrl}&message=${encodeURIComponent(depositToken)}" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-small">Steam Trade</a><br>Message: <code>${depositToken}</code></p>`;
-        // }
-
 
         // Clear selection and close modal AFTER initiating successfully
         if (depositModal) hideModal(depositModal);
@@ -761,69 +794,6 @@ async function submitDeposit() {
     } finally {
         // Reset button text regardless of success/failure after processing
          button.textContent = 'Deposit Items';
-    }
-}
-
-
-/**
- * Saves the user's Steam Trade URL via backend API call.
- */
-async function saveUserTradeUrl() {
-    const { tradeUrlInput, saveTradeUrlButton, tradeUrlModal } = DOMElements.tradeUrl;
-    if (!tradeUrlInput || !saveTradeUrlButton || !tradeUrlModal) {
-        console.error("Trade URL modal elements missing.");
-        return;
-    }
-
-    const tradeUrl = tradeUrlInput.value.trim();
-
-    // Basic validation
-    if (!tradeUrl) {
-        showNotification('Input Required: Please enter your Steam Trade URL.', 'error');
-        return;
-    }
-    // More specific validation
-    if (!tradeUrl.includes('steamcommunity.com/tradeoffer/new/') ||
-        !tradeUrl.includes('partner=') ||
-        !tradeUrl.includes('token=')) {
-        showNotification('Invalid Format: Please enter a valid Steam Trade URL including partner and token parameters.', 'error');
-        return;
-    }
-
-    saveTradeUrlButton.disabled = true;
-    saveTradeUrlButton.textContent = 'Saving...';
-
-    try {
-        const response = await fetch('/api/user/tradeurl', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tradeUrl })
-        });
-
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({ error: 'Failed to save Trade URL.' }));
-            throw new Error(error.error || `Save failed (${response.status})`);
-        }
-
-        const result = await response.json();
-        if (currentUser) currentUser.tradeUrl = result.tradeUrl; // Update local user object
-
-        hideModal(tradeUrlModal);
-
-        const depositTriggerButton = DOMElements.deposit.showDepositModalButton;
-        updateDepositButtonState(); // Re-evaluate deposit button state
-        if (depositTriggerButton && !depositTriggerButton.disabled) {
-            showNotification('Success: Trade URL saved. You can now try depositing again.', 'success');
-        } else {
-            showNotification('Success: Trade URL saved.', 'success');
-        }
-
-    } catch (error) {
-        showNotification(`Error Saving URL: ${error.message}`, 'error');
-        console.error('Error updating trade URL:', error);
-    } finally {
-        saveTradeUrlButton.disabled = false;
-        saveTradeUrlButton.textContent = 'Save Trade URL';
     }
 }
 
@@ -856,27 +826,26 @@ function updateTimerUI(timeLeft) {
     const timeToShow = Math.max(0, Math.round(timeLeft));
     let displayValue = timeToShow.toString();
 
-    if (currentRound && currentRound.status === 'active' && !timerActive && currentRound.participants?.length === 0) {
+     if (currentRound && currentRound.status === 'active' && !timerActive && currentRound.participants?.length === 0) {
         // If round is active, timer not started client-side, and no participants, show full duration
-        displayValue = CONFIG.ROUND_DURATION.toString();
-    } else if (timerActive || (currentRound && currentRound.status === 'active' && timeToShow > 0)) {
+         displayValue = CONFIG.ROUND_DURATION.toString();
+     } else if (timerActive || (currentRound && currentRound.status === 'active' && timeToShow > 0)) {
         // If timer is active or round active with time left, show countdown
-        displayValue = timeToShow.toString();
-    } else if (isSpinning || (currentRound && currentRound.status === 'rolling')) {
+         displayValue = timeToShow.toString();
+     } else if (isSpinning || (currentRound && currentRound.status === 'rolling')) {
         // If spinning or server says rolling, show "Rolling"
-        displayValue = "Rolling";
-    } else if (currentRound && (currentRound.status === 'completed' || currentRound.status === 'error')) {
+         displayValue = "Rolling";
+     } else if (currentRound && (currentRound.status === 'completed' || currentRound.status === 'error')) {
         // If round ended, show "Ended"
-        displayValue = "Ended";
-    } else if (!timerActive && timeToShow <= 0 && currentRound && currentRound.status === 'active') {
-        // If timer not active client-side but server indicates time is up (timeLeft <= 0)
-        displayValue = "0";
-     } else if (currentRound && currentRound.status === 'pending') {
-         displayValue = "Waiting"; // Show waiting if server says pending
-     } else if (!currentRound) {
-          displayValue = "--"; // Default if no round data yet
-     }
-
+         displayValue = "Ended";
+     } else if (!timerActive && timeToShow <= 0 && currentRound && currentRound.status === 'active') {
+         // If timer not active client-side but server indicates time is up (timeLeft <= 0)
+         displayValue = "0";
+      } else if (currentRound && currentRound.status === 'pending') {
+          displayValue = "Waiting"; // Show waiting if server says pending
+      } else if (!currentRound) {
+           displayValue = "--"; // Default if no round data yet
+      }
 
     timerValue.textContent = displayValue;
     updateTimerCircle(timeToShow, CONFIG.ROUND_DURATION);
@@ -923,7 +892,7 @@ function updateTimerCircle(timeLeft, totalTime) {
 
 
 /**
- * --- NEW --- Updates the percentage chance display for all participant blocks.
+ * Updates the percentage chance display for all participant blocks.
  */
 function updateAllParticipantPercentages() {
     if (!currentRound || !currentRound.participants || currentRound.participants.length === 0) {
@@ -941,7 +910,6 @@ function updateAllParticipantPercentages() {
         if (!userId) return; // Skip block if no userId found
 
         // Find the latest participant data from the currentRound state
-        // participant.user could be just an ID if not populated, handle this
         const participantData = currentRound.participants.find(p => p.user?._id === userId || p.user === userId);
 
         if (!participantData) return; // Skip if participant data not found (e.g., inconsistency)
@@ -966,7 +934,7 @@ function updateAllParticipantPercentages() {
 
 /**
  * Displays the latest deposit as a new block at the TOP of the participants container.
- * --- MODIFIED --- Calculates and includes the initial percentage chance.
+ * Calculates and includes the initial percentage chance.
  * @param {object} data - Participant update data.
  */
 function displayLatestDeposit(data) {
@@ -982,7 +950,7 @@ function displayLatestDeposit(data) {
     }
 
     // --->>> Play Deposit Sound <<<---
-    const depositSfx = DOMElements.audio.depositSound; // Get the deposit sound element
+    const depositSfx = DOMElements.audio.depositSound;
     if (depositSfx) {
         depositSfx.volume = 0.6; // Adjust volume (0.0 to 1.0) as needed
         depositSfx.currentTime = 0; // Ensure it plays from the start if triggered quickly
@@ -1098,7 +1066,7 @@ function displayLatestDeposit(data) {
 
 /**
  * Handles incoming participant update data from the server via Socket.IO.
- * --- MODIFIED --- Calls updateAllParticipantPercentages after processing.
+ * Calls updateAllParticipantPercentages after processing.
  * @param {object} data - Data received from the 'participantUpdated' socket event.
  */
 function handleNewDeposit(data) {
@@ -1189,9 +1157,6 @@ function handleNewDeposit(data) {
 }
 
 
-/**
- * Updates ONLY the participant count display in the header and the empty pot message visibility.
- */
 function updateParticipantsUI() {
     const { participantCount } = DOMElements.jackpot;
     const emptyMsg = DOMElements.jackpot.emptyPotMessage;
@@ -1616,8 +1581,8 @@ function startRouletteAnimation(winnerData) {
             console.warn(`No winner items found in preferred range [${minIndex}-${maxIndex}]. Expanding search.`);
             for (let i = 0; i < items.length; i++) {
                  if (items[i]?.dataset?.userId === winnerId) { // Compare with winnerId
-                    winnerItemsIndices.push(i);
-                }
+                     winnerItemsIndices.push(i);
+                 }
             }
         }
 
@@ -1626,17 +1591,17 @@ function startRouletteAnimation(winnerData) {
             console.error(`No items found matching winner ID ${winnerId}. Using fallback index.`);
             targetIndex = Math.max(0, Math.min(items.length - 1, Math.floor(items.length * 0.75)));
             winningElement = items[targetIndex];
-            if (!winningElement) {
-                console.error('Fallback winning element is invalid!');
-                isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
-            }
+             if (!winningElement) {
+                 console.error('Fallback winning element is invalid!');
+                 isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
+             }
         } else {
             targetIndex = winnerItemsIndices[Math.floor(Math.random() * winnerItemsIndices.length)];
             winningElement = items[targetIndex];
-             if (!winningElement) {
-                  console.error(`Selected winning element at index ${targetIndex} is invalid!`);
-                  isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
-             }
+              if (!winningElement) {
+                   console.error(`Selected winning element at index ${targetIndex} is invalid!`);
+                   isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
+              }
         }
         // --- End Select Winning Element ---
 
@@ -2579,31 +2544,31 @@ function setupSocketConnection() {
                   resetToJackpotView();
              }
         } else if (currentRound.status === 'active') {
-             // If round is active, has participants, has time left, and timer isn't running client-side -> start/sync it
-             if (currentRound.participants?.length > 0 && currentRound.timeLeft > 0 && !timerActive) {
-                 console.log(`Received active round data. Starting/syncing timer from ${currentRound.timeLeft}s.`);
-                 timerActive = true;
-                 startClientTimer(currentRound.timeLeft);
-             }
-             // If server says time is up, but client timer is still running, stop it
-             else if (currentRound.timeLeft <= 0 && timerActive) {
-                 console.log("Server data indicates time up, stopping client timer.");
-                 timerActive = false;
-                 if (roundTimer) clearInterval(roundTimer); roundTimer = null;
-                 updateTimerUI(0);
-                 updateDepositButtonState();
-             }
-             // If server says no participants, but client timer is running, stop it
-              else if (currentRound.participants?.length === 0 && timerActive) {
-                  console.log("Server data indicates no participants, stopping client timer.");
+              // If round is active, has participants, has time left, and timer isn't running client-side -> start/sync it
+              if (currentRound.participants?.length > 0 && currentRound.timeLeft > 0 && !timerActive) {
+                  console.log(`Received active round data. Starting/syncing timer from ${currentRound.timeLeft}s.`);
+                  timerActive = true;
+                  startClientTimer(currentRound.timeLeft);
+              }
+              // If server says time is up, but client timer is still running, stop it
+              else if (currentRound.timeLeft <= 0 && timerActive) {
+                  console.log("Server data indicates time up, stopping client timer.");
                   timerActive = false;
                   if (roundTimer) clearInterval(roundTimer); roundTimer = null;
-                  updateTimerUI(CONFIG.ROUND_DURATION); // Reset timer display visually
+                  updateTimerUI(0);
                   updateDepositButtonState();
-              } else if (!timerActive) {
-                   // If timer isn't active, ensure UI reflects current timeLeft from server
-                   updateTimerUI(currentRound.timeLeft);
               }
+              // If server says no participants, but client timer is running, stop it
+               else if (currentRound.participants?.length === 0 && timerActive) {
+                   console.log("Server data indicates no participants, stopping client timer.");
+                   timerActive = false;
+                   if (roundTimer) clearInterval(roundTimer); roundTimer = null;
+                   updateTimerUI(CONFIG.ROUND_DURATION); // Reset timer display visually
+                   updateDepositButtonState();
+               } else if (!timerActive) {
+                    // If timer isn't active, ensure UI reflects current timeLeft from server
+                    updateTimerUI(currentRound.timeLeft);
+               }
         } else if (currentRound.status === 'pending') {
             console.log("Received pending round state.");
             initiateNewRoundVisualReset(); // Reset to empty state
@@ -2628,22 +2593,21 @@ function setupSocketConnection() {
              const sortedParticipants = [...validParticipants].sort((a,b) => (b.itemsValue || 0) - (a.itemsValue || 0));
 
              sortedParticipants.forEach(p => {
-                // Find items associated with this participant
-                const participantItems = data.items?.filter(item => item.owner === p.user._id) || [];
-                displayLatestDeposit({ // Simulate deposit event structure
-                    userId: p.user._id,
-                    username: p.user.username,
-                    avatar: p.user.avatar,
-                    itemsValue: p.itemsValue, // Use participant's cumulative value for display
-                    depositedItems: participantItems, // Show items linked to this participant
-                    // Note: tickets and totalValue from the 'data' object aren't directly relevant here
-                });
-                 // Remove animation class immediately after adding
-                 const element = container.querySelector(`.player-deposit-container[data-user-id="${p.user._id}"]`);
-                 if (element) element.classList.remove('player-deposit-new');
-            });
-             // Update all percentages after rendering initial deposits
-             updateAllParticipantPercentages();
+                 // Find items associated with this participant
+                 const participantItems = data.items?.filter(item => item.owner === p.user._id) || [];
+                 displayLatestDeposit({ // Simulate deposit event structure
+                     userId: p.user._id,
+                     username: p.user.username,
+                     avatar: p.user.avatar,
+                     itemsValue: p.itemsValue, // Use participant's cumulative value for display
+                     depositedItems: participantItems, // Show items linked to this participant
+                 });
+                  // Remove animation class immediately after adding
+                  const element = container.querySelector(`.player-deposit-container[data-user-id="${p.user._id}"]`);
+                  if (element) element.classList.remove('player-deposit-new');
+             });
+              // Update all percentages after rendering initial deposits
+              updateAllParticipantPercentages();
 
         } else if (container && (!data.participants || data.participants.length === 0)) {
             // Ensure empty message is shown if data confirms no participants
@@ -2680,7 +2644,6 @@ function setupEventListeners() {
     DOMElements.nav.tosLink?.addEventListener('click', (e) => { e.preventDefault(); showPage(DOMElements.pages.tosPage); }); // Added TOS
     DOMElements.nav.faqLink?.addEventListener('click', (e) => { e.preventDefault(); showPage(DOMElements.pages.faqPage); });
     DOMElements.nav.fairLink?.addEventListener('click', (e) => { e.preventDefault(); showPage(DOMElements.pages.fairPage); });
-    // Removed listener for roadmapLink
 
     // Login Button (with integrated age check)
     DOMElements.user.loginButton?.addEventListener('click', () => {
@@ -2696,25 +2659,105 @@ function setupEventListeners() {
         }
     });
 
-    // User Profile Dropdown
-    DOMElements.user.userProfile?.addEventListener('click', (e) => {
+    // --- User Profile Dropdown Listeners ---
+    const { userProfile, userDropdownMenu, logoutButton,
+            editTradeUrlBtn, tradeUrlInput: dropdownTradeUrlInput,
+            profileButton, historyButton
+          } = DOMElements.user;
+
+    // Toggle dropdown menu
+    userProfile?.addEventListener('click', (e) => {
         e.stopPropagation();
-        const menu = DOMElements.user.userDropdownMenu;
-        const profileButton = DOMElements.user.userProfile;
-        if (menu) {
-            const isVisible = menu.style.display === 'block';
-            menu.style.display = isVisible ? 'none' : 'block';
-            profileButton?.setAttribute('aria-expanded', !isVisible);
-            profileButton?.classList.toggle('open', !isVisible);
+        if (userDropdownMenu) {
+            const isVisible = userDropdownMenu.style.display === 'block';
+            userDropdownMenu.style.display = isVisible ? 'none' : 'block';
+            userProfile?.setAttribute('aria-expanded', !isVisible);
+            userProfile?.classList.toggle('open', !isVisible);
         }
     });
-    DOMElements.user.userProfile?.addEventListener('keydown', (e) => {
+    userProfile?.addEventListener('keydown', (e) => {
          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.target.click(); }
     });
 
     // Logout Button
-    DOMElements.user.logoutButton?.addEventListener('click', (e) => { e.stopPropagation(); handleLogout(); });
-    DOMElements.user.logoutButton?.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleLogout(); } });
+    logoutButton?.addEventListener('click', (e) => { e.stopPropagation(); handleLogout(); });
+    logoutButton?.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleLogout(); } });
+
+    // Edit/Save Trade URL Button (inside dropdown)
+    if (editTradeUrlBtn && dropdownTradeUrlInput) {
+        editTradeUrlBtn.addEventListener('click', async (e) => { // Make async for API call
+            e.stopPropagation(); // Prevent dropdown from closing
+            if (dropdownTradeUrlInput.readOnly) {
+                // Switch to edit mode
+                dropdownTradeUrlInput.readOnly = false;
+                dropdownTradeUrlInput.focus();
+                editTradeUrlBtn.innerHTML = '<i class="fas fa-save"></i>';
+                editTradeUrlBtn.title = 'Save Trade URL';
+            } else {
+                // Save the trade URL
+                const newTradeUrl = dropdownTradeUrlInput.value.trim();
+                editTradeUrlBtn.disabled = true; // Disable button while saving
+                editTradeUrlBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; // Loading indicator
+
+                // Basic validation (matching main.js original logic)
+                 if (newTradeUrl && newTradeUrl.includes('steamcommunity.com/tradeoffer/new/') && newTradeUrl.includes('partner=') && newTradeUrl.includes('token=')) {
+                    try {
+                        // Call backend API to save the trade URL
+                        const response = await fetch('/api/user/tradeurl', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ tradeUrl: newTradeUrl })
+                        });
+                        if (!response.ok) {
+                             const error = await response.json().catch(() => ({ error: 'Failed to save Trade URL.' }));
+                             throw new Error(error.error || `Save failed (${response.status})`);
+                         }
+                        const result = await response.json();
+                        if (currentUser) currentUser.tradeUrl = result.tradeUrl; // Update local state
+
+                        // Switch back to view mode
+                        dropdownTradeUrlInput.readOnly = true;
+                        editTradeUrlBtn.innerHTML = '<i class="fas fa-edit"></i>';
+                        editTradeUrlBtn.title = 'Edit Trade URL';
+                        showNotification('Trade URL saved successfully', 'success');
+                        // Optionally close dropdown after successful save
+                        // if (userDropdownMenu) userDropdownMenu.style.display = 'none';
+
+                    } catch (error) {
+                        showNotification(`Error Saving URL: ${error.message}`, 'error');
+                        console.error('Error updating trade URL from dropdown:', error);
+                        // Don't switch back to read-only on error, allow retry
+                        editTradeUrlBtn.innerHTML = '<i class="fas fa-save"></i>'; // Back to save icon
+                        editTradeUrlBtn.title = 'Save Trade URL (Retry)';
+                    } finally {
+                        editTradeUrlBtn.disabled = false; // Re-enable button
+                    }
+                } else {
+                    // Show error for invalid URL
+                    showNotification('Please enter a valid Steam Trade URL (including partner and token).', 'error');
+                    editTradeUrlBtn.innerHTML = '<i class="fas fa-save"></i>'; // Back to save icon
+                    editTradeUrlBtn.title = 'Save Trade URL';
+                    editTradeUrlBtn.disabled = false; // Re-enable button immediately
+                }
+            }
+        });
+    }
+
+    // Profile Button (inside dropdown)
+    profileButton?.addEventListener('click', () => {
+        console.log('Navigating to profile page... (Implement navigation)');
+        // Example: window.location.href = '/profile'; or use showPage if it's an SPA section
+        if (userDropdownMenu) userDropdownMenu.style.display = 'none'; // Close dropdown
+    });
+
+    // History Button (inside dropdown)
+    historyButton?.addEventListener('click', () => {
+        console.log('Navigating to history page... (Implement navigation)');
+        // Example: window.location.href = '/history'; or use showPage if it's an SPA section
+        if (userDropdownMenu) userDropdownMenu.style.display = 'none'; // Close dropdown
+    });
+    // --- End User Profile Dropdown Listeners ---
+
 
     // Deposit Modal Trigger
     DOMElements.deposit.showDepositModalButton?.addEventListener('click', () => {
@@ -2726,10 +2769,13 @@ function setupEventListeners() {
             showNotification('Login Required: Please log in first.', 'error'); return;
         }
         // Check trade URL fetched during login or stored locally
-         if (!currentUser.tradeUrl) { // Check the user object fetched from backend
-              console.log("Trade URL missing for user. Opening modal.");
-              if(DOMElements.tradeUrl.tradeUrlInput) DOMElements.tradeUrl.tradeUrlInput.value = ''; // Clear input
-             showModal(DOMElements.tradeUrl.tradeUrlModal); return;
+         // **** IMPORTANT: Use the currentUser object which should have the correct tradeUrl after login ****
+         if (!currentUser.tradeUrl) {
+              console.log("Trade URL missing for user. Showing notification (user should set it via dropdown).");
+              showNotification('Trade URL Required: Please set your Steam Trade URL in the profile dropdown before depositing.', 'error', 6000);
+              // Optionally, automatically open the dropdown:
+              // userProfile?.click();
+              return;
          }
         showModal(DOMElements.deposit.depositModal);
         loadUserInventory();
@@ -2739,9 +2785,9 @@ function setupEventListeners() {
     DOMElements.deposit.closeDepositModalButton?.addEventListener('click', () => hideModal(DOMElements.deposit.depositModal));
     DOMElements.deposit.depositButton?.addEventListener('click', submitDeposit);
 
-    // Trade URL Modal Controls
-    DOMElements.tradeUrl.closeTradeUrlModalButton?.addEventListener('click', () => hideModal(DOMElements.tradeUrl.tradeUrlModal));
-    DOMElements.tradeUrl.saveTradeUrlButton?.addEventListener('click', saveUserTradeUrl);
+    // Trade URL Modal Controls (Keep if modal still exists as fallback, otherwise remove)
+    // DOMElements.tradeUrl.closeTradeUrlModalButton?.addEventListener('click', () => hideModal(DOMElements.tradeUrl.tradeUrlModal));
+    // DOMElements.tradeUrl.saveTradeUrlButton?.addEventListener('click', saveUserTradeUrl); // This function might need removal/adaptation
 
     // Age Verification Modal Controls
     const { modal: ageModal, checkbox: ageCheckbox, agreeButton: ageAgreeButton } = DOMElements.ageVerification;
@@ -2772,17 +2818,16 @@ function setupEventListeners() {
 
     // Global Listeners
     window.addEventListener('click', (e) => {
-        // Close dropdown
-        const menu = DOMElements.user.userDropdownMenu;
-        const profile = DOMElements.user.userProfile;
-        if (menu && profile && menu.style.display === 'block' && !profile.contains(e.target) && !menu.contains(e.target)) {
-            menu.style.display = 'none';
-            profile.setAttribute('aria-expanded', 'false');
-            profile.classList.remove('open');
+        // Close dropdown when clicking outside
+        if (userDropdownMenu && userProfile && userDropdownMenu.style.display === 'block' &&
+            !userProfile.contains(e.target) && !userDropdownMenu.contains(e.target)) {
+            userDropdownMenu.style.display = 'none';
+            userProfile.setAttribute('aria-expanded', 'false');
+            userProfile.classList.remove('open');
         }
         // Close modals on backdrop click
         if (e.target === DOMElements.deposit.depositModal) hideModal(DOMElements.deposit.depositModal);
-        if (e.target === DOMElements.tradeUrl.tradeUrlModal) hideModal(DOMElements.tradeUrl.tradeUrlModal);
+        // if (e.target === DOMElements.tradeUrl.tradeUrlModal) hideModal(DOMElements.tradeUrl.tradeUrlModal); // Remove if modal is gone
         if (e.target === DOMElements.ageVerification.modal) {
             // Optional: Decide if clicking backdrop closes age verification
             // hideModal(DOMElements.ageVerification.modal);
@@ -2791,12 +2836,11 @@ function setupEventListeners() {
 
     document.addEventListener('keydown', function(event) {
         // Close dropdown with Escape
-        const menu = DOMElements.user.userDropdownMenu;
-        if (event.key === 'Escape' && menu && menu.style.display === 'block') {
-            menu.style.display = 'none';
-            DOMElements.user.userProfile?.setAttribute('aria-expanded', 'false');
-            DOMElements.user.userProfile?.classList.remove('open');
-            DOMElements.user.userProfile?.focus();
+        if (event.key === 'Escape' && userDropdownMenu && userDropdownMenu.style.display === 'block') {
+            userDropdownMenu.style.display = 'none';
+            userProfile?.setAttribute('aria-expanded', 'false');
+            userProfile?.classList.remove('open');
+            userProfile?.focus(); // Return focus to the profile button
         }
         // Spacebar test trigger (only if home page visible and not in modal/input)
         if (event.code === 'Space' &&
@@ -2819,14 +2863,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // Check age verification status first
     const ageVerified = localStorage.getItem('ageVerified') === 'true';
 
-    // Initialize other components
-    checkLoginStatus(); // Check login status (which updates UI)
+    // Initialize core components
+    checkLoginStatus(); // Check login status (which updates UI including dropdown)
     setupEventListeners();
     setupSocketConnection();
     showPage(DOMElements.pages.homePage); // Show home page by default
     initiateNewRoundVisualReset(); // Reset UI elements to default state
 
-    // If age is not verified, ensure modal is shown (checkLoginStatus might run first)
+    // If age is not verified, ensure modal is shown (even if checkLoginStatus ran first)
     if (!ageVerified && DOMElements.ageVerification.modal) {
         // Ensure initial state of checkbox/button
         const { checkbox: ageCheckbox, agreeButton: ageAgreeButton } = DOMElements.ageVerification;
@@ -2836,4 +2880,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-console.log("main.js loaded.");
+console.log("main.js (Combined Version) loaded.");
