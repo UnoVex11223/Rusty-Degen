@@ -20,6 +20,9 @@
     --success-color: #4caf50;
     --info-color: #2196f3; /* For info notifications */
     --jackpot-tab-color: #00ff8c; /* Bright neon green for jackpot tab */
+    --font-primary: 'Rajdhani', sans-serif;      /* Added for consistency */
+    --font-secondary: 'Titillium Web', sans-serif; /* Added for consistency */
+    --font-mono: 'JetBrains Mono', monospace;    /* Added for consistency */
 }
 
 * {
@@ -29,7 +32,7 @@
 }
 
 body {
-    font-family: 'Rajdhani', sans-serif;
+    font-family: 'Rajdhani', sans-serif; /* Using Rajdhani as base */
     background-color: var(--background-dark);
     color: var(--text-primary);
     line-height: 1.6;
@@ -45,7 +48,7 @@ body {
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
-    font-family: 'Titillium Web', sans-serif;
+    font-family: 'Titillium Web', sans-serif; /* Titillium for headings */
     font-weight: 700;
     margin-bottom: 1rem;
     color: var(--text-primary); /* Ensure headings are white */
@@ -73,7 +76,7 @@ code { /* General code tag styling */
     background-color: var(--background-dark);
     padding: 3px 6px;
     border-radius: 4px;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-mono); /* Use mono var */
     color: var(--secondary-light);
     font-size: 0.9em;
     border: 1px solid var(--border-color);
@@ -223,7 +226,7 @@ code { /* General code tag styling */
 }
 
 .logo h1 {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-mono); /* Use mono var */
     font-size: 1.8rem;
     font-weight: 700;
     margin: 0;
@@ -252,6 +255,7 @@ code { /* General code tag styling */
 .primary-nav a, .secondary-nav a, .main-nav a {
     font-weight: 600;
     font-size: 1rem;
+    font-family: var(--font-primary); /* Use primary font var */
     padding: 8px 10px;
     border-radius: 4px;
     transition: all 0.3s ease;
@@ -309,48 +313,47 @@ code { /* General code tag styling */
     justify-content: flex-end;
 }
 
-/* *** MODIFICATION START: Added position: relative *** */
 .user-profile-container {
     position: relative; /* Needed for absolute positioning of the child dropdown */
 }
-/* *** MODIFICATION END *** */
 
-/* --- Enhanced User Profile Button (Replaces old .user-profile) --- */
+/* --- MODIFIED Logged-in User Profile Trigger --- */
 .user-profile {
-    background-color: var(--background-medium);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 6px 12px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+    display: flex; /* Layout avatar + name */
+    align-items: center; /* Vertical alignment */
+    gap: 10px; /* Space between avatar and name */
     cursor: pointer;
-    transition: all 0.3s ease;
-    min-width: 180px; /* Ensure enough space */
+    /* --- REMOVED --- */
+    /* background-color: var(--background-medium); */
+    /* border: 1px solid var(--border-color); */
+    /* border-radius: 6px; */
+    /* padding: 6px 12px; */
+    /* min-width: 180px; */
+    /* transition: all 0.3s ease; */
+    /* --- END REMOVED --- */
+}
+/* Optional: Add slight hover effect if desired */
+.user-profile:hover .user-name {
+    color: var(--primary-light);
 }
 
-.user-profile:hover {
-    background-color: var(--background-light);
-    border-color: var(--primary-color);
-}
 
-/* --- NEW User Profile Sub-elements --- */
+/* Keep avatar styles */
 .user-avatar-container {
-    position: relative; /* For status dot positioning */
-}
-
-/* UPDATED User Avatar */
-.user-avatar {
-    width: 36px; /* Slightly larger */
-    height: 36px;
-    border-radius: 50%;
-    border: 2px solid var(--primary-color);
-    object-fit: cover;
-    box-shadow: 0 0 10px rgba(0, 230, 118, 0.3); /* Added shadow */
+    position: relative; /* For status dot */
+    display: flex; /* Fix potential shrinking issue */
     flex-shrink: 0; /* Prevent shrinking */
 }
 
-/* NEW User Status Dot */
+.user-avatar {
+    width: 40px; /* Increased size */
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid var(--primary-color);
+    object-fit: cover;
+    box-shadow: 0 0 10px rgba(0, 230, 118, 0.3); /* Keep shadow */
+}
+
 .user-status {
     position: absolute;
     bottom: 0;
@@ -358,309 +361,138 @@ code { /* General code tag styling */
     width: 10px;
     height: 10px;
     border-radius: 50%;
-    border: 2px solid var(--background-medium); /* Match profile background */
-}
-.user-status.online {
-    background-color: #4caf50; /* Green for online */
-}
-.user-status.offline {
-    background-color: #9e9e9e; /* Grey for offline */
+    border: 2px solid var(--background-medium); /* Match header background */
 }
 
-/* NEW User Info Container */
-.user-info {
-    display: flex;
-    flex-direction: column;
-    flex-grow: 1; /* Take available space */
-    overflow: hidden; /* Prevent text overflow */
-}
+.user-status.online { background-color: #4caf50; } /* Green for online */
+.user-status.offline { background-color: #9e9e9e; } /* Grey for offline */
 
-/* UPDATED User Name */
+/* Keep User Name styles */
 .user-name {
+    font-family: var(--font-secondary); /* Use secondary font var */
     font-weight: 600;
-    font-size: 0.95rem; /* Adjusted size */
+    font-size: 0.95rem;
     color: var(--text-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    /* Removed max-width, rely on flex overflow */
+    transition: color 0.3s ease;
 }
 
-/* UPDATED Dropdown Arrow */
-.dropdown-arrow {
-    margin-left: auto; /* Push to the right */
-    font-size: 0.7rem;
-    color: var(--text-secondary);
-    transition: transform 0.3s ease;
-}
-.user-profile.open .dropdown-arrow {
-    transform: rotate(180deg);
-}
 
-/* --- Enhanced Dropdown Menu (Replaces old .dropdown-menu) --- */
-/* *** MODIFICATION START: Applied pop-out styles *** */
-.dropdown-menu {
-    /* Core Pop-out Styling */
-    display: none; /* JS toggles this to 'block' */
-    position: absolute; /* Changed from previous */
-    top: calc(100% + 8px); /* Position below the profile button container + 8px gap */
-    right: 0; /* Align to the right edge of the container */
-    z-index: 1000; /* High value to ensure it's on top */
-
-    /* Appearance */
-    background-color: var(--background-medium); /* Explicit background */
-    border: 1px solid var(--border-color);
-    border-radius: 8px; /* Slightly more rounded */
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); /* Stronger shadow */
-    min-width: 280px; /* Wider dropdown */
-    overflow: hidden; /* Clip content to border-radius */
-
-    /* Kept from previous */
-    /* padding: 0; (This was in suggestion, but keep existing section padding below) */
-
-    /* Add transitions for smooth show/hide (optional - requires JS change too) */
-    /* transition: opacity 0.15s ease-in-out, transform 0.15s ease-in-out; */
-    /* opacity: 0; */
-    /* transform: translateY(-10px); */
-}
-/* *** MODIFICATION END *** */
-
-
-/* --- NEW Dropdown Sections --- */
-/* Dropdown Header */
-.dropdown-header {
-    padding: 15px;
-    background: linear-gradient(135deg, var(--background-medium), var(--background-light));
-    border-bottom: 1px solid var(--border-color);
-}
-.dropdown-user-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-.dropdown-avatar {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    border: 2px solid var(--primary-color);
-    object-fit: cover;
-    box-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
-}
-.dropdown-user-details {
-    display: flex;
-    flex-direction: column;
-}
-.dropdown-user-name {
-    font-weight: 700;
-    font-size: 1.1rem;
-    color: var(--text-primary);
-    margin-bottom: 2px;
-}
-/* REMOVED .dropdown-user-id styling as element is removed */
+/* --- REMOVED User Info Container and Dropdown Arrow rules as they are not in HTML structure anymore --- */
 /*
-.dropdown-user-id {
-    font-size: 0.8rem;
-    color: var(--text-secondary);
-}
+.user-info { ... }
+.dropdown-arrow { ... }
+.user-profile.open .dropdown-arrow { ... }
 */
 
-/* Stats Section */
-.dropdown-stats {
-    display: grid;
-    grid-template-columns: 1fr 1fr; /* Two columns for stats */
-    gap: 1px; /* Use gap for borders */
-    background-color: var(--border-color); /* Background acts as border */
-}
-.stat-item {
-    background-color: var(--background-medium); /* Background for each item */
-    padding: 12px 15px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.stat-item .icon { /* Stat icon */
-    font-size: 1.2rem;
-    color: var(--primary-color);
-    width: 20px;
-    text-align: center;
-}
-.stat-details {
-    display: flex;
-    flex-direction: column;
-}
-.stat-label { /* Overrides base label style within dropdown */
-    font-size: 0.75rem;
-    color: var(--text-secondary);
-    margin-bottom: 2px;
-    text-transform: uppercase; /* Ensure uppercase */
-    letter-spacing: 0.5px; /* Adjust spacing */
-    margin-top: 0; /* Reset margin if needed */
-}
-.stat-value { /* Overrides base stat style within dropdown */
-    font-weight: 700;
-    font-size: 1rem; /* Adjusted size */
-    color: var(--text-primary);
-    line-height: 1.2; /* Adjust line height */
-    margin-top: 0; /* Reset margin */
-}
-
-/* Trade URL Section */
-.dropdown-section { /* General section styling reused */
-    padding: 15px;
-    border-bottom: 1px solid var(--border-color);
-}
-.dropdown-section-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 10px;
-    color: var(--text-secondary);
-    font-size: 0.9rem;
-    font-weight: 600;
-}
-.dropdown-section-header .icon {
-    color: var(--primary-color);
-}
-.trade-url-container {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 8px;
-}
-.trade-url-input { /* Styles #tradeUrlInput specifically within the dropdown */
-    flex-grow: 1;
-    padding: 8px 10px;
-    background-color: var(--background-dark);
+/* --- MODIFIED Dropdown Menu --- */
+.dropdown-menu {
+    display: none; /* JS toggles this to 'block' */
+    position: absolute;
+    top: calc(100% + 10px); /* Position below the profile trigger + gap */
+    right: 0;
+    z-index: 1000;
+    background-color: var(--background-dark); /* Darker background for dropdown */
     border: 1px solid var(--border-color);
-    border-radius: 4px;
-    color: var(--text-primary);
-    font-size: 0.85rem;
-    font-family: 'Rajdhani', sans-serif;
-}
-.trade-url-input:focus {
-    border-color: var(--primary-color);
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.2);
-}
-/* Style for Edit/Save button (#editTradeUrlBtn) */
-.btn-edit-url {
-    padding: 8px;
-    background-color: var(--background-light);
-    color: var(--primary-color);
-    border-radius: 4px;
-    transition: all 0.2s ease;
-    border: none; /* Ensure no default border */
-    cursor: pointer;
-    display: flex; /* For icon alignment */
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0; /* Prevent shrinking */
-}
-.btn-edit-url:hover {
-    background-color: var(--primary-color);
-    color: var(--background-dark);
-}
-.btn-edit-url i { /* Ensure icon fits */
-    font-size: 0.9em;
-    vertical-align: middle;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    min-width: 200px; /* Adjust width for simpler content */
+    overflow: hidden;
 }
 
-.trade-url-help {
-    font-size: 0.8rem;
-    text-align: right;
-}
-.trade-url-help a {
-    color: var(--text-accent);
-    text-decoration: none;
-    transition: color 0.2s ease;
-}
-.trade-url-help a:hover {
-    color: var(--primary-color);
-    text-decoration: underline;
-}
+/* --- REMOVED styles for old dropdown sections --- */
+/*
+.dropdown-header { ... }
+.dropdown-user-info { ... }
+.dropdown-avatar { ... }
+.dropdown-user-details { ... }
+.dropdown-user-name { ... }
+.dropdown-stats { ... }
+.stat-item { ... }
+.stat-item .icon { ... }
+.stat-details { ... }
+.stat-label { ... }
+.stat-value { ... } // Note: A general .stat-value exists, this specific one is removed
+.dropdown-section { ... }
+.dropdown-section-header { ... }
+.dropdown-section-header .icon { ... }
+.trade-url-container { ... }
+.trade-url-input { ... }
+.btn-edit-url { ... }
+.trade-url-help { ... }
+*/
+/* --- END REMOVED styles --- */
 
-/* Action Buttons Section */
 .dropdown-actions {
-    padding: 5px 0; /* Padding around the action items */
-    border-bottom: none; /* Ensure no border if it's the last section */
+    padding: 8px 0; /* Padding around the new buttons */
 }
 
-/* UPDATED Dropdown Item (Applies to any remaining items like potential future links) */
+/* UPDATED Dropdown Item (for new Profile/Logout buttons) */
 .dropdown-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 12px 15px; /* Adjusted padding */
+    gap: 12px; /* Slightly more gap */
+    padding: 12px 20px; /* Good padding */
     background: none;
     border: none;
     width: 100%;
     text-align: left;
     color: var(--text-secondary);
-    font-size: 0.95rem; /* Adjusted size */
-    font-family: 'Rajdhani', sans-serif;
+    font-size: 0.95rem;
+    font-family: var(--font-primary); /* Use primary font */
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease; /* Use 'all' for smoother transition */
-}
-.dropdown-item:hover {
-    background-color: var(--background-light); /* Use lighter background */
-    color: var(--primary-color); /* Highlight text */
-}
-.dropdown-item .icon { /* Icon within dropdown items */
-    width: 20px; /* Slightly larger icon area */
-    text-align: center;
-    color: var(--text-accent); /* Base icon color */
-    transition: color 0.2s ease; /* Add transition */
-}
-.dropdown-item:hover .icon {
-    color: var(--primary-color); /* Match text highlight color */
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
-/* Logout button specific styling */
-#logoutButton { /* Target by ID now */
-    /* Re-use .dropdown-item styles and override */
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 15px;
-    background: none;
-    border: none;
-    width: 100%;
-    text-align: left;
-    font-size: 0.95rem;
-    font-family: 'Rajdhani', sans-serif;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    /* Logout specific */
-    border-top: 1px solid var(--border-color); /* Separator */
+.dropdown-item:hover {
+    background-color: var(--background-light);
+    color: var(--primary-color);
+}
+
+.dropdown-item .icon {
+    width: 18px; /* Icon width */
+    text-align: center;
+    color: var(--text-accent); /* Default icon color */
+    flex-shrink: 0;
+}
+
+.dropdown-item:hover .icon {
+    color: var(--primary-color); /* Icon color on hover */
+}
+
+/* Keep Logout button specific styling */
+#logoutButton {
+    /* Inherits .dropdown-item styles */
+    border-top: 1px solid var(--border-color); /* Keep separator */
     margin-top: 5px; /* Space above separator */
-    color: #f44336 !important; /* Red color for logout, use important if needed*/
+    color: var(--error-color) !important; /* Red color for logout */
 }
-#logoutButton .icon { /* Style icon if present */
-    color: #f44336 !important; /* Match text color */
-     width: 20px;
-     text-align: center;
-     transition: color 0.2s ease;
+
+#logoutButton .icon {
+    color: var(--error-color) !important; /* Match text color */
 }
+
 #logoutButton:hover {
-    background-color: rgba(244, 67, 54, 0.1) !important; /* Light red background on hover */
-    color: #f44336 !important; /* Keep text red on hover */
+    background-color: rgba(244, 67, 54, 0.1) !important; /* Light red background */
+    color: var(--error-color) !important; /* Keep text red */
 }
+
 #logoutButton:hover .icon {
-    color: #f44336 !important; /* Keep icon red on hover */
+    color: var(--error-color) !important; /* Keep icon red */
 }
-/* --- END NEW Dropdown Sections --- */
 
 /*=========================
  BUTTONS (Continued - Base styles)
  =========================*/
-/* Base .btn styles remain unchanged */
 .btn {
     display: inline-block;
     padding: 10px 20px;
     border: none;
     border-radius: 4px;
-    font-family: 'Rajdhani', sans-serif;
+    font-family: var(--font-primary); /* Use primary font */
     font-weight: 600;
     font-size: 1rem;
     text-transform: uppercase;
@@ -684,34 +516,28 @@ code { /* General code tag styling */
     opacity: 0.6;
 }
 
-/* *** MODIFICATION START: Added specific styles for #loginButton *** */
 #loginButton {
-    /* Inherits .btn styles but adds specific overrides for size */
-    padding: 5px 12px; /* Reduced padding */
-    font-size: 0.9rem; /* Slightly smaller font */
-    height: auto; /* Auto height based on padding */
-    line-height: normal; /* Normal line height */
-    margin-left: 10px; /* Optional space from tabs */
-    vertical-align: middle; /* Align with adjacent elements */
-    /* Assume it also has .btn-primary or similar for color */
-    background-color: #4CAF50; /* Example Steam green */
+    padding: 5px 12px;
+    font-size: 0.9rem;
+    height: auto;
+    line-height: normal;
+    margin-left: 10px;
+    vertical-align: middle;
+    background-color: #4CAF50; /* Steam green */
     color: white;
-    display: inline-flex; /* Use flex if icon is present */
+    display: inline-flex;
     align-items: center;
-    white-space: nowrap; /* Prevent wrapping */
-    /* Override hover effect slightly if needed */
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); /* Smaller shadow */
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 #loginButton:hover:not(:disabled) {
-    transform: translateY(-1px); /* Less hover movement */
+    transform: translateY(-1px);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
 }
-#loginButton i { /* Optional icon styling */
-  margin-right: 6px;
-  font-size: 1em; /* Match button font size */
+#loginButton i {
+    margin-right: 6px;
+    font-size: 1em;
 }
-/* *** MODIFICATION END *** */
-
 
 .btn-primary {
     background-color: var(--primary-color);
@@ -850,7 +676,8 @@ code { /* General code tag styling */
 
 .jackpot-value h2 {
     font-size: 4.2rem; font-weight: 700; color: var(--primary-color); margin: 0;
-    font-family: 'JetBrains Mono', monospace; line-height: 1.1;
+    font-family: var(--font-mono); /* Use mono var */
+    line-height: 1.1;
     animation: valueGlow 1.8s infinite ease-in-out;
 }
 @keyframes valueGlow {
@@ -872,7 +699,7 @@ code { /* General code tag styling */
 .timer-text {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
     font-size: 3.8rem; font-weight: 700; color: var(--primary-color);
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-mono); /* Use mono var */
 }
 .timer-pulse { animation: timerPulse 2s infinite ease-in-out; }
 .urgent-pulse {
@@ -886,6 +713,7 @@ code { /* General code tag styling */
 .stat-value {
     font-size: 3.8rem; font-weight: 700; color: var(--text-primary);
     display: block; line-height: 1.1; margin-top: 10px;
+    /* Note: This general stat-value might conflict if reused. Check context. */
 }
 
 .value-label, .timer-label, .stat-label {
@@ -895,6 +723,7 @@ code { /* General code tag styling */
     color: var(--text-secondary);
     text-transform: uppercase;
     display: block;
+     /* Note: This general stat-label might conflict if reused. Check context. */
 }
 
 /*=========================
@@ -1116,51 +945,82 @@ code { /* General code tag styling */
 
 .modal {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background-color: rgba(0, 0, 0, 0.85); display: none;
+    background-color: rgba(0, 0, 0, 0.85); /* Original darker backdrop */
+    display: none;
     justify-content: center; align-items: center; z-index: 1000; padding: 20px;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px); /* Keep blur */
 }
 .modal-content {
-    background-color: var(--background-medium); border-radius: 12px; width: 100%;
-    max-width: 700px; max-height: 90vh; display: flex; flex-direction: column;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); border: 1px solid var(--border-color);
-    animation: modalIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); overflow: hidden;
+    background-color: var(--background-medium);
+    border-radius: 12px;
+    width: 100%; /* Use max-width to control size */
+    max-width: 700px; /* Default max-width */
+    max-height: 90vh; /* Max height */
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+    border: 1px solid var(--border-color);
+    animation: modalIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    overflow: hidden; /* Important for containing header/footer radius */
 }
 .age-verification .modal-content { max-width: 500px; }
 #depositModal .modal-content { max-width: 900px; }
+/* Keep tradeUrlModal style for now, though it's being replaced */
 #tradeUrlModal .modal-content { max-width: 600px; }
-@keyframes modalIn { from { opacity: 0; transform: scale(0.9) translateY(-20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
-.modal-header {
-    padding: 15px 20px; border-bottom: 1px solid var(--border-color); display: flex;
-    justify-content: space-between; align-items: center;
-    background: linear-gradient(135deg, var(--background-medium), var(--background-light));
-    border-radius: 12px 12px 0 0; flex-shrink: 0;
+
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(0.9) translateY(-20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
 }
-.modal-header h2 { margin: 0; color: var(--primary-color); font-size: 1.4rem; }
+
+.modal-header {
+    padding: 15px 25px; /* Standard padding */
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, var(--background-medium), var(--background-light)); /* Gradient */
+    border-radius: 12px 12px 0 0; /* Match content radius */
+    flex-shrink: 0;
+}
+.modal-header h2 {
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 1.4rem;
+    font-family: var(--font-primary); /* Use primary font */
+}
 .close-btn {
     background: none; border: none; color: var(--text-secondary); font-size: 1.8rem;
     line-height: 1; cursor: pointer; transition: color 0.3s ease, transform 0.3s ease; padding: 5px;
 }
 .close-btn:hover { color: var(--primary-color); transform: rotate(90deg); }
-.modal-body { padding: 20px; overflow-y: auto; flex-grow: 1; line-height: 1.7; }
+
+.modal-body { padding: 25px; overflow-y: auto; flex-grow: 1; line-height: 1.7; } /* Increased padding */
 .modal-body p { margin-bottom: 15px; color: var(--text-secondary); }
 .modal-body p:last-child { margin-bottom: 0; }
 .modal-body ul { list-style: disc; margin: 15px 0 15px 25px; padding-left: 15px; }
 .modal-body li { margin-bottom: 8px; color: var(--text-secondary); }
+
 .modal-footer {
-    padding: 15px 20px; border-top: 1px solid var(--border-color); text-align: right;
-    background-color: var(--background-light); border-radius: 0 0 12px 12px;
-    flex-shrink: 0; display: flex; justify-content: flex-end; gap: 10px;
+    padding: 15px 25px; /* Standard padding */
+    border-top: 1px solid var(--border-color);
+    background-color: var(--background-light); /* Slightly different background */
+    border-radius: 0 0 12px 12px; /* Match content radius */
+    flex-shrink: 0;
+    display: flex;
+    justify-content: flex-end; /* Align buttons to the right */
+    gap: 10px;
 }
 
 /* Form Elements */
 .form-group { margin-bottom: 20px; }
-.form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: var(--text-primary); }
+.form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary); font-family: var(--font-primary); } /* Added font */
 .form-group input[type="text"], .form-group input[type="url"], .form-group input[type="password"], .form-group input[type="email"], .form-group textarea {
-    width: 100%; padding: 12px; border: 1px solid var(--border-color);
-    border-radius: 4px; background-color: var(--background-light); color: var(--text-primary);
-    font-family: 'Rajdhani', sans-serif; font-size: 1rem;
+    width: 100%; padding: 12px 15px; border: 1px solid var(--border-color);
+    border-radius: 4px; background-color: var(--background-dark); color: var(--text-primary); /* Darker input background */
+    font-family: var(--font-primary); font-size: 1rem; /* Use primary font */
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    box-sizing: border-box;
 }
 .form-group input:focus, .form-group textarea:focus {
     border-color: var(--primary-color); outline: none;
@@ -1252,7 +1112,7 @@ code { /* General code tag styling */
     padding: 10px 15px; background-color: var(--background-light); border-radius: 4px;
     border: 1px solid var(--border-color); margin-top: 10px; font-weight: 600; font-size: 1.1rem;
 }
-.total-value span:last-child { color: var(--primary-color); font-family: 'JetBrains Mono', monospace; }
+.total-value span:last-child { color: var(--primary-color); font-family: var(--font-mono); } /* Use mono var */
 
 /* Loading indicator */
 .loading-indicator {
@@ -1267,6 +1127,93 @@ code { /* General code tag styling */
     animation: spin 1s linear infinite; margin-bottom: 15px;
 }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+
+/* --- NEW STYLES for Profile Modal --- */
+#profileModal .modal-content { /* Target specific modal */
+    max-width: 480px; /* Profile modal width */
+    background-color: var(--background-medium); /* Ensure background */
+}
+
+.profile-modal-body {
+    padding: 30px 35px; /* Adjust padding */
+}
+
+.profile-modal-user-info {
+    display: flex;
+    flex-direction: column; /* Stack avatar and name vertically */
+    align-items: center; /* Center items horizontally */
+    gap: 10px; /* Space between avatar and name */
+    margin-bottom: 25px; /* Space below user info block */
+    text-align: center; /* Ensure text elements are centered */
+}
+
+.profile-modal-avatar {
+    width: 80px; /* Larger avatar */
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid var(--primary-color); /* Thicker border */
+    object-fit: cover; /* Ensure image covers area */
+}
+
+.profile-modal-name {
+    font-family: var(--font-primary); /* Use primary font var */
+    font-size: 1.5em; /* Larger name */
+    font-weight: 600;
+    color: var(--text-primary); /* White text */
+    margin-top: 5px; /* Small space above name */
+}
+
+.profile-modal-stats {
+    text-align: center;
+    margin-bottom: 30px; /* Space below stats block */
+    padding: 15px;
+    background-color: var(--background-light); /* Slight background contrast */
+    border-radius: 5px;
+    border: 1px solid var(--border-color); /* Add border */
+}
+
+.profile-modal-stat-label {
+    display: block; /* Put label on its own line */
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.profile-modal-stat-value {
+    font-family: var(--font-mono); /* Use mono font for value */
+    font-size: 1.6em;
+    font-weight: 700;
+    color: var(--secondary-light); /* Highlight value color */
+}
+
+.profile-modal-trade-url {
+    margin-bottom: 15px; /* Space below the trade url group */
+}
+
+/* Specific styling for trade URL input in profile modal */
+#profileModalTradeUrl {
+     font-family: var(--font-mono); /* Use mono for URL consistency */
+     font-size: 0.95em;
+}
+
+.profile-modal-help-text {
+    margin-top: 10px;
+    font-size: 0.8em;
+}
+
+.profile-modal-footer {
+    justify-content: space-between; /* Push Close to left, Save to right */
+    background-color: var(--background-light); /* Match other footers */
+    padding: 15px 25px;
+    border-top: 1px solid var(--border-color);
+    border-bottom-left-radius: 12px; /* Match modal radius */
+    border-bottom-right-radius: 12px;
+}
+/* --- END NEW STYLES for Profile Modal --- */
+
 
 /*=========================
  STATIC PAGES (FAQ, FAIR, ABOUT, TOS) - Incorporating Visual Improvements
@@ -1336,7 +1283,7 @@ code { /* General code tag styling */
     background-color: var(--background-dark);
     padding: 3px 6px;
     border-radius: 4px;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-mono); /* Use mono var */
     color: var(--secondary-light);
     font-size: 0.9em;
     border: 1px solid var(--border-color);
@@ -1483,7 +1430,7 @@ code { /* General code tag styling */
 .verification-result h4 { margin-top: 0; margin-bottom: 15px; color: var(--primary-color); }
 .verification-result p { margin-bottom: 8px; word-wrap: break-word; }
 .verification-result strong { color: var(--text-accent); }
-.verification-result code.seed-value { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; display: inline-block; }
+.verification-result code.seed-value { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; display: inline-block; }
 .verification-result code.wrap-anywhere { word-break: break-all; }
 
 /* Round History Table - Base styles */
@@ -1504,5 +1451,3 @@ code { /* General code tag styling */
 .page-button.active { background-color: var(--primary-color); color: var(--background-dark); border-color: var(--primary-color); cursor: default; }
 .page-button:disabled { opacity: 0.5; cursor: not-allowed; }
 .page-ellipsis { color: var(--text-secondary); padding: 6px 0; margin: 0 2px; }
-
-/* (Code continues in the next part) */
