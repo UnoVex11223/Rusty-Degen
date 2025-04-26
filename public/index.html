@@ -88,11 +88,39 @@
                 </p>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-primary" id="saveTradeUrl">Save Trade URL</button>
-            </div>
+                <button class="btn btn-primary" id="saveTradeUrl">Save Trade URL</button> </div>
         </div>
     </div>
 
+    <div class="modal profile-modal" id="profileModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Your Profile</h2>
+                <button class="close-btn" id="profileModalCloseBtn" aria-label="Close profile modal">&times;</button>
+            </div>
+            <div class="modal-body profile-modal-body">
+                <div class="profile-modal-user-info">
+                    <img src="/img/default-avatar.png" alt="User Avatar" class="profile-modal-avatar" id="profileModalAvatar">
+                    <span class="profile-modal-name" id="profileModalName">PlayerName</span>
+                </div>
+                <div class="profile-modal-stats">
+                    <span class="profile-modal-stat-label">Total Deposited:</span>
+                    <span class="profile-modal-stat-value" id="profileModalDeposited">$0.00</span>
+                </div>
+                <div class="form-group profile-modal-trade-url">
+                    <label for="profileModalTradeUrl">Steam Trade URL</label>
+                    <input type="url" id="profileModalTradeUrl" placeholder="https://steamcommunity.com/tradeoffer/new/?partner=...">
+                     <p class="help-text profile-modal-help-text">
+                        Required for deposits and withdrawals.
+                        <a href="https://steamcommunity.com/my/tradeoffers/privacy" target="_blank" rel="noopener noreferrer">Find it here</a>.
+                    </p>
+               </div>
+            </div>
+            <div class="modal-footer profile-modal-footer">
+                <button class="btn btn-secondary" id="profileModalCancelBtn">Close</button> <button class="btn btn-primary" id="profileModalSaveBtn">Save Changes</button>
+            </div>
+        </div>
+    </div>
     <header class="main-header">
         <div class="container header-container">
             <div class="header-left">
@@ -130,65 +158,21 @@
                         <div class="user-profile" id="userProfile" style="display: none;" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0">
                             <div class="user-avatar-container">
                                 <img src="/img/default-avatar.png" alt="User Avatar" class="user-avatar" id="userAvatar">
-                                <div class="user-status online" id="userStatusIndicator"></div>
+                                <div class="user-status online" id="userStatusIndicator"></div> </div>
+                            <span class="user-name" id="userName">PlayerName</span>
                             </div>
-                            <div class="user-info">
-                                <span class="user-name" id="userName">PlayerName</span>
-                                <span class="dropdown-arrow" aria-hidden="true">▼</span>
-                            </div>
-                        </div>
 
                         <div class="dropdown-menu" id="userDropdownMenu" style="display: none;" role="menu">
-                            <div class="dropdown-header">
-                                <div class="dropdown-user-info">
-                                    <img src="/img/default-avatar.png" alt="User Avatar" class="dropdown-avatar" id="dropdownAvatar">
-                                    <div class="dropdown-user-details">
-                                        <span class="dropdown-user-name" id="dropdownUserName">PlayerName</span>
-                                        </div>
-                                </div>
-                            </div>
-
-                            <div class="dropdown-stats">
-                                <div class="stat-item">
-                                    <i class="fas fa-wallet icon"></i>
-                                    <div class="stat-details">
-                                        <span class="stat-label">Total Deposited</span>
-                                        <span class="stat-value" id="totalDeposited">$0.00</span>
-                                    </div>
-                                </div>
-                                <div class="stat-item">
-                                    <i class="fas fa-trophy icon"></i>
-                                    <div class="stat-details">
-                                        <span class="stat-label">Total Won</span>
-                                        <span class="stat-value" id="totalWon">$0.00</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="dropdown-section">
-                                <div class="dropdown-section-header">
-                                    <i class="fas fa-exchange-alt icon"></i>
-                                    <span>Trade URL</span>
-                                </div>
-                                <div class="trade-url-container">
-                                    <input type="text" id="dropdownTradeUrlInput" class="trade-url-input" placeholder="Enter your Steam Trade URL" readonly>
-                                    <button class="btn btn-edit-url" id="editTradeUrlBtn" aria-label="Edit Trade URL">
-                                        <i class="fas fa-edit"></i> </button>
-                                </div>
-                                <div class="trade-url-help">
-                                    <a href="https://steamcommunity.com/my/tradeoffers/privacy" target="_blank" rel="noopener noreferrer">
-                                        <i class="fas fa-question-circle"></i> Where to find my Trade URL?
-                                    </a>
-                                </div>
-                            </div>
-
                             <div class="dropdown-actions">
+                                <button class="dropdown-item" id="profileDropdownButton" role="menuitem">
+                                    <i class="fas fa-user-circle icon"></i> Profile
+                                </button>
                                 <button class="dropdown-item" id="logoutButton" role="menuitem">
                                     <i class="fas fa-sign-out-alt icon"></i> Sign Out
                                 </button>
                             </div>
+                             </div>
                         </div>
-                    </div>
                     </div>
             </div>
         </div>
@@ -246,211 +230,210 @@
                             <audio id="depositSound" src="deposit-join.mp3" preload="auto"></audio>
                             <button class="btn btn-primary return-btn" id="returnToJackpot" style="display: none;">Return</button>
                         </div>
-                    </div> <div class="deposit-button-container" id="depositBtnContainer">
-                        <button class="btn btn-deposit" id="showDepositModal" title="Log in to deposit" disabled>DEPOSIT SKINS</button>
-                        <div class="test-buttons-container">
-                            <button class="btn btn-secondary" id="testSpinButton">Test Roulette</button>
-                            <button class="btn btn-secondary" id="testDepositButton">Test Deposit</button>
-                        </div>
-                    </div>
+                        </div> <div class="deposit-button-container" id="depositBtnContainer">
+                         <button class="btn btn-deposit" id="showDepositModal" title="Log in to deposit" disabled>DEPOSIT SKINS</button>
+                         <div class="test-buttons-container">
+                             <button class="btn btn-secondary" id="testSpinButton">Test Roulette</button>
+                             <button class="btn btn-secondary" id="testDepositButton">Test Deposit</button>
+                         </div>
+                     </div>
 
-                    <div class="current-items-section" id="currentItems">
-                        <h3 class="section-title">CURRENT ITEMS IN POT</h3>
-                        <div class="items-container" id="itemsContainer">
-                            <div class="empty-pot-message" id="emptyPotMessage" style="display: block;">
-                                <p>No items in the current pot. Be the first to deposit!</p>
-                            </div>
-                            </div>
-                    </div>
-                </div>
-            </section>
+                     <div class="current-items-section" id="currentItems">
+                         <h3 class="section-title">CURRENT ITEMS IN POT</h3>
+                         <div class="items-container" id="itemsContainer">
+                             <div class="empty-pot-message" id="emptyPotMessage" style="display: block;">
+                                 <p>No items in the current pot. Be the first to deposit!</p>
+                             </div>
+                             </div>
+                     </div>
+                </div> </section>
 
             <section id="about-page" style="display: none;">
-                <div class="content-card">
-                    <h1>About Rusty Degen</h1>
-                    <div class="content-section">
-                        <h3 class="content-section-title">The Developer Behind Rusty Degen</h3>
-                        <div class="content-section-body">
-                            <p>Hello! I'm a passionate Rust player with over 7,000 hours in the game. What started as a hobby quickly turned into an obsession, and I've experienced every aspect of the Rust ecosystem - from intense PvP battles to trading rare skins.</p>
-                            <p>As a computer science student, I wanted to combine my two passions: programming and Rust. Rusty Degen is the result of this combination - a solo project developed from the ground up as part of my advanced computer science coursework.</p>
-                            <p>Unlike many gambling platforms that are run by large teams with significant backing, Rusty Degen is entirely developed, maintained, and operated by a single person - me. This project has been an incredible learning experience, allowing me to apply theoretical knowledge to a real-world application while creating something for a community I deeply care about.</p>
-                        </div>
+                 <div class="content-card">
+                     <h1>About Rusty Degen</h1>
+                     <div class="content-section">
+                         <h3 class="content-section-title">The Developer Behind Rusty Degen</h3>
+                         <div class="content-section-body">
+                             <p>Hello! I'm a passionate Rust player with over 7,000 hours in the game. What started as a hobby quickly turned into an obsession, and I've experienced every aspect of the Rust ecosystem - from intense PvP battles to trading rare skins.</p>
+                             <p>As a computer science student, I wanted to combine my two passions: programming and Rust. Rusty Degen is the result of this combination - a solo project developed from the ground up as part of my advanced computer science coursework.</p>
+                             <p>Unlike many gambling platforms that are run by large teams with significant backing, Rusty Degen is entirely developed, maintained, and operated by a single person - me. This project has been an incredible learning experience, allowing me to apply theoretical knowledge to a real-world application while creating something for a community I deeply care about.</p>
+                         </div>
+                     </div>
                     </div>
-                   </div>
             </section>
 
             <section id="tos-page" style="display: none;">
-                <div class="content-card">
-                    <h1>Terms of Service</h1>
-                    <div class="content-section">
-                        <h3 class="content-section-title">1. Acceptance of Terms</h3>
-                        <div class="content-section-body">
-                            <p>Welcome to Rusty Degen (referred to as "the Service" or "Website"). These Terms of Service ("Terms") outline the rules and regulations for using our platform. By accessing or utilizing any part of the Service, you signify your binding agreement to these Terms. If you disagree with any portion of these Terms, you are prohibited from using the Service.</p>
-                            <p>Your use of the Website, participation in games, and any communication with Rusty Degen are all governed by these Terms.</p>
-                        </div>
-                    </div>
-                    <div class="content-section">
-                        <h3 class="content-section-title">2. Eligibility and User Obligations</h3>
-                        <div class="content-section-body">
-                            <p>To use Rusty Degen, you confirm that:</p>
-                            <ul>
-                                <li>You are 18 years of age or older.</li>
-                                <li>You have the legal right and capacity to agree to these Terms and are responsible for your conduct.</li>
-                                <li>Your use of the Service complies with the laws and regulations of your location.</li>
-                            </ul>
-                            <p>It is your sole responsibility to ensure your activities on Rusty Degen are lawful in your jurisdiction. You access the Service at your own risk.</p>
-                        </div>
-                    </div>
-                    <div class="content-section">
-                        <h3 class="content-section-title">3. Service Availability and Liability</h3>
-                        <div class="content-section-body">
-                            <p>Rusty Degen provides its Service on an "as-is" and "as-available" basis without any warranties, express or implied. We do not guarantee that the Service will be uninterrupted, timely, secure, or free from errors.</p>
-                            <p>Rusty Degen, its owner, and affiliates will not be liable for any damages (direct, indirect, incidental, special, consequential, or exemplary) resulting from your use or inability to use the Service. This includes losses from gameplay, technical failures, data loss, or other intangible losses.</p>
-                            <p>We reserve the right to modify, suspend, or discontinue the Service, or any part thereof (including specific game rounds or user accounts), at our discretion, without notice or liability.</p>
-                        </div>
-                    </div>
-                    <div class="content-section">
-                        <h3 class="content-section-title">4. Gameplay, Winnings, and Site Fees</h3>
-                        <div class="content-section-body">
-                            <p>Winning chances vary based on game rules and deposited value, as determined by our Provably Fair system where applicable.</p>
-                            <p>Winners must claim items via the designated Steam trade offer system. Ensure your Steam Trade URL is accurate on our Website and that your Steam inventory settings allow incoming offers (set to public).</p>
-                            <p>Winning trade offers should be accepted promptly. Offers not accepted within 12 hours of being sent may be cancelled, resulting in forfeiture of winnings. If you encounter issues receiving winnings, contact support within 12 hours of the round's completion.</p>
-                            <p>A commission (typically 0-10%) is applied to each jackpot round's total value to support site maintenance, development, and operational costs. This fee is deducted from the item pool before the winner receives the remaining items.</p>
-                        </div>
-                    </div>
-                    <div class="content-section">
-                        <h3 class="content-section-title">5. Technical Issues and Support Claims</h3>
-                        <div class="content-section-body">
-                             <p>If you believe a loss occurred due to a verifiable error within Rusty Degen's systems (e.g., software bug, server issue), you must report it to our support channel (specified elsewhere, e.g., Discord) within 12 hours of the event.</p>
-                             <p>Claims require detailed information (round ID, time, issue description). Rusty Degen will investigate reasonable claims but retains sole discretion in determining the resolution, which may or may not include compensation.</p>
-                             <p>We recommend withdrawing valuable winnings quickly to avoid potential issues.</p>
-                        </div>
-                    </div>
-                    <div class="content-section">
-                        <h3 class="content-section-title">6. Intellectual Property</h3>
+                 <div class="content-card">
+                     <h1>Terms of Service</h1>
+                     <div class="content-section">
+                         <h3 class="content-section-title">1. Acceptance of Terms</h3>
                          <div class="content-section-body">
-                             <p>All materials on this Website, including design, code, text, graphics, and logos, are owned by or licensed to Rusty Degen and protected by intellectual property laws.</p>
-                             <p>Unauthorized copying, distribution, or modification of any Website content is forbidden without explicit written permission.</p>
-                             <p>Information on the Website is for general use and may change without notice.</p>
-                        </div>
-                    </div>
-                    <div class="content-section">
-                        <h3 class="content-section-title">7. Amendments to Terms</h3>
-                        <div class="content-section-body">
-                            <p>Rusty Degen may revise these Terms at any time. Updated Terms become effective upon posting on the Website. Continuing to use the Service after changes means you accept the revised Terms.</p>
-                        </div>
-                    </div>
-                </div>
+                             <p>Welcome to Rusty Degen (referred to as "the Service" or "Website"). These Terms of Service ("Terms") outline the rules and regulations for using our platform. By accessing or utilizing any part of the Service, you signify your binding agreement to these Terms. If you disagree with any portion of these Terms, you are prohibited from using the Service.</p>
+                             <p>Your use of the Website, participation in games, and any communication with Rusty Degen are all governed by these Terms.</p>
+                         </div>
+                     </div>
+                     <div class="content-section">
+                         <h3 class="content-section-title">2. Eligibility and User Obligations</h3>
+                         <div class="content-section-body">
+                             <p>To use Rusty Degen, you confirm that:</p>
+                             <ul>
+                                 <li>You are 18 years of age or older.</li>
+                                 <li>You have the legal right and capacity to agree to these Terms and are responsible for your conduct.</li>
+                                 <li>Your use of the Service complies with the laws and regulations of your location.</li>
+                             </ul>
+                             <p>It is your sole responsibility to ensure your activities on Rusty Degen are lawful in your jurisdiction. You access the Service at your own risk.</p>
+                         </div>
+                     </div>
+                     <div class="content-section">
+                         <h3 class="content-section-title">3. Service Availability and Liability</h3>
+                         <div class="content-section-body">
+                             <p>Rusty Degen provides its Service on an "as-is" and "as-available" basis without any warranties, express or implied. We do not guarantee that the Service will be uninterrupted, timely, secure, or free from errors.</p>
+                             <p>Rusty Degen, its owner, and affiliates will not be liable for any damages (direct, indirect, incidental, special, consequential, or exemplary) resulting from your use or inability to use the Service. This includes losses from gameplay, technical failures, data loss, or other intangible losses.</p>
+                             <p>We reserve the right to modify, suspend, or discontinue the Service, or any part thereof (including specific game rounds or user accounts), at our discretion, without notice or liability.</p>
+                         </div>
+                     </div>
+                     <div class="content-section">
+                         <h3 class="content-section-title">4. Gameplay, Winnings, and Site Fees</h3>
+                         <div class="content-section-body">
+                             <p>Winning chances vary based on game rules and deposited value, as determined by our Provably Fair system where applicable.</p>
+                             <p>Winners must claim items via the designated Steam trade offer system. Ensure your Steam Trade URL is accurate on our Website and that your Steam inventory settings allow incoming offers (set to public).</p>
+                             <p>Winning trade offers should be accepted promptly. Offers not accepted within 12 hours of being sent may be cancelled, resulting in forfeiture of winnings. If you encounter issues receiving winnings, contact support within 12 hours of the round's completion.</p>
+                             <p>A commission (typically 0-10%) is applied to each jackpot round's total value to support site maintenance, development, and operational costs. This fee is deducted from the item pool before the winner receives the remaining items.</p>
+                         </div>
+                     </div>
+                     <div class="content-section">
+                         <h3 class="content-section-title">5. Technical Issues and Support Claims</h3>
+                         <div class="content-section-body">
+                              <p>If you believe a loss occurred due to a verifiable error within Rusty Degen's systems (e.g., software bug, server issue), you must report it to our support channel (specified elsewhere, e.g., Discord) within 12 hours of the event.</p>
+                              <p>Claims require detailed information (round ID, time, issue description). Rusty Degen will investigate reasonable claims but retains sole discretion in determining the resolution, which may or may not include compensation.</p>
+                              <p>We recommend withdrawing valuable winnings quickly to avoid potential issues.</p>
+                         </div>
+                     </div>
+                     <div class="content-section">
+                         <h3 class="content-section-title">6. Intellectual Property</h3>
+                          <div class="content-section-body">
+                              <p>All materials on this Website, including design, code, text, graphics, and logos, are owned by or licensed to Rusty Degen and protected by intellectual property laws.</p>
+                              <p>Unauthorized copying, distribution, or modification of any Website content is forbidden without explicit written permission.</p>
+                              <p>Information on the Website is for general use and may change without notice.</p>
+                         </div>
+                     </div>
+                     <div class="content-section">
+                         <h3 class="content-section-title">7. Amendments to Terms</h3>
+                         <div class="content-section-body">
+                             <p>Rusty Degen may revise these Terms at any time. Updated Terms become effective upon posting on the Website. Continuing to use the Service after changes means you accept the revised Terms.</p>
+                         </div>
+                     </div>
+                 </div>
             </section>
 
             <section id="faq-page" style="display: none;">
-                <div class="content-card">
-                    <h1>Frequently Asked Questions</h1>
-                    <div class="content-section">
-                        <h3 class="content-section-title">How does Rusty Degen work?</h3>
-                        <div class="content-section-body">
-                            <p>Rusty Degen is a Rust skin jackpot site where players can deposit their skins into a pool. When the timer runs out, a winner is randomly selected using our Provably Fair system. The winner takes all skins in the pot (minus a small site fee). Your chance of winning is proportional to the value of skins you've deposited compared to the total pot value.</p>
-                        </div>
-                    </div>
-                    <div class="content-section">
-                        <h3 class="content-section-title">How do I deposit skins?</h3>
-                        <div class="content-section-body">
-                            <p>First, log in with your Steam account using the "Sign in" button. Then click the "Deposit Skins" button. A modal window will show your available Rust inventory. Select the skins you wish to deposit and click the final "Deposit Items" button. You'll then receive instructions to send a Steam trade offer to our bot including a specific message/token. You must accept/send this trade offer within Steam to complete the deposit.</p>
-                        </div>
-                    </div>
-                    <div class="content-section">
-                        <h3 class="content-section-title">How is the winner selected?</h3>
-                        <div class="content-section-body">
-                            <p>The winner is selected using a provably fair system based on cryptographic hashing. Each player gets virtual 'tickets' proportional to the value of their deposited skins (e.g., 1 ticket per $0.01). A random winning ticket number is generated using a combination of a secret server seed (hashed and shown before the round starts) and a public client seed (based on round info). See our "Provably Fair" page for a detailed explanation and verification tool.</p>
-                        </div>
-                    </div>
-                    <div class="content-section">
-                        <h3 class="content-section-title">How do I receive my winnings?</h3>
-                        <div class="content-section-body">
-                            <p>If you win the jackpot, all items in the pot (minus the site fee) will be automatically sent to you via a Steam trade offer from one of our site bots. Ensure your Trade URL is correctly set in your profile (you'll be prompted if it's missing) and that your Steam inventory privacy is set to "Public" so we can send the offer.</p>
-                        </div>
-                    </div>
-                    <div class="content-section">
-                        <h3 class="content-section-title">What is your fee?</h3>
-                        <div class="content-section-body">
-                            <p>Rusty Degen takes a small percentage fee (typically 5-10%, check current rate) from each jackpot pot. This fee is essential to cover server costs, bot maintenance, development, and ensure the long-term operation and improvement of the site.</p>
-                        </div>
-                    </div>
-                </div>
+                 <div class="content-card">
+                     <h1>Frequently Asked Questions</h1>
+                     <div class="content-section">
+                         <h3 class="content-section-title">How does Rusty Degen work?</h3>
+                         <div class="content-section-body">
+                             <p>Rusty Degen is a Rust skin jackpot site where players can deposit their skins into a pool. When the timer runs out, a winner is randomly selected using our Provably Fair system. The winner takes all skins in the pot (minus a small site fee). Your chance of winning is proportional to the value of skins you've deposited compared to the total pot value.</p>
+                         </div>
+                     </div>
+                     <div class="content-section">
+                         <h3 class="content-section-title">How do I deposit skins?</h3>
+                         <div class="content-section-body">
+                             <p>First, log in with your Steam account using the "Sign in" button. Then click the "Deposit Skins" button. A modal window will show your available Rust inventory. Select the skins you wish to deposit and click the final "Deposit Items" button. You'll then receive instructions to send a Steam trade offer to our bot including a specific message/token. You must accept/send this trade offer within Steam to complete the deposit.</p>
+                         </div>
+                     </div>
+                     <div class="content-section">
+                         <h3 class="content-section-title">How is the winner selected?</h3>
+                         <div class="content-section-body">
+                             <p>The winner is selected using a provably fair system based on cryptographic hashing. Each player gets virtual 'tickets' proportional to the value of their deposited skins (e.g., 1 ticket per $0.01). A random winning ticket number is generated using a combination of a secret server seed (hashed and shown before the round starts) and a public client seed (based on round info). See our "Provably Fair" page for a detailed explanation and verification tool.</p>
+                         </div>
+                     </div>
+                     <div class="content-section">
+                         <h3 class="content-section-title">How do I receive my winnings?</h3>
+                         <div class="content-section-body">
+                             <p>If you win the jackpot, all items in the pot (minus the site fee) will be automatically sent to you via a Steam trade offer from one of our site bots. Ensure your Trade URL is correctly set in your profile (you'll be prompted if it's missing) and that your Steam inventory privacy is set to "Public" so we can send the offer.</p>
+                         </div>
+                     </div>
+                     <div class="content-section">
+                         <h3 class="content-section-title">What is your fee?</h3>
+                         <div class="content-section-body">
+                             <p>Rusty Degen takes a small percentage fee (typically 5-10%, check current rate) from each jackpot pot. This fee is essential to cover server costs, bot maintenance, development, and ensure the long-term operation and improvement of the site.</p>
+                         </div>
+                     </div>
+                 </div>
             </section>
 
             <section id="fair-page" style="display: none;">
                  <div class="content-card">
-                    <h1>Provably Fair System</h1>
-                    <div class="content-section">
-                        <h3 class="content-section-title">How Our System Works</h3>
-                        <div class="content-section-body">
-                            <p>Rusty Degen uses a provably fair system to ensure complete transparency and fairness in winner selection. Our system uses cryptographic methods (specifically SHA256 hashing) to guarantee that the results cannot be manipulated by the site operators and can be independently verified by anyone after the round concludes.</p>
-                        </div>
-                    </div>
-                    <div class="content-section">
-                        <h3 class="content-section-title">The Process</h3>
-                        <div class="content-section-body">
-                            <ol>
-                                <li><strong>Seed Generation:</strong> Before a round begins, the server generates a long, random, secret string called the "Server Seed".</li>
-                                <li><strong>Hashing:</strong> The server calculates the SHA256 hash of this Server Seed. This hash (e.g., <code>a1b2c3d4...</code>) is publicly displayed for the round *before* any deposits are accepted. Hashing is a one-way process; you cannot get the original Seed from the Hash, but you can later verify that a revealed Seed produces the same Hash.</li>
-                                <li><strong>Deposits & Tickets:</strong> Players deposit items. Each $0.01 of value deposited grants the player 1 ticket. Tickets are numbered sequentially (e.g., Player A deposits $1.00 gets tickets 1-100, Player B deposits $2.50 gets tickets 101-350).</li>
-                                <li><strong>Round End & Client Seed:</strong> When the round ends (timer reaches zero or max items), a "Client Seed" is determined. This is typically a combination of public data like the Round ID and the end timestamp, making it unique and unpredictable beforehand.</li>
-                                <li><strong>Combined Hashing:</strong> The server combines the secret Server Seed and the public Client Seed (usually as <code>ServerSeed-ClientSeed</code>). It then calculates the SHA256 hash of this combined string.</li>
-                                <li><strong>Winning Ticket Calculation:</strong> The resulting hash is converted into a number. We use the modulo operator (%) with the total number of tickets in the round to determine the winning ticket number. (e.g., <code>WinningTicket = HashedNumber % TotalTickets + 1</code> to get 1-based ticket).</li>
-                                <li><strong>Winner Selection:</strong> The player whose ticket range includes the calculated Winning Ticket number wins the pot.</li>
-                                <li><strong>Seed Reveal:</strong> After the winner is determined and announced, the original secret Server Seed for that round is revealed publicly.</li>
-                            </ol>
-                        </div>
-                    </div>
-                    <div class="content-section" id="provably-fair-verification">
-                        <h3 class="content-section-title">Verification Tool</h3>
-                        <div class="content-section-body">
-                            <p>After a round is complete and the Server Seed is revealed, you can use this tool (or any external SHA256 tool) to verify the outcome:</p>
-                            <div class="verify-form">
-                                <div class="form-group">
-                                    <label for="round-id">Round ID:</label>
-                                    <input type="text" id="round-id" placeholder="Enter round ID from history">
-                                </div>
-                                <div class="form-group">
-                                    <label for="server-seed">Server Seed (Revealed):</label>
-                                    <input type="text" id="server-seed" placeholder="Enter the revealed Server Seed">
-                                </div>
-                                <div class="form-group">
-                                    <label for="client-seed">Client Seed (e.g., RoundID-Timestamp):</label>
-                                    <input type="text" id="client-seed" placeholder="Enter the Client Seed for the round">
-                                </div>
-                                <button class="btn btn-primary" id="verify-btn">Verify Round</button>
-                            </div>
-                            <div id="verification-result" class="verification-result" style="display: none;">
-                                </div>
-                            <p><small>Note: You may need to obtain the exact Client Seed format used for the round from the round details.</small></p>
-                        </div>
-                    </div>
-                    <div class="content-section">
-                        <h3 class="content-section-title">Round History</h3>
-                        <div class="content-section-body">
-                            <div class="table-container">
-                                <table class="history-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Round ID</th>
-                                            <th>Date</th>
-                                            <th>Pot Value</th>
-                                            <th>Winner</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="rounds-table-body">
-                                        <tr><td colspan="5" class="loading-message">Loading round history...</td></tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div class="pagination-container" id="rounds-pagination">
-                                </div>
-                        </div>
-                    </div>
-                </div>
+                     <h1>Provably Fair System</h1>
+                     <div class="content-section">
+                         <h3 class="content-section-title">How Our System Works</h3>
+                         <div class="content-section-body">
+                             <p>Rusty Degen uses a provably fair system to ensure complete transparency and fairness in winner selection. Our system uses cryptographic methods (specifically SHA256 hashing) to guarantee that the results cannot be manipulated by the site operators and can be independently verified by anyone after the round concludes.</p>
+                         </div>
+                     </div>
+                     <div class="content-section">
+                         <h3 class="content-section-title">The Process</h3>
+                         <div class="content-section-body">
+                             <ol>
+                                 <li><strong>Seed Generation:</strong> Before a round begins, the server generates a long, random, secret string called the "Server Seed".</li>
+                                 <li><strong>Hashing:</strong> The server calculates the SHA256 hash of this Server Seed. This hash (e.g., <code>a1b2c3d4...</code>) is publicly displayed for the round *before* any deposits are accepted. Hashing is a one-way process; you cannot get the original Seed from the Hash, but you can later verify that a revealed Seed produces the same Hash.</li>
+                                 <li><strong>Deposits & Tickets:</strong> Players deposit items. Each $0.01 of value deposited grants the player 1 ticket. Tickets are numbered sequentially (e.g., Player A deposits $1.00 gets tickets 1-100, Player B deposits $2.50 gets tickets 101-350).</li>
+                                 <li><strong>Round End & Client Seed:</strong> When the round ends (timer reaches zero or max items), a "Client Seed" is determined. This is typically a combination of public data like the Round ID and the end timestamp, making it unique and unpredictable beforehand.</li>
+                                 <li><strong>Combined Hashing:</strong> The server combines the secret Server Seed and the public Client Seed (usually as <code>ServerSeed-ClientSeed</code>). It then calculates the SHA256 hash of this combined string.</li>
+                                 <li><strong>Winning Ticket Calculation:</strong> The resulting hash is converted into a number. We use the modulo operator (%) with the total number of tickets in the round to determine the winning ticket number. (e.g., <code>WinningTicket = HashedNumber % TotalTickets + 1</code> to get 1-based ticket).</li>
+                                 <li><strong>Winner Selection:</strong> The player whose ticket range includes the calculated Winning Ticket number wins the pot.</li>
+                                 <li><strong>Seed Reveal:</strong> After the winner is determined and announced, the original secret Server Seed for that round is revealed publicly.</li>
+                             </ol>
+                         </div>
+                     </div>
+                     <div class="content-section" id="provably-fair-verification">
+                         <h3 class="content-section-title">Verification Tool</h3>
+                         <div class="content-section-body">
+                             <p>After a round is complete and the Server Seed is revealed, you can use this tool (or any external SHA256 tool) to verify the outcome:</p>
+                             <div class="verify-form">
+                                 <div class="form-group">
+                                     <label for="round-id">Round ID:</label>
+                                     <input type="text" id="round-id" placeholder="Enter round ID from history">
+                                 </div>
+                                 <div class="form-group">
+                                     <label for="server-seed">Server Seed (Revealed):</label>
+                                     <input type="text" id="server-seed" placeholder="Enter the revealed Server Seed">
+                                 </div>
+                                 <div class="form-group">
+                                     <label for="client-seed">Client Seed (e.g., RoundID-Timestamp):</label>
+                                     <input type="text" id="client-seed" placeholder="Enter the Client Seed for the round">
+                                 </div>
+                                 <button class="btn btn-primary" id="verify-btn">Verify Round</button>
+                             </div>
+                             <div id="verification-result" class="verification-result" style="display: none;">
+                                 </div>
+                             <p><small>Note: You may need to obtain the exact Client Seed format used for the round from the round details.</small></p>
+                         </div>
+                     </div>
+                     <div class="content-section">
+                         <h3 class="content-section-title">Round History</h3>
+                         <div class="content-section-body">
+                             <div class="table-container">
+                                 <table class="history-table">
+                                     <thead>
+                                         <tr>
+                                             <th>Round ID</th>
+                                             <th>Date</th>
+                                             <th>Pot Value</th>
+                                             <th>Winner</th>
+                                             <th>Actions</th>
+                                         </tr>
+                                     </thead>
+                                     <tbody id="rounds-table-body">
+                                         <tr><td colspan="5" class="loading-message">Loading round history...</td></tr>
+                                     </tbody>
+                                 </table>
+                             </div>
+                             <div class="pagination-container" id="rounds-pagination">
+                                 </div>
+                         </div>
+                     </div>
+                 </div>
             </section>
 
         </div> </main>
@@ -462,7 +445,5 @@
     </footer>
 
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/main.js"></script>
-
-</body>
+    <script src="/js/main.js"></script> </body>
 </html>
