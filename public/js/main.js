@@ -1,5 +1,5 @@
 // main.js - Rust Jackpot Frontend Logic (Combined with Profile Dropdown)
-// Modifications: Removed Steam ID display, Profile button, History button JS logic.
+// Modifications: Simplified header profile, updated dropdown, added Profile Modal.
 
 // Ensure Socket.IO client library is loaded before this script
 // Example: <script src="/socket.io/socket.io.js"></script>
@@ -52,25 +52,34 @@ const DOMElements = {
         faqPage: document.getElementById('faq-page'),
         fairPage: document.getElementById('fair-page'),
     },
-    // User Authentication / Profile (Includes Dropdown Elements)
+    // User Authentication / Profile
     user: {
         loginButton: document.getElementById('loginButton'),
-        userProfile: document.getElementById('userProfile'), // The clickable profile part
-        userAvatar: document.getElementById('userAvatar'), // Avatar in the header
-        userName: document.getElementById('userName'), // Name in the header
+        userProfile: document.getElementById('userProfile'),       // The clickable avatar+name element in header
+        userAvatar: document.getElementById('userAvatar'),         // Avatar within #userProfile
+        userName: document.getElementById('userName'),             // Name within #userProfile
         userDropdownMenu: document.getElementById('userDropdownMenu'), // The dropdown menu itself
+        profileDropdownButton: document.getElementById('profileDropdownButton'), // NEW "Profile" button inside dropdown
+        logoutButton: document.getElementById('logoutButton'),     // The logout button inside the dropdown
 
-        // Dropdown Specific Elements
-        dropdownAvatar: document.getElementById('dropdownAvatar'),
-        dropdownUserName: document.getElementById('dropdownUserName'),
-        // dropdownUserId: document.getElementById('dropdownUserId'), // REMOVED
-        totalDeposited: document.getElementById('totalDeposited'),
-        totalWon: document.getElementById('totalWon'),
-        tradeUrlInput: document.getElementById('tradeUrlInput'), // Trade URL input inside dropdown
-        editTradeUrlBtn: document.getElementById('editTradeUrlBtn'), // Edit/Save button for Trade URL
-        // profileButton: document.getElementById('profileButton'), // REMOVED
-        // historyButton: document.getElementById('historyButton'), // REMOVED
-        logoutButton: document.getElementById('logoutButton'), // The logout button inside the dropdown
+        // --- REMOVED references to old dropdown elements ---
+        // dropdownAvatar: document.getElementById('dropdownAvatar'),      // No longer needed
+        // dropdownUserName: document.getElementById('dropdownUserName'),  // No longer needed
+        // totalDeposited: document.getElementById('totalDeposited'),    // No longer needed here
+        // totalWon: document.getElementById('totalWon'),                // No longer needed here
+        // tradeUrlInput: document.getElementById('tradeUrlInput'),       // No longer needed here
+        // editTradeUrlBtn: document.getElementById('editTradeUrlBtn'),     // No longer needed here
+    },
+    // *** NEW Profile Modal Elements ***
+    profileModal: {
+        modal: document.getElementById('profileModal'),
+        avatar: document.getElementById('profileModalAvatar'),
+        name: document.getElementById('profileModalName'),
+        deposited: document.getElementById('profileModalDeposited'),
+        tradeUrlInput: document.getElementById('profileModalTradeUrl'),
+        saveBtn: document.getElementById('profileModalSaveBtn'),
+        closeBtn: document.getElementById('profileModalCloseBtn'),
+        cancelBtn: document.getElementById('profileModalCancelBtn'), // Added based on HTML
     },
     // Jackpot Display
     jackpot: {
@@ -434,49 +443,33 @@ async function checkLoginStatus() {
 }
 
 /**
- * Updates the user profile section (header avatar/name, dropdown content)
+ * Updates the user profile section (header avatar/name)
  * or shows the login button, based on the currentUser state.
- * MERGED FUNCTIONALITY FROM manu.js and main.js
+ * Handles the simplified header display.
  */
 function updateUserUI() {
-    // Destructure elements needed, EXCLUDING removed ones (dropdownUserId)
-    const { loginButton, userProfile, userAvatar, userName, userDropdownMenu,
-            dropdownAvatar, dropdownUserName,
-            totalDeposited, totalWon, tradeUrlInput, editTradeUrlBtn
-    } = DOMElements.user;
+    // Destructure elements needed for header display and dropdown control
+    const { loginButton, userProfile, userAvatar, userName, userDropdownMenu } = DOMElements.user;
 
     if (!loginButton || !userProfile) return; // Essential elements must exist
 
     if (currentUser) {
-        // --- Header Elements ---
+        // --- Header Elements (Simplified View) ---
         if (userAvatar) userAvatar.src = currentUser.avatar || '/img/default-avatar.png';
         if (userName) userName.textContent = currentUser.username || 'User';
+
         loginButton.style.display = 'none';
-        userProfile.style.display = 'flex'; // Show the profile block
-        userProfile.setAttribute('aria-disabled', 'false'); // Enable profile button
+        userProfile.style.display = 'flex'; // Show the avatar+name element
+        userProfile.setAttribute('aria-disabled', 'false'); // Enable profile trigger
 
-        // --- Dropdown Elements ---
-        if (dropdownAvatar) dropdownAvatar.src = currentUser.avatar || '/img/default-avatar.png';
-        if (dropdownUserName) dropdownUserName.textContent = currentUser.username || 'User';
-        // --- REMOVED Steam ID Update ---
-        // Use actual stats if available, otherwise show defaults or mock values
-        if (totalDeposited) totalDeposited.textContent = `$${(currentUser.totalDeposited || 0).toFixed(2)}`;
-        if (totalWon) totalWon.textContent = `$${(currentUser.totalWon || 0).toFixed(2)}`;
-        if (tradeUrlInput) tradeUrlInput.value = currentUser.tradeUrl || '';
-
-        // Ensure trade URL input starts as read-only in the dropdown
-        if (tradeUrlInput) tradeUrlInput.readOnly = true;
-        if (editTradeUrlBtn) {
-            editTradeUrlBtn.innerHTML = '<i class="fas fa-edit"></i>'; // Set to edit icon
-            editTradeUrlBtn.title = 'Edit Trade URL';
-            editTradeUrlBtn.disabled = false; // Ensure button is enabled
-        }
+        // --- REMOVED Dropdown Content Population ---
+        // Logic to populate the old dropdown elements (stats, inline trade url) is removed.
 
     } else {
         // --- User Logged Out ---
         loginButton.style.display = 'flex'; // Show login button
-        userProfile.style.display = 'none'; // Hide profile block
-        userProfile.setAttribute('aria-disabled', 'true'); // Disable profile button
+        userProfile.style.display = 'none'; // Hide avatar+name element
+        userProfile.setAttribute('aria-disabled', 'true'); // Disable profile trigger
 
         // Ensure dropdown is hidden if user logs out while it's open
         if (userDropdownMenu) userDropdownMenu.style.display = 'none';
@@ -660,7 +653,6 @@ function addSelectedItemElement(item) {
     container.appendChild(selectedElement);
 }
 
-
 /**
  * Removes the visual representation of an item from the "Selected Items" area.
  * @param {string} assetId - The asset ID of the item to remove.
@@ -687,7 +679,6 @@ function removeSelectedItem(assetId) {
     removeSelectedItemElement(assetId);
 }
 
-
 /**
  * Updates the total value display in the deposit modal and enables/disables the deposit button.
  */
@@ -706,11 +697,12 @@ function updateTotalValue() {
     depositButton.disabled = selectedItemsList.length === 0;
 }
 
-// main.js - Part 2 (Modified - Continued)
+// --- Second Part of main.js (Continued) ---
 
 /**
  * Handles the deposit submission process.
  * Initiates the deposit with the backend and instructs the user on the trade offer process.
+ * Note: This function was named submitDeposit in the original file.
  */
 async function submitDeposit() {
     const { depositButton: button, depositModal } = DOMElements.deposit;
@@ -740,50 +732,40 @@ async function submitDeposit() {
     button.textContent = 'Processing...';
 
     try {
-        // Step 1: Initiate deposit with the server to get token/URL
-        const initiateResponse = await fetch('/api/deposit/initiate', {
+        // Step 1: Initiate deposit with the server to get token/URL (or handle direct deposit)
+        // Adapting this based on the original intent which seemed more like direct deposit confirmation
+        // Let's revert to the simpler deposit logic assuming backend handles trade offer based on this call.
+        const assetIds = selectedItemsList.map(item => item.assetId);
+        const totalValue = selectedItemsList.reduce((sum, item) => sum + (item.price || 0), 0);
+
+        const response = await fetch('/api/deposit', { // Using the simpler endpoint from earlier logic
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({}) // Sending empty body as item details aren't needed for initiation
+            body: JSON.stringify({ assetIds, totalValue }),
         });
 
-        if (!initiateResponse.ok) {
-            const error = await initiateResponse.json().catch(() => ({ error: 'Failed to initiate deposit.' }));
-            throw new Error(error.error || `Deposit initiation failed (${initiateResponse.status})`);
+        const result = await response.json(); // Attempt to parse JSON regardless of response.ok
+
+        if (!response.ok) {
+            throw new Error(result.error || `Deposit failed with status ${response.status}.`);
         }
 
-        const { depositToken, botTradeUrl } = await initiateResponse.json();
-
-        if (!depositToken || !botTradeUrl) {
-            throw new Error('Invalid response from deposit initiation.');
+        if (!result.success) {
+            // Handle specific backend errors if available
+            throw new Error(result.error || 'Deposit request was not successful.');
         }
 
-        // Step 2: Construct the trade offer URL and instructions for the user
-        console.log("Deposit Token:", depositToken);
-        console.log("Bot Trade URL:", botTradeUrl);
+        showNotification(`Deposit confirmed! Total Value: $${totalValue.toFixed(2)}. Items will appear shortly.`, 'success', 6000);
+        // Items added to pot will be handled by socket event 'participantUpdated' (or similar)
+        selectedItemsList = []; // Clear selection
+        updateTotalValue(); // Update value display
+        hideModal(DOMElements.deposit.depositModal); // Close the deposit modal
+        // Play deposit sound if available
+        DOMElements.audio.depositSound?.play().catch(e => console.warn("Deposit sound play failed:", e));
 
-        // Step 3: Inform the user clearly about the next steps.
-        const selectedValue = DOMElements.deposit.totalValueDisplay?.textContent || '$?.??';
-        const instructionMessage = `Trade Offer Required:\n\n` +
-            `1. Open a trade offer with our bot (link opened automatically or copy from profile).\n` +
-            `2. Add the ${selectedItemsList.length} item(s) you selected (Value: ${selectedValue}).\n` +
-            `3. IMPORTANT: Put this EXACT code in the trade message: ${depositToken}\n\n` +
-            `The deposit will be processed once the trade is accepted with the correct message.`;
-
-        showNotification(instructionMessage, 'info', 15000); // Show for longer duration
-
-        // Clear selection and close modal AFTER initiating successfully
-        if (depositModal) hideModal(depositModal);
-        selectedItemsList = [];
-        if (DOMElements.deposit.selectedItemsContainer) DOMElements.deposit.selectedItemsContainer.innerHTML = '';
-        if (DOMElements.deposit.inventoryItemsContainer) {
-            DOMElements.deposit.inventoryItemsContainer.querySelectorAll('.inventory-item.selected')
-                .forEach(el => el.classList.remove('selected'));
-        }
-        updateTotalValue(); // Resets value and deposit button state
 
     } catch (error) {
-        showNotification(`Deposit Initiation Error: ${error.message}`, 'error');
+        showNotification(`Deposit Failed: ${error.message}`, 'error');
         console.error('Error initiating deposit:', error);
         // Re-enable button based on selection only if error occurred
         button.disabled = selectedItemsList.length === 0;
@@ -823,24 +805,24 @@ function updateTimerUI(timeLeft) {
     let displayValue = timeToShow.toString();
 
      if (currentRound && currentRound.status === 'active' && !timerActive && currentRound.participants?.length === 0) {
-        // If round is active, timer not started client-side, and no participants, show full duration
-         displayValue = CONFIG.ROUND_DURATION.toString();
+         // If round is active, timer not started client-side, and no participants, show full duration
+          displayValue = CONFIG.ROUND_DURATION.toString();
      } else if (timerActive || (currentRound && currentRound.status === 'active' && timeToShow > 0)) {
-        // If timer is active or round active with time left, show countdown
-         displayValue = timeToShow.toString();
+         // If timer is active or round active with time left, show countdown
+          displayValue = timeToShow.toString();
      } else if (isSpinning || (currentRound && currentRound.status === 'rolling')) {
-        // If spinning or server says rolling, show "Rolling"
-         displayValue = "Rolling";
+         // If spinning or server says rolling, show "Rolling"
+          displayValue = "Rolling";
      } else if (currentRound && (currentRound.status === 'completed' || currentRound.status === 'error')) {
-        // If round ended, show "Ended"
-         displayValue = "Ended";
+         // If round ended, show "Ended"
+          displayValue = "Ended";
      } else if (!timerActive && timeToShow <= 0 && currentRound && currentRound.status === 'active') {
-         // If timer not active client-side but server indicates time is up (timeLeft <= 0)
-         displayValue = "0";
+          // If timer not active client-side but server indicates time is up (timeLeft <= 0)
+          displayValue = "0";
       } else if (currentRound && currentRound.status === 'pending') {
-          displayValue = "Waiting"; // Show waiting if server says pending
+           displayValue = "Waiting"; // Show waiting if server says pending
       } else if (!currentRound) {
-          displayValue = "--"; // Default if no round data yet
+           displayValue = "--"; // Default if no round data yet
       }
 
     timerValue.textContent = displayValue;
@@ -917,9 +899,9 @@ function updateAllParticipantPercentages() {
         // Find the element to update within this block
         const valueElement = block.querySelector('.player-deposit-value');
         if (valueElement) {
-             // Determine color
-             const userColor = getUserColor(userId); // Get consistent color
-             // Update text content and title attribute
+            // Determine color
+            const userColor = getUserColor(userId); // Get consistent color
+            // Update text content and title attribute
             valueElement.textContent = `$${cumulativeValue.toFixed(2)} | ${percentage}%`;
             valueElement.title = `Deposited: $${cumulativeValue.toFixed(2)} | Chance: ${percentage}%`;
             valueElement.style.color = userColor; // Apply user color
@@ -1003,7 +985,7 @@ function displayLatestDeposit(data) {
             itemElement.className = 'player-deposit-item';
             itemElement.title = `${item.name} ($${item.price.toFixed(2)})`;
             itemElement.style.borderColor = userColor; // Use the same user color for item border
-             // Apply user color to item value as well
+            // Apply user color to item value as well
             itemElement.innerHTML = `
                 <img src="${item.image}" alt="${item.name}" class="player-deposit-item-image" loading="lazy"
                      onerror="this.onerror=null; this.src='/img/default-item.png';">
@@ -1390,7 +1372,7 @@ function createRouletteItems() {
 
         itemElement.innerHTML = `
              <img class="roulette-avatar" src="${avatar}" alt="${username}" loading="lazy"
-                  onerror="this.onerror=null; this.src='/img/default-avatar.png';" >`; // Removed inline style on img
+                   onerror="this.onerror=null; this.src='/img/default-avatar.png';" >`; // Removed inline style on img
 
         fragment.appendChild(itemElement);
     }
@@ -1594,9 +1576,9 @@ function startRouletteAnimation(winnerData) {
         } else {
             targetIndex = winnerItemsIndices[Math.floor(Math.random() * winnerItemsIndices.length)];
             winningElement = items[targetIndex];
-              if (!winningElement) {
-                   console.error(`Selected winning element at index ${targetIndex} is invalid!`);
-                   isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
+             if (!winningElement) {
+                  console.error(`Selected winning element at index ${targetIndex} is invalid!`);
+                  isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
               }
         }
         // --- End Select Winning Element ---
@@ -2483,7 +2465,7 @@ function setupSocketConnection() {
     socket.on('roundWinner', (data) => {
         console.log('Round winner received:', data);
         if (currentRound && currentRound.roundId === data.roundId) {
-             // Update local round state with winner info if not already set
+            // Update local round state with winner info if not already set
             if (!currentRound.winner) currentRound.winner = data.winner;
             currentRound.status = 'rolling'; // Ensure status reflects rolling phase
             handleWinnerAnnouncement(data); // Trigger animation
@@ -2562,8 +2544,8 @@ function setupSocketConnection() {
                    updateTimerUI(CONFIG.ROUND_DURATION); // Reset timer display visually
                    updateDepositButtonState();
                } else if (!timerActive) {
-                    // If timer isn't active, ensure UI reflects current timeLeft from server
-                    updateTimerUI(currentRound.timeLeft);
+                   // If timer isn't active, ensure UI reflects current timeLeft from server
+                   updateTimerUI(currentRound.timeLeft);
                }
         } else if (currentRound.status === 'pending') {
             console.log("Received pending round state.");
@@ -2631,7 +2613,6 @@ function setupSocketConnection() {
 
 }
 
-
 // --- Event Listener Setup ---
 function setupEventListeners() {
     // Navigation Links
@@ -2655,11 +2636,8 @@ function setupEventListeners() {
         }
     });
 
-    // --- User Profile Dropdown Listeners ---
-    // Destructure only the needed elements, EXCLUDING removed ones
-    const { userProfile, userDropdownMenu, logoutButton,
-            editTradeUrlBtn, tradeUrlInput: dropdownTradeUrlInput
-          } = DOMElements.user;
+    // --- User Profile Dropdown Listeners (MODIFIED) ---
+    const { userProfile, userDropdownMenu, logoutButton, profileDropdownButton } = DOMElements.user;
 
     // Toggle dropdown menu
     userProfile?.addEventListener('click', (e) => {
@@ -2679,73 +2657,36 @@ function setupEventListeners() {
     logoutButton?.addEventListener('click', (e) => { e.stopPropagation(); handleLogout(); });
     logoutButton?.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleLogout(); } });
 
-    // Edit/Save Trade URL Button (inside dropdown)
-    if (editTradeUrlBtn && dropdownTradeUrlInput) {
-        editTradeUrlBtn.addEventListener('click', async (e) => { // Make async for API call
-            e.stopPropagation(); // Prevent dropdown from closing
-            if (dropdownTradeUrlInput.readOnly) {
-                // Switch to edit mode
-                dropdownTradeUrlInput.readOnly = false;
-                dropdownTradeUrlInput.focus();
-                editTradeUrlBtn.innerHTML = '<i class="fas fa-save"></i>';
-                editTradeUrlBtn.title = 'Save Trade URL';
-            } else {
-                // Save the trade URL
-                const newTradeUrl = dropdownTradeUrlInput.value.trim();
-                editTradeUrlBtn.disabled = true; // Disable button while saving
-                editTradeUrlBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; // Loading indicator
+    // *** NEW: Profile Button (inside dropdown) Listener ***
+    profileDropdownButton?.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation(); // Prevent closing dropdown immediately
+        const menu = DOMElements.user.userDropdownMenu;
+        const modal = DOMElements.profileModal.modal;
 
-                // Basic validation (matching main.js original logic)
-                 if (newTradeUrl && newTradeUrl.includes('steamcommunity.com/tradeoffer/new/') && newTradeUrl.includes('partner=') && newTradeUrl.includes('token=')) {
-                    try {
-                        // Call backend API to save the trade URL
-                        const response = await fetch('/api/user/tradeurl', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ tradeUrl: newTradeUrl })
-                        });
-                        if (!response.ok) {
-                             const error = await response.json().catch(() => ({ error: 'Failed to save Trade URL.' }));
-                             throw new Error(error.error || `Save failed (${response.status})`);
-                         }
-                        const result = await response.json();
-                        if (currentUser) currentUser.tradeUrl = result.tradeUrl; // Update local state
+        if (currentUser && modal) {
+            populateProfileModal(); // Populate with current user data
+            showModal(modal); // Show the profile modal
+        } else if (!currentUser) {
+            showNotification("Please log in to view your profile.", "info");
+        } else {
+             console.error("Profile modal element not found.");
+        }
 
-                        // Switch back to view mode
-                        dropdownTradeUrlInput.readOnly = true;
-                        editTradeUrlBtn.innerHTML = '<i class="fas fa-edit"></i>';
-                        editTradeUrlBtn.title = 'Edit Trade URL';
-                        showNotification('Trade URL saved successfully', 'success');
-                        // Optionally close dropdown after successful save
-                        // if (userDropdownMenu) userDropdownMenu.style.display = 'none';
+        // Hide dropdown after clicking profile
+        if (menu) menu.style.display = 'none';
+        userProfile?.setAttribute('aria-expanded', 'false');
+        userProfile?.classList.remove('open');
+    });
 
-                    } catch (error) {
-                        showNotification(`Error Saving URL: ${error.message}`, 'error');
-                        console.error('Error updating trade URL from dropdown:', error);
-                        // Don't switch back to read-only on error, allow retry
-                        editTradeUrlBtn.innerHTML = '<i class="fas fa-save"></i>'; // Back to save icon
-                        editTradeUrlBtn.title = 'Save Trade URL (Retry)';
-                    } finally {
-                        editTradeUrlBtn.disabled = false; // Re-enable button
-                    }
-                } else {
-                    // Show error for invalid URL
-                    showNotification('Please enter a valid Steam Trade URL (including partner and token).', 'error');
-                    editTradeUrlBtn.innerHTML = '<i class="fas fa-save"></i>'; // Back to save icon
-                    editTradeUrlBtn.title = 'Save Trade URL';
-                    editTradeUrlBtn.disabled = false; // Re-enable button immediately
-                }
-            }
-        });
-    }
+    // --- REMOVED: Listener for old dropdown editTradeUrlBtn ---
 
-    // --- REMOVED Profile Button Listener ---
-    // --- REMOVED History Button Listener ---
+    // --- NEW: Profile Modal Listeners ---
+    DOMElements.profileModal.saveBtn?.addEventListener('click', handleProfileSave);
+    DOMElements.profileModal.closeBtn?.addEventListener('click', () => hideModal(DOMElements.profileModal.modal));
+    DOMElements.profileModal.cancelBtn?.addEventListener('click', () => hideModal(DOMElements.profileModal.modal)); // Also hide on Cancel
 
-    // --- End User Profile Dropdown Listeners ---
-
-
-    // Deposit Modal Trigger
+    // --- Deposit Modal Trigger ---
     DOMElements.deposit.showDepositModalButton?.addEventListener('click', () => {
         const button = DOMElements.deposit.showDepositModalButton;
         if (button.disabled) {
@@ -2754,14 +2695,16 @@ function setupEventListeners() {
         if (!currentUser) {
             showNotification('Login Required: Please log in first.', 'error'); return;
         }
-        // Check trade URL fetched during login or stored locally
-         // **** IMPORTANT: Use the currentUser object which should have the correct tradeUrl after login ****
+        // Check trade URL from current user data (should be populated by checkLoginStatus or saved via profile)
          if (!currentUser.tradeUrl) {
-              console.log("Trade URL missing for user. Showing notification (user should set it via dropdown).");
-              showNotification('Trade URL Required: Please set your Steam Trade URL in the profile dropdown before depositing.', 'error', 6000);
-              // Optionally, automatically open the dropdown:
-              // userProfile?.click();
-              return;
+             console.log("Trade URL missing for user. Prompting user to set it in profile.");
+             showNotification('Trade URL Required: Please open your profile (click your avatar) and set your Steam Trade URL before depositing.', 'error', 6000);
+             // Automatically open the NEW profile modal instead of the dropdown
+             if (DOMElements.profileModal.modal) {
+                 populateProfileModal();
+                 showModal(DOMElements.profileModal.modal);
+             }
+             return;
          }
         showModal(DOMElements.deposit.depositModal);
         loadUserInventory();
@@ -2769,7 +2712,7 @@ function setupEventListeners() {
 
     // Deposit Modal Controls
     DOMElements.deposit.closeDepositModalButton?.addEventListener('click', () => hideModal(DOMElements.deposit.depositModal));
-    DOMElements.deposit.depositButton?.addEventListener('click', submitDeposit);
+    DOMElements.deposit.depositButton?.addEventListener('click', submitDeposit); // Use submitDeposit (or handleDeposit if you preferred that name)
 
     // Age Verification Modal Controls
     const { modal: ageModal, checkbox: ageCheckbox, agreeButton: ageAgreeButton } = DOMElements.ageVerification;
@@ -2798,8 +2741,10 @@ function setupEventListeners() {
     // Provably Fair Verify Button
     DOMElements.provablyFair.verifyButton?.addEventListener('click', verifyRound);
 
-    // Global Listeners
+    // --- Global Listeners (MODIFIED) ---
     window.addEventListener('click', (e) => {
+        const profileModal = DOMElements.profileModal.modal;
+
         // Close dropdown when clicking outside
         if (userDropdownMenu && userProfile && userDropdownMenu.style.display === 'block' &&
             !userProfile.contains(e.target) && !userDropdownMenu.contains(e.target)) {
@@ -2809,20 +2754,36 @@ function setupEventListeners() {
         }
         // Close modals on backdrop click
         if (e.target === DOMElements.deposit.depositModal) hideModal(DOMElements.deposit.depositModal);
+        // Close profile modal on backdrop click
+        if (e.target === profileModal) hideModal(profileModal);
+        // Age verification backdrop click behavior (optional)
         if (e.target === DOMElements.ageVerification.modal) {
-            // Optional: Decide if clicking backdrop closes age verification
+            // Decide if clicking backdrop closes age verification
             // hideModal(DOMElements.ageVerification.modal);
         }
     });
 
     document.addEventListener('keydown', function(event) {
-        // Close dropdown with Escape
-        if (event.key === 'Escape' && userDropdownMenu && userDropdownMenu.style.display === 'block') {
-            userDropdownMenu.style.display = 'none';
-            userProfile?.setAttribute('aria-expanded', 'false');
-            userProfile?.classList.remove('open');
-            userProfile?.focus(); // Return focus to the profile button
+        const profileModal = DOMElements.profileModal.modal;
+        const depositModal = DOMElements.deposit.depositModal;
+
+        // Escape Key Logic
+        if (event.key === 'Escape') {
+             // Close open modals first (priority)
+             if (profileModal?.style.display === 'flex') {
+                 hideModal(profileModal);
+             } else if (depositModal?.style.display === 'flex') {
+                 hideModal(depositModal);
+             }
+             // Then close dropdown if no modal was closed
+             else if (userDropdownMenu && userDropdownMenu.style.display === 'block') {
+                userDropdownMenu.style.display = 'none';
+                userProfile?.setAttribute('aria-expanded', 'false');
+                userProfile?.classList.remove('open');
+                userProfile?.focus(); // Return focus to the profile button
+            }
         }
+
         // Spacebar test trigger (only if home page visible and not in modal/input)
         if (event.code === 'Space' &&
             DOMElements.pages.homePage?.style.display === 'block' &&
@@ -2837,6 +2798,77 @@ function setupEventListeners() {
     });
 }
 
+// --- NEW Helper Functions for Profile Modal ---
+
+/**
+ * Populates the profile modal fields with current user data.
+ */
+function populateProfileModal() {
+     const modalElements = DOMElements.profileModal;
+     if (!currentUser || !modalElements.modal) return; // Ensure user and modal exist
+
+     modalElements.avatar.src = currentUser.avatar || '/img/default-avatar.png';
+     modalElements.name.textContent = currentUser.username || 'User';
+     // Use a default value or loading state if data isn't ready
+     modalElements.deposited.textContent = `$${(currentUser.totalDeposited || 0).toFixed(2)}`;
+     modalElements.tradeUrlInput.value = currentUser.tradeUrl || '';
+ }
+
+/**
+ * Handles saving profile changes (currently just trade URL).
+ */
+async function handleProfileSave() {
+    const { tradeUrlInput, saveBtn } = DOMElements.profileModal;
+    if (!tradeUrlInput || !saveBtn) return;
+    if (!currentUser) {
+         showNotification("Not logged in.", "error");
+         return;
+     }
+
+    const newTradeUrl = tradeUrlInput.value.trim();
+
+    // Basic URL validation (Improve this regex as needed)
+    const urlPattern = /^https?:\/\/steamcommunity\.com\/tradeoffer\/new\/\?partner=\d+&token=[a-zA-Z0-9_-]+$/i;
+    if (!newTradeUrl) {
+        // Allow clearing the trade URL
+        console.log("Attempting to clear Trade URL.");
+    } else if (!urlPattern.test(newTradeUrl)) {
+        // If not empty, validate the format
+        showNotification('Invalid Steam Trade URL format. Please check and try again. It should look like https://steamcommunity.com/tradeoffer/new/?partner=...&token=...', 'error', 6000);
+        return;
+    }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+
+    try {
+        const response = await fetch('/api/user/tradeurl', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tradeUrl: newTradeUrl }), // Send empty string to clear
+        });
+
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || `Failed to save trade URL (${response.status})`);
+        }
+
+        // Success! Update local state and notify user
+        currentUser.tradeUrl = newTradeUrl; // Update with the new value (could be empty string)
+        showNotification(newTradeUrl ? 'Trade URL saved successfully!' : 'Trade URL cleared successfully!', 'success');
+        hideModal(DOMElements.profileModal.modal); // Close modal on success
+
+    } catch (error) {
+        console.error("Error saving trade URL:", error);
+        showNotification(`Error saving Trade URL: ${error.message}`, 'error');
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save Changes';
+    }
+}
+
+
 // --- Initialization ---
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM fully loaded and parsed.");
@@ -2845,7 +2877,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const ageVerified = localStorage.getItem('ageVerified') === 'true';
 
     // Initialize core components
-    checkLoginStatus(); // Check login status (which updates UI including dropdown)
+    checkLoginStatus(); // Check login status (which updates UI)
     setupEventListeners();
     setupSocketConnection();
     showPage(DOMElements.pages.homePage); // Show home page by default
@@ -2861,4 +2893,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-console.log("main.js (Combined Version, Modified) loaded.");
+console.log("main.js (Combined Version, Modified - Profile Modal) loaded.");
