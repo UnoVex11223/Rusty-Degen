@@ -1,5 +1,5 @@
 // main.js - Rust Jackpot Frontend Logic (Combined with Profile Dropdown)
-// Modifications: Simplified header profile, updated dropdown, added Profile Modal.
+// Modifications: Simplified header profile, updated dropdown, added Profile Modal, implemented trade offer flow.
 
 // Ensure Socket.IO client library is loaded before this script
 // Example: <script src="/socket.io/socket.io.js"></script>
@@ -55,20 +55,13 @@ const DOMElements = {
     // User Authentication / Profile
     user: {
         loginButton: document.getElementById('loginButton'),
-        userProfile: document.getElementById('userProfile'),       // The clickable avatar+name element in header
-        userAvatar: document.getElementById('userAvatar'),         // Avatar within #userProfile
-        userName: document.getElementById('userName'),             // Name within #userProfile
+        userProfile: document.getElementById('userProfile'),      // The clickable avatar+name element in header
+        userAvatar: document.getElementById('userAvatar'),        // Avatar within #userProfile
+        userName: document.getElementById('userName'),            // Name within #userProfile
         userDropdownMenu: document.getElementById('userDropdownMenu'), // The dropdown menu itself
         profileDropdownButton: document.getElementById('profileDropdownButton'), // NEW "Profile" button inside dropdown
-        logoutButton: document.getElementById('logoutButton'),     // The logout button inside the dropdown
-
-        // --- REMOVED references to old dropdown elements ---
-        // dropdownAvatar: document.getElementById('dropdownAvatar'),      // No longer needed
-        // dropdownUserName: document.getElementById('dropdownUserName'),  // No longer needed
-        // totalDeposited: document.getElementById('totalDeposited'),    // No longer needed here
-        // totalWon: document.getElementById('totalWon'),                // No longer needed here
-        // tradeUrlInput: document.getElementById('tradeUrlInput'),       // No longer needed here
-        // editTradeUrlBtn: document.getElementById('editTradeUrlBtn'),     // No longer needed here
+        logoutButton: document.getElementById('logoutButton'),    // The logout button inside the dropdown
+        pendingOfferIndicator: document.getElementById('pending-offer-indicator'), // ADDED
     },
     // *** NEW Profile Modal Elements ***
     profileModal: {
@@ -80,6 +73,7 @@ const DOMElements = {
         saveBtn: document.getElementById('profileModalSaveBtn'),
         closeBtn: document.getElementById('profileModalCloseBtn'),
         cancelBtn: document.getElementById('profileModalCancelBtn'), // Added based on HTML
+        pendingOfferStatus: document.getElementById('profile-pending-offer-status'), // ADDED
     },
     // Jackpot Display
     jackpot: {
@@ -101,6 +95,8 @@ const DOMElements = {
         selectedItemsContainer: document.getElementById('selectedItems'),
         totalValueDisplay: document.getElementById('totalValue'),
         inventoryLoadingIndicator: document.getElementById('inventory-loading'),
+        acceptDepositOfferBtn: document.getElementById('acceptDepositOfferBtn'), // ADDED
+        depositStatusText: document.getElementById('depositStatusText'), // ADDED
     },
     // Roulette Animation Elements
     roulette: {
@@ -152,6 +148,7 @@ let animationFrameId = null; // Holds the ID for the roulette animation frame re
 let userColorMap = new Map(); // Maps userId to a color from the palette for consistency
 let notificationTimeout = null; // Timeout ID for hiding the notification bar
 let spinStartTime = 0; // Tracks start of spin animation
+let currentDepositOfferURL = null; // ADDED: Store the URL for the accept button
 
 // --- Helper Functions ---
 
@@ -169,6 +166,10 @@ function showModal(modalElement) {
  */
 function hideModal(modalElement) {
     if (modalElement) modalElement.style.display = 'none';
+    // Reset deposit modal state when hiding
+    if (modalElement === DOMElements.deposit.depositModal) { // ADDED IF BLOCK
+        resetDepositModalUI();
+    }
 }
 
 /**
@@ -222,7 +223,8 @@ function getUserColor(userId) {
 /**
  * Displays a non-blocking notification message.
  * Uses the notificationBar element defined in DOMElements.
- * @param {string} message - The message to display.
+ * Allows HTML content.
+ * @param {string} message - The message to display (can be HTML).
  * @param {string} type - 'success', 'error', or 'info' (for styling). Default 'info'.
  * @param {number} duration - How long to show the message (ms). Default 4000.
  */
@@ -237,7 +239,7 @@ function showNotification(message, type = 'info', duration = 4000) {
     // Clear any existing timeout to prevent premature hiding
     if (notificationTimeout) clearTimeout(notificationTimeout);
 
-    bar.textContent = message;
+    bar.innerHTML = message; // Use innerHTML to render links etc.
     // Remove previous type classes and add the new one
     bar.className = 'notification-bar'; // Reset classes
     bar.classList.add(type); // Add the type class for styling
@@ -358,6 +360,25 @@ async function handleLogout() {
     }
 }
 
+/** Resets the deposit modal UI to its initial state */
+function resetDepositModalUI() {
+    const { depositButton, acceptDepositOfferBtn, depositStatusText } = DOMElements.deposit;
+    if (depositButton) {
+        depositButton.disabled = selectedItemsList.length === 0; // Re-enable based on selection
+        depositButton.style.display = 'inline-block';
+        depositButton.textContent = 'Request Deposit Offer';
+    }
+    if (acceptDepositOfferBtn) {
+        acceptDepositOfferBtn.style.display = 'none';
+        acceptDepositOfferBtn.removeAttribute('data-offer-url'); // Clear stored URL (though not strictly needed as we use state var)
+    }
+    if (depositStatusText) {
+        depositStatusText.textContent = ''; // Clear status text
+        depositStatusText.className = 'deposit-status-text'; // Reset class
+    }
+    currentDepositOfferURL = null; // Clear state variable
+}
+
 
 // --- Core Application Logic ---
 
@@ -375,6 +396,12 @@ function updateDepositButtonState() {
     if (!currentUser) {
         disabled = true;
         title = 'Log in to deposit';
+    } else if (currentUser.pendingDepositOfferId) { // ADDED check for pending offer
+         disabled = true;
+         title = 'Accept or cancel your pending deposit offer first (check profile)';
+    } else if (!currentUser.tradeUrl) { // Check if trade URL is set
+         disabled = true;
+         title = 'Set your Steam Trade URL in your profile to deposit';
     } else if (isSpinning) {
         disabled = true;
         title = 'Deposits closed during winner selection';
@@ -422,13 +449,13 @@ async function checkLoginStatus() {
             // Manually add mock stats if backend doesn't provide them yet
             // Remove these lines once your backend provides real stats
             if (currentUser && currentUser.totalDeposited === undefined) {
-                currentUser.totalDeposited = Math.random() * 2000; // Mock data
+                 currentUser.totalDeposited = Math.random() * 2000; // Mock data
             }
             if (currentUser && currentUser.totalWon === undefined) {
-                 currentUser.totalWon = Math.random() * 3000; // Mock data
+                  currentUser.totalWon = Math.random() * 3000; // Mock data
             }
              if (currentUser && !currentUser.steamId) {
-                 currentUser.steamId = `mock_${Math.floor(Math.random() * 100000000)}`; // Mock data
+                  currentUser.steamId = `mock_${Math.floor(Math.random() * 100000000)}`; // Mock data
              }
             console.log('User logged in:', currentUser?.username);
         }
@@ -443,13 +470,11 @@ async function checkLoginStatus() {
 }
 
 /**
- * Updates the user profile section (header avatar/name)
- * or shows the login button, based on the currentUser state.
- * Handles the simplified header display.
+ * Updates the user profile UI (header, dropdown) and pending offer indicators.
  */
 function updateUserUI() {
     // Destructure elements needed for header display and dropdown control
-    const { loginButton, userProfile, userAvatar, userName, userDropdownMenu } = DOMElements.user;
+    const { loginButton, userProfile, userAvatar, userName, userDropdownMenu, pendingOfferIndicator } = DOMElements.user; // Add pendingOfferIndicator here
 
     if (!loginButton || !userProfile) return; // Essential elements must exist
 
@@ -462,8 +487,14 @@ function updateUserUI() {
         userProfile.style.display = 'flex'; // Show the avatar+name element
         userProfile.setAttribute('aria-disabled', 'false'); // Enable profile trigger
 
-        // --- REMOVED Dropdown Content Population ---
-        // Logic to populate the old dropdown elements (stats, inline trade url) is removed.
+        // Show/hide pending offer indicator in header (ADDED LOGIC)
+        if (pendingOfferIndicator) {
+            const hasPending = !!currentUser.pendingDepositOfferId;
+            pendingOfferIndicator.style.display = hasPending ? 'inline-block' : 'none';
+             if (hasPending) {
+                 pendingOfferIndicator.title = `You have a pending deposit offer (#${currentUser.pendingDepositOfferId})! Click your profile to see details.`;
+             }
+        }
 
     } else {
         // --- User Logged Out ---
@@ -475,6 +506,7 @@ function updateUserUI() {
         if (userDropdownMenu) userDropdownMenu.style.display = 'none';
         userProfile.setAttribute('aria-expanded', 'false');
         userProfile.classList.remove('open');
+        if (pendingOfferIndicator) pendingOfferIndicator.style.display = 'none'; // Hide indicator if logged out (ADDED)
     }
 }
 
@@ -487,6 +519,8 @@ async function loadUserInventory() {
         console.error("Inventory DOM elements missing.");
         return;
     }
+
+    resetDepositModalUI(); // ADDED: Ensure buttons/status reset on load
 
     // Reset selection state
     selectedItemsList = [];
@@ -605,7 +639,8 @@ function toggleItemSelection(element, item) {
         removeSelectedItemElement(assetId); // Remove from the visual selected list
     }
 
-    updateTotalValue(); // Update total value display and deposit button state
+    updateTotalValue(); // Update total value display
+    resetDepositModalUI(); // ADDED: Reset footer buttons/text when selection changes
 }
 
 /**
@@ -641,6 +676,7 @@ function addSelectedItemElement(item) {
         if (assetIdToRemove) {
             removeSelectedItem(assetIdToRemove); // Use helper to remove from logic and UI
             updateTotalValue();
+            resetDepositModalUI(); // Reset footer when item is manually removed from selection
         }
     });
 
@@ -648,6 +684,7 @@ function addSelectedItemElement(item) {
     selectedElement.addEventListener('click', () => {
         removeSelectedItem(item.assetId);
         updateTotalValue();
+        resetDepositModalUI(); // Reset footer when item is manually removed from selection
     });
 
     container.appendChild(selectedElement);
@@ -680,11 +717,11 @@ function removeSelectedItem(assetId) {
 }
 
 /**
- * Updates the total value display in the deposit modal and enables/disables the deposit button.
+ * Updates the total value display in the deposit modal.
  */
 function updateTotalValue() {
-    const { totalValueDisplay, depositButton } = DOMElements.deposit;
-    if (!totalValueDisplay || !depositButton) return;
+    const { totalValueDisplay } = DOMElements.deposit;
+    if (!totalValueDisplay) return;
 
     const total = selectedItemsList.reduce((sum, item) => {
         // Ensure price is valid before adding
@@ -693,85 +730,98 @@ function updateTotalValue() {
     }, 0);
 
     totalValueDisplay.textContent = `$${total.toFixed(2)}`;
-    // Enable deposit button only if items are selected AND user is logged in etc. (basic check here)
-    depositButton.disabled = selectedItemsList.length === 0;
+    // Deposit button enable/disable logic is handled in resetDepositModalUI
 }
 
 // --- Second Part of main.js (Continued) ---
 
 /**
- * Handles the deposit submission process.
- * Initiates the deposit with the backend and instructs the user on the trade offer process.
- * Note: This function was named submitDeposit in the original file.
+ * Handles the initial deposit request. Sends selected asset IDs to the backend,
+ * expects an offer URL back, and updates the modal UI.
+ * REPLACES the old submitDeposit function.
  */
-async function submitDeposit() {
-    const { depositButton: button, depositModal } = DOMElements.deposit;
-    if (!button) return;
+async function requestDepositOffer() {
+    const { depositButton, acceptDepositOfferBtn, depositStatusText } = DOMElements.deposit;
+    if (!depositButton || !acceptDepositOfferBtn || !depositStatusText) return;
 
     if (selectedItemsList.length === 0) {
-        showNotification('No Items Selected: Please select items from your inventory first.', 'info');
+        showNotification('No Items Selected: Please select items first.', 'info');
         return;
     }
+    // Double-check round status/limits client-side
+    if (!currentRound || currentRound.status !== 'active' || isSpinning) { showNotification('Deposit Error: Deposits are currently closed.', 'error'); return; }
+    if (currentUser?.pendingDepositOfferId) {
+        showNotification('Deposit Error: You already have a pending deposit offer. Check your profile or Steam.', 'error');
+        if (DOMElements.profileModal.modal) { populateProfileModal(); showModal(DOMElements.profileModal.modal); }
+        return;
+    }
+     const participantsLength = currentRound.participants?.length || 0;
+     const isNewParticipant = !currentRound.participants?.some(p => p.user?._id === currentUser?._id);
+     if (isNewParticipant && participantsLength >= CONFIG.MAX_PARTICIPANTS_DISPLAY) { showNotification(`Deposit Error: Participant limit (${CONFIG.MAX_PARTICIPANTS_DISPLAY}) reached.`, 'error'); return; }
+     const itemsInPot = currentRound.items?.length || 0;
+     if (itemsInPot + selectedItemsList.length > CONFIG.MAX_ITEMS_PER_POT_FRONTEND) { const slotsLeft = CONFIG.MAX_ITEMS_PER_POT_FRONTEND - itemsInPot; showNotification(`Deposit Error: Pot item limit would be exceeded (Max ${CONFIG.MAX_ITEMS_PER_POT_FRONTEND}). Only ${slotsLeft} slots left.`, 'error', 6000); return; }
 
-    // Double-check round status client-side (backend enforces this anyway)
-    if (!currentRound || currentRound.status !== 'active' || isSpinning) {
-        showNotification('Deposit Error: Deposits are currently closed.', 'error');
-        return;
-    }
-    // Add checks for limits again, although main button should be disabled
-    if (currentRound.participants && currentRound.participants.length >= CONFIG.MAX_PARTICIPANTS_DISPLAY) {
-        showNotification(`Deposit Error: The participant limit (${CONFIG.MAX_PARTICIPANTS_DISPLAY}) has been reached.`, 'error');
-        return;
-    }
-    if (currentRound.items && currentRound.items.length + selectedItemsList.length > CONFIG.MAX_ITEMS_PER_POT_FRONTEND) {
-        showNotification(`Deposit Error: Depositing these items would exceed the pot limit (${CONFIG.MAX_ITEMS_PER_POT_FRONTEND}).`, 'error');
-        return;
-    }
+    depositButton.disabled = true;
+    depositButton.textContent = 'Requesting...';
+    acceptDepositOfferBtn.style.display = 'none';
+    depositStatusText.textContent = 'Creating deposit offer... Please wait.';
+    depositStatusText.className = 'deposit-status-text info';
 
-    button.disabled = true;
-    button.textContent = 'Processing...';
+    let response;
 
     try {
-        // Step 1: Initiate deposit with the server to get token/URL (or handle direct deposit)
-        // Adapting this based on the original intent which seemed more like direct deposit confirmation
-        // Let's revert to the simpler deposit logic assuming backend handles trade offer based on this call.
         const assetIds = selectedItemsList.map(item => item.assetId);
-        const totalValue = selectedItemsList.reduce((sum, item) => sum + (item.price || 0), 0);
+        console.log("Requesting deposit offer for assetIds:", assetIds);
 
-        const response = await fetch('/api/deposit', { // Using the simpler endpoint from earlier logic
+        response = await fetch('/api/deposit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ assetIds, totalValue }),
+            body: JSON.stringify({ assetIds }),
         });
 
-        const result = await response.json(); // Attempt to parse JSON regardless of response.ok
+        const result = await response.json();
 
         if (!response.ok) {
-            throw new Error(result.error || `Deposit failed with status ${response.status}.`);
+             if (response.status === 409 && result.offerURL && result.offerId) {
+                 console.warn("User already has a pending offer:", result.offerId);
+                 depositStatusText.textContent = `You already have a pending offer! Click 'Accept on Steam' to view it.`;
+                 depositStatusText.className = 'deposit-status-text warning';
+                 currentDepositOfferURL = result.offerURL;
+                 acceptDepositOfferBtn.style.display = 'inline-block';
+                 acceptDepositOfferBtn.disabled = false;
+                 depositButton.style.display = 'none';
+                 if (currentUser && !currentUser.pendingDepositOfferId) { currentUser.pendingDepositOfferId = result.offerId; updateUserUI(); updateDepositButtonState(); }
+                 return;
+             } else {
+                 throw new Error(result.error || `Failed to create offer (${response.status})`);
+             }
+        } else if (!result.success || !result.offerURL || !result.offerId) {
+            throw new Error(result.error || 'Backend did not return a valid offer URL and ID.');
+        } else {
+            // --- Success ---
+            console.log("Deposit offer created:", result.offerId);
+            depositStatusText.textContent = "Offer created! Click 'Accept on Steam' below to complete.";
+            depositStatusText.className = 'deposit-status-text success';
+            currentDepositOfferURL = result.offerURL;
+            depositButton.style.display = 'none';
+            acceptDepositOfferBtn.style.display = 'inline-block';
+            acceptDepositOfferBtn.disabled = false;
+            if(currentUser) { currentUser.pendingDepositOfferId = result.offerId; updateUserUI(); updateDepositButtonState(); }
         }
-
-        if (!result.success) {
-            // Handle specific backend errors if available
-            throw new Error(result.error || 'Deposit request was not successful.');
-        }
-
-        showNotification(`Deposit confirmed! Total Value: $${totalValue.toFixed(2)}. Items will appear shortly.`, 'success', 6000);
-        // Items added to pot will be handled by socket event 'participantUpdated' (or similar)
-        selectedItemsList = []; // Clear selection
-        updateTotalValue(); // Update value display
-        hideModal(DOMElements.deposit.depositModal); // Close the deposit modal
-        // Play deposit sound if available
-        DOMElements.audio.depositSound?.play().catch(e => console.warn("Deposit sound play failed:", e));
-
 
     } catch (error) {
-        showNotification(`Deposit Failed: ${error.message}`, 'error');
-        console.error('Error initiating deposit:', error);
-        // Re-enable button based on selection only if error occurred
-        button.disabled = selectedItemsList.length === 0;
-    } finally {
-        // Reset button text regardless of success/failure after processing
-         button.textContent = 'Deposit Items';
+        console.error('Error requesting deposit offer:', error);
+        depositStatusText.textContent = `Error: ${error.message}`;
+        depositStatusText.className = 'deposit-status-text error';
+        if (!(response && response.status === 409)) {
+             // Only fully reset UI if it wasn't a 409 (pending offer exists) error
+             resetDepositModalUI();
+        }
+        // Ensure pending offer ID is cleared locally if a non-409 error occurred
+        if (currentUser && currentUser.pendingDepositOfferId && !(response && response.status === 409)) {
+            console.log("Clearing potentially stale pending offer ID due to error.");
+            currentUser.pendingDepositOfferId = null; updateUserUI(); updateDepositButtonState();
+        }
     }
 }
 
@@ -817,13 +867,13 @@ function updateTimerUI(timeLeft) {
          // If round ended, show "Ended"
           displayValue = "Ended";
      } else if (!timerActive && timeToShow <= 0 && currentRound && currentRound.status === 'active') {
-          // If timer not active client-side but server indicates time is up (timeLeft <= 0)
+         // If timer not active client-side but server indicates time is up (timeLeft <= 0)
           displayValue = "0";
-      } else if (currentRound && currentRound.status === 'pending') {
+     } else if (currentRound && currentRound.status === 'pending') {
            displayValue = "Waiting"; // Show waiting if server says pending
-      } else if (!currentRound) {
+     } else if (!currentRound) {
            displayValue = "--"; // Default if no round data yet
-      }
+     }
 
     timerValue.textContent = displayValue;
     updateTimerCircle(timeToShow, CONFIG.ROUND_DURATION);
@@ -1043,8 +1093,7 @@ function displayLatestDeposit(data) {
 
 
 /**
- * Handles incoming participant update data from the server via Socket.IO.
- * Calls updateAllParticipantPercentages after processing.
+ * Processes participant updates from the server. Called when deposit confirmed.
  * @param {object} data - Data received from the 'participantUpdated' socket event.
  */
 function handleNewDeposit(data) {
@@ -1077,6 +1126,24 @@ function handleNewDeposit(data) {
     // Ensure participants and items arrays exist
     if (!currentRound.participants) currentRound.participants = [];
     if (!currentRound.items) currentRound.items = [];
+
+    // Check if this update corresponds to clearing a pending offer for the current user (ADDED BLOCK)
+    if (currentUser && currentUser.pendingDepositOfferId && currentUser._id === data.userId) {
+         console.log(`Deposit processed for user ${currentUser.username}, clearing local pending offer flag.`);
+         currentUser.pendingDepositOfferId = null; // Clear local flag
+         updateUserUI(); // Update header indicator
+         updateDepositButtonState(); // Re-enable main deposit button if appropriate
+         // Reset deposit modal if it's open
+         if (DOMElements.deposit.depositModal?.style.display === 'flex') {
+             resetDepositModalUI();
+             // Clear selection list visually as items are now deposited
+             selectedItemsList = [];
+             if(DOMElements.deposit.selectedItemsContainer) DOMElements.deposit.selectedItemsContainer.innerHTML = '';
+             updateTotalValue(); // Reset total value display
+             // Optionally close modal after successful deposit confirmation from backend
+             // hideModal(DOMElements.deposit.depositModal);
+         }
+     }
 
     // Find if participant already exists in this round
     let participantIndex = currentRound.participants.findIndex(p => p.user?._id === data.userId || p.user === data.userId);
@@ -1117,11 +1184,7 @@ function handleNewDeposit(data) {
     // Update UI Elements
     updateRoundUI(); // Update header (pot value, participant count)
     displayLatestDeposit(data); // Display the new deposit block (will show initial percentage)
-
-    // --- MODIFICATION START: Update ALL percentages ---
     updateAllParticipantPercentages(); // Update percentages for all visible blocks
-    // --- MODIFICATION END ---
-
     updateDepositButtonState(); // Update deposit button availability
 
     // Start timer visually if this is the first participant
@@ -1559,7 +1622,7 @@ function startRouletteAnimation(winnerData) {
             console.warn(`No winner items found in preferred range [${minIndex}-${maxIndex}]. Expanding search.`);
             for (let i = 0; i < items.length; i++) {
                  if (items[i]?.dataset?.userId === winnerId) { // Compare with winnerId
-                     winnerItemsIndices.push(i);
+                      winnerItemsIndices.push(i);
                  }
             }
         }
@@ -1570,16 +1633,16 @@ function startRouletteAnimation(winnerData) {
             targetIndex = Math.max(0, Math.min(items.length - 1, Math.floor(items.length * 0.75)));
             winningElement = items[targetIndex];
              if (!winningElement) {
-                 console.error('Fallback winning element is invalid!');
-                 isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
+                  console.error('Fallback winning element is invalid!');
+                  isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
              }
         } else {
             targetIndex = winnerItemsIndices[Math.floor(Math.random() * winnerItemsIndices.length)];
             winningElement = items[targetIndex];
              if (!winningElement) {
-                  console.error(`Selected winning element at index ${targetIndex} is invalid!`);
-                  isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
-              }
+                   console.error(`Selected winning element at index ${targetIndex} is invalid!`);
+                   isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
+             }
         }
         // --- End Select Winning Element ---
 
@@ -2518,35 +2581,35 @@ function setupSocketConnection() {
                  console.log("Connected mid-round with winner known, triggering animation.");
                  handleWinnerAnnouncement(currentRound);
              } else if (!isSpinning) { // If rolling/completed but no winner data OR already spinning, just reset
-                  console.log("Connected after round ended or rolling. Resetting view.");
-                  resetToJackpotView();
+                   console.log("Connected after round ended or rolling. Resetting view.");
+                   resetToJackpotView();
              }
         } else if (currentRound.status === 'active') {
-              // If round is active, has participants, has time left, and timer isn't running client-side -> start/sync it
-              if (currentRound.participants?.length > 0 && currentRound.timeLeft > 0 && !timerActive) {
-                  console.log(`Received active round data. Starting/syncing timer from ${currentRound.timeLeft}s.`);
-                  timerActive = true;
-                  startClientTimer(currentRound.timeLeft);
-              }
-              // If server says time is up, but client timer is still running, stop it
-              else if (currentRound.timeLeft <= 0 && timerActive) {
-                  console.log("Server data indicates time up, stopping client timer.");
+             // If round is active, has participants, has time left, and timer isn't running client-side -> start/sync it
+             if (currentRound.participants?.length > 0 && currentRound.timeLeft > 0 && !timerActive) {
+                 console.log(`Received active round data. Starting/syncing timer from ${currentRound.timeLeft}s.`);
+                 timerActive = true;
+                 startClientTimer(currentRound.timeLeft);
+             }
+             // If server says time is up, but client timer is still running, stop it
+             else if (currentRound.timeLeft <= 0 && timerActive) {
+                 console.log("Server data indicates time up, stopping client timer.");
+                 timerActive = false;
+                 if (roundTimer) clearInterval(roundTimer); roundTimer = null;
+                 updateTimerUI(0);
+                 updateDepositButtonState();
+             }
+             // If server says no participants, but client timer is running, stop it
+              else if (currentRound.participants?.length === 0 && timerActive) {
+                  console.log("Server data indicates no participants, stopping client timer.");
                   timerActive = false;
                   if (roundTimer) clearInterval(roundTimer); roundTimer = null;
-                  updateTimerUI(0);
+                  updateTimerUI(CONFIG.ROUND_DURATION); // Reset timer display visually
                   updateDepositButtonState();
+              } else if (!timerActive) {
+                  // If timer isn't active, ensure UI reflects current timeLeft from server
+                  updateTimerUI(currentRound.timeLeft);
               }
-              // If server says no participants, but client timer is running, stop it
-               else if (currentRound.participants?.length === 0 && timerActive) {
-                   console.log("Server data indicates no participants, stopping client timer.");
-                   timerActive = false;
-                   if (roundTimer) clearInterval(roundTimer); roundTimer = null;
-                   updateTimerUI(CONFIG.ROUND_DURATION); // Reset timer display visually
-                   updateDepositButtonState();
-               } else if (!timerActive) {
-                   // If timer isn't active, ensure UI reflects current timeLeft from server
-                   updateTimerUI(currentRound.timeLeft);
-               }
         } else if (currentRound.status === 'pending') {
             console.log("Received pending round state.");
             initiateNewRoundVisualReset(); // Reset to empty state
@@ -2594,13 +2657,17 @@ function setupSocketConnection() {
 
     });
 
-     // --- Other Events ---
-    socket.on('tradeOfferSent', (data) => {
-        console.log('Trade offer sent event received:', data);
-        if (currentUser && data.userId === currentUser._id) {
-            showNotification('Trade Offer Sent: Check Steam for your winnings!', 'success');
-        }
-    });
+     // MODIFIED: Trade Offer Sent Handler - uses offerURL for link
+     socket.on('tradeOfferSent', (data) => {
+         console.log('Trade offer sent event received:', data);
+         if (currentUser && data.userId === currentUser._id && data.offerURL) {
+              // Offer a more direct link for winnings
+              showNotification(`Trade Offer Sent: <a href="${data.offerURL}" target="_blank" rel="noopener noreferrer" class="notification-link">Click here to accept your winnings on Steam!</a> (#${data.offerId})`, 'success', 10000);
+         } else if (currentUser && data.userId === currentUser._id) {
+              // Fallback if URL is missing (shouldn't happen with backend changes)
+              showNotification(`Trade Offer Sent: Check Steam for your winnings! (#${data.offerId})`, 'success', 8000);
+         }
+     });
 
     // --- Notification Event (Generic) ---
     socket.on('notification', (data) => {
@@ -2609,8 +2676,7 @@ function setupSocketConnection() {
        if (!data.userId || (currentUser && data.userId === currentUser._id)) {
         showNotification(data.message || 'Received notification from server.', data.type || 'info', data.duration || 4000);
        }
-   });
-
+    });
 }
 
 // --- Event Listener Setup ---
@@ -2670,7 +2736,7 @@ function setupEventListeners() {
         } else if (!currentUser) {
             showNotification("Please log in to view your profile.", "info");
         } else {
-             console.error("Profile modal element not found.");
+            console.error("Profile modal element not found.");
         }
 
         // Hide dropdown after clicking profile
@@ -2678,8 +2744,6 @@ function setupEventListeners() {
         userProfile?.setAttribute('aria-expanded', 'false');
         userProfile?.classList.remove('open');
     });
-
-    // --- REMOVED: Listener for old dropdown editTradeUrlBtn ---
 
     // --- NEW: Profile Modal Listeners ---
     DOMElements.profileModal.saveBtn?.addEventListener('click', handleProfileSave);
@@ -2712,7 +2776,22 @@ function setupEventListeners() {
 
     // Deposit Modal Controls
     DOMElements.deposit.closeDepositModalButton?.addEventListener('click', () => hideModal(DOMElements.deposit.depositModal));
-    DOMElements.deposit.depositButton?.addEventListener('click', submitDeposit); // Use submitDeposit (or handleDeposit if you preferred that name)
+    // MODIFIED: Main deposit button now calls requestDepositOffer
+    DOMElements.deposit.depositButton?.addEventListener('click', requestDepositOffer);
+    // ADDED: Listener for the new accept button
+    DOMElements.deposit.acceptDepositOfferBtn?.addEventListener('click', () => {
+         if (currentDepositOfferURL) {
+              console.log("Opening Steam trade offer:", currentDepositOfferURL);
+              window.open(currentDepositOfferURL, '_blank', 'noopener,noreferrer');
+              const { depositStatusText } = DOMElements.deposit;
+              if(depositStatusText) depositStatusText.textContent = "Check Steam tab...";
+              // Optionally hide modal or provide further instructions
+              // hideModal(DOMElements.deposit.depositModal);
+         } else {
+              console.error("No deposit offer URL found for accept button.");
+              showNotification("Error: Could not find the trade offer URL.", "error");
+         }
+    });
 
     // Age Verification Modal Controls
     const { modal: ageModal, checkbox: ageCheckbox, agreeButton: ageAgreeButton } = DOMElements.ageVerification;
@@ -2777,11 +2856,11 @@ function setupEventListeners() {
              }
              // Then close dropdown if no modal was closed
              else if (userDropdownMenu && userDropdownMenu.style.display === 'block') {
-                userDropdownMenu.style.display = 'none';
-                userProfile?.setAttribute('aria-expanded', 'false');
-                userProfile?.classList.remove('open');
-                userProfile?.focus(); // Return focus to the profile button
-            }
+                 userDropdownMenu.style.display = 'none';
+                 userProfile?.setAttribute('aria-expanded', 'false');
+                 userProfile?.classList.remove('open');
+                 userProfile?.focus(); // Return focus to the profile button
+             }
         }
 
         // Spacebar test trigger (only if home page visible and not in modal/input)
@@ -2801,18 +2880,24 @@ function setupEventListeners() {
 // --- NEW Helper Functions for Profile Modal ---
 
 /**
- * Populates the profile modal fields with current user data.
+ * Populates the profile modal fields, including pending offer status.
  */
 function populateProfileModal() {
-     const modalElements = DOMElements.profileModal;
-     if (!currentUser || !modalElements.modal) return; // Ensure user and modal exist
-
-     modalElements.avatar.src = currentUser.avatar || '/img/default-avatar.png';
-     modalElements.name.textContent = currentUser.username || 'User';
-     // Use a default value or loading state if data isn't ready
-     modalElements.deposited.textContent = `$${(currentUser.totalDeposited || 0).toFixed(2)}`;
-     modalElements.tradeUrlInput.value = currentUser.tradeUrl || '';
- }
+    const modalElements = DOMElements.profileModal; if (!currentUser || !modalElements.modal) return;
+    modalElements.avatar.src = currentUser.avatar || '/img/default-avatar.png'; modalElements.name.textContent = currentUser.username || 'User';
+    modalElements.deposited.textContent = `$${(currentUser.totalDeposited || 0).toFixed(2)}`; modalElements.tradeUrlInput.value = currentUser.tradeUrl || '';
+    // Handle Pending Offer Status Display (ADDED/MODIFIED PART)
+    const statusDiv = modalElements.pendingOfferStatus; if (!statusDiv) return;
+    if (currentUser.pendingDepositOfferId) {
+        const offerId = currentUser.pendingDepositOfferId; const offerURL = `https://steamcommunity.com/tradeoffer/${offerId}/`;
+        // Use innerHTML to create a clickable link
+        statusDiv.innerHTML = `<p>⚠️ You have a <a href="${offerURL}" target="_blank" rel="noopener noreferrer" class="profile-pending-link">pending deposit offer (#${offerId})</a> awaiting action on Steam.</p>`;
+        statusDiv.style.display = 'block';
+    } else {
+        statusDiv.style.display = 'none';
+        statusDiv.innerHTML = ''; // Clear content when no offer
+    }
+}
 
 /**
  * Handles saving profile changes (currently just trade URL).
@@ -2857,6 +2942,7 @@ async function handleProfileSave() {
         // Success! Update local state and notify user
         currentUser.tradeUrl = newTradeUrl; // Update with the new value (could be empty string)
         showNotification(newTradeUrl ? 'Trade URL saved successfully!' : 'Trade URL cleared successfully!', 'success');
+        updateDepositButtonState(); // ADDED: Re-check deposit button state
         hideModal(DOMElements.profileModal.modal); // Close modal on success
 
     } catch (error) {
@@ -2893,4 +2979,4 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-console.log("main.js (Combined Version, Modified - Profile Modal) loaded.");
+console.log("main.js (Combined Version, Modified - Trade Offer Flow) loaded.");
