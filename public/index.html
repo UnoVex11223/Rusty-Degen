@@ -19,7 +19,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Age Verification</h2>
-                </div>
+            </div>
             <div class="modal-body">
                 <p>You must be at least 18 years old to use this site.</p>
                 <p>By clicking "Agree" you confirm that:</p>
@@ -70,8 +70,46 @@
                 <span id="depositStatusText" class="deposit-status-text" style="flex-grow: 1; text-align: left; color: var(--text-secondary); font-size: 0.9em;"></span>
                 <button class="btn btn-primary" id="depositButton" disabled>Request Deposit Offer</button>
                 <button class="btn btn-success" id="acceptDepositOfferBtn" style="display: none;" title="Opens the Steam trade offer in a new tab">
-                     Accept on Steam <i class="fas fa-external-link-alt"></i>
+                    Accept on Steam <i class="fas fa-external-link-alt"></i>
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="tradeHistoryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Trade History</h2>
+                <button class="close-btn" id="closeTradeHistoryModal" aria-label="Close trade history modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                 <div class="trade-history-container">
+                     <div id="tradeHistoryLoading" class="loading-indicator" style="display: none;">
+                         <div class="spinner"></div>
+                         <p>Loading your trade history...</p>
+                     </div>
+                     <div id="emptyTradeHistory" class="empty-history-message" style="display: none;">
+                         <p>You don't have any trade history yet.</p>
+                     </div>
+                     <table id="tradeHistoryTable" class="trade-history-table" style="display: none;">
+                         <thead>
+                             <tr>
+                                 <th>Date</th>
+                                 <th>Round</th>
+                                 <th>Type</th>
+                                 <th>Items</th>
+                                 <th>Value</th>
+                                 <th>Status</th>
+                                 <th>Actions</th>
+                             </tr>
+                         </thead>
+                         <tbody id="tradeHistoryTableBody">
+                             </tbody>
+                     </table>
+                 </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="closeTradeHistoryBtn">Close</button>
             </div>
         </div>
     </div>
@@ -117,7 +155,7 @@
                 <div class="profile-modal-stats">
                     <span class="profile-modal-stat-label">Total Deposited:</span>
                     <span class="profile-modal-stat-value" id="profileModalDeposited">$0.00</span>
-                    </div>
+                </div>
 
                 <div class="form-group profile-modal-trade-url">
                     <label for="profileModalTradeUrl">Steam Trade URL</label>
@@ -152,7 +190,7 @@
             <nav class="main-nav header-center">
                 <ul>
                     <li><a href="#" class="active jackpot-tab" id="home-link">JACKPOT</a></li>
-                    </ul>
+                </ul>
             </nav>
 
             <div class="header-right">
@@ -160,7 +198,7 @@
                     <ul>
                         <li><a href="#" id="faq-link">FAQ</a></li>
                         <li><a href="#" id="fair-link">PROVABLY FAIR</a></li>
-                        </ul>
+                    </ul>
                 </nav>
 
                 <div class="user-controls">
@@ -171,7 +209,7 @@
 
                     <div class="user-profile-container">
                         <span id="pending-offer-indicator" class="pending-offer-indicator" style="display: none;" title="You have a pending trade offer!">
-                             <i class="fas fa-exclamation-circle"></i>
+                            <i class="fas fa-exclamation-circle"></i>
                         </span>
                         <div class="user-profile" id="userProfile" style="display: none;" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0">
                             <div class="user-avatar-container">
@@ -186,6 +224,9 @@
                                 <button class="dropdown-item" id="profileDropdownButton" role="menuitem">
                                     <i class="fas fa-user-circle icon"></i> Profile
                                 </button>
+                                <button class="dropdown-item" id="tradeHistoryButton" role="menuitem">
+                                    <i class="fas fa-exchange-alt icon"></i> Trade History
+                                </button>
                                 <button class="dropdown-item" id="logoutButton" role="menuitem">
                                     <i class="fas fa-sign-out-alt icon"></i> Sign Out
                                 </button>
@@ -199,7 +240,6 @@
 
     <main class="main-content">
         <div class="container">
-
             <section id="home-page">
                 <div class="jackpot-section">
                     <div class="jackpot-header" id="jackpotHeader">
@@ -244,16 +284,18 @@
                                 </div>
                                 <div class="confetti-container" id="confettiContainer"></div>
                             </div>
-                            <audio id="spinSound" src="/audio/spin-sound.mp3" preload="auto"></audio> <audio id="depositSound" src="/audio/deposit-join.mp3" preload="auto"></audio> <button class="btn btn-primary return-btn" id="returnToJackpot" style="display: none;">Return</button>
+                            <audio id="spinSound" src="/audio/spin-sound.mp3" preload="auto"></audio>
+                            <audio id="depositSound" src="/audio/deposit-join.mp3" preload="auto"></audio>
+                            <button class="btn btn-primary return-btn" id="returnToJackpot" style="display: none;">Return</button>
                         </div>
                     </div>
 
                     <div class="deposit-button-container" id="depositBtnContainer">
                         <button class="btn btn-deposit" id="showDepositModal" title="Log in to deposit" disabled>DEPOSIT SKINS</button>
                          <div class="test-buttons-container" style="margin-top: 10px;">
-                            <button class="btn btn-secondary btn-small" id="testSpinButton">Test Roulette</button>
-                            <button class="btn btn-secondary btn-small" id="testDepositButton">Test Deposit</button>
-                        </div>
+                             <button class="btn btn-secondary btn-small" id="testSpinButton">Test Roulette</button>
+                             <button class="btn btn-secondary btn-small" id="testDepositButton">Test Deposit</button>
+                         </div>
                     </div>
 
                     <div class="current-items-section" id="currentItems">
@@ -279,225 +321,222 @@
                             <p>Please remember this is a project under development. Play responsibly and understand the risks involved.</p>
                         </div>
                     </div>
-                    </div>
+                </div>
             </section>
 
             <section id="tos-page" style="display: none;">
                  <div class="content-card">
-                     <h1>Terms of Service</h1>
-                     <p><small>Last Updated: April 27, 2025</small></p>
-                     <div class="content-section">
-                         <h3 class="content-section-title">1. Acceptance of Terms</h3>
-                         <div class="content-section-body">
-                             <p>Welcome to Rusty Degen (referred to as "the Service" or "Website"). These Terms of Service ("Terms") outline the rules and regulations for using our platform. By accessing or utilizing any part of the Service, you signify your binding agreement to these Terms. If you disagree with any portion of these Terms, you are prohibited from using the Service.</p>
-                             <p>Your use of the Website, participation in games, and any communication with Rusty Degen are all governed by these Terms.</p>
-                         </div>
-                     </div>
-                     <div class="content-section">
-                         <h3 class="content-section-title">2. Eligibility and User Obligations</h3>
-                         <div class="content-section-body">
-                             <p>To use Rusty Degen, you confirm that:</p>
-                             <ul>
-                                 <li>You are 18 years of age or older.</li>
-                                 <li>You have the legal right and capacity to agree to these Terms and are responsible for your conduct.</li>
-                                 <li>Your use of the Service complies with the laws and regulations of your location.</li>
-                                 <li>You own the Steam account you use to log in and the items you deposit.</li>
-                                 <li>You understand that virtual items have no real money value on this platform.</li>
-                             </ul>
-                             <p>It is your sole responsibility to ensure your activities on Rusty Degen are lawful in your jurisdiction. You access the Service at your own risk.</p>
-                         </div>
-                     </div>
-                     <div class="content-section">
-                         <h3 class="content-section-title">3. Service Availability and Liability</h3>
-                         <div class="content-section-body">
-                             <p>Rusty Degen provides its Service on an "as-is" and "as-available" basis without any warranties, express or implied. We do not guarantee that the Service will be uninterrupted, timely, secure, or free from errors.</p>
-                             <p>Rusty Degen, its owner, and affiliates will not be liable for any damages (direct, indirect, incidental, special, consequential, or exemplary) resulting from your use or inability to use the Service. This includes losses from gameplay, technical failures, data loss, Steam API issues, trade delays/errors, or other intangible losses.</p>
-                             <p>We reserve the right to modify, suspend, or discontinue the Service, or any part thereof (including specific game rounds or user accounts), at our discretion, without notice or liability.</p>
-                         </div>
-                     </div>
+                      <h1>Terms of Service</h1>
+                      <p><small>Last Updated: April 29, 2025</small></p> <div class="content-section">
+                           <h3 class="content-section-title">1. Acceptance of Terms</h3>
+                           <div class="content-section-body">
+                                <p>Welcome to Rusty Degen (referred to as "the Service" or "Website"). These Terms of Service ("Terms") outline the rules and regulations for using our platform. By accessing or utilizing any part of the Service, you signify your binding agreement to these Terms. If you disagree with any portion of these Terms, you are prohibited from using the Service.</p>
+                                <p>Your use of the Website, participation in games, and any communication with Rusty Degen are all governed by these Terms.</p>
+                           </div>
+                      </div>
                       <div class="content-section">
-                         <h3 class="content-section-title">4. Gameplay, Winnings, and Site Fees</h3>
-                         <div class="content-section-body">
-                             <p>Winning chances vary based on game rules and deposited value, as determined by our Provably Fair system where applicable.</p>
-                             <p>Winners must claim items via the designated Steam trade offer system. Ensure your Steam Trade URL is accurate on our Website and that your Steam inventory settings allow incoming offers (set to public).</p>
-                             <p>Winning trade offers should be accepted promptly. Offers not accepted within a reasonable timeframe (e.g., 12-24 hours, subject to change) of being sent may be cancelled, potentially resulting in forfeiture of winnings. If you encounter issues receiving winnings, contact support promptly.</p>
-                             <p>A commission (typically 0-10%, see FAQ for current rate) is applied to each jackpot round's total value to support site maintenance, development, and operational costs. This fee is deducted from the item pool before the winner receives the remaining items.</p>
-                         </div>
-                     </div>
+                           <h3 class="content-section-title">2. Eligibility and User Obligations</h3>
+                           <div class="content-section-body">
+                                <p>To use Rusty Degen, you confirm that:</p>
+                                <ul>
+                                     <li>You are 18 years of age or older.</li>
+                                     <li>You have the legal right and capacity to agree to these Terms and are responsible for your conduct.</li>
+                                     <li>Your use of the Service complies with the laws and regulations of your location.</li>
+                                     <li>You own the Steam account you use to log in and the items you deposit.</li>
+                                     <li>You understand that virtual items have no real money value on this platform.</li>
+                                </ul>
+                                <p>It is your sole responsibility to ensure your activities on Rusty Degen are lawful in your jurisdiction. You access the Service at your own risk.</p>
+                           </div>
+                      </div>
                       <div class="content-section">
-                          <h3 class="content-section-title">5. User Accounts and Conduct</h3>
-                          <div class="content-section-body">
-                              <p>You are responsible for maintaining the confidentiality of your Steam account login information. You are responsible for all activities that occur under your account.</p>
-                              <p>You agree not to use the Service for any unlawful purpose or in any way that could damage, disable, overburden, or impair the Service.</p>
-                              <p>Prohibited activities include, but are not limited to: using scripts or bots to interact with the site (except as explicitly allowed), attempting to exploit vulnerabilities, impersonating others, engaging in harassment, or disrupting the experience of other users.</p>
-                              <p>Violation of these terms may result in temporary or permanent suspension of your account without notice.</p>
-                         </div>
-                     </div>
-                     <div class="content-section">
-                         <h3 class="content-section-title">6. Technical Issues and Support Claims</h3>
-                         <div class="content-section-body">
-                              <p>If you believe a loss occurred due to a verifiable error within Rusty Degen's systems (e.g., software bug, server issue), you must report it to our support channel (specified elsewhere, e.g., Discord) promptly, ideally within 12 hours of the event.</p>
-                              <p>Claims require detailed information (round ID, time, issue description, relevant screenshots/proof). Rusty Degen will investigate reasonable claims but retains sole discretion in determining the resolution, which may or may not include compensation.</p>
-                              <p>We are not responsible for issues arising from Steam network problems, user-side errors, or delays in accepting trade offers.</p>
-                         </div>
-                     </div>
-                     <div class="content-section">
-                         <h3 class="content-section-title">7. Intellectual Property</h3>
-                          <div class="content-section-body">
-                              <p>All materials on this Website, including design, code, text, graphics, and logos, are owned by or licensed to Rusty Degen and protected by intellectual property laws.</p>
-                              <p>Unauthorized copying, distribution, or modification of any Website content is forbidden without explicit written permission.</p>
-                         </div>
-                     </div>
-                     <div class="content-section">
-                         <h3 class="content-section-title">8. Amendments to Terms</h3>
-                         <div class="content-section-body">
-                             <p>Rusty Degen may revise these Terms at any time. Updated Terms become effective upon posting on the Website. Continuing to use the Service after changes means you accept the revised Terms. It is your responsibility to review the Terms periodically.</p>
-                         </div>
-                     </div>
+                           <h3 class="content-section-title">3. Service Availability and Liability</h3>
+                           <div class="content-section-body">
+                                <p>Rusty Degen provides its Service on an "as-is" and "as-available" basis without any warranties, express or implied. We do not guarantee that the Service will be uninterrupted, timely, secure, or free from errors.</p>
+                                <p>Rusty Degen, its owner, and affiliates will not be liable for any damages (direct, indirect, incidental, special, consequential, or exemplary) resulting from your use or inability to use the Service. This includes losses from gameplay, technical failures, data loss, Steam API issues, trade delays/errors, or other intangible losses.</p>
+                                <p>We reserve the right to modify, suspend, or discontinue the Service, or any part thereof (including specific game rounds or user accounts), at our discretion, without notice or liability.</p>
+                           </div>
+                      </div>
+                       <div class="content-section">
+                           <h3 class="content-section-title">4. Gameplay, Winnings, and Site Fees</h3>
+                           <div class="content-section-body">
+                                <p>Winning chances vary based on game rules and deposited value, as determined by our Provably Fair system where applicable.</p>
+                                <p>Winners must claim items via the designated Steam trade offer system. Ensure your Steam Trade URL is accurate on our Website and that your Steam inventory settings allow incoming offers (set to public).</p>
+                                <p>Winning trade offers should be accepted promptly. Offers not accepted within a reasonable timeframe (e.g., 12-24 hours, subject to change) of being sent may be cancelled, potentially resulting in forfeiture of winnings. If you encounter issues receiving winnings, contact support promptly.</p>
+                                <p>A commission (typically 0-10%, see FAQ for current rate) is applied to each jackpot round's total value to support site maintenance, development, and operational costs. This fee is deducted from the item pool before the winner receives the remaining items.</p>
+                           </div>
+                      </div>
+                       <div class="content-section">
+                           <h3 class="content-section-title">5. User Accounts and Conduct</h3>
+                           <div class="content-section-body">
+                                <p>You are responsible for maintaining the confidentiality of your Steam account login information. You are responsible for all activities that occur under your account.</p>
+                                <p>You agree not to use the Service for any unlawful purpose or in any way that could damage, disable, overburden, or impair the Service.</p>
+                                <p>Prohibited activities include, but are not limited to: using scripts or bots to interact with the site (except as explicitly allowed), attempting to exploit vulnerabilities, impersonating others, engaging in harassment, or disrupting the experience of other users.</p>
+                                <p>Violation of these terms may result in temporary or permanent suspension of your account without notice.</p>
+                           </div>
+                      </div>
                       <div class="content-section">
-                         <h3 class="content-section-title">9. Governing Law</h3>
-                         <div class="content-section-body">
-                             <p>These Terms shall be governed by and construed in accordance with the laws of [Your Jurisdiction - e.g., Florida, USA], without regard to its conflict of law provisions.</p>
-                         </div>
-                     </div>
+                           <h3 class="content-section-title">6. Technical Issues and Support Claims</h3>
+                           <div class="content-section-body">
+                                <p>If you believe a loss occurred due to a verifiable error within Rusty Degen's systems (e.g., software bug, server issue), you must report it to our support channel (specified elsewhere, e.g., Discord) promptly, ideally within 12 hours of the event.</p>
+                                <p>Claims require detailed information (round ID, time, issue description, relevant screenshots/proof). Rusty Degen will investigate reasonable claims but retains sole discretion in determining the resolution, which may or may not include compensation.</p>
+                                <p>We are not responsible for issues arising from Steam network problems, user-side errors, or delays in accepting trade offers.</p>
+                           </div>
+                      </div>
+                      <div class="content-section">
+                           <h3 class="content-section-title">7. Intellectual Property</h3>
+                            <div class="content-section-body">
+                                <p>All materials on this Website, including design, code, text, graphics, and logos, are owned by or licensed to Rusty Degen and protected by intellectual property laws.</p>
+                                <p>Unauthorized copying, distribution, or modification of any Website content is forbidden without explicit written permission.</p>
+                           </div>
+                      </div>
+                      <div class="content-section">
+                           <h3 class="content-section-title">8. Amendments to Terms</h3>
+                           <div class="content-section-body">
+                                <p>Rusty Degen may revise these Terms at any time. Updated Terms become effective upon posting on the Website. Continuing to use the Service after changes means you accept the revised Terms. It is your responsibility to review the Terms periodically.</p>
+                           </div>
+                      </div>
+                       <div class="content-section">
+                           <h3 class="content-section-title">9. Governing Law</h3>
+                           <div class="content-section-body">
+                                <p>These Terms shall be governed by and construed in accordance with the laws of Florida, USA, without regard to its conflict of law provisions.</p> </div>
+                      </div>
                  </div>
             </section>
 
             <section id="faq-page" style="display: none;">
                  <div class="content-card">
-                     <h1>Frequently Asked Questions</h1>
-                     <div class="content-section faq-item">
-                         <h3 class="content-section-title">How does Rusty Degen work?</h3>
-                         <div class="content-section-body" style="display: none;">
-                             <p>Rusty Degen is a Rust skin jackpot site. Players deposit their Rust skins into a shared pot. Each skin adds value, and your chance to win is proportional to the value you deposit compared to the total pot value. When the round timer ends, our Provably Fair system randomly selects a winning ticket based on deposited value. The owner of that ticket wins all the items in the pot, minus a small site fee.</p>
-                         </div>
-                     </div>
-                     <div class="content-section faq-item">
-                         <h3 class="content-section-title">How do I deposit skins?</h3>
-                         <div class="content-section-body" style="display: none;">
-                             <p>1. Log in using the "Sign in with Steam" button.</p>
-                             <p>2. Ensure your Steam Trade URL is set correctly in your profile (click your avatar).</p>
-                             <p>3. Click the "Deposit Skins" button on the main jackpot page.</p>
-                             <p>4. Select the Rust items you wish to deposit from your inventory shown in the modal (up to the allowed limit per deposit).</p>
-                             <p>5. Click "Request Deposit Offer".</p>
-                             <p>6. If successful, a button "Accept on Steam" will appear. Click it to open the trade offer in a new Steam tab.</p>
-                             <p>7. Review and accept the trade offer in Steam. Your items will be added to the pot shortly after Steam confirms the trade.</p>
-                         </div>
-                     </div>
+                      <h1>Frequently Asked Questions</h1>
                       <div class="content-section faq-item">
-                         <h3 class="content-section-title">Why do I need a Trade URL?</h3>
-                         <div class="content-section-body" style="display: none;">
-                             <p>Your Steam Trade URL allows our site bots to send you trade offers. It's necessary for both creating deposit offers (where the bot requests items from you) and sending you your winnings if you win a jackpot. You can find and set your Trade URL via the link in your profile modal.</p>
-                         </div>
-                     </div>
-                     <div class="content-section faq-item">
-                         <h3 class="content-section-title">How is the winner selected? Is it fair?</h3>
-                         <div class="content-section-body" style="display: none;">
-                             <p>We use a Provably Fair system. Before the round starts, we generate a secret Server Seed and show you its SHA256 hash. When the round ends, we combine the secret Server Seed with a public Client Seed (derived from round data). We hash this combination to get a final result. This result determines the winning ticket number based on the total tickets assigned (proportional to deposit value). Since the initial hash was public, and the Server Seed is revealed after the round, anyone can verify the outcome was predetermined and not tampered with. Visit the "Provably Fair" page for details and a verification tool.</p>
-                         </div>
-                     </div>
-                     <div class="content-section faq-item">
-                         <h3 class="content-section-title">How do I receive my winnings?</h3>
-                         <div class="content-section-body" style="display: none;">
-                             <p>If you win, our bot will automatically create and send a Steam trade offer containing the winning items (minus the site fee) to the Trade URL set in your profile. You will receive a notification on the site, and you'll need to accept the trade offer within Steam to receive the items into your inventory.</p>
-                         </div>
-                     </div>
-                     <div class="content-section faq-item">
-                         <h3 class="content-section-title">What is the site fee (tax/commission)?</h3>
-                         <div class="content-section-body" style="display: none;">
-                             <p>We apply a small commission (typically 5-10%) to the total value of each jackpot pot. This fee helps cover server hosting, bot maintenance, ongoing development, and Steam API costs. The exact percentage may vary slightly and is applied by removing items closest to the fee value from the pot before sending the winnings. This ensures the site can continue operating and improving.</p>
-                         </div>
-                     </div>
+                           <h3 class="content-section-title">How does Rusty Degen work?</h3>
+                           <div class="content-section-body" style="display: none;">
+                                <p>Rusty Degen is a Rust skin jackpot site. Players deposit their Rust skins into a shared pot. Each skin adds value, and your chance to win is proportional to the value you deposit compared to the total pot value. When the round timer ends, our Provably Fair system randomly selects a winning ticket based on deposited value. The owner of that ticket wins all the items in the pot, minus a small site fee.</p>
+                           </div>
+                      </div>
                       <div class="content-section faq-item">
-                         <h3 class="content-section-title">My deposit offer expired / I declined it. What happens?</h3>
-                         <div class="content-section-body" style="display: none;">
-                             <p>If you don't accept the deposit trade offer sent by our bot within the time limit (usually around 10 minutes), or if you decline it, the offer becomes invalid. Your items remain safely in your Steam inventory, and they are not added to the jackpot pot. You would need to initiate a new deposit if you still wish to participate.</p>
-                         </div>
-                     </div>
-                     <div class="content-section faq-item">
-                         <h3 class="content-section-title">I have a problem / Need support!</h3>
-                         <div class="content-section-body" style="display: none;">
-                             <p>If you encounter any issues (e.g., problems with deposits, withdrawals, site errors), please reach out to us through our official support channel [Link to your Discord/Support System Here - Placeholder]. Please provide as much detail as possible, including your Steam profile link, the relevant Round ID (if applicable), approximate time of the issue, and a clear description of the problem.</p>
-                         </div>
-                     </div>
+                           <h3 class="content-section-title">How do I deposit skins?</h3>
+                           <div class="content-section-body" style="display: none;">
+                                <p>1. Log in using the "Sign in with Steam" button.</p>
+                                <p>2. Ensure your Steam Trade URL is set correctly in your profile (click your avatar).</p>
+                                <p>3. Click the "Deposit Skins" button on the main jackpot page.</p>
+                                <p>4. Select the Rust items you wish to deposit from your inventory shown in the modal (up to the allowed limit per deposit).</p>
+                                <p>5. Click "Request Deposit Offer".</p>
+                                <p>6. If successful, a button "Accept on Steam" will appear. Click it to open the trade offer in a new Steam tab.</p>
+                                <p>7. Review and accept the trade offer in Steam. Your items will be added to the pot shortly after Steam confirms the trade.</p>
+                           </div>
+                      </div>
+                       <div class="content-section faq-item">
+                           <h3 class="content-section-title">Why do I need a Trade URL?</h3>
+                           <div class="content-section-body" style="display: none;">
+                                <p>Your Steam Trade URL allows our site bots to send you trade offers. It's necessary for both creating deposit offers (where the bot requests items from you) and sending you your winnings if you win a jackpot. You can find and set your Trade URL via the link in your profile modal.</p>
+                           </div>
+                      </div>
+                      <div class="content-section faq-item">
+                           <h3 class="content-section-title">How is the winner selected? Is it fair?</h3>
+                           <div class="content-section-body" style="display: none;">
+                                <p>We use a Provably Fair system. Before the round starts, we generate a secret Server Seed and show you its SHA256 hash. When the round ends, we combine the secret Server Seed with a public Client Seed (derived from round data). We hash this combination to get a final result. This result determines the winning ticket number based on the total tickets assigned (proportional to deposit value). Since the initial hash was public, and the Server Seed is revealed after the round, anyone can verify the outcome was predetermined and not tampered with. Visit the "Provably Fair" page for details and a verification tool.</p>
+                           </div>
+                      </div>
+                      <div class="content-section faq-item">
+                           <h3 class="content-section-title">How do I receive my winnings?</h3>
+                           <div class="content-section-body" style="display: none;">
+                                <p>If you win, our bot will automatically create and send a Steam trade offer containing the winning items (minus the site fee) to the Trade URL set in your profile. You will receive a notification on the site, and you'll need to accept the trade offer within Steam to receive the items into your inventory.</p>
+                           </div>
+                      </div>
+                      <div class="content-section faq-item">
+                           <h3 class="content-section-title">What is the site fee (tax/commission)?</h3>
+                           <div class="content-section-body" style="display: none;">
+                                <p>We apply a small commission (typically 5-10%) to the total value of each jackpot pot. This fee helps cover server hosting, bot maintenance, ongoing development, and Steam API costs. The exact percentage may vary slightly and is applied by removing items closest to the fee value from the pot before sending the winnings. This ensures the site can continue operating and improving.</p>
+                           </div>
+                      </div>
+                       <div class="content-section faq-item">
+                           <h3 class="content-section-title">My deposit offer expired / I declined it. What happens?</h3>
+                           <div class="content-section-body" style="display: none;">
+                                <p>If you don't accept the deposit trade offer sent by our bot within the time limit (usually around 10 minutes), or if you decline it, the offer becomes invalid. Your items remain safely in your Steam inventory, and they are not added to the jackpot pot. You would need to initiate a new deposit if you still wish to participate.</p>
+                           </div>
+                      </div>
+                      <div class="content-section faq-item">
+                           <h3 class="content-section-title">I have a problem / Need support!</h3>
+                           <div class="content-section-body" style="display: none;">
+                                <p>If you encounter any issues (e.g., problems with deposits, withdrawals, site errors), please reach out to us through our official support channel [Link to your Discord/Support System Here - Placeholder]. Please provide as much detail as possible, including your Steam profile link, the relevant Round ID (if applicable), approximate time of the issue, and a clear description of the problem.</p>
+                           </div>
+                      </div>
                  </div>
             </section>
 
             <section id="fair-page" style="display: none;">
                  <div class="content-card">
-                     <h1>Provably Fair System</h1>
-                     <div class="content-section">
-                         <h3 class="content-section-title">How Our System Works</h3>
-                         <div class="content-section-body">
-                             <p>Rusty Degen uses a provably fair system to ensure complete transparency and fairness in winner selection. Our system uses cryptographic methods (specifically SHA256 hashing) to guarantee that the results cannot be manipulated by the site operators and can be independently verified by anyone after the round concludes.</p>
-                         </div>
-                     </div>
-                     <div class="content-section">
-                         <h3 class="content-section-title">The Process</h3>
-                         <div class="content-section-body">
-                             <ol>
-                                 <li><strong>Seed Generation:</strong> Before a round begins, the server generates a long, random, secret string called the "Server Seed".</li>
-                                 <li><strong>Hashing:</strong> The server calculates the SHA256 hash of this Server Seed. This hash (e.g., <code>a1b2c3d4...</code>) is publicly displayed for the round *before* any deposits are accepted. Hashing is a one-way process; you cannot get the original Seed from the Hash, but you can later verify that a revealed Seed produces the same Hash.</li>
-                                 <li><strong>Deposits & Tickets:</strong> Players deposit items. Each $0.01 of value deposited grants the player 1 ticket (or adjusted based on settings). Tickets are assigned ranges based on deposit order and value (e.g., Player A $1.00 gets tickets 0-99, Player B $2.50 gets tickets 100-349). The total number of tickets is the sum of tickets for all deposits.</li>
-                                 <li><strong>Round End & Client Seed:</strong> When the round ends (timer reaches zero or max items), a "Client Seed" is determined. This is typically derived from public round data making it unique and non-manipulable after the round closes (e.g., Round ID, end timestamp hash).</li>
-                                 <li><strong>Combined Hashing:</strong> The server combines the secret Server Seed and the public Client Seed (usually as <code>ServerSeedClientSeed</code> or <code>ServerSeed-ClientSeed</code> - check verification logic). It then calculates the SHA256 hash of this combined string.</li>
-                                 <li><strong>Winning Ticket Calculation:</strong> A deterministic calculation is performed on the final hash to get a number between 0 and 1. This number is multiplied by the total number of tickets to determine the winning ticket position. (e.g., <code>WinningPosition = floor(ResultingNumber * TotalTickets)</code>. The winning ticket is the one at this position (0-indexed).</li>
-                                 <li><strong>Winner Selection:</strong> The player whose assigned ticket range includes the calculated Winning Ticket position wins the pot.</li>
-                                 <li><strong>Seed Reveal:</strong> After the winner is determined and announced, the original secret Server Seed for that round is revealed publicly in the round history.</li>
-                             </ol>
-                         </div>
-                     </div>
-                     <div class="content-section" id="provably-fair-verification">
-                         <h3 class="content-section-title">Verification Tool</h3>
-                         <div class="content-section-body">
-                             <p>After a round is complete and the Server Seed is revealed, you can use this tool (or any external SHA256 tool) to verify the outcome:</p>
-                             <div class="verify-form">
-                                 <div class="form-group">
-                                     <label for="round-id">Round ID:</label>
-                                     <input type="number" id="round-id" placeholder="Enter round ID from history">
-                                 </div>
-                                 <div class="form-group">
-                                     <label for="server-seed">Server Seed (Revealed):</label>
-                                     <input type="text" id="server-seed" placeholder="Enter the revealed Server Seed (64 hex chars)">
-                                 </div>
-                                 <div class="form-group">
-                                     <label for="client-seed">Client Seed:</label>
-                                     <input type="text" id="client-seed" placeholder="Enter the Client Seed for the round">
-                                 </div>
-                                 <button class="btn btn-primary" id="verify-btn" style="grid-column: 1 / -1;">Verify Round</button> </div>
-                             <div id="verification-result" class="verification-result" style="display: none;">
-                                 </div>
-                         </div>
-                     </div>
-                     <div class="content-section">
-                         <h3 class="content-section-title">Round History</h3>
-                         <div class="content-section-body">
-                             <div class="table-container">
-                                 <table class="history-table">
-                                     <thead>
-                                         <tr>
-                                             <th>Round ID</th>
-                                             <th>Date Ended</th>
-                                             <th>Pot Value</th>
-                                             <th>Winner</th>
-                                             <th>Actions</th>
-                                         </tr>
-                                     </thead>
-                                     <tbody id="rounds-table-body">
-                                         <tr><td colspan="5" class="loading-message">Loading round history...</td></tr>
-                                         </tbody>
-                                 </table>
-                             </div>
-                             <div class="pagination-container" id="rounds-pagination">
-                                 </div>
-                         </div>
-                     </div>
+                      <h1>Provably Fair System</h1>
+                      <div class="content-section">
+                           <h3 class="content-section-title">How Our System Works</h3>
+                           <div class="content-section-body">
+                                <p>Rusty Degen uses a provably fair system to ensure complete transparency and fairness in winner selection. Our system uses cryptographic methods (specifically SHA256 hashing) to guarantee that the results cannot be manipulated by the site operators and can be independently verified by anyone after the round concludes.</p>
+                           </div>
+                      </div>
+                      <div class="content-section">
+                           <h3 class="content-section-title">The Process</h3>
+                           <div class="content-section-body">
+                                <ol>
+                                     <li><strong>Seed Generation:</strong> Before a round begins, the server generates a long, random, secret string called the "Server Seed".</li>
+                                     <li><strong>Hashing:</strong> The server calculates the SHA256 hash of this Server Seed. This hash (e.g., <code>a1b2c3d4...</code>) is publicly displayed for the round *before* any deposits are accepted. Hashing is a one-way process; you cannot get the original Seed from the Hash, but you can later verify that a revealed Seed produces the same Hash.</li>
+                                     <li><strong>Deposits & Tickets:</strong> Players deposit items. Each $0.01 of value deposited grants the player 1 ticket (or adjusted based on settings). Tickets are assigned ranges based on deposit order and value (e.g., Player A $1.00 gets tickets 0-99, Player B $2.50 gets tickets 100-349). The total number of tickets is the sum of tickets for all deposits.</li>
+                                     <li><strong>Round End & Client Seed:</strong> When the round ends (timer reaches zero or max items), a "Client Seed" is determined. This is typically derived from public round data making it unique and non-manipulable after the round closes (e.g., Round ID, end timestamp hash).</li>
+                                     <li><strong>Combined Hashing:</strong> The server combines the secret Server Seed and the public Client Seed (usually as <code>ServerSeedClientSeed</code> or <code>ServerSeed-ClientSeed</code> - check verification logic). It then calculates the SHA256 hash of this combined string.</li>
+                                     <li><strong>Winning Ticket Calculation:</strong> A deterministic calculation is performed on the final hash to get a number between 0 and 1. This number is multiplied by the total number of tickets to determine the winning ticket position. (e.g., <code>WinningPosition = floor(ResultingNumber * TotalTickets)</code>. The winning ticket is the one at this position (0-indexed).</li>
+                                     <li><strong>Winner Selection:</strong> The player whose assigned ticket range includes the calculated Winning Ticket position wins the pot.</li>
+                                     <li><strong>Seed Reveal:</strong> After the winner is determined and announced, the original secret Server Seed for that round is revealed publicly in the round history.</li>
+                                </ol>
+                           </div>
+                      </div>
+                      <div class="content-section" id="provably-fair-verification">
+                           <h3 class="content-section-title">Verification Tool</h3>
+                           <div class="content-section-body">
+                                <p>After a round is complete and the Server Seed is revealed, you can use this tool (or any external SHA256 tool) to verify the outcome:</p>
+                                <div class="verify-form">
+                                     <div class="form-group">
+                                         <label for="round-id">Round ID:</label>
+                                         <input type="number" id="round-id" placeholder="Enter round ID from history" min="1">
+                                     </div>
+                                     <div class="form-group">
+                                         <label for="server-seed">Server Seed (Revealed):</label>
+                                         <input type="text" id="server-seed" placeholder="Enter the revealed Server Seed (64 hex chars)">
+                                     </div>
+                                     <div class="form-group">
+                                          <label for="client-seed">Client Seed:</label>
+                                          <input type="text" id="client-seed" placeholder="Enter the Client Seed for the round">
+                                     </div>
+                                     <button class="btn btn-primary" id="verify-btn" style="grid-column: 1 / -1;">Verify Round</button>
+                                </div>
+                                <div id="verification-result" class="verification-result" style="display: none;">
+                                     </div>
+                           </div>
+                      </div>
+                      <div class="content-section">
+                           <h3 class="content-section-title">Round History</h3>
+                           <div class="content-section-body">
+                                <div class="table-container">
+                                     <table class="history-table">
+                                          <thead>
+                                               <tr>
+                                                   <th>Round ID</th>
+                                                   <th>Date Ended</th>
+                                                   <th>Pot Value</th>
+                                                   <th>Winner</th>
+                                                   <th>Actions</th>
+                                               </tr>
+                                          </thead>
+                                          <tbody id="rounds-table-body">
+                                               <tr><td colspan="5" class="loading-message">Loading round history...</td></tr>
+                                               </tbody>
+                                     </table>
+                                </div>
+                                <div class="pagination-container" id="rounds-pagination">
+                                     </div>
+                           </div>
+                      </div>
                  </div>
             </section>
 
-        </div> </main>
-
-    <footer class="main-footer">
+        </div> </main> <footer class="main-footer">
         <div class="container">
             <p> &copy;2025 Rusty Degen. All rights reserved. Rusty Degen is not affiliated with Valve Corporation, Facepunch Studios, Rust or any other trademarks. Gambling can be addictive. Play responsibly. 18+</p>
             <p>
@@ -519,7 +558,7 @@
                     const item = title.closest('.faq-item');
                     const body = item.querySelector('.content-section-body');
                     if (item && body) {
-                         // Close other items
+                        // Close other items
                         document.querySelectorAll('#faq-page .faq-item.active').forEach(openItem => {
                             if (openItem !== item) {
                                 openItem.classList.remove('active');
@@ -527,33 +566,36 @@
                                 if (openBody) openBody.style.display = 'none';
                             }
                         });
-                         // Toggle current item
+                        // Toggle current item
                         item.classList.toggle('active');
                         body.style.display = item.classList.contains('active') ? 'block' : 'none';
                     }
                 });
             });
 
-            // Footer/Modal TOS Links
-             const setupLink = (linkId, pageElementId) => {
+            // Footer/Modal Links Setup (Ensure main.js defines showPage and hideModal globally)
+            const setupLink = (linkId, pageElementId) => {
                  const link = document.getElementById(linkId);
                  const page = document.getElementById(pageElementId);
-                  // Check if showPage is globally available (it should be from main.js)
+                 // Check if showPage is globally available
                  if (link && page && typeof window.showPage === 'function') {
                       link.addEventListener('click', (e) => {
                            e.preventDefault();
-                           window.showPage(page);
-                           // If it's the modal link, also close the modal
+                           window.showPage(page); // Assumes showPage handles hiding others & updating nav
+                           // If it's the modal link, also close the modal it's in
                            const modal = link.closest('.modal');
                            if (modal && typeof window.hideModal === 'function') {
                                 window.hideModal(modal);
                            }
                       });
+                 } else {
+                     // console.warn(`Could not set up link: ${linkId} -> ${pageElementId}. Element or showPage/hideModal function missing.`);
                  }
-             };
-             setupLink('tos-link-modal', 'tos-page');
-             setupLink('tos-link-footer', 'tos-page');
-             setupLink('fair-link-footer', 'fair-page');
+            };
+            setupLink('tos-link-modal', 'tos-page');
+            setupLink('tos-link-footer', 'tos-page');
+            setupLink('fair-link-footer', 'fair-page');
+            // Assumes navigation links (about, faq, fair, home) are handled in main.js event listeners already
         });
     </script>
 
