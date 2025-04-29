@@ -1,5 +1,6 @@
 // main.js - Rust Jackpot Frontend Logic (Combined with Profile Dropdown)
 // Modifications: Simplified header profile, updated dropdown, added Profile Modal, implemented trade offer flow.
+// **MODIFIED AGAIN: Added handling for trade restriction/private inventory errors in loadUserInventory**
 
 // Ensure Socket.IO client library is loaded before this script
 // Example: <script src="/socket.io/socket.io.js"></script>
@@ -55,12 +56,12 @@ const DOMElements = {
     // User Authentication / Profile
     user: {
         loginButton: document.getElementById('loginButton'),
-        userProfile: document.getElementById('userProfile'),      // The clickable avatar+name element in header
-        userAvatar: document.getElementById('userAvatar'),        // Avatar within #userProfile
-        userName: document.getElementById('userName'),            // Name within #userProfile
+        userProfile: document.getElementById('userProfile'),     // The clickable avatar+name element in header
+        userAvatar: document.getElementById('userAvatar'),       // Avatar within #userProfile
+        userName: document.getElementById('userName'),           // Name within #userProfile
         userDropdownMenu: document.getElementById('userDropdownMenu'), // The dropdown menu itself
         profileDropdownButton: document.getElementById('profileDropdownButton'), // NEW "Profile" button inside dropdown
-        logoutButton: document.getElementById('logoutButton'),    // The logout button inside the dropdown
+        logoutButton: document.getElementById('logoutButton'),   // The logout button inside the dropdown
         pendingOfferIndicator: document.getElementById('pending-offer-indicator'), // ADDED
     },
     // *** NEW Profile Modal Elements ***
@@ -91,7 +92,7 @@ const DOMElements = {
         depositModal: document.getElementById('depositModal'),
         closeDepositModalButton: document.getElementById('closeDepositModal'),
         depositButton: document.getElementById('depositButton'), // The actual "Deposit Items" button inside modal
-        inventoryItemsContainer: document.getElementById('inventory-items'),
+        inventoryItemsContainer: document.getElementById('inventory-items'), // *** Container for grid OR error message ***
         selectedItemsContainer: document.getElementById('selectedItems'),
         totalValueDisplay: document.getElementById('totalValue'),
         inventoryLoadingIndicator: document.getElementById('inventory-loading'),
@@ -329,14 +330,14 @@ async function handleLogout() {
         });
 
         if (!response.ok) {
-             const result = await response.json().catch(() => ({ error: 'Logout request failed.' }));
+            const result = await response.json().catch(() => ({ error: 'Logout request failed.' }));
             throw new Error(result.error || `Logout request failed with status ${response.status}.`);
         }
 
         const result = await response.json();
-         if (!result.success) {
+          if (!result.success) {
              throw new Error(result.error || 'Logout unsuccessful according to server.');
-         }
+          }
 
         console.log('Logout successful.');
         currentUser = null; // Clear local user state
@@ -449,13 +450,13 @@ async function checkLoginStatus() {
             // Manually add mock stats if backend doesn't provide them yet
             // Remove these lines once your backend provides real stats
             if (currentUser && currentUser.totalDeposited === undefined) {
-                 currentUser.totalDeposited = Math.random() * 2000; // Mock data
+                currentUser.totalDeposited = Math.random() * 2000; // Mock data
             }
             if (currentUser && currentUser.totalWon === undefined) {
-                  currentUser.totalWon = Math.random() * 3000; // Mock data
+                 currentUser.totalWon = Math.random() * 3000; // Mock data
             }
              if (currentUser && !currentUser.steamId) {
-                  currentUser.steamId = `mock_${Math.floor(Math.random() * 100000000)}`; // Mock data
+                 currentUser.steamId = `mock_${Math.floor(Math.random() * 100000000)}`; // Mock data
              }
             console.log('User logged in:', currentUser?.username);
         }
@@ -510,8 +511,10 @@ function updateUserUI() {
     }
 }
 
+// --- loadUserInventory Function (MODIFIED) ---
 /**
  * Fetches the user's inventory from the backend API and displays it in the deposit modal.
+ * Handles specific errors like trade restrictions or private inventory.
  */
 async function loadUserInventory() {
     const { inventoryItemsContainer, selectedItemsContainer, inventoryLoadingIndicator, totalValueDisplay } = DOMElements.deposit;
@@ -520,7 +523,7 @@ async function loadUserInventory() {
         return;
     }
 
-    resetDepositModalUI(); // ADDED: Ensure buttons/status reset on load
+    resetDepositModalUI(); // Ensure buttons/status reset on load
 
     // Reset selection state
     selectedItemsList = [];
@@ -528,23 +531,45 @@ async function loadUserInventory() {
     updateTotalValue(); // Resets value display and deposit button state
 
     inventoryLoadingIndicator.style.display = 'flex';
-    inventoryItemsContainer.innerHTML = ''; // Clear previous items
+    inventoryItemsContainer.innerHTML = ''; // Clear previous items or messages
 
     try {
         const response = await fetch('/api/inventory'); // Assumes API endpoint exists
+
+        // --- START: Modified Response Handling ---
         if (!response.ok) {
-            let errorMsg = 'Inventory load failed.';
+            let errorData = { error: `Inventory load failed (${response.status})`, reason: 'Unknown error' };
+            let isJson = false;
             try {
-                const errorData = await response.json();
-                errorMsg = errorData.error || `Inventory load failed (${response.status})`;
-            } catch (e) { /* Ignore if response is not JSON */ }
+                // Try to parse JSON error response from backend
+                errorData = await response.json();
+                isJson = true;
+            } catch (e) { /* Ignore if response body is not JSON */ }
 
-            if (response.status === 401 || response.status === 403) {
-                errorMsg = 'Please log in first.';
+            // Check for specific status codes / error types from backend
+            if (response.status === 403 && isJson && errorData.error === 'Trade Restricted') {
+                // Display Trade Restriction Message
+                inventoryItemsContainer.innerHTML = `<p class="inventory-error-message trade-restriction-message">⚠️ ${errorData.reason || 'Cannot load inventory due to a Steam trade restriction (hold or ban) on your account.'}</p>`;
+            } else if (response.status === 403 && isJson && errorData.error === 'Inventory Private') {
+                // Display Inventory Private Message
+                inventoryItemsContainer.innerHTML = `<p class="inventory-error-message inventory-private-message">⚠️ ${errorData.reason || 'Your Steam inventory is private. Please set it to public in your Steam privacy settings to deposit items.'}</p>`;
+            } else if (response.status === 503 && isJson && errorData.error === 'Bot Unavailable') {
+                // Display Bot Unavailable Message
+                inventoryItemsContainer.innerHTML = `<p class="inventory-error-message bot-unavailable-message">⚠️ ${errorData.reason || 'The deposit service is temporarily unavailable. Please try again shortly.'}</p>`;
+            } else if (response.status === 401) {
+                inventoryItemsContainer.innerHTML = `<p class="inventory-error-message">Authentication error. Please try logging out and back in.</p>`;
+            } else {
+                // Display Generic Error Message
+                inventoryItemsContainer.innerHTML = `<p class="inventory-error-message">Error loading inventory: ${errorData.reason || errorData.error || `Status ${response.status}`}</p>`;
             }
-            throw new Error(errorMsg);
+            console.error(`Error loading inventory: Status ${response.status}, Data:`, errorData);
+            // Stop further processing in this function after displaying the error
+            inventoryLoadingIndicator.style.display = 'none';
+            return; // EXIT FUNCTION HERE after displaying error
         }
+        // --- END: Modified Response Handling ---
 
+        // If response.ok, proceed to parse inventory
         userInventory = await response.json();
         inventoryLoadingIndicator.style.display = 'none';
 
@@ -553,18 +578,24 @@ async function loadUserInventory() {
         }
 
         if (userInventory.length === 0) {
-            inventoryItemsContainer.innerHTML = '<p class="empty-inventory-message">Inventory empty or unavailable. Ensure it\'s public on Steam.</p>';
+            inventoryItemsContainer.innerHTML = '<p class="empty-inventory-message">Your Rust inventory appears empty or contains no tradable items above the minimum value.</p>';
             return;
         }
 
         displayInventoryItems(); // Display the fetched items
-    } catch (error) {
+
+    } catch (error) { // Catch errors from fetch itself or subsequent processing
         inventoryLoadingIndicator.style.display = 'none';
-        inventoryItemsContainer.innerHTML = `<p class="error-message">Error loading inventory: ${error.message}</p>`;
-        console.error('Error loading inventory:', error);
-        // Error is shown within the modal, no need for separate notification
+        // Ensure a generic error message is shown if specific handling above didn't catch it
+        if (!inventoryItemsContainer.querySelector('.inventory-error-message')) {
+            inventoryItemsContainer.innerHTML = `<p class="inventory-error-message">Error loading inventory: ${error.message}</p>`;
+        }
+        console.error('Error in loadUserInventory catch block:', error);
     }
 }
+// --- End loadUserInventory Function (MODIFIED) ---
+
+// START HERE FOR PART 2
 
 /**
  * Renders the user's inventory items in the deposit modal.
@@ -814,7 +845,7 @@ async function requestDepositOffer() {
         depositStatusText.textContent = `Error: ${error.message}`;
         depositStatusText.className = 'deposit-status-text error';
         if (!(response && response.status === 409)) {
-             // Only fully reset UI if it wasn't a 409 (pending offer exists) error
+            // Only fully reset UI if it wasn't a 409 (pending offer exists) error
              resetDepositModalUI();
         }
         // Ensure pending offer ID is cleared locally if a non-409 error occurred
@@ -854,26 +885,26 @@ function updateTimerUI(timeLeft) {
     const timeToShow = Math.max(0, Math.round(timeLeft));
     let displayValue = timeToShow.toString();
 
-     if (currentRound && currentRound.status === 'active' && !timerActive && currentRound.participants?.length === 0) {
-         // If round is active, timer not started client-side, and no participants, show full duration
-          displayValue = CONFIG.ROUND_DURATION.toString();
-     } else if (timerActive || (currentRound && currentRound.status === 'active' && timeToShow > 0)) {
-         // If timer is active or round active with time left, show countdown
-          displayValue = timeToShow.toString();
-     } else if (isSpinning || (currentRound && currentRound.status === 'rolling')) {
-         // If spinning or server says rolling, show "Rolling"
-          displayValue = "Rolling";
-     } else if (currentRound && (currentRound.status === 'completed' || currentRound.status === 'error')) {
-         // If round ended, show "Ended"
-          displayValue = "Ended";
-     } else if (!timerActive && timeToShow <= 0 && currentRound && currentRound.status === 'active') {
-         // If timer not active client-side but server indicates time is up (timeLeft <= 0)
-          displayValue = "0";
-     } else if (currentRound && currentRound.status === 'pending') {
-           displayValue = "Waiting"; // Show waiting if server says pending
-     } else if (!currentRound) {
-           displayValue = "--"; // Default if no round data yet
-     }
+      if (currentRound && currentRound.status === 'active' && !timerActive && currentRound.participants?.length === 0) {
+          // If round is active, timer not started client-side, and no participants, show full duration
+           displayValue = CONFIG.ROUND_DURATION.toString();
+      } else if (timerActive || (currentRound && currentRound.status === 'active' && timeToShow > 0)) {
+          // If timer is active or round active with time left, show countdown
+           displayValue = timeToShow.toString();
+      } else if (isSpinning || (currentRound && currentRound.status === 'rolling')) {
+          // If spinning or server says rolling, show "Rolling"
+           displayValue = "Rolling";
+      } else if (currentRound && (currentRound.status === 'completed' || currentRound.status === 'error')) {
+          // If round ended, show "Ended"
+           displayValue = "Ended";
+      } else if (!timerActive && timeToShow <= 0 && currentRound && currentRound.status === 'active') {
+          // If timer not active client-side but server indicates time is up (timeLeft <= 0)
+           displayValue = "0";
+      } else if (currentRound && currentRound.status === 'pending') {
+            displayValue = "Waiting"; // Show waiting if server says pending
+      } else if (!currentRound) {
+            displayValue = "--"; // Default if no round data yet
+      }
 
     timerValue.textContent = displayValue;
     updateTimerCircle(timeToShow, CONFIG.ROUND_DURATION);
@@ -1143,7 +1174,7 @@ function handleNewDeposit(data) {
              // Optionally close modal after successful deposit confirmation from backend
              // hideModal(DOMElements.deposit.depositModal);
          }
-     }
+      }
 
     // Find if participant already exists in this round
     let participantIndex = currentRound.participants.findIndex(p => p.user?._id === data.userId || p.user === data.userId);
@@ -1434,7 +1465,7 @@ function createRouletteItems() {
         itemElement.style.borderColor = userColor; // Set border color immediately
 
         itemElement.innerHTML = `
-             <img class="roulette-avatar" src="${avatar}" alt="${username}" loading="lazy"
+              <img class="roulette-avatar" src="${avatar}" alt="${username}" loading="lazy"
                    onerror="this.onerror=null; this.src='/img/default-avatar.png';" >`; // Removed inline style on img
 
         fragment.appendChild(itemElement);
@@ -1622,7 +1653,7 @@ function startRouletteAnimation(winnerData) {
             console.warn(`No winner items found in preferred range [${minIndex}-${maxIndex}]. Expanding search.`);
             for (let i = 0; i < items.length; i++) {
                  if (items[i]?.dataset?.userId === winnerId) { // Compare with winnerId
-                      winnerItemsIndices.push(i);
+                     winnerItemsIndices.push(i);
                  }
             }
         }
@@ -1633,15 +1664,15 @@ function startRouletteAnimation(winnerData) {
             targetIndex = Math.max(0, Math.min(items.length - 1, Math.floor(items.length * 0.75)));
             winningElement = items[targetIndex];
              if (!winningElement) {
-                  console.error('Fallback winning element is invalid!');
-                  isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
+                 console.error('Fallback winning element is invalid!');
+                 isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
              }
         } else {
             targetIndex = winnerItemsIndices[Math.floor(Math.random() * winnerItemsIndices.length)];
             winningElement = items[targetIndex];
              if (!winningElement) {
-                   console.error(`Selected winning element at index ${targetIndex} is invalid!`);
-                   isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
+                 console.error(`Selected winning element at index ${targetIndex} is invalid!`);
+                 isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
              }
         }
         // --- End Select Winning Element ---
@@ -2577,13 +2608,13 @@ function setupSocketConnection() {
         // --- Sync Timer and UI State ---
         if (currentRound.status === 'rolling' || currentRound.status === 'completed') {
             // If round is rolling/completed and we have a winner, but animation isn't running, start it
-             if (!isSpinning && currentRound.winner) {
+              if (!isSpinning && currentRound.winner) {
                  console.log("Connected mid-round with winner known, triggering animation.");
                  handleWinnerAnnouncement(currentRound);
-             } else if (!isSpinning) { // If rolling/completed but no winner data OR already spinning, just reset
-                   console.log("Connected after round ended or rolling. Resetting view.");
-                   resetToJackpotView();
-             }
+              } else if (!isSpinning) { // If rolling/completed but no winner data OR already spinning, just reset
+                 console.log("Connected after round ended or rolling. Resetting view.");
+                 resetToJackpotView();
+              }
         } else if (currentRound.status === 'active') {
              // If round is active, has participants, has time left, and timer isn't running client-side -> start/sync it
              if (currentRound.participants?.length > 0 && currentRound.timeLeft > 0 && !timerActive) {
@@ -2643,12 +2674,12 @@ function setupSocketConnection() {
                      itemsValue: p.itemsValue, // Use participant's cumulative value for display
                      depositedItems: participantItems, // Show items linked to this participant
                  });
-                  // Remove animation class immediately after adding
-                  const element = container.querySelector(`.player-deposit-container[data-user-id="${p.user._id}"]`);
-                  if (element) element.classList.remove('player-deposit-new');
+                 // Remove animation class immediately after adding
+                 const element = container.querySelector(`.player-deposit-container[data-user-id="${p.user._id}"]`);
+                 if (element) element.classList.remove('player-deposit-new');
              });
-              // Update all percentages after rendering initial deposits
-              updateAllParticipantPercentages();
+             // Update all percentages after rendering initial deposits
+             updateAllParticipantPercentages();
 
         } else if (container && (!data.participants || data.participants.length === 0)) {
             // Ensure empty message is shown if data confirms no participants
@@ -2657,8 +2688,8 @@ function setupSocketConnection() {
 
     });
 
-     // MODIFIED: Trade Offer Sent Handler - uses offerURL for link
-     socket.on('tradeOfferSent', (data) => {
+      // MODIFIED: Trade Offer Sent Handler - uses offerURL for link
+      socket.on('tradeOfferSent', (data) => {
          console.log('Trade offer sent event received:', data);
          if (currentUser && data.userId === currentUser._id && data.offerURL) {
               // Offer a more direct link for winnings
@@ -2667,7 +2698,7 @@ function setupSocketConnection() {
               // Fallback if URL is missing (shouldn't happen with backend changes)
               showNotification(`Trade Offer Sent: Check Steam for your winnings! (#${data.offerId})`, 'success', 8000);
          }
-     });
+      });
 
     // --- Notification Event (Generic) ---
     socket.on('notification', (data) => {
@@ -2781,15 +2812,15 @@ function setupEventListeners() {
     // ADDED: Listener for the new accept button
     DOMElements.deposit.acceptDepositOfferBtn?.addEventListener('click', () => {
          if (currentDepositOfferURL) {
-              console.log("Opening Steam trade offer:", currentDepositOfferURL);
-              window.open(currentDepositOfferURL, '_blank', 'noopener,noreferrer');
-              const { depositStatusText } = DOMElements.deposit;
-              if(depositStatusText) depositStatusText.textContent = "Check Steam tab...";
-              // Optionally hide modal or provide further instructions
-              // hideModal(DOMElements.deposit.depositModal);
+             console.log("Opening Steam trade offer:", currentDepositOfferURL);
+             window.open(currentDepositOfferURL, '_blank', 'noopener,noreferrer');
+             const { depositStatusText } = DOMElements.deposit;
+             if(depositStatusText) depositStatusText.textContent = "Check Steam tab...";
+             // Optionally hide modal or provide further instructions
+             // hideModal(DOMElements.deposit.depositModal);
          } else {
-              console.error("No deposit offer URL found for accept button.");
-              showNotification("Error: Could not find the trade offer URL.", "error");
+             console.error("No deposit offer URL found for accept button.");
+             showNotification("Error: Could not find the trade offer URL.", "error");
          }
     });
 
@@ -2811,10 +2842,10 @@ function setupEventListeners() {
     }
 
     // Test Buttons
-     const testSpinBtn = document.getElementById('testSpinButton');
-     const testDepositBtn = document.getElementById('testDepositButton');
-     if (testSpinBtn) testSpinBtn.addEventListener('click', testRouletteAnimation);
-     if (testDepositBtn) testDepositBtn.addEventListener('click', testDeposit);
+      const testSpinBtn = document.getElementById('testSpinButton');
+      const testDepositBtn = document.getElementById('testDepositButton');
+      if (testSpinBtn) testSpinBtn.addEventListener('click', testRouletteAnimation);
+      if (testDepositBtn) testDepositBtn.addEventListener('click', testDeposit);
 
 
     // Provably Fair Verify Button
@@ -2908,7 +2939,7 @@ async function handleProfileSave() {
     if (!currentUser) {
          showNotification("Not logged in.", "error");
          return;
-     }
+      }
 
     const newTradeUrl = tradeUrlInput.value.trim();
 
