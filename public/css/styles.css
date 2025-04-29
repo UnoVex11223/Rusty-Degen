@@ -196,7 +196,7 @@ code { /* General code tag styling */
 
 .header-left { gap: 20px; flex: 1; min-width: 0; justify-content: flex-start; }
 .header-center { flex-grow: 2; justify-content: center; min-width: 0; text-align: center; }
-.header-right { gap: 10px; flex: 1; min-width: 0; justify-content: flex-end; position: relative; /* Needed for dropdown positioning */ } /* Reduced gap, added position relative */
+.header-right { gap: 10px; flex: 1; min-width: 0; justify-content: flex-end; } /* Reduced gap */
 
 .logo h1 {
     font-family: var(--font-mono);
@@ -243,7 +243,6 @@ code { /* General code tag styling */
 /* User Controls */
 .user-controls { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
 
-/* User Profile Container - Set relative for dropdown */
 .user-profile-container { position: relative; display: flex; align-items: center; gap: 8px; /* Added for indicator positioning */ }
 
 /* --- User Profile Trigger (Simplified) --- */
@@ -292,47 +291,13 @@ code { /* General code tag styling */
 /* --- End Pending Offer Indicator --- */
 
 
-/* --- Dropdown Menu (MODIFIED POSITIONING) --- */
+/* --- Dropdown Menu (New Simplified Structure) --- */
 .dropdown-menu {
     display: none; /* JS toggles this to 'block' */
-    position: absolute;
-    /* Align top edge below the user profile container + 10px gap */
-    top: calc(100% + 10px);
-    /* Align left edge with the left edge of its relative parent (.user-profile-container) */
-    left: 0;
-    z-index: 1000;
-    background-color: var(--background-dark);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    box-shadow: var(--shadow-lg);
-    min-width: 220px; /* Adjusted min-width slightly */
-    overflow: hidden;
+    position: absolute; top: calc(100% + 10px); right: 0; z-index: 1000;
+    background-color: var(--background-dark); border: 1px solid var(--border-color);
+    border-radius: 8px; box-shadow: var(--shadow-lg); min-width: 200px; overflow: hidden;
 }
-/* Add arrow indicator (optional) */
-.dropdown-menu::before {
-    content: "";
-    position: absolute;
-    top: -6px; /* Position arrow above the dropdown */
-    left: 20px; /* Align arrow roughly under the avatar */
-    width: 0;
-    height: 0;
-    border-left: 6px solid transparent;
-    border-right: 6px solid transparent;
-    border-bottom: 6px solid var(--border-color); /* Matches border */
-}
-.dropdown-menu::after { /* Inner part of arrow to match background */
-    content: "";
-    position: absolute;
-    top: -5px;
-    left: 20px;
-    width: 0;
-    height: 0;
-    border-left: 6px solid transparent;
-    border-right: 6px solid transparent;
-    border-bottom: 6px solid var(--background-dark); /* Matches background */
-}
-/* --- End Dropdown Menu Modifications --- */
-
 .dropdown-actions { padding: 8px 0; }
 
 .dropdown-item {
@@ -938,67 +903,16 @@ code { /* General code tag styling */
     text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;
 }
 .inventory-items {
-    /* Was grid, now flex container for potential error messages */
-    display: flex; /* Use flex */
-    flex-wrap: wrap; /* Allow wrapping for items or message */
-    gap: 10px;
-    min-height: 100px; /* Ensure some height even when empty */
-    max-height: 300px;
-    overflow-y: auto;
-    background-color: var(--background-light);
-    padding: 15px;
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px;
+    max-height: 300px; overflow-y: auto; background-color: var(--background-light);
+    padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);
 }
-
-/* Ensure error messages take full width */
-.inventory-error-message,
-.empty-inventory-message {
-    width: 100%; /* Span full width */
-    text-align: center;
-    padding: 20px;
-    margin: auto; /* Center vertically/horizontally within flex */
-    font-size: 1rem;
-    line-height: 1.5;
-    border-radius: 6px;
-}
-
-.empty-inventory-message {
-    color: var(--text-secondary);
-    background-color: rgba(0,0,0,0.1);
-}
-
-.inventory-error-message { /* Base style for errors */
-    color: var(--error-color);
-    background-color: rgba(244, 67, 54, 0.1);
-    border: 1px solid var(--error-color);
-    font-weight: 500;
-}
-
-/* Specific styles for trade restriction/privacy messages */
-.trade-restriction-message,
-.inventory-private-message,
-.bot-unavailable-message {
-    color: var(--warning-color); /* Use warning color for these specific issues */
-    background-color: rgba(255, 193, 7, 0.1);
-    border: 1px solid var(--warning-color);
-}
-
-/* Add icon using ::before pseudo-element */
-.inventory-error-message::before {
-    content: '⚠️'; /* Warning symbol */
-    display: inline-block;
-    margin-right: 8px;
-    font-size: 1.2em;
-}
-
-/* Styles for the actual inventory item grid (if shown) */
+.empty-inventory-message, .error-message { grid-column: 1 / -1; text-align: center; color: var(--text-secondary); padding: 20px; }
+.error-message { color: var(--error-color); }
 .inventory-item {
     background-color: var(--background-medium); border-radius: 4px; overflow: hidden; cursor: pointer;
     transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
     border: 2px solid transparent; display: flex; flex-direction: column;
-    flex-basis: 120px; /* Define base width */
-    flex-grow: 1; /* Allow growing */
 }
 .inventory-item:hover { transform: translateY(-3px); border-color: rgba(0, 230, 118, 0.3); }
 .inventory-item.selected { border-color: var(--primary-color); box-shadow: 0 0 15px rgba(0, 230, 118, 0.4); transform: scale(1.03); }
@@ -1006,9 +920,6 @@ code { /* General code tag styling */
 .item-details { padding: 8px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; min-height: 50px; }
 .item-name { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; line-height: 1.2; }
 .inventory-item .item-value { font-size: 0.85rem; font-weight: 700; color: var(--primary-color); text-align: right; margin-top: auto; }
-
-/* --- End Inventory Message Styles --- */
-
 
 /* Selected Items (Deposit Modal) */
 .selected-items { margin-top: 20px; }
@@ -1046,11 +957,9 @@ code { /* General code tag styling */
 
 /* Loading indicator */
 .loading-indicator {
-    display: none; /* JS toggles to flex */
-    flex-direction: column; align-items: center; justify-content: center;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
     padding: 30px; background-color: transparent; border-radius: 8px;
-    margin: 20px 0; color: var(--text-secondary);
-    width: 100%; /* Ensure takes full width in inventory box */
+    margin: 20px 0; color: var(--text-secondary); grid-column: 1 / -1;
 }
 .spinner {
     width: 40px; height: 40px; border: 4px solid rgba(0, 230, 118, 0.3);
@@ -1089,356 +998,177 @@ code { /* General code tag styling */
 .profile-pending-offer-status a, .profile-pending-link { color: var(--secondary-light) !important; font-weight: bold; text-decoration: underline !important; }
 .profile-pending-offer-status a:hover, .profile-pending-link:hover { color: var(--secondary-color) !important; opacity: 0.9; }
 .profile-pending-offer-status i { margin-right: 5px; } /* Example for icon */
-/* START HERE FOR PART 2 */
 
-/* Age Verification Modal Specific Styles */
-#ageVerificationModal .modal-content {
-    text-align: center;
-}
-#ageVerificationModal .modal-body {
-    padding: 30px 40px;
-}
-#ageVerificationModal h2 {
-    margin-bottom: 15px;
-    font-size: 1.6rem;
-    color: var(--warning-color); /* Make title stand out */
-}
-#ageVerificationModal p {
-    margin-bottom: 25px;
-    color: var(--text-secondary);
-}
-#agreeCheckbox {
-    width: 20px; /* Make checkbox slightly larger */
-    height: 20px;
-}
-#ageVerificationModal label {
-    font-size: 1rem;
-    color: var(--text-primary);
-}
-#agreeButton {
-    margin-top: 10px; /* Space above button */
-    padding: 12px 30px; /* Make button larger */
-    font-size: 1.1rem;
-}
-#agreeButton:disabled {
-    background-color: var(--background-light);
-    color: var(--text-secondary);
-    cursor: not-allowed;
-    opacity: 0.5;
+
+/*=========================
+ STATIC PAGES (FAQ, FAIR, ABOUT, TOS)
+ =========================*/
+
+.content-section { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(48, 54, 61, 0.5); line-height: 1.7; }
+.content-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.content-section-title { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); margin-bottom: 15px; padding-left: 12px; border-left: 3px solid var(--primary-color); }
+.content-section-body { padding: 0 15px; }
+.content-section-body p { margin-bottom: 15px; line-height: 1.7; color: var(--text-secondary); }
+.content-section-body p:last-child { margin-bottom: 0; }
+.content-section-body ul, .content-section-body ol { margin: 15px 0 15px 25px; padding-left: 20px; }
+.content-section-body li { margin-bottom: 10px; }
+.content-section-body strong { color: var(--text-accent); font-weight: 600; }
+.content-section-body a { color: var(--primary-light); text-decoration: underline; }
+.content-section-body a:hover { color: var(--primary-color); }
+.content-section-body code { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; }
+
+/* About Page */
+#about-page .content-section-body p { text-align: justify; padding: 0 5px; }
+#about-page .content-section-title { color: var(--primary-light); }
+
+/* TOS Page */
+#tos-page .content-section { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 20px; margin-bottom: 25px; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
+#tos-page .content-section:last-child { border-bottom: 1px solid var(--border-color); }
+#tos-page .content-section-title { margin-top: 0; border-left: 3px solid var(--secondary-color); }
+#tos-page ul { margin-left: 20px; margin-bottom: 15px; list-style-type: disc; }
+#tos-page ul li { margin-bottom: 10px; color: var(--text-secondary); }
+
+/* FAQ Page */
+#faq-page .content-section { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 20px; margin-bottom: 20px; transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
+#faq-page .content-section:last-child { border-bottom: 1px solid var(--border-color); }
+#faq-page .content-section:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+#faq-page .content-section-title { color: var(--secondary-color); cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-left: none; padding-left: 0; }
+#faq-page .content-section-title::after { content: '+'; font-size: 1.5rem; color: var(--primary-color); transition: transform 0.3s ease; }
+#faq-page .content-section.active .content-section-title::after { content: '-'; transform: rotate(180deg); }
+/* FAQ body visibility is handled by JS in index.html */
+
+/* Provably Fair Page */
+#fair-page .content-card { padding-bottom: 40px; }
+#fair-page #provably-fair-verification { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 25px; margin-top: 30px; border: 1px solid var(--border-color); }
+#fair-page .verify-form { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background-color: transparent; padding: 0; border: none; margin: 0 0 25px 0; }
+#fair-page .form-group { margin-bottom: 0; }
+#fair-page .verify-form button { grid-column: 1 / -1; /* Make button span full width */ }
+#fair-page .verification-result { margin-top: 20px; padding: 15px; border-radius: 6px; background-color: var(--background-light); border: 1px solid var(--border-color); }
+#fair-page .history-table { width: 100%; border-collapse: collapse; margin-top: 25px; background-color: rgba(22, 27, 34, 0.4); }
+#fair-page .history-table th, #fair-page .history-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+#fair-page .history-table th { background-color: var(--background-light); color: var(--primary-color); font-weight: 600; }
+#fair-page .history-table tr:hover { background-color: var(--background-light); }
+
+/* Provably Fair Verification Form & Result - Base styles */
+.verify-form { background-color: var(--background-light); padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--border-color); }
+.verification-result { margin-top: 15px; padding: 15px; border-radius: 4px; background-color: var(--background-light); display: none; border: 1px solid var(--border-color); line-height: 1.5; }
+.verification-result.loading { background-color: var(--background-medium); border-color: var(--secondary-light); color: var(--text-primary); }
+.verification-result.success { background-color: rgba(0, 230, 118, 0.1); border-color: var(--success-color); color: var(--text-primary); }
+.verification-result.error { background-color: rgba(244, 67, 54, 0.1); border-color: var(--error-color); color: var(--text-primary); }
+.verification-result h4 { margin-top: 0; margin-bottom: 15px; color: var(--primary-color); }
+.verification-result p { margin-bottom: 8px; word-wrap: break-word; }
+.verification-result strong { color: var(--text-accent); }
+.verification-result code.seed-value { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; display: inline-block; }
+.verification-result code.wrap-anywhere { word-break: break-all; }
+
+/* Round History Table - Base styles */
+.table-container { overflow-x: auto; margin-bottom: 20px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 8px; }
+.history-table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 0.9rem; }
+.history-table th, .history-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; vertical-align: middle; }
+.history-table tr:last-child td { border-bottom: none; }
+.history-table th { background-color: var(--background-medium); color: var(--primary-color); font-weight: 600; text-transform: uppercase; font-size: 0.85rem; position: sticky; top: 0; z-index: 1; }
+.history-table .loading-message, .history-table .no-rounds-message, .history-table .error-message { text-align: center; color: var(--text-secondary); padding: 20px; font-style: italic; white-space: normal; }
+.history-table .error-message { color: var(--error-color); font-style: normal; }
+.history-table tbody tr:hover { background-color: rgba(255, 255, 255, 0.05); }
+.history-table td:last-child { white-space: normal; text-align: right; }
+
+/* Pagination */
+.pagination-container { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+.page-button { padding: 6px 10px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary); cursor: pointer; transition: var(--transition-fast); font-size: 0.9rem; }
+.page-button:hover:not(:disabled) { background-color: var(--primary-dark); color: var(--background-dark); border-color: var(--primary-dark); }
+.page-button.active { background-color: var(--primary-color); color: var(--background-dark); border-color: var(--primary-color); cursor: default; }
+.page-button:disabled { opacity: 0.5; cursor: not-allowed; }
+.page-ellipsis { color: var(--text-secondary); padding: 6px 0; margin: 0 2px; }
+
+
+/* --- ADDED: Deposit Modal Footer Enhancements --- */
+
+/* Style for the new "Accept on Steam" button */
+#acceptDepositOfferBtn {
+    /* Inherits base .btn styles */
+    background-color: var(--success-color); /* Green background */
+    color: white;
+    border: 1px solid var(--success-color);
+    padding: 10px 15px; /* Match other footer buttons */
+    font-size: 1rem; /* Match other modal footer buttons */
+    /* Ensure it inherits flex alignment from footer */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
-/* Deposit Modal Footer specific alignment */
-#depositModal .modal-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 15px;
-    flex-wrap: wrap; /* Allow wrapping on small screens */
-}
-.deposit-footer-left {
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-.deposit-footer-right {
-    display: flex;
-    align-items: center;
-    gap: 10px;
+#acceptDepositOfferBtn:hover:not(:disabled) {
+    background-color: #45a049; /* Darker green */
+    border-color: #45a049;
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4); /* Green shadow */
+    transform: translateY(-2px);
 }
 
-/* Deposit Status Text */
+#acceptDepositOfferBtn i { /* Style for the external link icon */
+    margin-left: 8px;
+    font-size: 0.9em;
+}
+
+/* Style for the status text area in the deposit modal footer */
 .deposit-status-text {
-    font-size: 0.9rem;
-    font-weight: 500;
-    margin-left: 5px; /* Space from Total Value */
     flex-grow: 1; /* Allow it to take available space */
     text-align: left;
+    padding: 0 10px; /* Add some padding */
+    font-size: 0.9em;
+    line-height: 1.4;
+    color: var(--text-secondary); /* Default color */
+    transition: color 0.3s ease;
+    display: flex; /* Align text vertically */
+    align-items: center;
 }
+
+/* Status-specific colors for the text */
 .deposit-status-text.info { color: var(--info-color); }
 .deposit-status-text.success { color: var(--success-color); }
-.deposit-status-text.error { color: var(--error-color); }
 .deposit-status-text.warning { color: var(--warning-color); }
+.deposit-status-text.error { color: var(--error-color); }
 
 
-/*=========================
- PROVABLY FAIR PAGE
- =========================*/
+/* --- ADDED: Pending Offer Indicators --- */
 
-.provably-fair-content h2,
-.provably-fair-content h3 {
-    color: var(--primary-light);
-    margin-bottom: 20px;
-    font-size: 1.8rem;
-    font-family: var(--font-primary);
-    border-bottom: 1px solid var(--border-color);
-    padding-bottom: 10px;
-}
-.provably-fair-content h3 {
-    font-size: 1.4rem;
-    margin-top: 30px;
-    margin-bottom: 15px;
-    color: var(--secondary-light);
-}
-.provably-fair-content p {
-    margin-bottom: 15px;
-    color: var(--text-secondary);
-    line-height: 1.8;
-}
-.provably-fair-content code {
-    word-break: break-word; /* Allow long seeds to wrap */
-    display: inline-block; /* Allow padding */
-    max-width: 100%;
-}
-.provably-fair-content .info-box {
-    background-color: var(--background-light);
-    padding: 20px;
-    border-radius: 8px;
-    margin: 25px 0;
-    border: 1px solid var(--border-color);
-    border-left: 4px solid var(--info-color);
+/* Header Indicator */
+.pending-offer-indicator {
+    display: inline-block; /* Initially hidden by JS */
+    color: var(--warning-color); /* Warning color */
+    font-size: 1.1rem;
+    /* margin-left: 5px; /* Positioned by flex gap in container */
+    cursor: help; /* Indicate tooltip */
+    animation: pulseWarning 1.5s infinite ease-in-out;
+    vertical-align: middle; /* Align with text/avatar */
+    line-height: 1;
 }
 
-.verification-section { margin-top: 40px; }
-.verification-form {
-    background-color: var(--background-light);
-    padding: 25px; border-radius: 8px; border: 1px solid var(--border-color);
-    margin-bottom: 25px; display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* Responsive grid */
-    gap: 20px;
-}
-.verification-form .form-group label {
-    font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px;
-}
-.verification-form input[type="text"] { background-color: var(--background-medium); }
-.verify-button-container {
-    grid-column: 1 / -1; /* Span full width */
-    text-align: center;
-    margin-top: 10px;
-}
-#verify-btn {
-    /* Inherits .btn, .btn-primary */
-    width: 200px;
-    padding: 12px 20px;
+/* Define pulse animation if not already defined */
+@keyframes pulseWarning {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: 0.7; }
 }
 
-.verification-result {
-    background-color: var(--background-light); padding: 20px; border-radius: 8px;
-    border: 1px solid var(--border-color); display: none; /* JS shows this */
-}
-.verification-result h4 {
-    font-size: 1.3rem; margin-bottom: 15px; color: var(--text-primary);
-    border-bottom: 1px solid var(--border-color); padding-bottom: 8px;
-}
-.verification-result p { margin-bottom: 8px; font-size: 0.95rem; color: var(--text-secondary); }
-.verification-result strong { color: var(--text-primary); }
-.verification-result .seed-value { background-color: var(--background-medium); word-break: break-all; }
-.verification-result.loading p { color: var(--info-color); }
-.verification-result.success { border-left: 4px solid var(--success-color); }
-.verification-result.error { border-left: 4px solid var(--error-color); }
-.wrap-anywhere { overflow-wrap: anywhere; word-break: anywhere; }
-
-.rounds-history { margin-top: 40px; }
-.rounds-table-container {
-    width: 100%;
-    overflow-x: auto; /* Allow horizontal scrolling on small screens */
-    background-color: var(--background-light);
-    border-radius: 8px;
-    border: 1px solid var(--border-color);
-}
-.rounds-history-table {
-    width: 100%;
-    min-width: 600px; /* Prevent table from collapsing too much */
-    border-collapse: collapse;
-    table-layout: fixed; /* Fixed layout */
-}
-.rounds-history-table th, .rounds-history-table td {
-    padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color);
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.rounds-history-table th {
-    background-color: var(--background-medium);
-    color: var(--text-accent);
-    font-size: 0.85rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    font-family: var(--font-primary);
-    font-weight: 600;
-}
-.rounds-history-table td { font-size: 0.9rem; color: var(--text-secondary); }
-.rounds-history-table tr:last-child td { border-bottom: none; }
-.rounds-history-table tr:hover td { background-color: rgba(255, 255, 255, 0.03); }
-.rounds-history-table .loading-message td,
-.rounds-history-table .no-rounds-message td,
-.rounds-history-table .error-message td {
-    text-align: center; padding: 30px; font-size: 1rem; color: var(--text-secondary);
-    white-space: normal;
-}
-.rounds-history-table .error-message td { color: var(--error-color); }
-.rounds-history-table .winner-cell { color: var(--primary-color); font-weight: 600; }
-
-/* Column Widths (Example - Adjust as needed) */
-.rounds-history-table th:nth-child(1), .rounds-history-table td:nth-child(1) { width: 10%; } /* Round ID */
-.rounds-history-table th:nth-child(2), .rounds-history-table td:nth-child(2) { width: 25%; } /* Date */
-.rounds-history-table th:nth-child(3), .rounds-history-table td:nth-child(3) { width: 15%; } /* Pot Value */
-.rounds-history-table th:nth-child(4), .rounds-history-table td:nth-child(4) { width: 20%; } /* Winner */
-.rounds-history-table th:nth-child(5), .rounds-history-table td:nth-child(5) { width: 30%; text-align: center; } /* Actions */
-
-.rounds-pagination {
-    display: flex; justify-content: center; align-items: center;
-    margin-top: 25px; gap: 5px;
-}
-.page-button { /* Inherits .btn, .btn-secondary */
-    padding: 6px 12px; min-width: 35px; font-size: 0.9rem;
-    background-color: var(--background-light); color: var(--text-primary);
-    border: 1px solid var(--border-color); border-radius: 4px;
-    transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
-}
-.page-button:hover:not(:disabled) { background-color: var(--background-medium); border-color: var(--primary-color); color: var(--primary-color); transform: none; box-shadow: none;}
-.page-button.active { background-color: var(--primary-color); color: var(--background-dark); border-color: var(--primary-color); font-weight: bold; }
-.page-button:disabled { opacity: 0.5; background-color: var(--background-light); border-color: var(--border-color); color: var(--text-secondary); transform: none; box-shadow: none;}
-.page-ellipsis { padding: 6px 5px; color: var(--text-secondary); display: flex; align-items: center; }
-
-/*=========================
- FOOTER
- =========================*/
-
+/* --- ADDED: Footer --- */
 .main-footer {
-    background-color: var(--background-medium);
-    border-top: 1px solid var(--border-color);
-    padding: 30px 0;
-    margin-top: 40px;
+    background-color: var(--background-dark);
     color: var(--text-secondary);
-    font-size: 0.9rem;
-}
-
-.footer-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 20px;
-}
-
-.footer-links ul {
-    list-style: none;
-    display: flex;
-    gap: 15px;
-    padding: 0;
-    margin: 0;
-}
-
-.footer-links a {
-    color: var(--text-secondary);
-    transition: var(--transition-fast);
-}
-
-.footer-links a:hover {
-    color: var(--primary-light);
-}
-
-.footer-social ul {
-    list-style: none;
-    display: flex;
-    gap: 15px;
-    padding: 0;
-    margin: 0;
-}
-
-.footer-social a {
-    color: var(--text-secondary);
-    font-size: 1.3rem; /* Larger icons */
-    transition: var(--transition-fast);
-}
-
-.footer-social a:hover {
-    color: var(--primary-color);
-    transform: scale(1.1);
-}
-
-.footer-copyright {
+    padding: 20px 0;
+    margin-top: 40px; /* Add space above footer */
     text-align: center;
-    width: 100%;
-    margin-top: 20px;
-    border-top: 1px solid var(--border-color);
-    padding-top: 20px;
     font-size: 0.85rem;
+    border-top: 1px solid var(--border-color);
 }
 
-/*=========================
- RESPONSIVE DESIGN
- =========================*/
-
-@media (max-width: 992px) {
-    .header-container { flex-direction: column; align-items: stretch; }
-    .header-left, .header-center, .header-right { justify-content: center; flex-basis: 100%; }
-    .header-right { padding-top: 10px; }
-    .main-nav ul { gap: 10px; }
-    .jackpot-header { flex-direction: column; min-height: auto; gap: 15px; padding: 20px; }
-    .jackpot-timer, .jackpot-value, .jackpot-stats { min-width: auto; padding: 10px 0; }
-    .jackpot-value h2 { font-size: 3rem; }
-    .timer-text { font-size: 2.8rem; }
-    .stat-value { font-size: 2.8rem; }
-    .roulette-container { height: 80px; }
-    .roulette-item { width: 80px; height: 70px; }
-    .verification-form { grid-template-columns: 1fr; }
+.main-footer p {
+    margin-bottom: 8px;
+    line-height: 1.5;
 }
-
-@media (max-width: 768px) {
-    .primary-nav, .secondary-nav { display: none; } /* Hide secondary navs on smaller screens */
-    .main-nav { width: 100%; }
-    .main-nav ul { justify-content: center; }
-    .main-nav a { font-size: 0.9rem; padding: 6px 8px; }
-    .jackpot-tab { font-size: 1.4rem; }
-    .logo h1 { font-size: 1.5rem; }
-    .user-name { max-width: 100px; font-size: 0.9rem; }
-    .items-container { flex-direction: column; }
-    .player-items-grid { justify-content: center; }
-    .deposit-footer-left, .deposit-footer-right { flex-basis: 100%; justify-content: center; }
-    .deposit-status-text { text-align: center; margin-bottom: 10px; }
-    .footer-container { flex-direction: column; text-align: center; }
-    .footer-links ul, .footer-social ul { justify-content: center; }
-    .footer-social { margin-top: 15px; }
-    .rounds-history-table th:nth-child(2), .rounds-history-table td:nth-child(2), /* Date */
-    .rounds-history-table th:nth-child(3), .rounds-history-table td:nth-child(3) { /* Value */
-         display: none; /* Hide less critical columns */
-    }
-    .rounds-history-table th, .rounds-history-table td { padding: 10px 8px; font-size: 0.85rem; }
-    .rounds-history-table th:nth-child(1), .rounds-history-table td:nth-child(1) { width: 20%; } /* Round ID */
-    .rounds-history-table th:nth-child(4), .rounds-history-table td:nth-child(4) { width: 35%; } /* Winner */
-    .rounds-history-table th:nth-child(5), .rounds-history-table td:nth-child(5) { width: 45%; } /* Actions */
-
+.main-footer a {
+    color: var(--text-secondary);
+    text-decoration: underline;
+    margin: 0 5px;
 }
-
-@media (max-width: 576px) {
-    body { font-size: 14px; } /* Base font size */
-    .container { padding: 0 10px; }
-    .header-left, .header-right { flex-direction: column; align-items: center; gap: 5px; }
-    .user-profile { gap: 5px; }
-    .user-name { max-width: none; } /* Allow full name */
-    .dropdown-menu { min-width: 180px; left: 50%; transform: translateX(-50%); /* Center dropdown */ }
-    .dropdown-menu::before, .dropdown-menu::after { left: 50%; transform: translateX(-50%); /* Center arrow */ }
-    .jackpot-value h2 { font-size: 2.5rem; }
-    .timer-text { font-size: 2.4rem; }
-    .stat-value { font-size: 2.4rem; }
-    .timer-circle { width: 100px; height: 100px; }
-    #showDepositModal { width: 90%; font-size: 1rem; padding: 12px 20px; }
-    .modal-content { max-height: 85vh; }
-    .modal-body { padding: 15px; }
-    .modal-header { padding: 12px 15px; }
-    .modal-header h2 { font-size: 1.2rem; }
-    .modal-footer { padding: 12px 15px; }
-    .inventory-items, .selected-items-container { padding: 10px; }
-    .inventory-item { flex-basis: 90px; }
-    .player-deposit-item { width: 70px; height: 90px; }
-    .player-deposit-item-image { height: 50px; }
-    .player-deposit-item-info { height: 40px; padding: 3px; }
-    .player-deposit-item-name { font-size: 0.6rem; }
-    .player-deposit-item-value { font-size: 0.65rem; }
-    .content-card { padding: 20px; }
-    .content-card h1 { font-size: 1.8rem; }
-    .rounds-history-table th, .rounds-history-table td { padding: 8px 5px; white-space: normal; } /* Allow wrapping */
-    .rounds-history-table th:nth-child(1), .rounds-history-table td:nth-child(1) { width: 25%; }
-    .rounds-history-table th:nth-child(4), .rounds-history-table td:nth-child(4) { width: 35%; }
-    .rounds-history-table th:nth-child(5), .rounds-history-table td:nth-child(5) { width: 40%; }
-    .btn-details, .btn-verify { font-size: 0.7rem; padding: 4px 8px; }
+.main-footer a:hover {
+    color: var(--primary-light);
 }
