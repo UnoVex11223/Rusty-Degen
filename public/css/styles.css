@@ -32,10 +32,10 @@
     --transition-medium: all 0.3s ease;
     --transition-slow: all 0.5s ease;
 
-     /* Shadows */
-     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
-     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-     --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.4);
+    /* Shadows */
+    --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
 * {
@@ -243,15 +243,26 @@ code { /* General code tag styling */
 /* User Controls */
 .user-controls { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
 
-.user-profile-container { position: relative; display: flex; align-items: center; gap: 8px; /* Added for indicator positioning */ }
-
-/* --- User Profile Trigger (Simplified) --- */
-.user-profile {
-    display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px; /* Add small padding */ border-radius: 4px;
-     transition: background-color var(--transition-fast);
+/* Improved user profile container positioning */
+.user-profile-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
-.user-profile:hover { background-color: rgba(255, 255, 255, 0.05); } /* Subtle hover */
-.user-profile:focus { outline: none; box-shadow: 0 0 0 2px var(--primary-light); } /* Focus style */
+
+/* --- User Profile Trigger (Improved) --- */
+.user-profile {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    padding: 5px 8px; /* Slightly increased padding */
+    border-radius: 4px;
+    transition: background-color var(--transition-fast);
+}
+.user-profile:hover { background-color: rgba(255, 255, 255, 0.05); }
+.user-profile:focus { outline: none; box-shadow: 0 0 0 2px var(--primary-light); }
 
 .user-avatar-container { position: relative; display: flex; flex-shrink: 0; }
 .user-avatar {
@@ -266,9 +277,15 @@ code { /* General code tag styling */
 .user-status.offline { background-color: #9e9e9e; } /* Grey for offline */
 
 .user-name {
-    font-family: var(--font-secondary); font-weight: 600; font-size: 0.95rem;
-    color: var(--text-primary); white-space: nowrap; overflow: hidden;
-    text-overflow: ellipsis; transition: color var(--transition-fast); max-width: 150px; /* Limit name width */
+    font-family: var(--font-secondary);
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color var(--transition-fast);
+    max-width: 150px; /* Limit name width */
 }
 .user-profile:hover .user-name { color: var(--primary-light); }
 
@@ -277,7 +294,6 @@ code { /* General code tag styling */
     display: inline-block; /* Initially hidden by JS */
     color: var(--warning-color); /* Use warning color */
     font-size: 1.1rem;
-    /* margin-left: 5px; */ /* Positioned by flex gap in container */
     cursor: help; /* Indicate tooltip */
     animation: pulseWarning 1.5s infinite ease-in-out;
     vertical-align: middle; /* Align with text/avatar */
@@ -288,23 +304,45 @@ code { /* General code tag styling */
     0%, 100% { transform: scale(1); opacity: 1; }
     50% { transform: scale(1.15); opacity: 0.7; }
 }
-/* --- End Pending Offer Indicator --- */
 
-
-/* --- Dropdown Menu (New Simplified Structure) --- */
+/* --- Improved Dropdown Menu --- */
 .dropdown-menu {
     display: none; /* JS toggles this to 'block' */
-    position: absolute; top: calc(100% + 10px); right: 0; z-index: 1000;
-    background-color: var(--background-dark); border: 1px solid var(--border-color);
-    border-radius: 8px; box-shadow: var(--shadow-lg); min-width: 200px; overflow: hidden;
+    position: absolute;
+    top: calc(100% + 5px); /* Position closer to profile */
+    right: 0;
+    z-index: 1000;
+    background-color: var(--background-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    min-width: 200px;
+    overflow: hidden;
+    animation: dropdownFadeIn 0.2s ease; /* Smooth appearance */
 }
+
+@keyframes dropdownFadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .dropdown-actions { padding: 8px 0; }
 
 .dropdown-item {
-    display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: none;
-    border: none; width: 100%; text-align: left; color: var(--text-secondary);
-    font-size: 0.95rem; font-family: var(--font-primary); font-weight: 500;
-    cursor: pointer; transition: background-color var(--transition-fast), color var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    font-family: var(--font-primary);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 .dropdown-item:hover { background-color: var(--background-light); color: var(--primary-color); }
 .dropdown-item .icon { width: 18px; text-align: center; color: var(--text-accent); flex-shrink: 0; }
@@ -312,12 +350,28 @@ code { /* General code tag styling */
 
 /* Logout button specific styling */
 #logoutButton {
-    border-top: 1px solid var(--border-color); margin-top: 5px;
+    border-top: 1px solid var(--border-color);
+    margin-top: 5px;
     color: var(--error-color) !important;
 }
 #logoutButton .icon { color: var(--error-color) !important; }
 #logoutButton:hover { background-color: rgba(244, 67, 54, 0.1) !important; color: var(--error-color) !important; }
 #logoutButton:hover .icon { color: var(--error-color) !important; }
+
+/* New: Trade History Menu Section */
+.dropdown-trade-history {
+    border-top: 1px solid var(--border-color);
+    margin-top: 5px;
+    padding-top: 5px;
+}
+
+/* Trade History button styling */
+#tradeHistoryButton {
+    color: var(--secondary-light) !important;
+}
+#tradeHistoryButton .icon { color: var(--secondary-light) !important; }
+#tradeHistoryButton:hover { background-color: rgba(255, 145, 0, 0.1) !important; color: var(--secondary-color) !important; }
+#tradeHistoryButton:hover .icon { color: var(--secondary-color) !important; }
 
 /*=========================
  BUTTONS
@@ -433,6 +487,14 @@ code { /* General code tag styling */
     color: var(--background-dark); border-color: var(--secondary-color);
 }
 .btn-verify:hover:not(:disabled) { background-color: var(--secondary-dark); border-color: var(--secondary-dark); }
+
+/* Accept Offer Button (for viewing trade offers) */
+.btn-accept-offer { /* Inherits .btn, .btn-secondary, .btn-small */
+    margin-right: 5px; margin-bottom: 5px; vertical-align: middle;
+    background-color: var(--success-color);
+    color: white; border-color: var(--success-color);
+}
+.btn-accept-offer:hover:not(:disabled) { background-color: #45a049; border-color: #45a049; }
 
 /* Success Button (for Accept on Steam) */
 .btn-success { /* Inherits .btn */
@@ -829,6 +891,7 @@ code { /* General code tag styling */
 .age-verification .modal-content { max-width: 500px; }
 #depositModal .modal-content { max-width: 900px; }
 #tradeUrlModal .modal-content { max-width: 600px; } /* Kept for now */
+#tradeHistoryModal .modal-content { max-width: 800px; } /* New: Trade History Modal */
 
 @keyframes modalIn {
     from { opacity: 0; transform: scale(0.9) translateY(-20px); }
@@ -878,7 +941,7 @@ code { /* General code tag styling */
 /* Form Elements */
 .form-group { margin-bottom: 20px; }
 .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary); font-family: var(--font-primary); }
-.form-group input[type="text"], .form-group input[type="url"], .form-group input[type="password"], .form-group input[type="email"], .form-group textarea {
+.form-group input[type="text"], .form-group input[type="url"], .form-group input[type="password"], .form-group input[type="email"], .form-group textarea, .form-group input[type="number"] {
     width: 100%; padding: 12px 15px; border: 1px solid var(--border-color);
     border-radius: 4px; background-color: var(--background-dark); color: var(--text-primary);
     font-family: var(--font-primary); font-size: 1rem;
@@ -999,6 +1062,71 @@ code { /* General code tag styling */
 .profile-pending-offer-status a:hover, .profile-pending-link:hover { color: var(--secondary-color) !important; opacity: 0.9; }
 .profile-pending-offer-status i { margin-right: 5px; } /* Example for icon */
 
+/* --- Trade History Modal Styles --- */
+.trade-history-container {
+    background-color: var(--background-light);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 20px;
+    overflow: hidden;
+}
+
+.trade-history-list {
+    padding: 0;
+    margin: 0;
+    list-style-type: none;
+}
+
+.trade-history-item {
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.trade-history-item:last-child {
+    border-bottom: none;
+}
+
+.trade-history-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.trade-info {
+    flex: 1;
+}
+
+.trade-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+
+.trade-details {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.trade-value {
+    color: var(--primary-color);
+    margin-top: 3px;
+    font-family: var(--font-mono);
+}
+
+.trade-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.empty-history-message {
+    text-align: center;
+    padding: 30px;
+    color: var(--text-secondary);
+    font-style: italic;
+}
 
 /*=========================
  STATIC PAGES (FAQ, FAIR, ABOUT, TOS)
@@ -1129,26 +1257,6 @@ code { /* General code tag styling */
 .deposit-status-text.error { color: var(--error-color); }
 
 
-/* --- ADDED: Pending Offer Indicators --- */
-
-/* Header Indicator */
-.pending-offer-indicator {
-    display: inline-block; /* Initially hidden by JS */
-    color: var(--warning-color); /* Warning color */
-    font-size: 1.1rem;
-    /* margin-left: 5px; /* Positioned by flex gap in container */
-    cursor: help; /* Indicate tooltip */
-    animation: pulseWarning 1.5s infinite ease-in-out;
-    vertical-align: middle; /* Align with text/avatar */
-    line-height: 1;
-}
-
-/* Define pulse animation if not already defined */
-@keyframes pulseWarning {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.15); opacity: 0.7; }
-}
-
 /* --- ADDED: Footer --- */
 .main-footer {
     background-color: var(--background-dark);
@@ -1171,4 +1279,71 @@ code { /* General code tag styling */
 }
 .main-footer a:hover {
     color: var(--primary-light);
+}
+
+/* --- Improved Form Styling for Round ID Input --- */
+#round-id, #server-seed, #client-seed {
+    font-family: var(--font-mono);
+    letter-spacing: 0.5px;
+}
+
+#round-id {
+    height: 47px; /* Match the height of other input fields */
+    font-size: 1rem;
+    padding: 12px 15px;
+}
+
+/* Trade History Table Specific Styles */
+.trade-history-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.trade-history-table th {
+    background-color: var(--background-light);
+    color: var(--primary-color);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.trade-history-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.9rem;
+}
+
+.trade-history-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.trade-history-status {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.trade-history-status.pending {
+    background-color: rgba(255, 193, 7, 0.2);
+    color: var(--warning-color);
+}
+
+.trade-history-status.accepted {
+    background-color: rgba(76, 175, 80, 0.2);
+    color: var(--success-color);
+}
+
+.trade-history-status.declined {
+    background-color: rgba(244, 67, 54, 0.2);
+    color: var(--error-color);
+}
+
+.trade-history-status.expired {
+    background-color: rgba(158, 158, 158, 0.2);
+    color: var(--text-secondary);
 }
