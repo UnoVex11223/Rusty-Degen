@@ -154,7 +154,6 @@ app.use(helmet.originAgentCluster());
 app.use(helmet.permittedCrossDomainPolicies());
 app.use(helmet.referrerPolicy({ policy: 'same-origin' }));
 app.use(helmet.xssFilter()); // Deprecated by browsers, but doesn't hurtRetryIcontinueEditContinuing with the app.js file:
-javascript// Rate Limiting Setup (Apply consistently later)
 const generalApiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false, message: { error: 'Too many general API requests, please try again after 15 minutes.' } });
 const authLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 10, message: { error: 'Too many login attempts from this IP, please try again after 10 minutes.' }, standardHeaders: true, legacyHeaders: false });
 const sensitiveActionLimiter = rateLimit({ windowMs: 5 * 60 * 1000, max: 20, message: { error: 'Too many requests for this action, please try again after 5 minutes.' }, standardHeaders: true, legacyHeaders: false });
