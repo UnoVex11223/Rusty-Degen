@@ -424,7 +424,7 @@ if (isBotConfigured) {
         isBotReady = false;
     }
 } // End if (isBotConfigured)
-javascript// --- Active Round Data ---
+// --- Active Round Data ---
 let currentRound = null;
 let roundTimer = null;
 let isRolling = false;
