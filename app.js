@@ -58,7 +58,7 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 logger.info('Logger initialized.');
-javascript// --- Configuration Constants & Validation ---
+
 // TODO: Implement robust environment variable validation using a library like Joi or Zod
 // Example placeholder:
 // const { error: envError } = envSchema.validate(process.env);
