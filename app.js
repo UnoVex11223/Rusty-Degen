@@ -1592,11 +1592,7 @@ if (isBotConfigured && manager) {
                     if (depositRound.status !== 'active' || isRolling) {
                         throw new Error(`Round ${depositData.roundId} no longer active for deposit ${depositId}. Status: ${depositRound.status}, Rolling: ${isRolling}.`);
                     }
-                    const depositRound = await Round.findById(depositData.roundId);
-                    if (!depositRound) throw new Error(`Round ${depositData.roundId} not found for deposit ${depositId}.`);
-                    if (depositRound.status !== 'active' || isRolling) {
-                        throw new Error(`Round ${depositData.roundId} no longer active for deposit ${depositId}. Status: ${depositRound.status}, Rolling: ${isRolling}.`);
-                    }
+                    
                     // Re-check limits
                     const isNewParticipantCheck = !depositRound.participants.some(p => p.user?.toString() === depositData.userId.toString());
                     if (isNewParticipantCheck && depositRound.participants.length >= MAX_PARTICIPANTS) {
