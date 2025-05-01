@@ -536,8 +536,8 @@ function resetDepositModalUI() {
     }
     currentDepositOfferURL = null; // Clear state variable
 }
-Let me continue with the trade history and user interface functionality:
-javascript// --- Trade History Functions ---
+
+/ --- Trade History Functions ---
 
 /**
  * Fetches the user's trade history from the backend
@@ -837,8 +837,8 @@ function updateTradeStatus(offerId, newStatus) {
     }
     
     return updated;
-}RetryIcontinueEditLet me continue with the main.js file focusing on the core application logic:
-javascript// --- Core Application Logic ---
+}
+/ --- Core Application Logic ---
 
 /**
  * Updates the enabled/disabled state and tooltip of the main deposit button
@@ -1213,8 +1213,7 @@ function updateTotalValue() {
         depositButton.disabled = selectedItemsList.length === 0;
     }
 }
-Let me continue with more of the deposit handling and round display functionality:
-javascript/**
+/**
  * Handles the initial deposit request. Sends selected asset IDs to the backend,
  * expects an offer URL back, and updates the modal UI.
  */
@@ -1494,8 +1493,8 @@ function updateAllParticipantPercentages() {
             valueElement.style.color = userColor; // Apply user color
         }
     });
-}RetryIcontinueEditLet me continue with implementing the display of deposits and winner animation functionality:
-javascript/**
+}
+/**
  * Displays the latest deposit as a new block at the TOP of the participants container.
  * Calculates and includes the initial percentage chance based on the latest round state.
  * @param {object} data - Participant update data { userId, username, avatar, itemsValue, depositedItems }.
@@ -1840,8 +1839,7 @@ function startClientTimer(initialTime = CONFIG.ROUND_DURATION) {
         }
     }, 1000);
 }
-Now let's implement the roulette animation and winner display functionality:
-javascript// --- Roulette/Winner Animation Functions ---
+
 
 /**
  * Creates the visual items (player avatars) for the roulette animation track.
@@ -2562,8 +2560,7 @@ function resetToJackpotView() {
 
     }, 500); // Delay matches the longest fade-out duration (rouletteContainer)
 }
-Let me continue with the profile modal and verification functions:
-javascript/**
+    /**
  * Performs the visual reset needed when a new round starts or view is reset.
  * Clears participant blocks, resets timer display, pot value display.
  */
@@ -2788,7 +2785,7 @@ async function verifyRound() {
         resultEl.style.display = 'block';
         resultEl.className = 'result-panel loading';
         resultEl.innerHTML = '<h3>VerifyingRetryClaude hit the max length for a message and has paused its response. You can write Continue to keep the chat going.IContinueEditLet me continue with the verification UI implementation:
-javascript    try {
+           try {
         resultEl.style.display = 'block';
         resultEl.className = 'result-panel loading';
         resultEl.innerHTML = '<h3>Verifying round fairness...</h3><div class="loading-spinner"></div>';
@@ -3118,8 +3115,7 @@ function initializeSocketConnection() {
     // --- Chat Events ---
     socket.on('chatMessage', handleChatMessage);
 }
-Let me continue with the socket event handler implementations:
-javascript/**
+/**
  * Handles the socket 'connect' event.
  */
 function handleSocketConnect() {
@@ -3414,8 +3410,7 @@ function handleChatMessage(data) {
     // Optional: Implement chat functionality if needed
     console.log("Chat message received:", data);
 }
-Let's finish with the app initialization and event binding:
-javascript// --- App Initialization and Event Binding ---
+
 
 /**
  * Performs initial setup when the DOM is loaded.
