@@ -1130,7 +1130,7 @@ app.get('/api/inventory', generalApiLimiter, ensureAuthenticated, async (req, re
         res.status(500).json({ error: err.message || 'Server error fetching inventory.' }); // Send sanitized error message
     }
 });
-javascript// GET User Trade History
+// GET User Trade History
 // Apply general limiter, ensure authenticated
 app.get('/api/trades', generalApiLimiter, ensureAuthenticated, async (req, res) => {
     try {
