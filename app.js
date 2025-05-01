@@ -97,7 +97,6 @@ const MAX_ITEMS_PER_DEPOSIT = parseInt(process.env.MAX_ITEMS_PER_DEPOSIT) || 20;
 const TAX_MIN_PERCENT = 5;
 const TAX_MAX_PERCENT = 10;
 const MIN_POT_FOR_TAX = parseFloat(process.env.MIN_POT_FOR_TAX) || 100;
-javascript// Initialize Express app
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, { cors: { origin: process.env.SITE_URL || "*", methods: ["GET", "POST"] } });
