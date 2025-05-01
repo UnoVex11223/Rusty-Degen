@@ -200,7 +200,6 @@ app.use((req, res, next) => {
     });
     next();
 });
-javascript// --- Steam Strategy ---
 passport.use(new SteamStrategy({
     returnURL: `${process.env.SITE_URL}/auth/steam/return`,
     realm: process.env.SITE_URL,
@@ -333,7 +332,6 @@ const User = mongoose.model('User', userSchema);
 const Item = mongoose.model('Item', itemSchema);
 const Round = mongoose.model('Round', roundSchema);
 const Trade = mongoose.model('Trade', tradeSchema); // Add Trade modelRetryIcontinueEditContinuing with more of app.js:
-javascript// --- Steam Bot Setup ---
 const community = new SteamCommunity();
 const manager = new TradeOfferManager({
     steam: community,
@@ -568,7 +566,7 @@ async function createNewRound() {
         return null;
     }
 }
-javascript/**
+/**
  * Ensure an initial round exists on startup *after* bot is ready.
  */
 async function ensureInitialRound() {
@@ -714,7 +712,7 @@ async function endRound() {
             setTimeout(createNewRound, 5000); // Schedule next round
             return;
         }
-javascript        // --- Tax Calculation ---
+       // --- Tax Calculation ---
         let finalItems = [...round.items]; // Copy items array
         let finalTotalValue = round.totalValue;
         let taxAmount = 0;
@@ -780,7 +778,7 @@ javascript        // --- Tax Calculation ---
             }
         }
         if (!winner) throw new Error(`Winner selection failed for round ${round.roundId}. Winning Ticket: ${winningTicket}, Total Tickets: ${totalTickets}`);
-javascript        // --- Final Database Update ---
+        // --- Final Database Update ---
         const finalUpdateData = {
             status: 'completed', completedTime: new Date(), clientSeed: clientSeed,
             provableHash: provableHash, winningTicket: winningTicket, winner: winner._id, // Store winner's ID
@@ -972,7 +970,7 @@ async function sendWinningTradeOffer(round, winner, itemsToSend) {
         io.emit('notification', { type: 'error', userId: winner._id.toString(), message: `Error creating winnings offer for round ${round.roundId}. Please contact support.` });
     }
 }
-javascript// --- Authentication Routes ---
+// --- Authentication Routes ---
 app.get('/auth/steam', authLimiter, passport.authenticate('steam', { failureRedirect: '/' }));
 
 app.get('/auth/steam/return',
@@ -1001,7 +999,7 @@ app.post('/logout', (req, res, next) => { // Changed to POST as it modifies stat
         });
     });
 });
-javascript// --- Middleware & API Routes ---
+// --- Middleware & API Routes ---
 function ensureAuthenticated(req, res, next) {
     if (req.isAuthenticated()) { return next(); }
     res.status(401).json({ error: 'Not authenticated' });
@@ -1071,7 +1069,7 @@ app.post('/api/user/tradeurl',
             res.status(500).json({ error: 'Server error saving Trade URL.' });
         }
     });
-javascript// GET User Inventory
+// GET User Inventory
 // Apply general limiter, ensure authenticated
 app.get('/api/inventory', generalApiLimiter, ensureAuthenticated, async (req, res) => {
     if (!isBotReady) {
@@ -1254,7 +1252,7 @@ app.post('/api/deposit',
             logger.error(`Error fetching round data during deposit for ${user.username}:`, { error: dbErr.message, stack: dbErr.stack });
             return res.status(500).json({ error: 'Internal server error checking round limits. Please try again.' });
          }
-javascript        // --- Verify Items and Calculate Value ---
+        // --- Verify Items and Calculate Value ---
         let itemsToRequest = [];
         let depositTotalValue = 0;
         let verificationErrorMsg = null;
@@ -1901,7 +1899,7 @@ io.on('connection', (socket) => {
             socket.emit('roundError', { error: 'Failed to load round data.' }); // Send generic error
         }
     }); // End 'requestRoundData' listener
-javascript    // Request trade history
+    // Request trade history
     socket.on('requestTradeHistory', async () => {
         // Skip if not authenticated
         if (!socket.user) {
