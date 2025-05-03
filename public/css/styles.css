@@ -60,7 +60,8 @@ body {
     margin: 0 auto;
     padding: 0 15px;
 }
-css/* Typography */
+
+/* Typography */
 h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-secondary); /* Titillium for headings */
     font-weight: 700;
@@ -118,7 +119,9 @@ code { /* General code tag styling */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--background-dark); border-radius: 4px; }
 ::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 4px; border: 2px solid var(--background-dark); }
-::-webkit-scrollbar-thumb:hover { background-color: var(--primary-dark); }/* Notification Bar */
+::-webkit-scrollbar-thumb:hover { background-color: var(--primary-dark); }
+
+/* Notification Bar */
 .notification-bar {
     position: fixed;
     top: -100px; /* Start hidden */
@@ -194,7 +197,8 @@ code { /* General code tag styling */
 .header-left { gap: 20px; flex: 1; min-width: 0; justify-content: flex-start; }
 .header-center { flex-grow: 2; justify-content: center; min-width: 0; text-align: center; }
 .header-right { gap: 10px; flex: 1; min-width: 0; justify-content: flex-end; } /* Reduced gap */
-css.logo h1 {
+
+.logo h1 {
     font-family: var(--font-mono);
     font-size: 1.8rem;
     font-weight: 700;
@@ -237,13 +241,7 @@ css.logo h1 {
 .jackpot-tab:hover { color: var(--jackpot-tab-color); text-shadow: 0 0 15px var(--jackpot-tab-color), 0 0 20px var(--jackpot-tab-color); }
 
 /* User Controls */
-.user-controls { 
-    display: flex; 
-    align-items: center; 
-    gap: 10px; 
-    justify-content: flex-end; 
-    position: relative; /* Added for positioning context */
-}
+.user-controls { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
 
 /* Improved user profile container positioning */
 .user-profile-container {
@@ -252,6 +250,7 @@ css.logo h1 {
     align-items: center;
     gap: 8px;
 }
+
 /* --- User Profile Trigger (Improved) --- */
 .user-profile {
     display: flex;
@@ -264,7 +263,6 @@ css.logo h1 {
 }
 .user-profile:hover { background-color: rgba(255, 255, 255, 0.05); }
 .user-profile:focus { outline: none; box-shadow: 0 0 0 2px var(--primary-light); }
-.user-profile.open { background-color: rgba(255, 255, 255, 0.07); } /* Added style for open state */
 
 .user-avatar-container { position: relative; display: flex; flex-shrink: 0; }
 .user-avatar {
@@ -300,7 +298,6 @@ css.logo h1 {
     animation: pulseWarning 1.5s infinite ease-in-out;
     vertical-align: middle; /* Align with text/avatar */
     line-height: 1;
-    margin-right: 5px; /* Add some spacing */
 }
 
 @keyframes pulseWarning {
@@ -328,8 +325,8 @@ css.logo h1 {
     from { opacity: 0; transform: translateY(-5px); }
     to { opacity: 1; transform: translateY(0); }
 }
-Continue with dropdown styles:
-css.dropdown-actions { padding: 8px 0; }
+
+.dropdown-actions { padding: 8px 0; }
 
 .dropdown-item {
     display: flex;
@@ -361,7 +358,7 @@ css.dropdown-actions { padding: 8px 0; }
 #logoutButton:hover { background-color: rgba(244, 67, 54, 0.1) !important; color: var(--error-color) !important; }
 #logoutButton:hover .icon { color: var(--error-color) !important; }
 
-/* Trade History Menu Section */
+/* New: Trade History Menu Section */
 .dropdown-trade-history {
     border-top: 1px solid var(--border-color);
     margin-top: 5px;
@@ -415,6 +412,7 @@ css.dropdown-actions { padding: 8px 0; }
      font-size: 1em; /* Match text size */
      line-height: 1; /* Prevent extra spacing */
 }
+
 /* Login Button */
 #loginButton {
     padding: 8px 15px; /* Slightly adjusted */
@@ -480,8 +478,8 @@ css.dropdown-actions { padding: 8px 0; }
      padding: 5px 10px;
      font-size: 0.8rem;
 }
-Now focusing on the round history table and form styling:
-css/* Specific Buttons from History/Verify */
+
+/* Specific Buttons from History/Verify */
 .btn-details { /* Inherits .btn, .btn-secondary, .btn-small */ margin-right: 5px; margin-bottom: 5px; vertical-align: middle; }
 .btn-verify { /* Inherits .btn, .btn-secondary, .btn-small */
     margin-right: 5px; margin-bottom: 5px; vertical-align: middle;
@@ -547,6 +545,7 @@ css/* Specific Buttons from History/Verify */
     border: 1px solid var(--border-color);
     position: relative;
 }
+
 /*=========================
  JACKPOT HEADER & TIMER
  =========================*/
@@ -637,7 +636,9 @@ css/* Specific Buttons from History/Verify */
     color: var(--text-secondary);
     text-transform: uppercase;
     display: block;
-}/*=========================
+}
+
+/*=========================
  ROULETTE ANIMATION
  =========================*/
 
@@ -702,6 +703,10 @@ css/* Specific Buttons from History/Verify */
 
 .roulette-item:hover .roulette-avatar { transform: scale(1.1); }
 
+.roulette-item.winner-highlight {
+    /* Styles applied via JS */
+}
+
 .roulette-ticker {
     position: absolute; top: 0; left: 50%; transform: translateX(-50%);
     width: 4px; height: 100%; z-index: 15; pointer-events: none;
@@ -718,7 +723,8 @@ css/* Specific Buttons from History/Verify */
 }
 .roulette-ticker::before { top: -6px; border-bottom: 8px solid rgba(0, 230, 118, 0.8); }
 .roulette-ticker::after { bottom: -6px; border-top: 8px solid rgba(0, 230, 118, 0.8); }
-css.winner-info {
+
+.winner-info {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     background: radial-gradient(circle, rgba(20, 25, 30, 0.95), rgba(13, 17, 23, 0.98));
     padding: 10px; display: flex; flex-direction: column; justify-content: center;
@@ -780,7 +786,9 @@ css.winner-info {
      color: var(--text-secondary);
 }
 #showDepositModal.deposit-disabled:before { display: none; } /* Hide shine */
-css.test-buttons-container { display: flex; gap: 10px; justify-content: center; }
+
+
+.test-buttons-container { display: flex; gap: 10px; justify-content: center; }
 .test-buttons-container .btn-secondary { width: auto; }
 
 .current-items-section {
@@ -836,6 +844,26 @@ css.test-buttons-container { display: flex; gap: 10px; justify-content: center; 
     text-overflow: ellipsis;
     transition: color var(--transition-fast); /* Smooth color transition */
 }
+.player-items-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: flex-start; }
+.player-deposit-item {
+    width: 80px; height: 100px; background: rgba(22, 27, 34, 0.7); border-radius: 5px;
+    overflow: hidden; box-shadow: var(--shadow-sm); transition: transform var(--transition-fast);
+    border: 1px solid var(--border-color); flex: 0 0 auto; display: flex; flex-direction: column;
+    border-left-width: 3px; border-left-style: solid; /* Keep colored border */
+    /* border-left-color: var(--border-color); /* Color set by JS */
+}
+.player-deposit-item:hover { transform: translateY(-3px); box-shadow: var(--shadow-md), 0 0 8px rgba(0, 230, 118, 0.2); }
+.player-deposit-item-image { width: 100%; height: 60px; object-fit: contain; background-color: var(--background-medium); border-bottom: 1px solid rgba(48, 54, 61, 0.5); display: block; }
+.player-deposit-item-info { padding: 4px; height: 40px; display: flex; flex-direction: column; justify-content: center; flex-grow: 1; }
+.player-deposit-item-name { font-size: 0.65rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); margin-bottom: 2px; }
+.player-deposit-item-value { font-size: 0.7rem; font-weight: 700; /* Color set by JS */ }
+.player-deposit-item-more { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; padding: 5px; margin-top: 5px; /* Color set by JS */ }
+@keyframes newDepositPulse {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+.player-deposit-new { animation: newDepositPulse 0.5s ease-out forwards; }
+
 /*=========================
  MODALS
  =========================*/
@@ -909,8 +937,8 @@ css.test-buttons-container { display: flex; gap: 10px; justify-content: center; 
     align-items: center; /* Align items vertically */
     gap: 10px;
 }
-Form elements and inventory styling:
-css/* Form Elements */
+
+/* Form Elements */
 .form-group { margin-bottom: 20px; }
 .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary); font-family: var(--font-primary); }
 .form-group input[type="text"], .form-group input[type="url"], .form-group input[type="password"], .form-group input[type="email"], .form-group textarea, .form-group input[type="number"] {
@@ -919,7 +947,6 @@ css/* Form Elements */
     font-family: var(--font-primary); font-size: 1rem;
     transition: border-color var(--transition-medium), box-shadow var(--transition-medium);
     box-sizing: border-box;
-    height: 47px; /* Standardize height */
 }
 .form-group input:focus, .form-group textarea:focus {
     border-color: var(--primary-color); outline: none;
@@ -956,8 +983,8 @@ css/* Form Elements */
 .item-details { padding: 8px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; min-height: 50px; }
 .item-name { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; line-height: 1.2; }
 .inventory-item .item-value { font-size: 0.85rem; font-weight: 700; color: var(--primary-color); text-align: right; margin-top: auto; }
-Selected items and loading indicator styles:
-css/* Selected Items (Deposit Modal) */
+
+/* Selected Items (Deposit Modal) */
 .selected-items { margin-top: 20px; }
 .selected-items h3 { font-size: 1rem; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
 .selected-items-container {
@@ -1003,8 +1030,9 @@ css/* Selected Items (Deposit Modal) */
     animation: spin 1s linear infinite; margin-bottom: 15px;
 }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-Profile modal styling:
-css/* --- Profile Modal Styles --- */
+
+
+/* --- Profile Modal Styles --- */
 #profileModal .modal-content { max-width: 480px; }
 .profile-modal-body { padding: 30px 35px; }
 .profile-modal-user-info { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 25px; text-align: center; }
@@ -1033,6 +1061,7 @@ css/* --- Profile Modal Styles --- */
 .profile-pending-offer-status a, .profile-pending-link { color: var(--secondary-light) !important; font-weight: bold; text-decoration: underline !important; }
 .profile-pending-offer-status a:hover, .profile-pending-link:hover { color: var(--secondary-color) !important; opacity: 0.9; }
 .profile-pending-offer-status i { margin-right: 5px; } /* Example for icon */
+
 /* --- Trade History Modal Styles --- */
 .trade-history-container {
     background-color: var(--background-light);
@@ -1098,8 +1127,8 @@ css/* --- Profile Modal Styles --- */
     color: var(--text-secondary);
     font-style: italic;
 }
-Static pages and final styles:
-css/*=========================
+
+/*=========================
  STATIC PAGES (FAQ, FAIR, ABOUT, TOS)
  =========================*/
 
@@ -1116,6 +1145,50 @@ css/*=========================
 .content-section-body a:hover { color: var(--primary-color); }
 .content-section-body code { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; }
 
+/* About Page */
+#about-page .content-section-body p { text-align: justify; padding: 0 5px; }
+#about-page .content-section-title { color: var(--primary-light); }
+
+/* TOS Page */
+#tos-page .content-section { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 20px; margin-bottom: 25px; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
+#tos-page .content-section:last-child { border-bottom: 1px solid var(--border-color); }
+#tos-page .content-section-title { margin-top: 0; border-left: 3px solid var(--secondary-color); }
+#tos-page ul { margin-left: 20px; margin-bottom: 15px; list-style-type: disc; }
+#tos-page ul li { margin-bottom: 10px; color: var(--text-secondary); }
+
+/* FAQ Page */
+#faq-page .content-section { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 20px; margin-bottom: 20px; transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
+#faq-page .content-section:last-child { border-bottom: 1px solid var(--border-color); }
+#faq-page .content-section:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+#faq-page .content-section-title { color: var(--secondary-color); cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-left: none; padding-left: 0; }
+#faq-page .content-section-title::after { content: '+'; font-size: 1.5rem; color: var(--primary-color); transition: transform 0.3s ease; }
+#faq-page .content-section.active .content-section-title::after { content: '-'; transform: rotate(180deg); }
+/* FAQ body visibility is handled by JS in index.html */
+
+/* Provably Fair Page */
+#fair-page .content-card { padding-bottom: 40px; }
+#fair-page #provably-fair-verification { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 25px; margin-top: 30px; border: 1px solid var(--border-color); }
+#fair-page .verify-form { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background-color: transparent; padding: 0; border: none; margin: 0 0 25px 0; }
+#fair-page .form-group { margin-bottom: 0; }
+#fair-page .verify-form button { grid-column: 1 / -1; /* Make button span full width */ }
+#fair-page .verification-result { margin-top: 20px; padding: 15px; border-radius: 6px; background-color: var(--background-light); border: 1px solid var(--border-color); }
+#fair-page .history-table { width: 100%; border-collapse: collapse; margin-top: 25px; background-color: rgba(22, 27, 34, 0.4); }
+#fair-page .history-table th, #fair-page .history-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+#fair-page .history-table th { background-color: var(--background-light); color: var(--primary-color); font-weight: 600; }
+#fair-page .history-table tr:hover { background-color: var(--background-light); }
+
+/* Provably Fair Verification Form & Result - Base styles */
+.verify-form { background-color: var(--background-light); padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--border-color); }
+.verification-result { margin-top: 15px; padding: 15px; border-radius: 4px; background-color: var(--background-light); display: none; border: 1px solid var(--border-color); line-height: 1.5; }
+.verification-result.loading { background-color: var(--background-medium); border-color: var(--secondary-light); color: var(--text-primary); }
+.verification-result.success { background-color: rgba(0, 230, 118, 0.1); border-color: var(--success-color); color: var(--text-primary); }
+.verification-result.error { background-color: rgba(244, 67, 54, 0.1); border-color: var(--error-color); color: var(--text-primary); }
+.verification-result h4 { margin-top: 0; margin-bottom: 15px; color: var(--primary-color); }
+.verification-result p { margin-bottom: 8px; word-wrap: break-word; }
+.verification-result strong { color: var(--text-accent); }
+.verification-result code.seed-value { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; display: inline-block; }
+.verification-result code.wrap-anywhere { word-break: break-all; }
+
 /* Round History Table - Base styles */
 .table-container { overflow-x: auto; margin-bottom: 20px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 8px; }
 .history-table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 0.9rem; }
@@ -1126,533 +1199,151 @@ css/*=========================
 .history-table .error-message { color: var(--error-color); font-style: normal; }
 .history-table tbody tr:hover { background-color: rgba(255, 255, 255, 0.05); }
 .history-table td:last-child { white-space: normal; text-align: right; }
-/* PaginationRetryClaude hit the max length for a message and has paused its response. You can write Continue to keep the chat going.IContinueEditContinuing with styles.css, focusing on pagination, forms and footer:
-css/* Pagination */
-.pagination {
-    display: flex;
-    justify-content: center;
+
+/* Pagination */
+.pagination-container { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+.page-button { padding: 6px 10px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary); cursor: pointer; transition: var(--transition-fast); font-size: 0.9rem; }
+.page-button:hover:not(:disabled) { background-color: var(--primary-dark); color: var(--background-dark); border-color: var(--primary-dark); }
+.page-button.active { background-color: var(--primary-color); color: var(--background-dark); border-color: var(--primary-color); cursor: default; }
+.page-button:disabled { opacity: 0.5; cursor: not-allowed; }
+.page-ellipsis { color: var(--text-secondary); padding: 6px 0; margin: 0 2px; }
+
+
+/* --- ADDED: Deposit Modal Footer Enhancements --- */
+
+/* Style for the new "Accept on Steam" button */
+#acceptDepositOfferBtn {
+    /* Inherits base .btn styles */
+    background-color: var(--success-color); /* Green background */
+    color: white;
+    border: 1px solid var(--success-color);
+    padding: 10px 15px; /* Match other footer buttons */
+    font-size: 1rem; /* Match other modal footer buttons */
+    /* Ensure it inherits flex alignment from footer */
+    display: inline-flex;
     align-items: center;
-    margin: 20px 0;
-    gap: 5px;
-}
-.pagination button {
-    background-color: var(--background-medium);
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
-    cursor: pointer;
-    padding: 8px 12px;
-    border-radius: 4px;
-    font-family: var(--font-primary);
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-}
-.pagination button:hover:not(:disabled) {
-    background-color: var(--primary-color);
-    color: var(--background-dark);
-}
-.pagination button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-.pagination button.active {
-    background-color: var(--primary-color);
-    color: var(--background-dark);
-    border-color: var(--primary-color);
-}
-.pagination .page-info {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    margin: 0 10px;
+    justify-content: center;
 }
 
-/* Form Panel (for Verify Fair Modal) */
-.form-panel {
-    background-color: var(--background-light);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 20px;
-    margin-bottom: 20px;
-}
-.form-panel h3 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    font-size: 1.1rem;
-    color: var(--text-primary);
-}
-.form-panel .form-group:last-child {
-    margin-bottom: 0;
+#acceptDepositOfferBtn:hover:not(:disabled) {
+    background-color: #45a049; /* Darker green */
+    border-color: #45a049;
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4); /* Green shadow */
+    transform: translateY(-2px);
 }
 
-/* Result Panel (for verification results) */
-.result-panel {
-    background-color: var(--background-light);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 20px;
-    margin-top: 25px;
-    display: none; /* Initially hidden */
+#acceptDepositOfferBtn i { /* Style for the external link icon */
+    margin-left: 8px;
+    font-size: 0.9em;
 }
-.result-panel.success {
-    border-color: var(--success-color);
-    background-color: rgba(76, 175, 80, 0.1);
-}
-.result-panel.error {
-    border-color: var(--error-color);
-    background-color: rgba(244, 67, 54, 0.1);
-}
-.result-panel h3 {
-    margin-top: 0;
-    margin-bottom: 15px;
-    font-size: 1.1rem;
-}
-.result-panel.success h3 {
-    color: var(--success-color);
-}
-.result-panel.error h3 {
-    color: var(--error-color);
-}
-.result-data {
-    margin-top: 15px;
-    padding: 15px;
-    background-color: var(--background-medium);
-    border-radius: 5px;
-    font-family: var(--font-mono);
-    font-size: 0.9rem;
-    word-break: break-all;
-}
-.result-data pre {
-    margin: 0;
-    white-space: pre-wrap;
-}
-.result-row {
-    display: flex;
-    margin-bottom: 10px;
-}
-.result-row:last-child {
-    margin-bottom: 0;
-}
-.result-label {
-    font-weight: 600;
-    color: var(--text-secondary);
-    min-width: 200px;
-    flex-shrink: 0;
-}
-.result-value {
-    color: var(--text-primary);
-}
-css/*=========================
- FOOTER
- =========================*/
 
+/* Style for the status text area in the deposit modal footer */
+.deposit-status-text {
+    flex-grow: 1; /* Allow it to take available space */
+    text-align: left;
+    padding: 0 10px; /* Add some padding */
+    font-size: 0.9em;
+    line-height: 1.4;
+    color: var(--text-secondary); /* Default color */
+    transition: color 0.3s ease;
+    display: flex; /* Align text vertically */
+    align-items: center;
+}
+
+/* Status-specific colors for the text */
+.deposit-status-text.info { color: var(--info-color); }
+.deposit-status-text.success { color: var(--success-color); }
+.deposit-status-text.warning { color: var(--warning-color); }
+.deposit-status-text.error { color: var(--error-color); }
+
+
+/* --- ADDED: Footer --- */
 .main-footer {
-    background-color: var(--background-medium);
-    border-top: 1px solid var(--border-color);
-    padding: 30px 0;
+    background-color: var(--background-dark);
     color: var(--text-secondary);
-    margin-top: 50px;
-}
-.footer-container {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 30px;
-}
-.footer-section {
-    flex: 1;
-    min-width: 200px;
-}
-.footer-section h3 {
-    color: var(--primary-color);
-    font-size: 1.2rem;
-    margin-bottom: 15px;
-    font-weight: 600;
-}
-.footer-nav ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-.footer-nav li {
-    margin-bottom: 8px;
-}
-.footer-nav a {
-    color: var(--text-secondary);
-    transition: var(--transition-medium);
-    text-decoration: none;
-}
-.footer-nav a:hover {
-    color: var(--primary-color);
-}
-.footer-text {
-    line-height: 1.6;
-    font-size: 0.9rem;
-}
-.footer-bottom {
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border-color);
+    padding: 20px 0;
+    margin-top: 40px; /* Add space above footer */
     text-align: center;
     font-size: 0.85rem;
+    border-top: 1px solid var(--border-color);
 }
-.footer-logo {
-    font-family: var(--font-mono);
-    font-size: 1.5rem;
-    font-weight: 700;
-    margin-bottom: 15px;
-    color: var(--text-primary);
+
+.main-footer p {
+    margin-bottom: 8px;
+    line-height: 1.5;
 }
-.footer-logo span {
-    color: var(--primary-color);
-}
-.social-links {
-    display: flex;
-    gap: 10px;
-    margin-top: 10px;
-}
-.social-links a {
+.main-footer a {
     color: var(--text-secondary);
-    font-size: 1.2rem;
-    transition: var(--transition-medium);
+    text-decoration: underline;
+    margin: 0 5px;
 }
-.social-links a:hover {
+.main-footer a:hover {
+    color: var(--primary-light);
+}
+
+/* --- Improved Form Styling for Round ID Input --- */
+#round-id, #server-seed, #client-seed {
+    font-family: var(--font-mono);
+    letter-spacing: 0.5px;
+}
+
+#round-id {
+    height: 47px; /* Match the height of other input fields */
+    font-size: 1rem;
+    padding: 12px 15px;
+}
+
+/* Trade History Table Specific Styles */
+.trade-history-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.trade-history-table th {
+    background-color: var(--background-light);
     color: var(--primary-color);
-    transform: translateY(-3px);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
 }
 
-
-/* Small screens (mobile) */
-@media (max-width: 576px) {
-    h1 { font-size: 2rem; }
-    h2 { font-size: 1.5rem; }
-    h3 { font-size: 1.2rem; }
-    
-    .header-container {
-        flex-direction: column;
-        gap: 10px;
-    }
-    .header-left, .header-center, .header-right {
-        width: 100%;
-        justify-content: center;
-    }
-    .primary-nav, .secondary-nav {
-        display: none; /* Hide on small screens */
-    }
-    
-    .jackpot-header {
-        flex-direction: column;
-        min-height: 280px;
-        padding: 15px 10px;
-        gap: 10px;
-    }
-    .jackpot-value h2 {
-        font-size: 3rem;
-    }
-    .timer-circle {
-        width: 100px;
-        height: 100px;
-    }
-    .timer-text {
-        font-size: 2.8rem;
-    }
-    .stat-value {
-        font-size: 2.8rem;
-    }
-    
-    .modal-content {
-        width: 95%;
-    }
-    .modal-header h2 {
-        font-size: 1.2rem;
-    }
-    .modal-body {
-        padding: 15px;
-    }
-    
-    .inventory-items {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    }
-    
-    .footer-section {
-        min-width: 100%;
-    }
+.trade-history-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.9rem;
 }
 
-/* Medium screens (tablets) */
-@media (min-width: 577px) and (max-width: 991px) {
-    .header-container {
-        flex-wrap: wrap;
-    }
-    .header-center {
-        order: 3;
-        width: 100%;
-        margin-top: 10px;
-    }
-    .main-nav ul {
-        flex-wrap: wrap;
-        justify-content: center;
-    }
-    
-    .jackpot-header {
-        flex-wrap: wrap;
-        gap: 15px;
-    }
-    
-    .inventory-items {
-        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-    }
+.trade-history-table tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
 }
 
-/* Fix for user menu on tablet/mobile */
-@media (max-width: 991px) {
-    .dropdown-menu {
-        right: 0;
-        left: auto;
-        width: 250px;
-    }
-}
-
-/* Fix for scrollable modals on small/medium screens */
-@media (max-height: 700px) {
-    .modal-content {
-        max-height: 95vh;
-    }
-    .modal-body {
-        max-height: 70vh;
-        overflow-y: auto;
-    }
-}
-
-css/*=========================
- ANIMATIONS & EFFECTS
- =========================*/
-
-/* Hover and Focus Styles */
-.btn:focus, .form-group input:focus, .modal-content:focus, button:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.2);
-}
-
-/* Subtle hover animations */
-a, button, .inventory-item, .player-deposit-container, .selected-item-display {
-    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-}
-
-/* Status badges (for trade status) */
-.status-badge {
+.trade-history-status {
     display: inline-block;
     padding: 3px 8px;
     border-radius: 4px;
     font-size: 0.8rem;
     font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    white-space: nowrap;
 }
-.status-pending {
-    background-color: rgba(33, 150, 243, 0.2);
-    color: #90caf9;
-    border: 1px solid #1976d2;
+
+.trade-history-status.pending {
+    background-color: rgba(255, 193, 7, 0.2);
+    color: var(--warning-color);
 }
-.status-accepted {
+
+.trade-history-status.accepted {
     background-color: rgba(76, 175, 80, 0.2);
-    color: #a5d6a7;
-    border: 1px solid #388e3c;
+    color: var(--success-color);
 }
-.status-declined, .status-canceled, .status-error {
+
+.trade-history-status.declined {
     background-color: rgba(244, 67, 54, 0.2);
-    color: #ef9a9a;
-    border: 1px solid #d32f2f;
+    color: var(--error-color);
 }
-.status-expired {
+
+.trade-history-status.expired {
     background-color: rgba(158, 158, 158, 0.2);
-    color: #bdbdbd;
-    border: 1px solid #757575;
+    color: var(--text-secondary);
 }
-
-/* Custom tooltip styles */
-.tooltip {
-    position: relative;
-    display: inline-block;
-}
-.tooltip .tooltip-text {
-    visibility: hidden;
-    background-color: rgba(0, 0, 0, 0.85);
-    color: #fff;
-    text-align: center;
-    border-radius: 4px;
-    padding: 5px 10px;
-    position: absolute;
-    z-index: 100;
-    bottom: 125%;
-    left: 50%;
-    transform: translateX(-50%);
-    opacity: 0;
-    transition: opacity 0.3s;
-    font-size: 0.8rem;
-    white-space: nowrap;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-}
-.tooltip:hover .tooltip-text {
-    visibility: visible;
-    opacity: 1;
-}
-.tooltip .tooltip-text::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: rgba(0, 0, 0, 0.85) transparent transparent transparent;
-}
-
-/* Fade in/out animations */
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-}
-@keyframes fadeOut {
-    from { opacity: 1; }
-    to { opacity: 0; }
-}
-.fadeIn { animation: fadeIn 0.3s forwards; }
-.fadeOut { animation: fadeOut 0.3s forwards; }
-
-/* Mobile-friendly menu toggle (if needed) */
-.menu-toggle {
-    display: none;
-    background: none;
-    border: none;
-    color: var(--text-primary);
-    font-size: 1.5rem;
-    cursor: pointer;
-    padding: 5px;
-}
-@media (max-width: 991px) {
-    .menu-toggle {
-        display: block;
-    }
-}
-Adding the final styles to address any potential dropdown alignment issues and fixes:
-css/*=========================
- DROPDOWN FIXES
- =========================*/
-
-/* Fixed positioning for dropdown to prevent overflow issues */
-.user-profile-container {
-    position: relative;
-}
-.dropdown-menu {
-    position: absolute;
-    right: 0; /* Align to the right edge of the container */
-    top: calc(100% + 10px); /* Position below with a small gap */
-    z-index: 1000;
-    min-width: 220px;
-    width: auto;
-    transform-origin: top right;
-}
-
-/* Dynamic vertical positioning to prevent cutoff */
-@media (max-height: 650px) {
-    .dropdown-menu {
-        max-height: calc(100vh - 100px);
-        overflow-y: auto;
-    }
-}
-
-/* Ensure proper width on small screens */
-@media (max-width: 576px) {
-    .dropdown-menu {
-        width: 100%;
-        min-width: 100%;
-        max-width: 100%;
-        left: 0;
-        right: 0;
-    }
-}
-
-/* Fix for dropdown position in Firefox */
-@-moz-document url-prefix() {
-    .dropdown-menu {
-        top: calc(100% + 5px);
-    }
-}
-
-/* Fix for dropdown position in Safari */
-@media not all and (min-resolution:.001dpcm) {
-    @supports (-webkit-appearance:none) {
-        .dropdown-menu {
-            transform: translateZ(0);
-        }
-    }
-}
-
-/* Fix hover effects on touch devices */
-@media (hover: hover) {
-    .dropdown-item:hover,
-    .btn:hover {
-        transition: all 0.2s ease;
-    }
-}
-@media (hover: none) {
-    .dropdown-item:active,
-    .btn:active {
-        background-color: var(--background-light);
-    }
-    .btn-primary:active,
-    .btn-deposit:active {
-        background-color: var(--primary-dark);
-    }
-}
-
-/*=========================
- APP-SPECIFIC UTILITY CLASSES
- =========================*/
-
-.primary-text { color: var(--primary-color) !important; }
-.secondary-text { color: var(--secondary-color) !important; }
-.success-text { color: var(--success-color) !important; }
-.error-text { color: var(--error-color) !important; }
-.warning-text { color: var(--warning-color) !important; }
-
-/* Add width helpers */
-.w-100 { width: 100% !important; }
-.w-75 { width: 75% !important; }
-.w-50 { width: 50% !important; }
-.w-auto { width: auto !important; }
-
-/* Add spacing helpers */
-.mt-1 { margin-top: 0.25rem !important; }
-.mt-2 { margin-top: 0.5rem !important; }
-.mt-3 { margin-top: 1rem !important; }
-.mt-4 { margin-top: 2rem !important; }
-.mb-1 { margin-bottom: 0.25rem !important; }
-.mb-2 { margin-bottom: 0.5rem !important; }
-.mb-3 { margin-bottom: 1rem !important; }
-.mb-4 { margin-bottom: 2rem !important; }
-.py-2 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
-.py-3 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
-.px-2 { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
-.px-3 { padding-left: 1rem !important; padding-right: 1rem !important; }
-
-/* Text alignment */
-.text-center { text-align: center !important; }
-.text-right { text-align: right !important; }
-.text-left { text-align: left !important; }
-
-/* Display helpers */
-.d-none { display: none !important; }
-.d-block { display: block !important; }
-.d-flex { display: flex !important; }
-.flex-wrap { flex-wrap: wrap !important; }
-.align-center { align-items: center !important; }
-.justify-center { justify-content: center !important; }
-.justify-between { justify-content: space-between !important; }
-.justify-end { justify-content: flex-end !important; }
-
-/* Cursor helpers */
-.cursor-pointer { cursor: pointer !important; }
-.cursor-default { cursor: default !important; }
-.cursor-help { cursor: help !important; }
-.cursor-not-allowed { cursor: not-allowed !important; }
