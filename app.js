@@ -1,2982 +1,1806 @@
-// main.js - Rust Jackpot Frontend Logic (Combined with Profile Dropdown)
-// Modifications: Simplified header profile, updated dropdown, added Profile Modal, implemented trade offer flow.
-
-// Ensure Socket.IO client library is loaded before this script
-// Example: <script src="/socket.io/socket.io.js"></script>
-
-// Establish Socket.IO connection
-const socket = io();
+// Required dependencies
+const express = require('express');
+const session = require('express-session');
+const passport = require('passport');
+const SteamStrategy = require('passport-steam').Strategy;
+const mongoose = require('mongoose');
+const http = require('http');
+const socketIo = require('socket.io');
+const crypto = require('crypto');
+const SteamCommunity = require('steamcommunity');
+const TradeOfferManager = require('steam-tradeoffer-manager');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const SteamTotp = require('steam-totp');
+const axios = require('axios');
+const NodeCache = require('node-cache');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const { body, query, param, validationResult } = require('express-validator');
+const { v4: uuidv4 } = require('uuid'); // <-- ADDED: For unique deposit identifiers
+require('dotenv').config();
 
 // --- Configuration Constants ---
-const CONFIG = {
-    ROUND_DURATION: 99, // Timer duration in seconds
-    MAX_ITEMS_PER_DEPOSIT: 20, // Max selectable items per deposit action
-    MAX_DISPLAY_DEPOSITS: 10, // Max vertical deposit blocks shown visually
-    MAX_PARTICIPANTS_DISPLAY: 20, // Max participants allowed (should match backend)
-    MAX_ITEMS_PER_POT_FRONTEND: 200, // Max items in pot (should match backend)
-    ROULETTE_REPETITIONS: 20, // How many times the participant pool is repeated visually in roulette
-    SPIN_DURATION_SECONDS: 6.5, // Duration of the main roulette spin animation
-    WINNER_DISPLAY_DURATION: 7000, // How long winner info is shown (ms)
-    CONFETTI_COUNT: 150, // Number of confetti pieces
-    // Roulette Animation Physics (Adjust for feel)
-    EASE_OUT_POWER: 5, // Higher value = faster initial speed, slower end
-    BOUNCE_ENABLED: false, // Enable/disable landing bounce effect
-    BOUNCE_OVERSHOOT_FACTOR: 0.07, // How much it overshoots before bouncing back (if enabled)
-    BOUNCE_DAMPING: 0.35, // How quickly the bounce settles (if enabled)
-    BOUNCE_FREQUENCY: 3.5, // How many bounces occur (if enabled)
-    LANDING_POSITION_VARIATION: 0.60, // Randomness in landing position (0 to 1, fraction of item width)
-};
-
-// User Color Palette (20 distinct colors)
-const COLOR_PALETTE = [
-    '#00bcd4', '#ff5722', '#9c27b0', '#4caf50', '#ffeb3b', '#2196f3', '#f44336', '#ff9800',
-    '#e91e63', '#8bc34a', '#3f51b5', '#009688', '#cddc39', '#795548', '#607d8b', '#673ab7',
-    '#ffc107', '#03a9f4', '#9e9e9e', '#8d6e63'
+const requiredEnvVars = [
+    'MONGODB_URI', 'SESSION_SECRET', 'STEAM_API_KEY', 'SITE_URL',
+    // Conditionally required if bot is intended to function
+    'STEAM_USERNAME', 'STEAM_PASSWORD', 'STEAM_SHARED_SECRET', 'BOT_TRADE_URL', 'SITE_NAME'
+    // STEAM_IDENTITY_SECRET is optional but needed for auto-confirming trades
 ];
-
-// --- DOM Element References ---
-// Grouping DOM elements for better organization
-const DOMElements = {
-    // Navigation
-    nav: {
-        homeLink: document.getElementById('home-link'), // Assuming jackpot tab is home
-        aboutLink: document.getElementById('about-link'),
-        tosLink: document.getElementById('tos-link'),
-        faqLink: document.getElementById('faq-link'),
-        fairLink: document.getElementById('fair-link'),
-    },
-    pages: {
-        homePage: document.getElementById('home-page'),
-        aboutPage: document.getElementById('about-page'),
-        tosPage: document.getElementById('tos-page'),
-        faqPage: document.getElementById('faq-page'),
-        fairPage: document.getElementById('fair-page'),
-    },
-    // User Authentication / Profile
-    user: {
-        loginButton: document.getElementById('loginButton'),
-        userProfile: document.getElementById('userProfile'),      // The clickable avatar+name element in header
-        userAvatar: document.getElementById('userAvatar'),        // Avatar within #userProfile
-        userName: document.getElementById('userName'),            // Name within #userProfile
-        userDropdownMenu: document.getElementById('userDropdownMenu'), // The dropdown menu itself
-        profileDropdownButton: document.getElementById('profileDropdownButton'), // NEW "Profile" button inside dropdown
-        logoutButton: document.getElementById('logoutButton'),    // The logout button inside the dropdown
-        pendingOfferIndicator: document.getElementById('pending-offer-indicator'), // ADDED
-    },
-    // *** NEW Profile Modal Elements ***
-    profileModal: {
-        modal: document.getElementById('profileModal'),
-        avatar: document.getElementById('profileModalAvatar'),
-        name: document.getElementById('profileModalName'),
-        deposited: document.getElementById('profileModalDeposited'),
-        tradeUrlInput: document.getElementById('profileModalTradeUrl'),
-        saveBtn: document.getElementById('profileModalSaveBtn'),
-        closeBtn: document.getElementById('profileModalCloseBtn'),
-        cancelBtn: document.getElementById('profileModalCancelBtn'), // Added based on HTML
-        pendingOfferStatus: document.getElementById('profile-pending-offer-status'), // ADDED
-    },
-    // Jackpot Display
-    jackpot: {
-        potValue: document.getElementById('potValue'),
-        timerValue: document.getElementById('timerValue'),
-        timerForeground: document.querySelector('.timer-foreground'), // SVG Circle
-        participantCount: document.getElementById('participantCount'),
-        participantsContainer: document.getElementById('itemsContainer'), // Vertical list container
-        emptyPotMessage: document.getElementById('emptyPotMessage'),
-        jackpotHeader: document.getElementById('jackpotHeader'), // Container for value/timer/stats
-    },
-    // Deposit Modal & Inventory
-    deposit: {
-        showDepositModalButton: document.getElementById('showDepositModal'),
-        depositModal: document.getElementById('depositModal'),
-        closeDepositModalButton: document.getElementById('closeDepositModal'),
-        depositButton: document.getElementById('depositButton'), // The actual "Deposit Items" button inside modal
-        inventoryItemsContainer: document.getElementById('inventory-items'),
-        selectedItemsContainer: document.getElementById('selectedItems'),
-        totalValueDisplay: document.getElementById('totalValue'),
-        inventoryLoadingIndicator: document.getElementById('inventory-loading'),
-        acceptDepositOfferBtn: document.getElementById('acceptDepositOfferBtn'), // ADDED
-        depositStatusText: document.getElementById('depositStatusText'), // ADDED
-    },
-    // Roulette Animation Elements
-    roulette: {
-        inlineRouletteContainer: document.getElementById('inlineRoulette'), // Main container shown during spin
-        rouletteTrack: document.getElementById('rouletteTrack'), // The horizontally scrolling element
-        winnerInfoBox: document.getElementById('winnerInfo'), // Box showing winner details after spin
-        winnerAvatar: document.getElementById('winnerAvatar'),
-        winnerName: document.getElementById('winnerName'),
-        winnerDeposit: document.getElementById('winnerDeposit'), // Displays winner's deposited value
-        winnerChance: document.getElementById('winnerChance'), // Displays winner's chance
-        returnToJackpotButton: document.getElementById('returnToJackpot'), // Optional button
-        confettiContainer: document.getElementById('confettiContainer'), // For confetti effect
-    },
-    // Audio Elements
-    audio: {
-        spinSound: document.getElementById('spinSound'),
-        depositSound: document.getElementById('depositSound')
-    },
-    // Provably Fair Elements
-    provablyFair: {
-        verifyButton: document.getElementById('verify-btn'),
-        roundsTableBody: document.getElementById('rounds-table-body'),
-        roundsPagination: document.getElementById('rounds-pagination'),
-        roundIdInput: document.getElementById('round-id'),
-        serverSeedInput: document.getElementById('server-seed'),
-        clientSeedInput: document.getElementById('client-seed'),
-        verificationResultDisplay: document.getElementById('verification-result'),
-        verificationSection: document.getElementById('provably-fair-verification'), // Section for scrolling
-    },
-    // Age Verification Modal
-    ageVerification: {
-        modal: document.getElementById('ageVerificationModal'),
-        checkbox: document.getElementById('agreeCheckbox'),
-        agreeButton: document.getElementById('agreeButton'),
-    },
-    // General UI
-    notificationBar: document.getElementById('notification-bar'), // Add this div to your HTML for notifications
-};
-
-// --- Application State ---
-let currentUser = null; // Stores logged-in user data (null if not logged in)
-let currentRound = null; // Stores data about the current jackpot round
-let selectedItemsList = []; // Items selected in the deposit modal
-let userInventory = []; // User's inventory items fetched from backend
-let isSpinning = false; // Tracks if the roulette animation is currently active
-let timerActive = false; // Tracks if the client-side countdown interval is running
-let roundTimer = null; // Holds the interval ID for the client-side timer
-let animationFrameId = null; // Holds the ID for the roulette animation frame request
-let userColorMap = new Map(); // Maps userId to a color from the palette for consistency
-let notificationTimeout = null; // Timeout ID for hiding the notification bar
-let spinStartTime = 0; // Tracks start of spin animation
-let currentDepositOfferURL = null; // ADDED: Store the URL for the accept button
-
-// --- Helper Functions ---
-
-/**
- * Displays a modal dialog.
- * @param {HTMLElement} modalElement - The modal element to show.
- */
-function showModal(modalElement) {
-    if (modalElement) modalElement.style.display = 'flex';
+const isBotConfigured = process.env.STEAM_USERNAME && process.env.STEAM_PASSWORD && process.env.STEAM_SHARED_SECRET && process.env.BOT_TRADE_URL;
+let missingVars = requiredEnvVars.filter(v => !process.env[v] && !(v.startsWith('STEAM_') || v === 'BOT_TRADE_URL' || v === 'SITE_NAME') && isBotConfigured);
+if (!isBotConfigured) {
+    console.warn("WARN: Steam Bot credentials/config incomplete in .env file. Trading features will be disabled.");
+} else {
+    missingVars = missingVars.concat(requiredEnvVars.filter(v => (v.startsWith('STEAM_') || v === 'BOT_TRADE_URL' || v === 'SITE_NAME') && !process.env[v]));
 }
 
-/**
- * Hides a modal dialog.
- * @param {HTMLElement} modalElement - The modal element to hide.
- */
-function hideModal(modalElement) {
-    if (modalElement) modalElement.style.display = 'none';
-    // Reset deposit modal state when hiding
-    if (modalElement === DOMElements.deposit.depositModal) { // ADDED IF BLOCK
-        resetDepositModalUI();
-    }
+if (missingVars.length > 0) {
+    console.error(`FATAL: Missing required environment variables: ${missingVars.join(', ')}`);
+    process.exit(1);
 }
 
-/**
- * Shows a specific page section and hides others. Updates navigation link styles.
- * @param {HTMLElement} pageElement - The page element to display.
- */
-function showPage(pageElement) {
-    // Hide all page containers
-    Object.values(DOMElements.pages).forEach(page => {
-        if (page) page.style.display = 'none';
-    });
-
-    // Show the selected page container
-    if (pageElement) pageElement.style.display = 'block';
-
-    // Update active state on navigation links
-    document.querySelectorAll('.main-nav a, .secondary-nav a, .primary-nav a')
-        .forEach(link => link?.classList.remove('active'));
-
-    // Find the corresponding link element to activate
-    let activeLink = null;
-    if (pageElement === DOMElements.pages.homePage) activeLink = DOMElements.nav.homeLink;
-    else if (pageElement === DOMElements.pages.aboutPage) activeLink = DOMElements.nav.aboutLink;
-    else if (pageElement === DOMElements.pages.tosPage) activeLink = DOMElements.nav.tosLink;
-    else if (pageElement === DOMElements.pages.faqPage) activeLink = DOMElements.nav.faqLink;
-    else if (pageElement === DOMElements.pages.fairPage) activeLink = DOMElements.nav.fairLink;
-
-    if (activeLink) activeLink.classList.add('active');
-
-    // Load round history if navigating to the Provably Fair page
-    if (pageElement === DOMElements.pages.fairPage) {
-        loadPastRounds();
-    }
-}
-
-
-/**
- * Assigns and retrieves a consistent color for a given user ID.
- * Cycles through the COLOR_PALETTE.
- * @param {string} userId - The ID of the user.
- * @returns {string} The hex color code for the user.
- */
-function getUserColor(userId) {
-    if (!userColorMap.has(userId)) {
-        const colorIndex = userColorMap.size % COLOR_PALETTE.length;
-        userColorMap.set(userId, COLOR_PALETTE[colorIndex]);
-    }
-    return userColorMap.get(userId) || '#cccccc'; // Fallback color
-}
-
-/**
- * Displays a non-blocking notification message.
- * Uses the notificationBar element defined in DOMElements.
- * Allows HTML content.
- * @param {string} message - The message to display (can be HTML).
- * @param {string} type - 'success', 'error', or 'info' (for styling). Default 'info'.
- * @param {number} duration - How long to show the message (ms). Default 4000.
- */
-function showNotification(message, type = 'info', duration = 4000) {
-    if (!DOMElements.notificationBar) {
-        console.warn("Notification bar element (#notification-bar) not found. Using console.log as fallback.");
-        console.log(`[${type.toUpperCase()}] ${message}`);
-        return;
-    }
-
-    const bar = DOMElements.notificationBar;
-    // Clear any existing timeout to prevent premature hiding
-    if (notificationTimeout) clearTimeout(notificationTimeout);
-
-    bar.innerHTML = message; // Use innerHTML to render links etc.
-    // Remove previous type classes and add the new one
-    bar.className = 'notification-bar'; // Reset classes
-    bar.classList.add(type); // Add the type class for styling
-    bar.classList.add('show'); // Add 'show' class to trigger CSS transition/animation
-
-    // Set a timeout to hide the notification
-    notificationTimeout = setTimeout(() => {
-        bar.classList.remove('show');
-        notificationTimeout = null; // Clear the timeout ID
-    }, duration);
-}
-
-/**
- * Shuffles an array in place using the Fisher-Yates algorithm.
- * @param {Array} array - The array to shuffle.
- * @returns {Array} The shuffled array.
- */
-function shuffleArray(array) {
-    let currentIndex = array.length, randomIndex;
-    while (currentIndex !== 0) {
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex--;
-        [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
-    }
-    return array;
-}
-
-// --- Animation Easing Functions ---
-function easeOutAnimation(t) {
-    const clampedT = Math.max(0, Math.min(1, t));
-    return 1 - Math.pow(1 - clampedT, CONFIG.EASE_OUT_POWER);
-}
-
-function calculateBounce(t) {
-    if (!CONFIG.BOUNCE_ENABLED) return 0;
-    const clampedT = Math.max(0, Math.min(1, t));
-    const decay = Math.exp(-clampedT / CONFIG.BOUNCE_DAMPING);
-    const oscillations = Math.sin(clampedT * Math.PI * 2 * CONFIG.BOUNCE_FREQUENCY);
-    return -decay * oscillations;
-}
-
-// --- Color Utility Functions --- (Used for Confetti)
-function getComplementaryColor(hex) {
-    hex = hex.replace('#', '');
-    let r = parseInt(hex.substring(0, 2), 16);
-    let g = parseInt(hex.substring(2, 4), 16);
-    let b = parseInt(hex.substring(4, 6), 16);
-    r = 255 - r; g = 255 - g; b = 255 - b;
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-}
-
-function lightenColor(hex, percent) {
-    hex = hex.replace('#', '');
-    let r = parseInt(hex.substring(0, 2), 16);
-    let g = parseInt(hex.substring(2, 4), 16);
-    let b = parseInt(hex.substring(4, 6), 16);
-    r = Math.min(255, Math.floor(r + (255 - r) * (percent / 100)));
-    g = Math.min(255, Math.floor(g + (255 - g) * (percent / 100)));
-    b = Math.min(255, Math.floor(b + (255 - b) * (percent / 100)));
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-}
-
-function darkenColor(hex, percent) {
-    hex = hex.replace('#', '');
-    let r = parseInt(hex.substring(0, 2), 16);
-    let g = parseInt(hex.substring(2, 4), 16);
-    let b = parseInt(hex.substring(4, 6), 16);
-    r = Math.max(0, Math.floor(r * (1 - percent / 100)));
-    g = Math.max(0, Math.floor(g * (1 - percent / 100)));
-    b = Math.max(0, Math.floor(b * (1 - percent / 100)));
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
-}
-
-// --- Logout Function ---
-/**
- * Handles the user logout process by calling the backend.
- */
-async function handleLogout() {
-    console.log("Attempting logout...");
-    try {
-        const response = await fetch('/logout', { // Assuming '/logout' is your backend endpoint
-            method: 'POST',
-            headers: {
-                // Add CSRF token header if your session setup requires it
-                // 'X-CSRF-Token': 'your_csrf_token_here'
-            }
-        });
-
-        if (!response.ok) {
-             const result = await response.json().catch(() => ({ error: 'Logout request failed.' }));
-            throw new Error(result.error || `Logout request failed with status ${response.status}.`);
-        }
-
-        const result = await response.json();
-         if (!result.success) {
-             throw new Error(result.error || 'Logout unsuccessful according to server.');
-         }
-
-        console.log('Logout successful.');
-        currentUser = null; // Clear local user state
-        updateUserUI(); // Update header to show login button
-        updateDepositButtonState(); // Update deposit button state
-        showNotification('You have been successfully signed out.', 'success');
-        // Optionally reload the page for a full reset:
-        // window.location.reload();
-
-    } catch (error) {
-        console.error('Logout Error:', error);
-        showNotification(`Logout failed: ${error.message}`, 'error');
-    } finally {
-        // Ensure dropdown is closed after attempt
-        const { userDropdownMenu, userProfile } = DOMElements.user;
-        if (userDropdownMenu) {
-            userDropdownMenu.style.display = 'none';
-            userProfile?.setAttribute('aria-expanded', 'false');
-            userProfile?.classList.remove('open'); // Optional class for arrow styling
-        }
-    }
-}
-
-/** Resets the deposit modal UI to its initial state */
-function resetDepositModalUI() {
-    const { depositButton, acceptDepositOfferBtn, depositStatusText } = DOMElements.deposit;
-    if (depositButton) {
-        depositButton.disabled = selectedItemsList.length === 0; // Re-enable based on selection
-        depositButton.style.display = 'inline-block';
-        depositButton.textContent = 'Request Deposit Offer';
-    }
-    if (acceptDepositOfferBtn) {
-        acceptDepositOfferBtn.style.display = 'none';
-        acceptDepositOfferBtn.removeAttribute('data-offer-url'); // Clear stored URL (though not strictly needed as we use state var)
-    }
-    if (depositStatusText) {
-        depositStatusText.textContent = ''; // Clear status text
-        depositStatusText.className = 'deposit-status-text'; // Reset class
-    }
-    currentDepositOfferURL = null; // Clear state variable
-}
-
-
-// --- Core Application Logic ---
-
-/**
- * Updates the enabled/disabled state and tooltip of the main deposit button
- * based on current user status, round status, limits, and timer.
- */
-function updateDepositButtonState() {
-    const button = DOMElements.deposit.showDepositModalButton;
-    if (!button) return;
-
-    let disabled = false;
-    let title = 'Deposit Rust skins into the pot'; // Default tooltip
-
-    if (!currentUser) {
-        disabled = true;
-        title = 'Log in to deposit';
-    } else if (currentUser.pendingDepositOfferId) { // ADDED check for pending offer
-         disabled = true;
-         title = 'Accept or cancel your pending deposit offer first (check profile)';
-    } else if (!currentUser.tradeUrl) { // Check if trade URL is set
-         disabled = true;
-         title = 'Set your Steam Trade URL in your profile to deposit';
-    } else if (isSpinning) {
-        disabled = true;
-        title = 'Deposits closed during winner selection';
-    } else if (!currentRound || currentRound.status !== 'active') {
-        disabled = true;
-        title = 'Deposits are currently closed';
-        if (currentRound) {
-            switch (currentRound.status) {
-                case 'rolling': title = 'Deposits closed during winner selection'; break;
-                case 'completed':
-                case 'error': title = 'Deposits closed (Round ended)'; break;
-                case 'pending': title = 'Deposits closed (Waiting for round)'; break;
-            }
-        }
-    } else if (currentRound.participants && currentRound.participants.length >= CONFIG.MAX_PARTICIPANTS_DISPLAY) {
-        disabled = true;
-        title = `Participant limit (${CONFIG.MAX_PARTICIPANTS_DISPLAY}) reached`;
-    } else if (currentRound.items && currentRound.items.length >= CONFIG.MAX_ITEMS_PER_POT_FRONTEND) {
-        disabled = true;
-        title = `Pot item limit (${CONFIG.MAX_ITEMS_PER_POT_FRONTEND}) reached`;
-    } else if (timerActive && currentRound.timeLeft !== undefined && currentRound.timeLeft <= 0) {
-        disabled = true;
-        title = 'Deposits closed (Round ending)';
-    }
-
-    button.disabled = disabled;
-    button.title = title;
-    button.classList.toggle('deposit-disabled', disabled); // Optional class for styling
-}
-
-/**
- * Fetches the user's login status from the backend API.
- */
-async function checkLoginStatus() {
-    try {
-        const response = await fetch('/api/user'); // Assumes API endpoint exists
-        if (!response.ok) {
-            if (response.status === 401 || response.status === 403) {
-                currentUser = null; // Not logged in
-            } else {
-                throw new Error(`Server error fetching user: ${response.status}`);
-            }
-        } else {
-            currentUser = await response.json();
-            // Manually add mock stats if backend doesn't provide them yet
-            // Remove these lines once your backend provides real stats
-            if (currentUser && currentUser.totalDeposited === undefined) {
-                 currentUser.totalDeposited = Math.random() * 2000; // Mock data
-            }
-            if (currentUser && currentUser.totalWon === undefined) {
-                  currentUser.totalWon = Math.random() * 3000; // Mock data
-            }
-             if (currentUser && !currentUser.steamId) {
-                  currentUser.steamId = `mock_${Math.floor(Math.random() * 100000000)}`; // Mock data
-             }
-            console.log('User logged in:', currentUser?.username);
-        }
-    } catch (error) {
-        console.error('Error checking login status:', error);
-        currentUser = null;
-        showNotification(`Error checking login: ${error.message}`, 'error');
-    } finally {
-        updateUserUI(); // Update profile/login button visibility and dropdown content
-        updateDepositButtonState(); // Update deposit button based on login status
-    }
-}
-
-/**
- * Updates the user profile UI (header, dropdown) and pending offer indicators.
- */
-function updateUserUI() {
-    // Destructure elements needed for header display and dropdown control
-    const { loginButton, userProfile, userAvatar, userName, userDropdownMenu, pendingOfferIndicator } = DOMElements.user; // Add pendingOfferIndicator here
-
-    if (!loginButton || !userProfile) return; // Essential elements must exist
-
-    if (currentUser) {
-        // --- Header Elements (Simplified View) ---
-        if (userAvatar) userAvatar.src = currentUser.avatar || '/img/default-avatar.png';
-        if (userName) userName.textContent = currentUser.username || 'User';
-
-        loginButton.style.display = 'none';
-        userProfile.style.display = 'flex'; // Show the avatar+name element
-        userProfile.setAttribute('aria-disabled', 'false'); // Enable profile trigger
-
-        // Show/hide pending offer indicator in header (ADDED LOGIC)
-        if (pendingOfferIndicator) {
-            const hasPending = !!currentUser.pendingDepositOfferId;
-            pendingOfferIndicator.style.display = hasPending ? 'inline-block' : 'none';
-             if (hasPending) {
-                 pendingOfferIndicator.title = `You have a pending deposit offer (#${currentUser.pendingDepositOfferId})! Click your profile to see details.`;
-             }
-        }
-
-    } else {
-        // --- User Logged Out ---
-        loginButton.style.display = 'flex'; // Show login button
-        userProfile.style.display = 'none'; // Hide avatar+name element
-        userProfile.setAttribute('aria-disabled', 'true'); // Disable profile trigger
-
-        // Ensure dropdown is hidden if user logs out while it's open
-        if (userDropdownMenu) userDropdownMenu.style.display = 'none';
-        userProfile.setAttribute('aria-expanded', 'false');
-        userProfile.classList.remove('open');
-        if (pendingOfferIndicator) pendingOfferIndicator.style.display = 'none'; // Hide indicator if logged out (ADDED)
-    }
-}
-
-/**
- * Fetches the user's inventory from the backend API and displays it in the deposit modal.
- */
-async function loadUserInventory() {
-    const { inventoryItemsContainer, selectedItemsContainer, inventoryLoadingIndicator, totalValueDisplay } = DOMElements.deposit;
-    if (!inventoryItemsContainer || !selectedItemsContainer || !inventoryLoadingIndicator || !totalValueDisplay) {
-        console.error("Inventory DOM elements missing.");
-        return;
-    }
-
-    resetDepositModalUI(); // ADDED: Ensure buttons/status reset on load
-
-    // Reset selection state
-    selectedItemsList = [];
-    selectedItemsContainer.innerHTML = '';
-    updateTotalValue(); // Resets value display and deposit button state
-
-    inventoryLoadingIndicator.style.display = 'flex';
-    inventoryItemsContainer.innerHTML = ''; // Clear previous items
-
-    try {
-        const response = await fetch('/api/inventory'); // Assumes API endpoint exists
-        if (!response.ok) {
-            let errorMsg = 'Inventory load failed.';
-            try {
-                const errorData = await response.json();
-                errorMsg = errorData.error || `Inventory load failed (${response.status})`;
-            } catch (e) { /* Ignore if response is not JSON */ }
-
-            if (response.status === 401 || response.status === 403) {
-                errorMsg = 'Please log in first.';
-            }
-            throw new Error(errorMsg);
-        }
-
-        userInventory = await response.json();
-        inventoryLoadingIndicator.style.display = 'none';
-
-        if (!Array.isArray(userInventory)) {
-            throw new Error('Invalid inventory data received.');
-        }
-
-        if (userInventory.length === 0) {
-            inventoryItemsContainer.innerHTML = '<p class="empty-inventory-message">Inventory empty or unavailable. Ensure it\'s public on Steam.</p>';
-            return;
-        }
-
-        displayInventoryItems(); // Display the fetched items
-    } catch (error) {
-        inventoryLoadingIndicator.style.display = 'none';
-        inventoryItemsContainer.innerHTML = `<p class="error-message">Error loading inventory: ${error.message}</p>`;
-        console.error('Error loading inventory:', error);
-        // Error is shown within the modal, no need for separate notification
-    }
-}
-
-/**
- * Renders the user's inventory items in the deposit modal.
- */
-function displayInventoryItems() {
-    const container = DOMElements.deposit.inventoryItemsContainer;
-    if (!container) return;
-    container.innerHTML = ''; // Clear previous items
-
-    userInventory.forEach(item => {
-        // Basic validation of item structure
-        if (!item || typeof item.price !== 'number' || isNaN(item.price) ||
-            !item.assetId || !item.name || !item.image) {
-            console.warn("Skipping invalid inventory item:", item);
-            return; // Skip this item
-        }
-
-        const itemElement = document.createElement('div');
-        itemElement.className = 'inventory-item';
-        itemElement.dataset.assetId = item.assetId;
-        itemElement.dataset.name = item.name;
-        itemElement.dataset.image = item.image;
-        itemElement.dataset.price = item.price.toFixed(2);
-
-        itemElement.innerHTML = `
-            <img src="${item.image}" alt="${item.name}" loading="lazy"
-                 onerror="this.onerror=null; this.src='/img/default-item.png';">
-            <div class="item-details">
-                <div class="item-name" title="${item.name}">${item.name}</div>
-                <div class="item-value">$${item.price.toFixed(2)}</div>
-            </div>`;
-
-        // Check if item is already selected (e.g., if modal was reopened)
-        if (selectedItemsList.some(selected => selected.assetId === item.assetId)) {
-            itemElement.classList.add('selected');
-        }
-
-        // Add click listener to toggle selection
-        itemElement.addEventListener('click', () => toggleItemSelection(itemElement, item));
-        container.appendChild(itemElement);
-    });
-}
-
-/**
- * Toggles the selection state of an inventory item.
- * @param {HTMLElement} element - The DOM element of the item clicked.
- * @param {object} item - The inventory item data object.
- */
-function toggleItemSelection(element, item) {
-    // Validate item price again before selection
-    if (typeof item.price !== 'number' || isNaN(item.price)) {
-        console.error("Attempted to select item with invalid price:", item);
-        showNotification('Selection Error: Cannot select item with invalid price.', 'error');
-        return;
-    }
-
-    const assetId = item.assetId;
-    const index = selectedItemsList.findIndex(i => i.assetId === assetId);
-
-    if (index === -1) { // If not selected, add it
-        // Check selection limit
-        if (selectedItemsList.length >= CONFIG.MAX_ITEMS_PER_DEPOSIT) {
-            showNotification(`Selection Limit: You can select a maximum of ${CONFIG.MAX_ITEMS_PER_DEPOSIT} items per deposit.`, 'info');
-            return;
-        }
-        selectedItemsList.push(item);
-        element.classList.add('selected');
-        addSelectedItemElement(item); // Add to the visual selected list
-    } else { // If already selected, remove it
-        selectedItemsList.splice(index, 1);
-        element.classList.remove('selected');
-        removeSelectedItemElement(assetId); // Remove from the visual selected list
-    }
-
-    updateTotalValue(); // Update total value display
-    resetDepositModalUI(); // ADDED: Reset footer buttons/text when selection changes
-}
-
-/**
- * Adds a visual representation of a selected item to the "Selected Items" area.
- * @param {object} item - The item data object.
- */
-function addSelectedItemElement(item) {
-    const container = DOMElements.deposit.selectedItemsContainer;
-    if (!container) return;
-
-    // Validate price
-    if (typeof item.price !== 'number' || isNaN(item.price)) {
-        console.error("Cannot add selected item element, invalid price:", item);
-        return;
-    }
-
-    const selectedElement = document.createElement('div');
-    // Use the class defined in CSS
-    selectedElement.className = 'selected-item-display';
-    selectedElement.dataset.assetId = item.assetId;
-    selectedElement.innerHTML = `
-        <img src="${item.image}" alt="${item.name}" loading="lazy"
-             onerror="this.onerror=null; this.src='/img/default-item.png';">
-        <div class="item-name" title="${item.name}">${item.name}</div>
-        <div class="item-value">$${item.price.toFixed(2)}</div>
-        <button class="remove-item-btn" title="Remove ${item.name}" data-asset-id="${item.assetId}" aria-label="Remove ${item.name}">&times;</button>
-        `; // Added a remove button
-
-    // Add listener to remove button
-    selectedElement.querySelector('.remove-item-btn')?.addEventListener('click', (e) => {
-        e.stopPropagation(); // Prevent event bubbling
-        const assetIdToRemove = e.target.dataset.assetId;
-        if (assetIdToRemove) {
-            removeSelectedItem(assetIdToRemove); // Use helper to remove from logic and UI
-            updateTotalValue();
-            resetDepositModalUI(); // Reset footer when item is manually removed from selection
-        }
-    });
-
-    // Add listener to the item itself to allow deselecting by clicking it here too
-    selectedElement.addEventListener('click', () => {
-        removeSelectedItem(item.assetId);
-        updateTotalValue();
-        resetDepositModalUI(); // Reset footer when item is manually removed from selection
-    });
-
-    container.appendChild(selectedElement);
-}
-
-/**
- * Removes the visual representation of an item from the "Selected Items" area.
- * @param {string} assetId - The asset ID of the item to remove.
- */
-function removeSelectedItemElement(assetId) {
-    const container = DOMElements.deposit.selectedItemsContainer;
-    const selectedElement = container?.querySelector(`.selected-item-display[data-asset-id="${assetId}"]`); // Match class used in addSelectedItemElement
-    if (selectedElement) selectedElement.remove();
-}
-
-/**
- * Removes an item from the selectedItemsList array and updates UI.
- * Called when removing without direct element interaction (e.g., from remove button).
- * @param {string} assetId - The asset ID of the item to remove.
- */
-function removeSelectedItem(assetId) {
-    selectedItemsList = selectedItemsList.filter(item => item.assetId !== assetId);
-
-    // Deselect in the main inventory view if visible
-    const inventoryElement = DOMElements.deposit.inventoryItemsContainer?.querySelector(`.inventory-item[data-asset-id="${assetId}"]`);
-    if (inventoryElement) inventoryElement.classList.remove('selected');
-
-    // Remove from the selected items display area
-    removeSelectedItemElement(assetId);
-}
-
-/**
- * Updates the total value display in the deposit modal.
- */
-function updateTotalValue() {
-    const { totalValueDisplay } = DOMElements.deposit;
-    if (!totalValueDisplay) return;
-
-    const total = selectedItemsList.reduce((sum, item) => {
-        // Ensure price is valid before adding
-        const price = typeof item.price === 'number' && !isNaN(item.price) ? item.price : 0;
-        return sum + price;
-    }, 0);
-
-    totalValueDisplay.textContent = `$${total.toFixed(2)}`;
-    // Deposit button enable/disable logic is handled in resetDepositModalUI
-}
-
-// --- Second Part of main.js (Continued) ---
-
-/**
- * Handles the initial deposit request. Sends selected asset IDs to the backend,
- * expects an offer URL back, and updates the modal UI.
- * REPLACES the old submitDeposit function.
- */
-async function requestDepositOffer() {
-    const { depositButton, acceptDepositOfferBtn, depositStatusText } = DOMElements.deposit;
-    if (!depositButton || !acceptDepositOfferBtn || !depositStatusText) return;
-
-    if (selectedItemsList.length === 0) {
-        showNotification('No Items Selected: Please select items first.', 'info');
-        return;
-    }
-    // Double-check round status/limits client-side
-    if (!currentRound || currentRound.status !== 'active' || isSpinning) { showNotification('Deposit Error: Deposits are currently closed.', 'error'); return; }
-    if (currentUser?.pendingDepositOfferId) {
-        showNotification('Deposit Error: You already have a pending deposit offer. Check your profile or Steam.', 'error');
-        if (DOMElements.profileModal.modal) { populateProfileModal(); showModal(DOMElements.profileModal.modal); }
-        return;
-    }
-     const participantsLength = currentRound.participants?.length || 0;
-     const isNewParticipant = !currentRound.participants?.some(p => p.user?._id === currentUser?._id);
-     if (isNewParticipant && participantsLength >= CONFIG.MAX_PARTICIPANTS_DISPLAY) { showNotification(`Deposit Error: Participant limit (${CONFIG.MAX_PARTICIPANTS_DISPLAY}) reached.`, 'error'); return; }
-     const itemsInPot = currentRound.items?.length || 0;
-     if (itemsInPot + selectedItemsList.length > CONFIG.MAX_ITEMS_PER_POT_FRONTEND) { const slotsLeft = CONFIG.MAX_ITEMS_PER_POT_FRONTEND - itemsInPot; showNotification(`Deposit Error: Pot item limit would be exceeded (Max ${CONFIG.MAX_ITEMS_PER_POT_FRONTEND}). Only ${slotsLeft} slots left.`, 'error', 6000); return; }
-
-    depositButton.disabled = true;
-    depositButton.textContent = 'Requesting...';
-    acceptDepositOfferBtn.style.display = 'none';
-    depositStatusText.textContent = 'Creating deposit offer... Please wait.';
-    depositStatusText.className = 'deposit-status-text info';
-
-    let response;
-
-    try {
-        const assetIds = selectedItemsList.map(item => item.assetId);
-        console.log("Requesting deposit offer for assetIds:", assetIds);
-
-        response = await fetch('/api/deposit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ assetIds }),
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-             if (response.status === 409 && result.offerURL && result.offerId) {
-                 console.warn("User already has a pending offer:", result.offerId);
-                 depositStatusText.textContent = `You already have a pending offer! Click 'Accept on Steam' to view it.`;
-                 depositStatusText.className = 'deposit-status-text warning';
-                 currentDepositOfferURL = result.offerURL;
-                 acceptDepositOfferBtn.style.display = 'inline-block';
-                 acceptDepositOfferBtn.disabled = false;
-                 depositButton.style.display = 'none';
-                 if (currentUser && !currentUser.pendingDepositOfferId) { currentUser.pendingDepositOfferId = result.offerId; updateUserUI(); updateDepositButtonState(); }
-                 return;
-             } else {
-                 throw new Error(result.error || `Failed to create offer (${response.status})`);
-             }
-        } else if (!result.success || !result.offerURL || !result.offerId) {
-            throw new Error(result.error || 'Backend did not return a valid offer URL and ID.');
-        } else {
-            // --- Success ---
-            console.log("Deposit offer created:", result.offerId);
-            depositStatusText.textContent = "Offer created! Click 'Accept on Steam' below to complete.";
-            depositStatusText.className = 'deposit-status-text success';
-            currentDepositOfferURL = result.offerURL;
-            depositButton.style.display = 'none';
-            acceptDepositOfferBtn.style.display = 'inline-block';
-            acceptDepositOfferBtn.disabled = false;
-            if(currentUser) { currentUser.pendingDepositOfferId = result.offerId; updateUserUI(); updateDepositButtonState(); }
-        }
-
-    } catch (error) {
-        console.error('Error requesting deposit offer:', error);
-        depositStatusText.textContent = `Error: ${error.message}`;
-        depositStatusText.className = 'deposit-status-text error';
-        if (!(response && response.status === 409)) {
-             // Only fully reset UI if it wasn't a 409 (pending offer exists) error
-             resetDepositModalUI();
-        }
-        // Ensure pending offer ID is cleared locally if a non-409 error occurred
-        if (currentUser && currentUser.pendingDepositOfferId && !(response && response.status === 409)) {
-            console.log("Clearing potentially stale pending offer ID due to error.");
-            currentUser.pendingDepositOfferId = null; updateUserUI(); updateDepositButtonState();
-        }
-    }
-}
-
-/**
- * Updates the main jackpot header UI elements (Pot Value, Timer Display, Participant Count).
- */
-function updateRoundUI() {
-    const { potValue, participantCount } = DOMElements.jackpot;
-    if (!currentRound || !potValue || !participantCount) return;
-
-    potValue.textContent = `$${(currentRound.totalValue || 0).toFixed(2)}`;
-
-    if (!timerActive) {
-        updateTimerUI(currentRound.timeLeft !== undefined ? currentRound.timeLeft : CONFIG.ROUND_DURATION);
-    }
-
-    const participantNum = currentRound.participants?.length || 0;
-    participantCount.textContent = `${participantNum}/${CONFIG.MAX_PARTICIPANTS_DISPLAY}`;
-}
-
-
-/**
- * Updates the timer text display and the SVG circle progress.
- * @param {number} timeLeft - The remaining time in seconds.
- */
-function updateTimerUI(timeLeft) {
-    const { timerValue, timerForeground } = DOMElements.jackpot;
-    if (!timerValue || !timerForeground) return;
-
-    const timeToShow = Math.max(0, Math.round(timeLeft));
-    let displayValue = timeToShow.toString();
-
-     if (currentRound && currentRound.status === 'active' && !timerActive && currentRound.participants?.length === 0) {
-         // If round is active, timer not started client-side, and no participants, show full duration
-          displayValue = CONFIG.ROUND_DURATION.toString();
-     } else if (timerActive || (currentRound && currentRound.status === 'active' && timeToShow > 0)) {
-         // If timer is active or round active with time left, show countdown
-          displayValue = timeToShow.toString();
-     } else if (isSpinning || (currentRound && currentRound.status === 'rolling')) {
-         // If spinning or server says rolling, show "Rolling"
-          displayValue = "Rolling";
-     } else if (currentRound && (currentRound.status === 'completed' || currentRound.status === 'error')) {
-         // If round ended, show "Ended"
-          displayValue = "Ended";
-     } else if (!timerActive && timeToShow <= 0 && currentRound && currentRound.status === 'active') {
-         // If timer not active client-side but server indicates time is up (timeLeft <= 0)
-          displayValue = "0";
-     } else if (currentRound && currentRound.status === 'pending') {
-           displayValue = "Waiting"; // Show waiting if server says pending
-     } else if (!currentRound) {
-           displayValue = "--"; // Default if no round data yet
-     }
-
-    timerValue.textContent = displayValue;
-    updateTimerCircle(timeToShow, CONFIG.ROUND_DURATION);
-
-    // Update pulse animation
-    if (timerActive && timeToShow <= 10 && timeToShow > 0) {
-        timerValue.classList.add('urgent-pulse');
-        timerValue.classList.remove('timer-pulse');
-    } else {
-        timerValue.classList.remove('urgent-pulse');
-        if (timerActive && timeToShow > 10) {
-            timerValue.classList.add('timer-pulse');
-        } else {
-            timerValue.classList.remove('timer-pulse');
-        }
-    }
-}
-
-
-/**
- * Updates the stroke-dashoffset of the timer's SVG circle foreground.
- * @param {number} timeLeft - Current time left in seconds.
- * @param {number} totalTime - The total duration of the timer in seconds.
- */
-function updateTimerCircle(timeLeft, totalTime) {
-    const circle = DOMElements.jackpot.timerForeground;
-    if (!circle) return;
-
-    // Check if it's an SVG circle element and has the 'r' attribute
-    if (circle instanceof SVGCircleElement && circle.r?.baseVal?.value) {
-        const radius = circle.r.baseVal.value;
-        const circumference = 2 * Math.PI * radius;
-        // Calculate progress, ensure totalTime is not zero
-        const progress = Math.min(1, Math.max(0, timeLeft / Math.max(1, totalTime)));
-        const offset = circumference * (1 - progress);
-
-        circle.style.strokeDasharray = `${circumference}`;
-        circle.style.strokeDashoffset = `${Math.max(0, offset)}`; // Ensure offset is non-negative
-    } else {
-        // Optional: Log a warning if the element is not as expected
-        // console.warn("timerForeground is not an SVG circle or 'r' attribute missing.");
-    }
-}
-
-
-/**
- * Updates the percentage chance display for all participant blocks.
- */
-function updateAllParticipantPercentages() {
-    if (!currentRound || !currentRound.participants || currentRound.participants.length === 0) {
-        return; // No participants or round data
-    }
-
-    const container = DOMElements.jackpot.participantsContainer;
-    if (!container) return;
-
-    const depositBlocks = container.querySelectorAll('.player-deposit-container');
-    const currentTotalPotValue = Math.max(0.01, currentRound.totalValue || 0.01); // Ensure > 0 for calculation
-
-    depositBlocks.forEach(block => {
-        const userId = block.dataset.userId;
-        if (!userId) return; // Skip block if no userId found
-
-        // Find the latest participant data from the currentRound state
-        const participantData = currentRound.participants.find(p => p.user?._id === userId || p.user === userId);
-
-        if (!participantData) return; // Skip if participant data not found (e.g., inconsistency)
-
-        const cumulativeValue = participantData.itemsValue || 0;
-        // Calculate percentage based on the participant's current total value and the *current* total pot value
-        const percentage = ((cumulativeValue / currentTotalPotValue) * 100).toFixed(1);
-
-        // Find the element to update within this block
-        const valueElement = block.querySelector('.player-deposit-value');
-        if (valueElement) {
-            // Determine color
-            const userColor = getUserColor(userId); // Get consistent color
-            // Update text content and title attribute
-            valueElement.textContent = `$${cumulativeValue.toFixed(2)} | ${percentage}%`;
-            valueElement.title = `Deposited: $${cumulativeValue.toFixed(2)} | Chance: ${percentage}%`;
-            valueElement.style.color = userColor; // Apply user color
-        }
-    });
-}
-
-
-/**
- * Displays the latest deposit as a new block at the TOP of the participants container.
- * Calculates and includes the initial percentage chance.
- * @param {object} data - Participant update data.
- */
-function displayLatestDeposit(data) {
-    const container = DOMElements.jackpot.participantsContainer;
-    const emptyMsg = DOMElements.jackpot.emptyPotMessage;
-    if (!container) return;
-
-    // Use user ID directly from data if available, fallback to data.user._id
-    const userId = data.userId || data.user?._id;
-    if (!userId || typeof data.itemsValue !== 'number' || isNaN(data.itemsValue)) {
-        console.error("Invalid data passed to displayLatestDeposit:", data);
-        return;
-    }
-
-    // --->>> Play Deposit Sound <<<---
-    const depositSfx = DOMElements.audio.depositSound;
-    if (depositSfx) {
-        depositSfx.volume = 0.6; // Adjust volume (0.0 to 1.0) as needed
-        depositSfx.currentTime = 0; // Ensure it plays from the start if triggered quickly
-        depositSfx.play().catch(e => console.error("Error playing deposit sound:", e));
-    }
-    // --->>> End Deposit Sound <<<---
-
-
-    const username = data.username || data.user?.username || 'Unknown User';
-    const avatar = data.avatar || data.user?.avatar || '/img/default-avatar.png';
-    const value = data.itemsValue; // This deposit's value
-    const items = data.depositedItems || [];
-    const userColor = getUserColor(userId);
-
-    // --- Calculate Percentage for Display ---
-    // Find the participant's LATEST cumulative data from currentRound
-    const participantData = currentRound?.participants?.find(p => (p.user?._id === userId || p.user === userId));
-    const cumulativeValue = participantData ? participantData.itemsValue : value; // Use latest cumulative value if found
-    const currentTotalPotValue = Math.max(0.01, currentRound?.totalValue || 0.01); // Use current round total, ensure > 0
-    const percentage = ((cumulativeValue / currentTotalPotValue) * 100).toFixed(1); // Calculate percentage
-
-    const depositContainer = document.createElement('div');
-    depositContainer.dataset.userId = userId; // Use the determined userId
-    depositContainer.className = 'player-deposit-container player-deposit-new';
-
-    const depositHeader = document.createElement('div');
-    depositHeader.className = 'player-deposit-header';
-    // Update innerHTML to include percentage and apply user color
-    depositHeader.innerHTML = `
-        <img src="${avatar}" alt="${username}" class="player-avatar" loading="lazy"
-             onerror="this.onerror=null; this.src='/img/default-avatar.png';" style="border-color: ${userColor};">
-        <div class="player-info">
-            <div class="player-name" title="${username}">${username}</div>
-            <div class="player-deposit-value" style="color: ${userColor}" title="Deposited: $${cumulativeValue.toFixed(2)} | Chance: ${percentage}%">
-                $${cumulativeValue.toFixed(2)} | ${percentage}%
-            </div>
-        </div>`;
-
-
-    const itemsGrid = document.createElement('div');
-    itemsGrid.className = 'player-items-grid';
-
-    if (items.length > 0) {
-        items.sort((a, b) => (b.price || 0) - (a.price || 0));
-        const displayItems = items.slice(0, CONFIG.MAX_ITEMS_PER_DEPOSIT);
-
-        displayItems.forEach(item => {
-            if (!item || typeof item.price !== 'number' || isNaN(item.price) || !item.name || !item.image) {
-                console.warn("Skipping invalid item in deposit display:", item);
-                return;
-            }
-
-            const itemElement = document.createElement('div');
-            itemElement.className = 'player-deposit-item';
-            itemElement.title = `${item.name} ($${item.price.toFixed(2)})`;
-            itemElement.style.borderColor = userColor; // Use the same user color for item border
-            // Apply user color to item value as well
-            itemElement.innerHTML = `
-                <img src="${item.image}" alt="${item.name}" class="player-deposit-item-image" loading="lazy"
-                     onerror="this.onerror=null; this.src='/img/default-item.png';">
-                <div class="player-deposit-item-info">
-                    <div class="player-deposit-item-name" title="${item.name}">${item.name}</div>
-                    <div class="player-deposit-item-value" style="color: ${userColor}">$${item.price.toFixed(2)}</div>
-                </div>`;
-            itemsGrid.appendChild(itemElement);
-        });
-
-        if (items.length > CONFIG.MAX_ITEMS_PER_DEPOSIT) {
-            const moreItems = document.createElement('div');
-            moreItems.className = 'player-deposit-item-more';
-            moreItems.style.color = userColor; // Apply user color
-            moreItems.textContent = `+${items.length - CONFIG.MAX_ITEMS_PER_DEPOSIT} more`;
-            itemsGrid.appendChild(moreItems);
-        }
-    }
-
-    depositContainer.appendChild(depositHeader);
-    depositContainer.appendChild(itemsGrid);
-
-    // Insert new deposit block at the top
-    if (container.firstChild) {
-        container.insertBefore(depositContainer, container.firstChild);
-    } else {
-        container.appendChild(depositContainer);
-    }
-
-    if (emptyMsg) emptyMsg.style.display = 'none'; // Hide empty message
-
-    // Fade-in animation trigger
-    setTimeout(() => {
-        depositContainer.classList.remove('player-deposit-new');
-    }, 500);
-
-    // Limit displayed deposit blocks
-    const currentDepositBlocks = container.querySelectorAll('.player-deposit-container');
-    if (currentDepositBlocks.length > CONFIG.MAX_DISPLAY_DEPOSITS) {
-        const blocksToRemove = currentDepositBlocks.length - CONFIG.MAX_DISPLAY_DEPOSITS;
-        for (let i = 0; i < blocksToRemove; i++) {
-            const oldestBlock = container.querySelector('.player-deposit-container:last-child');
-            if (oldestBlock && oldestBlock !== depositContainer) { // Don't remove the one just added
-                oldestBlock.style.transition = 'opacity 0.3s ease-out';
-                oldestBlock.style.opacity = '0';
-                setTimeout(() => {
-                    if (oldestBlock.parentNode === container) { // Check if still attached before removing
-                        oldestBlock.remove();
+const RUST_APP_ID = 252490;
+const RUST_CONTEXT_ID = 2;
+const ROUND_DURATION = parseInt(process.env.ROUND_DURATION_SECONDS) || 99;
+const TICKET_VALUE_RATIO = parseFloat(process.env.TICKET_VALUE) || 0.01;
+const PRICE_CACHE_TTL_SECONDS = parseInt(process.env.PRICE_CACHE_TTL_SECONDS) || 15 * 60;
+const PRICE_REFRESH_INTERVAL_MS = (parseInt(process.env.PRICE_REFRESH_MINUTES) || 10) * 60 * 1000;
+const MIN_ITEM_VALUE = parseFloat(process.env.MIN_ITEM_VALUE) || 0.10;
+const PRICE_FETCH_TIMEOUT_MS = 30000;
+const MAX_PARTICIPANTS = 20;
+const MAX_ITEMS_PER_POT = 200;
+const MAX_ITEMS_PER_DEPOSIT = parseInt(process.env.MAX_ITEMS_PER_DEPOSIT) || 20; // Limit items per single deposit trade
+const TAX_MIN_PERCENT = 5;
+const TAX_MAX_PERCENT = 10;
+const MIN_POT_FOR_TAX = parseFloat(process.env.MIN_POT_FOR_TAX) || 100;
+
+// Initialize Express app
+const app = express();
+const server = http.createServer(app);
+const io = socketIo(server, { cors: { origin: process.env.SITE_URL || "*", methods: ["GET", "POST"] } });
+
+// --- Security Middleware ---
+app.set('trust proxy', 1);
+app.use(
+    helmet.contentSecurityPolicy({
+        directives: {
+            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+            "default-src": ["'self'"],
+            "script-src": ["'self'", "/socket.io/socket.io.js", "'unsafe-inline'"], // Added unsafe-inline temporarily if needed for inline event handlers from HTML file
+            "script-src-attr": ["'self'", "'unsafe-inline'"], // Consider removing unsafe-inline later
+            "style-src": ["'self'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
+            "img-src": [
+                "'self'", "data:", "*.steamstatic.com", "*.akamai.steamstatic.com"
+            ],
+            "font-src": ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
+            "connect-src": (() => {
+                const sources = ["'self'"];
+                const siteUrl = process.env.SITE_URL;
+                if (siteUrl) {
+                    try {
+                        const url = new URL(siteUrl);
+                        sources.push(`ws://${url.hostname}${url.port ? `:${url.port}` : ''}`);
+                        sources.push(`wss://${url.hostname}${url.port ? `:${url.port}` : ''}`);
+                        sources.push(siteUrl); // Allow connections TO the site URL itself
+                    } catch (e) {
+                        console.error("Invalid SITE_URL for CSP connect-src:", siteUrl, e);
                     }
-                }, 300);
-            }
+                }
+                sources.push("https://rust.scmm.app"); // For pricing
+                 // Allow connections back to self for API calls (redundant if SITE_URL is set correctly)
+                // sources.push(process.env.SITE_URL || "'self'");
+                return sources;
+            })(),
+             // IMPORTANT: Allow framing to steamcommunity.com for trade offers
+             "frame-src": ["'self'", "https://steamcommunity.com"],
+             // IMPORTANT: Allow frame ancestors from steamcommunity.com if needed for embedded scenarios
+             "frame-ancestors": ["'self'", "https://steamcommunity.com"],
+            "object-src": ["'none'"],
+            "upgrade-insecure-requests": [],
+        },
+    })
+);
+// Add other specific helmet features if needed, e.g., HSTS
+// app.use(helmet.hsts({ maxAge: 15552000, includeSubDomains: true }));
+
+// Rate Limiting Setup
+const generalApiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false });
+const authLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 10, message: 'Too many login attempts from this IP, please try again after 10 minutes', standardHeaders: true, legacyHeaders: false });
+const sensitiveActionLimiter = rateLimit({ windowMs: 5 * 60 * 1000, max: 20, message: 'Too many requests for this action, please try again after 5 minutes', standardHeaders: true, legacyHeaders: false });
+const depositLimiter = rateLimit({ windowMs: 1 * 60 * 1000, max: 10, message: 'Too many deposit attempts, please wait a minute.', standardHeaders: true, legacyHeaders: false }); // Stricter limit for deposit requests
+
+// Apply general limiter to API routes
+app.use('/api/', generalApiLimiter);
+
+// Configure middleware
+app.use(cors({ origin: process.env.SITE_URL || "*", credentials: true }));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static('public')); // Serves index.html, main.js, styles.css etc.
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    // TODO: Use MongoStore in production
+    // const MongoStore = require('connect-mongo');
+    // store: MongoStore.create({ mongoUrl: process.env.MONGODB_URI }),
+    cookie: {
+        maxAge: 3600000, // 1 hour session cookie
+        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
+        httpOnly: true, // Helps prevent XSS accessing the cookie
+        sameSite: 'lax' // Helps prevent CSRF
+    }
+}));
+app.use(passport.initialize());
+app.use(passport.session());
+
+// --- Steam Strategy ---
+passport.use(new SteamStrategy({
+    returnURL: `${process.env.SITE_URL}/auth/steam/return`,
+    realm: process.env.SITE_URL,
+    apiKey: process.env.STEAM_API_KEY,
+    providerURL: 'https://steamcommunity.com/openid' // Correct OpenID endpoint
+},
+    async (identifier, profile, done) => {
+        try {
+            // Use findOneAndUpdate with upsert for cleaner create/update logic
+            const userData = {
+                username: profile.displayName,
+                avatar: profile._json.avatarfull || '',
+                // Don't overwrite tradeUrl on login
+            };
+            const user = await User.findOneAndUpdate(
+                { steamId: profile.id },
+                { $set: userData, $setOnInsert: { steamId: profile.id, tradeUrl: '', createdAt: new Date(), pendingDepositOfferId: null } }, // Add pendingDepositOfferId on insert
+                { new: true, upsert: true, runValidators: true } // upsert=true creates if not found
+            );
+            // console.log(`User login/update successful: ${user.username} (ID: ${user.steamId})`); // Less verbose logging
+            return done(null, user); // Pass user object to serializeUser
+        } catch (err) {
+            console.error('Steam Strategy Error:', err);
+            return done(err);
         }
+    }
+));
+passport.serializeUser((user, done) => done(null, user.id)); // Use internal MongoDB ID
+passport.deserializeUser(async (id, done) => {
+    try {
+        const user = await User.findById(id);
+        done(null, user); // Attach user object to req.user
+    } catch (err) {
+        console.error("DeserializeUser Error:", err);
+        done(err);
+    }
+});
+
+// --- MongoDB Connection ---
+mongoose.connect(process.env.MONGODB_URI)
+    .then(() => console.log('Successfully connected to MongoDB.'))
+    .catch(err => {
+        console.error('MongoDB Connection Error:', err);
+        // process.exit(1); // Exit if cannot connect to DB
+    });
+
+// --- MongoDB Schemas ---
+const userSchema = new mongoose.Schema({
+    steamId: { type: String, required: true, unique: true, index: true },
+    username: { type: String, required: true },
+    avatar: { type: String },
+    tradeUrl: {
+        type: String,
+        default: '',
+        // Basic regex validation at schema level (more thorough validation in route)
+        match: [/^https?:\/\/steamcommunity\.com\/tradeoffer\/new\/\?partner=\d+&token=[a-zA-Z0-9_-]+$/, 'Invalid Steam Trade URL format']
+    },
+    balance: { type: Number, default: 0 }, // Example field, might not be used in jackpot
+    createdAt: { type: Date, default: Date.now },
+    banned: { type: Boolean, default: false },
+    // Field to track pending deposit offer ID
+    pendingDepositOfferId: { type: String, default: null, index: true } // Added index
+});
+const itemSchema = new mongoose.Schema({
+    assetId: { type: String, required: true, index: true },
+    name: { type: String, required: true },
+    image: { type: String, required: true },
+    price: { type: Number, required: true, min: 0 }, // Ensure price is non-negative
+    owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true }, // Added index
+    roundId: { type: mongoose.Schema.Types.ObjectId, ref: 'Round', required: true, index: true },
+    depositedAt: { type: Date, default: Date.now }
+});
+const roundSchema = new mongoose.Schema({
+    roundId: { type: Number, required: true, unique: true, index: true },
+    status: { type: String, enum: ['pending', 'active', 'rolling', 'completed', 'error'], default: 'pending', index: true },
+    startTime: { type: Date },
+    endTime: { type: Date },
+    completedTime: { type: Date },
+    totalValue: { type: Number, default: 0, min: 0 },
+    items: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Item' }],
+    participants: [{
+        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+        itemsValue: { type: Number, required: true, default: 0, min: 0 }, // Total value deposited by user in this round
+        tickets: { type: Number, required: true, default: 0, min: 0 }      // Tickets based on value
+    }],
+    winner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true }, // Added index
+    winningTicket: { type: Number, min: 0 },
+    serverSeed: { type: String, required: true, match: /^[a-f0-9]{64}$/ }, // Ensure hex format
+    serverSeedHash: { type: String, required: true, match: /^[a-f0-9]{64}$/ }, // Ensure hex format
+    clientSeed: { type: String, match: /^[a-f0-9]+$/ }, // Allow any hex length, could be refined
+    provableHash: { type: String, match: /^[a-f0-9]{64}$/ }, // Ensure hex format
+    taxAmount: { type: Number, default: 0, min: 0 }, // Store the calculated tax value
+    taxedItems: [{ // Store basic info of items taken as tax
+        assetId: String,
+        name: String,
+        price: { type: Number, min: 0 }
+    }]
+});
+// Add index to participants.user for faster lookups
+roundSchema.index({ 'participants.user': 1 });
+
+const User = mongoose.model('User', userSchema);
+const Item = mongoose.model('Item', itemSchema);
+const Round = mongoose.model('Round', roundSchema);
+
+// --- Steam Bot Setup ---
+const community = new SteamCommunity();
+const manager = new TradeOfferManager({
+    steam: community,
+    domain: process.env.SITE_URL ? process.env.SITE_URL.replace(/^https?:\/\//, '') : 'localhost', // Domain for trade link validation
+    language: 'en', // Language for trade offers
+    pollInterval: 10000, // Poll slightly faster for quicker deposit confirmations // Check for new offers every 10 seconds
+    cancelTime: 10 * 60 * 1000, // Cancel outgoing offers after 10 minutes (e.g., deposit requests)
+});
+let isBotReady = false; // Track bot readiness
+// Store pending deposit data { depositId: { userId, items, roundId, steamId } }
+// TODO: Consider using Redis or DB for persistence if app restarts often
+const pendingDeposits = new Map();
+
+// --- 2FA Code Generation ---
+function generateAuthCode() {
+    const secret = process.env.STEAM_SHARED_SECRET;
+    if (!secret) { console.error("STEAM_SHARED_SECRET missing. Cannot generate 2FA code."); return null; }
+    try { return SteamTotp.generateAuthCode(secret); }
+    catch (e) { console.error("Error generating 2FA code:", e); return null; }
+}
+
+// --- Steam Bot Login ---
+// Using enhanced login logic with detailed error reporting
+if (isBotConfigured) {
+    const loginCredentials = {
+        accountName: process.env.STEAM_USERNAME,
+        password: process.env.STEAM_PASSWORD,
+        twoFactorCode: generateAuthCode()
+    };
+
+    if (loginCredentials.twoFactorCode) {
+        console.log(`Attempting Steam login for bot: ${loginCredentials.accountName}...`);
+        // Add 'steamguard' parameter to potentially capture more info
+        community.login(loginCredentials, (err, sessionID, cookies, steamguard) => {
+            // Log the error object immediately for details, regardless if it exists
+            if (err) {
+                console.error('STEAM LOGIN ERROR (Callback Err Object):', {
+                    message: err.message,
+                    eresult: err.eresult, // EResult provides specific Steam error codes
+                    emaildomain: err.emaildomain, // May indicate if email auth is needed
+                });
+            } else {
+                console.log('Steam community.login callback received (no immediate error object reported).');
+            }
+
+            // Check if EITHER an error occurred OR the SteamID wasn't retrieved
+            if (err || !community.steamID) {
+                console.error(`CRITICAL LOGIN FAILURE: Login callback failed or community.steamID is undefined. Error: ${err ? err.message : 'N/A'}, SteamID: ${community.steamID}, EResult: ${err?.eresult}`);
+                isBotReady = false; // Ensure bot is marked as not ready
+                // Add specific failure hints
+                if (err?.eresult === 5) console.warn('Login Failure Hint: Invalid Password? Check .env');
+                if (err?.eresult === 65) console.warn('Login Failure Hint: Incorrect 2FA Code (Check Shared Secret/Server Time) or Account Rate Limit?');
+                if (err?.eresult === 63) console.warn('Login Failure Hint: Account Logon Denied - Check Email Auth/Steam Guard settings via Browser?');
+                return; // *** DO NOT PROCEED to manager.setCookies if login failed ***
+            }
+
+            // Only proceed if login was truly successful
+            console.log(`Steam bot ${loginCredentials.accountName} logged in successfully (SteamID: ${community.steamID}). Attempting to set cookies for TradeOfferManager...`);
+
+            manager.setCookies(cookies, (setCookieErr) => {
+                if (setCookieErr) {
+                    console.error('TradeOfferManager Error setting cookies:', { error: setCookieErr.message, stack: setCookieErr.stack });
+                    isBotReady = false;
+                    return;
+                }
+                console.log('TradeOfferManager cookies set successfully.');
+                // Cookies are valid enough for the manager, now set for community actions too
+                community.setCookies(cookies);
+                // Set persona/games played AFTER cookies are confirmed set
+                // community.gamesPlayed(process.env.SITE_NAME || 'RustyDegen'); // Often cosmetic
+                // community.setPersona(SteamCommunity.EPersonaState.Online); // Set online status
+                isBotReady = true; // Mark bot as ready ONLY after cookies are set for BOTH manager and community
+                console.log("Steam Bot is ready.");
+                // Now that the bot is ready, attempt to create the first round if none exists
+                ensureInitialRound();
+            });
+
+            // Auto-accept friend requests (can run once login is confirmed valid)
+            community.on('friendRelationship', (steamID, relationship) => {
+                if (relationship === SteamCommunity.EFriendRelationship.RequestRecipient) {
+                    console.log(`Received friend request from ${steamID}. Accepting...`);
+                    community.addFriend(steamID, (friendErr) => { // Use different variable name
+                        if (friendErr) console.error(`Error accepting friend request from ${steamID}:`, friendErr);
+                        else console.log(`Accepted friend request from ${steamID}.`);
+                    });
+                }
+            });
+        }); // End community.login callback
+    } else {
+        console.warn("Could not generate 2FA code. Steam Bot login skipped.");
+        isBotReady = false;
+    }
+} // End if (isBotConfigured)
+
+// --- Active Round Data ---
+let currentRound = null;
+let roundTimer = null; // Interval ID for the countdown
+let isRolling = false; // Flag to prevent actions during winner selection/payout
+
+// --- Deposit Security Token Store ---
+// REMOVED: depositTokens object and verifyDepositToken function are no longer needed for the new flow
+
+// --- Pricing Cache and Functions ---
+const priceCache = new NodeCache({ stdTTL: PRICE_CACHE_TTL_SECONDS, checkperiod: PRICE_CACHE_TTL_SECONDS * 0.2, useClones: false }); // useClones: false for performance
+
+// Fallback function
+function getFallbackPrice(marketHashName) {
+    // console.warn(`PRICE_INFO: Using fallback (min value $${MIN_ITEM_VALUE.toFixed(2)}) for: ${marketHashName}`); // Less verbose
+    return MIN_ITEM_VALUE > 0 ? MIN_ITEM_VALUE : 0;
+}
+
+/**
+ * Fetches ALL item prices from rust.scmm.app and updates the local cache.
+ */
+async function refreshPriceCache() {
+    console.log("PRICE_INFO: Attempting to refresh price cache from rust.scmm.app...");
+    const apiUrl = `https://rust.scmm.app/api/item/prices?currency=USD`;
+
+    try {
+        const response = await axios.get(apiUrl, { timeout: PRICE_FETCH_TIMEOUT_MS });
+
+        if (response.data && Array.isArray(response.data)) {
+            const items = response.data;
+            let updatedCount = 0;
+            let newItems = []; // Array for bulk cache update
+
+            items.forEach(item => {
+                // Check for valid name and non-negative number price
+                if (item?.name && typeof item.price === 'number' && item.price >= 0) {
+                    const key = item.name;
+                    // Assuming SCMM API returns price in the smallest currency unit (e.g., cents)
+                    const priceInDollars = item.price / 100.0;
+
+                    newItems.push({ key: key, val: priceInDollars }); // TTL is managed by NodeCache default
+                    updatedCount++;
+                } else if (item?.name) {
+                    // console.warn(`PRICE_WARN: Invalid or missing price field for item '${item.name}' in SCMM response. Raw price: ${item.price}`); // Less verbose
+                }
+            });
+
+            if (newItems.length > 0) {
+                const success = priceCache.mset(newItems); // Bulk set items in cache
+                if (success) { console.log(`PRICE_SUCCESS: Refreshed price cache with ${updatedCount} items from rust.scmm.app.`); }
+                else { console.error("PRICE_ERROR: Failed to bulk set price cache (node-cache mset returned false)."); }
+            } else {
+                console.warn("PRICE_WARN: No valid items found in the response from rust.scmm.app price refresh.");
+            }
+        } else {
+            console.error("PRICE_ERROR: Invalid or empty array response received from rust.scmm.app price refresh. Response Status:", response.status);
+        }
+    } catch (error) {
+        console.error(`PRICE_ERROR: Failed to fetch prices from ${apiUrl}.`);
+        if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+            console.error(` -> Error: Request timed out after ${PRICE_FETCH_TIMEOUT_MS}ms. SCMM API might be slow/unreachable.`);
+        } else if (error.response) {
+            console.error(` -> Status: ${error.response.status}, Response:`, error.response.data || error.message);
+        } else if (error.request) {
+            console.error(` -> Error: No response received (Network issue?).`, error.message);
+        } else {
+            console.error(' -> Error setting up request:', error.message);
+        }
+        // Do not crash the server, continue using potentially stale cache or fallbacks
     }
 }
 
+/**
+ * Gets item price from local cache, falling back if not found.
+ * @param {string} marketHashName
+ * @returns {number} Price in USD
+ */
+function getItemPrice(marketHashName) {
+    // Basic validation on input
+    if (typeof marketHashName !== 'string' || marketHashName.length === 0) {
+        console.warn("getItemPrice called with invalid marketHashName:", marketHashName);
+        return 0;
+    }
+    const cachedPrice = priceCache.get(marketHashName);
+    if (cachedPrice !== undefined) { // Check cache first (0 is a valid cached price)
+        return cachedPrice;
+    } else {
+        return getFallbackPrice(marketHashName); // Use fallback if not in cache
+    }
+}
+
+// --- Sanitizer Function ---
+// REMOVED: sanitizeObjectProperties function (less critical with current libs, but can be re-added if specific vulnerabilities are found)
+
+// --- Core Game Logic ---
 
 /**
- * Processes participant updates from the server. Called when deposit confirmed.
- * @param {object} data - Data received from the 'participantUpdated' socket event.
+ * Creates a new round if one isn't already active or rolling.
  */
-function handleNewDeposit(data) {
-    // Basic data validation
-    if (!data || !data.roundId || !data.userId ||
-        typeof data.itemsValue !== 'number' || isNaN(data.itemsValue) ||
-        data.totalValue === undefined || data.tickets === undefined) {
-        console.error("Invalid participant update data received:", data);
-        return;
+async function createNewRound() {
+    if (isRolling) {
+        console.log("Cannot create new round: Current round is rolling.");
+        return null;
     }
-    if (!data.depositedItems) data.depositedItems = []; // Ensure depositedItems array exists
+    // Check if there's already an active round in memory
+    if (currentRound && currentRound.status === 'active') {
+        console.log(`Cannot create new round: Round ${currentRound.roundId} is already active.`);
+        return currentRound;
+    }
 
-    // Ensure local round state exists or initialize it
-    if (!currentRound) {
-        currentRound = {
-            roundId: data.roundId,
-            status: 'active',
-            timeLeft: CONFIG.ROUND_DURATION,
+    try {
+        isRolling = false; // Ensure rolling flag is reset
+
+        const serverSeed = crypto.randomBytes(32).toString('hex');
+        const serverSeedHash = crypto.createHash('sha256').update(serverSeed).digest('hex');
+
+        // Get the last round ID to increment
+        const lastRound = await Round.findOne().sort('-roundId');
+        const nextRoundId = lastRound ? lastRound.roundId + 1 : 1;
+
+        const newRound = new Round({
+            roundId: nextRoundId,
+            status: 'active', // Start as active immediately
+            startTime: new Date(),
+            serverSeed: serverSeed,
+            serverSeedHash: serverSeedHash,
+            items: [],
+            participants: [],
+            totalValue: 0
+        });
+
+        await newRound.save();
+        currentRound = newRound.toObject(); // Update global current round state (use toObject for plain object)
+
+        // Timer starts when the first participant joins (handled in handleNewDeposit)
+        io.emit('roundCreated', {
+            roundId: newRound.roundId,
+            serverSeedHash: newRound.serverSeedHash,
+            timeLeft: ROUND_DURATION, // Initial time
             totalValue: 0,
             participants: [],
             items: []
-        };
-        console.warn("Handling deposit for non-existent local round. Initializing round.");
-    } else if (currentRound.roundId !== data.roundId) {
-        // Ignore updates for a previous round
-        console.warn(`Deposit received for wrong round (${data.roundId}). Current is ${currentRound.roundId}. Ignoring.`);
+        });
+
+        console.log(`--- Round ${newRound.roundId} created and active ---`);
+        return newRound.toObject(); // Return plain object representation
+
+    } catch (err) {
+        console.error('FATAL: Error creating new round:', err);
+        setTimeout(createNewRound, 10000); // Retry after 10 seconds
+        return null;
+    }
+}
+
+// Ensure an initial round exists on startup *after* bot is ready
+async function ensureInitialRound() {
+    // Only run if bot is configured AND bot is ready
+    if (isBotConfigured && isBotReady) {
+        if (!currentRound) {
+            try {
+                const existingActive = await Round.findOne({ status: 'active' })
+                    .populate('participants.user', 'steamId username avatar')
+                    .populate('items')
+                    .lean();
+                if (existingActive) {
+                    console.log(`Found existing active round ${existingActive.roundId} on startup.`);
+                    currentRound = existingActive;
+                    // Decide if timer needs starting
+                    if (currentRound.participants.length > 0 && currentRound.endTime && new Date(currentRound.endTime) > Date.now() && !roundTimer) {
+                        startRoundTimer(true); // Start timer based on remaining time if not already running
+                    } else if (currentRound.participants.length > 0 && !currentRound.endTime && !roundTimer) {
+                        console.warn(`Active round ${currentRound.roundId} found without endTime. Starting timer now.`);
+                        startRoundTimer(false);
+                    }
+                } else {
+                    console.log("No active round found, creating initial round...");
+                    await createNewRound();
+                }
+            } catch (dbErr) {
+                console.error("Error ensuring initial round:", dbErr);
+            }
+        }
+    } else if (isBotConfigured && !isBotReady) {
+        console.log("Bot configured but not ready, skipping initial round check until bot is ready.");
+    } else {
+        console.log("Bot not configured, skipping initial round check.");
+    }
+}
+
+/**
+ * Starts or restarts the countdown timer for the current round.
+ * @param {boolean} useRemainingTime - If true, calculate based on endTime, else use ROUND_DURATION.
+ */
+function startRoundTimer(useRemainingTime = false) {
+    if (roundTimer) clearInterval(roundTimer); // Clear existing timer
+    if (!currentRound || currentRound.status !== 'active') {
+        console.warn("Cannot start timer: No active round or round status invalid.");
         return;
     }
 
-    // Ensure participants and items arrays exist
-    if (!currentRound.participants) currentRound.participants = [];
-    if (!currentRound.items) currentRound.items = [];
+    let timeLeft;
+    let calculatedEndTime;
 
-    // Check if this update corresponds to clearing a pending offer for the current user (ADDED BLOCK)
-    if (currentUser && currentUser.pendingDepositOfferId && currentUser._id === data.userId) {
-         console.log(`Deposit processed for user ${currentUser.username}, clearing local pending offer flag.`);
-         currentUser.pendingDepositOfferId = null; // Clear local flag
-         updateUserUI(); // Update header indicator
-         updateDepositButtonState(); // Re-enable main deposit button if appropriate
-         // Reset deposit modal if it's open
-         if (DOMElements.deposit.depositModal?.style.display === 'flex') {
-             resetDepositModalUI();
-             // Clear selection list visually as items are now deposited
-             selectedItemsList = [];
-             if(DOMElements.deposit.selectedItemsContainer) DOMElements.deposit.selectedItemsContainer.innerHTML = '';
-             updateTotalValue(); // Reset total value display
-             // Optionally close modal after successful deposit confirmation from backend
-             // hideModal(DOMElements.deposit.depositModal);
-         }
-     }
-
-    // Find if participant already exists in this round
-    let participantIndex = currentRound.participants.findIndex(p => p.user?._id === data.userId || p.user === data.userId);
-
-    // Update existing participant or add new one
-    if (participantIndex !== -1) {
-        // Update existing participant's total value and tickets
-        currentRound.participants[participantIndex] = {
-            ...currentRound.participants[participantIndex],
-            itemsValue: (currentRound.participants[participantIndex].itemsValue || 0) + data.itemsValue,
-            tickets: data.tickets // Update tickets based on server calculation
-        };
+    if (useRemainingTime && currentRound.endTime) {
+        calculatedEndTime = new Date(currentRound.endTime);
+        timeLeft = Math.max(0, Math.floor((calculatedEndTime.getTime() - Date.now()) / 1000));
+        console.log(`Resuming timer for round ${currentRound.roundId} with ${timeLeft}s remaining.`);
     } else {
-        // Add new participant
-        currentRound.participants.push({
-            user: { // Store user info nested
-                _id: data.userId, // Use _id consistently if available
-                username: data.username || 'Unknown User',
-                avatar: data.avatar || '/img/default-avatar.png'
-            },
-            itemsValue: data.itemsValue, // Initial value for this participant
-            tickets: data.tickets // Initial tickets for this participant
-        });
+        timeLeft = ROUND_DURATION;
+        calculatedEndTime = new Date(Date.now() + ROUND_DURATION * 1000);
+        currentRound.endTime = calculatedEndTime; // Set end time on the object
+        // Save end time asynchronously
+        Round.updateOne({ _id: currentRound._id }, { $set: { endTime: calculatedEndTime } })
+            .catch(e => console.error(`Error saving round end time for round ${currentRound?.roundId}:`, e));
+        console.log(`Starting timer for round ${currentRound.roundId} (${ROUND_DURATION}s). End time: ${calculatedEndTime.toISOString()}`);
     }
 
-    // Update the total pot value
-    currentRound.totalValue = data.totalValue;
+    io.emit('timerUpdate', { timeLeft }); // Initial emit
 
-    // Add the newly deposited items to the round's master item list
-    data.depositedItems.forEach(item => {
-        if (item && typeof item.price === 'number' && !isNaN(item.price)) {
-            currentRound.items.push({ ...item, owner: data.userId }); // Include owner info
-        } else {
-            console.warn("Skipping invalid item while adding to round master list:", item);
-        }
-    });
-
-    // Update UI Elements
-    updateRoundUI(); // Update header (pot value, participant count)
-    displayLatestDeposit(data); // Display the new deposit block (will show initial percentage)
-    updateAllParticipantPercentages(); // Update percentages for all visible blocks
-    updateDepositButtonState(); // Update deposit button availability
-
-    // Start timer visually if this is the first participant
-    if (currentRound.status === 'active' &&
-        currentRound.participants.length === 1 &&
-        !timerActive) {
-        console.log("First participant joined. Starting client timer visually.");
-        timerActive = true;
-        startClientTimer(currentRound.timeLeft || CONFIG.ROUND_DURATION);
-    }
-}
-
-
-function updateParticipantsUI() {
-    const { participantCount } = DOMElements.jackpot;
-    const emptyMsg = DOMElements.jackpot.emptyPotMessage;
-    const container = DOMElements.jackpot.participantsContainer;
-
-    if (!participantCount || !emptyMsg || !container) {
-        console.error("Participants count/empty message/container elements missing.");
-        return;
-    }
-
-    const participantNum = currentRound?.participants?.length || 0;
-    participantCount.textContent = `${participantNum}/${CONFIG.MAX_PARTICIPANTS_DISPLAY}`;
-
-    const hasDepositBlocks = container.querySelector('.player-deposit-container') !== null;
-
-    if (!hasDepositBlocks && participantNum === 0) { // Ensure count is also 0
-        emptyMsg.style.display = 'block';
-        if (!container.contains(emptyMsg)) {
-            container.appendChild(emptyMsg);
-        }
-    } else {
-        emptyMsg.style.display = 'none';
-    }
-}
-
-
-/**
- * Function to test deposit display with mock data. Adds a new deposit block to the top.
- */
-function testDeposit() {
-    console.log("--- TESTING DEPOSIT DISPLAY (Adds to Top) ---");
-
-    if (!currentRound) {
-        currentRound = { roundId: 'test-round-123', status: 'active', totalValue: 0, participants: [], items: [] };
-    } else {
-        currentRound.status = 'active';
-        if (!currentRound.participants) currentRound.participants = [];
-        if (!currentRound.items) currentRound.items = [];
-    }
-
-    const randomValue = parseFloat((Math.random() * 50 + 1).toFixed(2));
-    // Use _id format for mock user ID for consistency
-    const mockUserId = `mock_${Math.floor(Math.random() * 1000)}`;
-    const mockUsername = ["RustPlayer99", "ScrapCollector", "AK47Master", "TheNaked", "ZergLeader", "TheRaider", "OilRigEnjoyer"][Math.floor(Math.random() * 7)];
-    const mockAvatar = ['https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg', 'https://avatars.steamstatic.com/bb8a0a497b4b1f46b96b6b0775e9368fc8c5c3b4_full.jpg', 'https://avatars.steamstatic.com/3c4c5a7c9968414c3a1ddd1e73cb8e6aeeec5f32_full.jpg', '/img/default-avatar.png'][Math.floor(Math.random() * 4)];
-
-    // Simulate server calculation for cumulative values and tickets
-    let existingParticipant = currentRound.participants.find(p => p.user?._id === mockUserId);
-    let newTotalValue = (currentRound.totalValue || 0) + randomValue;
-    let cumulativeValue = (existingParticipant ? existingParticipant.itemsValue : 0) + randomValue;
-    let cumulativeTickets = Math.max(1, Math.floor(cumulativeValue * 100)); // Example ticket calc
-
-    const mockDepositData = {
-        roundId: currentRound.roundId,
-        userId: mockUserId, // Send ID
-        username: mockUsername,
-        avatar: mockAvatar,
-        itemsValue: randomValue, // Value of *this* deposit
-        tickets: cumulativeTickets, // Participant's *new total* tickets
-        totalValue: newTotalValue, // *New* total pot value
-        depositedItems: []
-    };
-
-    // Generate mock items for this deposit
-    const rustItemNames = ["Assault Rifle", "Metal Facemask", "Garage Door", "Semi-Automatic Rifle", "Road Sign Kilt", "Coffee Can Helmet", "Sheet Metal Door", "Medical Syringe", "MP5A4", "LR-300", "Bolt Action Rifle", "Satchel Charge", "Explosive Ammo", "High Quality Metal", "Crude Oil", "Tech Trash", "Scrap"];
-    const numItems = Math.floor(Math.random() * 10) + 1;
-    let remainingValue = mockDepositData.itemsValue;
-    let accumulatedValue = 0;
-
-    for (let i = 0; i < numItems; i++) {
-        const isLastItem = i === numItems - 1;
-        let itemValue;
-        if (isLastItem) {
-            itemValue = Math.max(0.01, remainingValue);
-        } else {
-            itemValue = parseFloat((Math.random() * remainingValue * 0.6 + 0.01).toFixed(2));
-            itemValue = Math.min(itemValue, remainingValue - (numItems - 1 - i) * 0.01);
-            itemValue = Math.max(0.01, itemValue);
-        }
-        remainingValue -= itemValue;
-        accumulatedValue += itemValue;
-        if (isLastItem && Math.abs(accumulatedValue - mockDepositData.itemsValue) > 0.001) {
-            itemValue += (mockDepositData.itemsValue - accumulatedValue);
-            itemValue = Math.max(0.01, parseFloat(itemValue.toFixed(2)));
-        } else {
-            itemValue = parseFloat(itemValue.toFixed(2));
-        }
-        mockDepositData.depositedItems.push({
-            assetId: `test_asset_${Math.floor(Math.random() * 100000)}`,
-            name: rustItemNames[Math.floor(Math.random() * rustItemNames.length)],
-            image: `/img/default-item.png`,
-            price: itemValue
-        });
-    }
-    // Ensure itemsValue matches sum precisely
-    mockDepositData.itemsValue = mockDepositData.depositedItems.reduce((sum, item) => sum + item.price, 0);
-    mockDepositData.totalValue = (currentRound.totalValue || 0) + mockDepositData.itemsValue;
-
-    console.log("Mock Deposit Data (Passed to handleNewDeposit):", mockDepositData);
-    // Call the main handler which will update the state and then call display functions
-    handleNewDeposit(mockDepositData);
-}
-
-
-/**
- * Starts the client-side countdown timer interval.
- * @param {number} [initialTime=CONFIG.ROUND_DURATION] - The time to start counting down from.
- */
-function startClientTimer(initialTime = CONFIG.ROUND_DURATION) {
-    const timerDisplay = DOMElements.jackpot.timerValue;
-    if (!timerDisplay) return;
-
-    if (roundTimer) clearInterval(roundTimer); // Clear existing timer if any
-
-    let timeLeft = Math.max(0, initialTime);
-    console.log(`Starting/Syncing client timer from ${timeLeft}s`);
-    timerActive = true;
-    updateTimerUI(timeLeft); // Initial UI update
-    updateDepositButtonState(); // Update button state
-
-    roundTimer = setInterval(() => {
-        if (!timerActive) { // Check if timer should stop
-            clearInterval(roundTimer);
-            roundTimer = null;
-            console.log("Client timer interval stopped (timerActive is false).");
+    roundTimer = setInterval(async () => {
+        if (!currentRound || currentRound.status !== 'active' || !currentRound.endTime) {
+            clearInterval(roundTimer); roundTimer = null;
+            console.warn("Timer stopped: Round state became invalid during countdown.");
             return;
         }
-
-        timeLeft--; // Decrement time
-        if (currentRound) currentRound.timeLeft = timeLeft; // Update local state
-
-        updateTimerUI(timeLeft); // Update UI display
-        updateDepositButtonState(); // Update button state (might disable when timer is low)
-
-        if (timeLeft <= 0) { // Timer reached zero
-            clearInterval(roundTimer);
-            roundTimer = null;
-            timerActive = false;
-            console.log("Client timer reached zero.");
-            if (timerDisplay) timerDisplay.textContent = "0"; // Ensure display shows 0
-            updateDepositButtonState(); // Update button state (deposits definitely closed)
-            // Server will trigger the 'roundRolling' event
+        const now = Date.now();
+        let currenttimeLeft = Math.max(0, Math.floor((new Date(currentRound.endTime).getTime() - now) / 1000));
+        io.emit('timerUpdate', { timeLeft: currenttimeLeft });
+        if (currenttimeLeft <= 0) {
+            clearInterval(roundTimer); roundTimer = null;
+            console.log(`Round ${currentRound.roundId} timer reached zero.`);
+            await endRound(); // Trigger round ending process
         }
     }, 1000);
 }
 
-// --- Roulette/Winner Animation Functions ---
-
 /**
- * Creates the visual items (player avatars) for the roulette animation track.
+ * Handles the process of ending the current round, calculating the winner, applying tax, and initiating payout.
  */
-function createRouletteItems() {
-    const track = DOMElements.roulette.rouletteTrack;
-    const container = DOMElements.roulette.inlineRouletteContainer;
-    if (!track || !container) {
-        console.error("Roulette track or inline roulette element missing.");
+async function endRound() {
+    if (!currentRound || isRolling || currentRound.status !== 'active') {
+        console.warn(`Attempted to end round ${currentRound?.roundId}, but state is invalid (Status: ${currentRound?.status}, Rolling: ${isRolling})`);
         return;
     }
 
-    track.innerHTML = ''; // Clear previous items
-    track.style.transition = 'none';
-    track.style.transform = 'translateX(0)'; // Reset position
+    isRolling = true;
+    const roundIdToEnd = currentRound.roundId;
+    const roundMongoId = currentRound._id;
+    console.log(`--- Ending round ${roundIdToEnd}... ---`);
 
-    // Check for participant data
-    if (!currentRound || !currentRound.participants || currentRound.participants.length === 0) {
-        console.error('No participants data available to create roulette items.');
-        track.innerHTML = '<div class="roulette-message">Waiting for participants...</div>';
-        return;
-    }
+    try {
+        await Round.updateOne({ _id: roundMongoId }, { $set: { status: 'rolling', endTime: new Date() } });
+        io.emit('roundRolling', { roundId: roundIdToEnd });
 
-    // Build the ticket pool for visual representation
-    let ticketPool = [];
-    const totalTicketsInRound = currentRound.participants.reduce((sum, p) => sum + (p.tickets || 0), 0);
+        const round = await Round.findById(roundMongoId)
+            .populate('participants.user')
+            .populate('items')
+            .lean();
 
-    if (totalTicketsInRound <= 0) {
-        // Fallback: Use value percentage if tickets are zero
-        console.warn("Total tickets in round is zero. Building roulette based on value percentage.");
-        const totalValueNonZero = Math.max(0.01, currentRound.totalValue || 0.01);
-        const targetVisualBlocks = 150; // Target number of visual blocks
-        currentRound.participants.forEach(p => {
-            const visualBlocks = Math.max(3, Math.ceil(((p.itemsValue || 0) / totalValueNonZero) * targetVisualBlocks));
-            for (let i = 0; i < visualBlocks; i++) ticketPool.push(p); // Add participant reference
-        });
-    } else {
-        // Normal case: Use ticket percentage
-        const targetVisualBlocks = 150; // Target number of visual blocks
-        currentRound.participants.forEach(p => {
-            const tickets = p.tickets || 0;
-            const visualBlocksForUser = Math.max(3, Math.ceil((tickets / totalTicketsInRound) * targetVisualBlocks));
-            for (let i = 0; i < visualBlocksForUser; i++) {
-                ticketPool.push(p); // Add participant reference
-            }
-        });
-    }
+        if (!round) throw new Error(`Round ${roundIdToEnd} data missing after status update.`);
+        if (round.status !== 'rolling') {
+             console.warn(`Round ${roundIdToEnd} status changed unexpectedly after marking as rolling. Aborting endRound.`);
+             isRolling = false; return;
+           }
+        currentRound = round; // Update in-memory state
 
-    if (ticketPool.length === 0) {
-        console.error("Ticket pool calculation resulted in zero items for roulette.");
-        track.innerHTML = '<div class="roulette-message">Error building roulette items.</div>';
-        return;
-    }
-
-    // Shuffle the pool for visual randomness
-    ticketPool = shuffleArray([...ticketPool]);
-
-    // Calculate how many items are needed based on container width and desired spin length
-    const rouletteContainer = container.querySelector('.roulette-container');
-    const containerWidth = rouletteContainer?.offsetWidth || container.offsetWidth || 1000;
-    const itemWidthWithMargin = 60 + 10; // Use updated item width + margin (60px + 5px*2)
-    const itemsInView = Math.ceil(containerWidth / itemWidthWithMargin);
-    const itemsForSpin = 400; // Number of items to spin past (adjust for speed/duration)
-    const totalItemsNeeded = itemsForSpin + (itemsInView * 2); // Ensure enough items for wrap-around feel
-    const itemsToCreate = Math.max(totalItemsNeeded, 500); // Ensure a minimum number
-
-    console.log(`Targeting ${itemsToCreate} roulette items for smooth animation.`);
-
-    // Create DOM elements
-    const fragment = document.createDocumentFragment();
-    for (let i = 0; i < itemsToCreate; i++) {
-        const participant = ticketPool[i % ticketPool.length]; // Cycle through shuffled pool
-        if (!participant || !participant.user) {
-            console.warn(`Skipping roulette item creation at index ${i} due to invalid participant data.`);
-            continue;
-        }
-
-        // Participant.user might be just an ID if not fully populated yet, handle gracefully
-        const userId = participant.user._id || participant.user; // Get ID
-        const userColor = getUserColor(userId);
-        const avatar = participant.user.avatar || '/img/default-avatar.png';
-        const username = participant.user.username || 'Unknown User'; // Alt text
-
-        const itemElement = document.createElement('div');
-        itemElement.className = 'roulette-item';
-        itemElement.dataset.userId = userId; // Store ID
-        itemElement.style.borderColor = userColor; // Set border color immediately
-
-        itemElement.innerHTML = `
-             <img class="roulette-avatar" src="${avatar}" alt="${username}" loading="lazy"
-                   onerror="this.onerror=null; this.src='/img/default-avatar.png';" >`; // Removed inline style on img
-
-        fragment.appendChild(itemElement);
-    }
-
-    track.appendChild(fragment);
-    console.log(`Created ${track.children.length} items for roulette animation.`);
-}
-
-
-/**
- * Handles the 'roundWinner' event from the server. Switches view and starts the animation.
- * @param {object} data - Winner announcement data.
- */
-function handleWinnerAnnouncement(data) {
-    if (isSpinning) {
-        console.warn("Received winner announcement but animation is already spinning.");
-        return;
-    }
-
-    // Ensure participant data is loaded before starting
-    if (!currentRound || !currentRound.participants || currentRound.participants.length === 0) {
-        console.error("Missing participant data for winner announcement. Requesting fresh data.");
-        socket.emit('requestRoundData'); // Ask server for current data
-        setTimeout(() => { // Wait a bit for data to arrive
-            if (currentRound?.participants?.length > 0) {
-                console.log("Retrying winner announcement after receiving data.");
-                handleWinnerAnnouncement(data); // Try again
-            } else {
-                console.error("Still no participant data after requesting. Cannot start spin.");
-                resetToJackpotView(); // Give up and reset
-            }
-        }, 1500);
-        return;
-    }
-
-    // Get winner details (from event or local state if available)
-    const winnerDetails = data.winner || currentRound?.winner;
-    // Use winnerDetails.id (which should be Mongo _id) or winnerDetails._id
-    const winnerId = winnerDetails?.id || winnerDetails?._id;
-    if (!winnerId) {
-        console.error("Invalid winner data received in announcement:", data);
-        resetToJackpotView();
-        return;
-    }
-
-
-    console.log(`Winner announced: ${winnerDetails.username}. Preparing roulette...`);
-
-    // Stop client timer if it's running
-    if (timerActive) {
-        timerActive = false;
-        clearInterval(roundTimer);
-        roundTimer = null;
-        console.log("Stopped client timer due to winner announcement.");
-    }
-
-    // Switch UI to roulette view
-    switchToRouletteView();
-
-    // Start the animation after a short delay to allow UI transition
-    setTimeout(() => {
-        startRouletteAnimation({ winner: winnerDetails }); // Pass the winner object
-    }, 500);
-}
-
-
-/**
- * Switches the UI from the main jackpot display to the roulette animation view.
- */
-function switchToRouletteView() {
-    const header = DOMElements.jackpot.jackpotHeader;
-    const rouletteContainer = DOMElements.roulette.inlineRouletteContainer;
-    if (!header || !rouletteContainer) {
-        console.error("Missing roulette UI elements for view switch.");
-        return;
-    }
-
-    const valueDisplay = header.querySelector('.jackpot-value');
-    const timerDisplay = header.querySelector('.jackpot-timer');
-    const statsDisplay = header.querySelector('.jackpot-stats');
-
-    // Fade out header elements
-    [valueDisplay, timerDisplay, statsDisplay].forEach(el => {
-        if (el) {
-            el.style.transition = 'opacity 0.5s ease';
-            el.style.opacity = '0';
-            setTimeout(() => { el.style.display = 'none'; }, 500); // Hide after fade
-        }
-    });
-
-    header.classList.add('roulette-mode'); // Apply class for background/height changes
-    rouletteContainer.style.display = 'flex'; // Show roulette (use flex from CSS)
-    rouletteContainer.style.opacity = '0';
-    rouletteContainer.style.transform = 'translateY(20px)'; // Start slightly down
-
-    // Fade in roulette
-    setTimeout(() => {
-        rouletteContainer.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
-        rouletteContainer.style.opacity = '1';
-        rouletteContainer.style.transform = 'translateY(0)';
-    }, 600); // Stagger fade in
-
-    if (DOMElements.roulette.returnToJackpotButton) {
-        DOMElements.roulette.returnToJackpotButton.style.display = 'none'; // Ensure hidden initially
-    }
-}
-
-
-/**
- * Starts the roulette spinning animation after items are created.
- * @param {object} winnerData - Object containing winner details { winner: { id/ _id, username, avatar } }.
- */
-function startRouletteAnimation(winnerData) {
-    if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-        animationFrameId = null;
-        console.log("Cancelled previous animation frame.");
-    }
-
-    const winnerId = winnerData?.winner?.id || winnerData?.winner?._id;
-    if (!winnerId) {
-        console.error("Invalid winner data passed to startRouletteAnimation.");
-        resetToJackpotView();
-        return;
-    }
-
-    isSpinning = true;
-    updateDepositButtonState();
-    spinStartTime = 0; // Reset spin start time tracker
-
-    if (DOMElements.roulette.winnerInfoBox) DOMElements.roulette.winnerInfoBox.style.display = 'none'; // Hide previous winner info
-
-    clearConfetti(); // Clear any leftover confetti
-    createRouletteItems(); // Build the items in the track
-
-    const winnerParticipantData = findWinnerFromData(winnerData); // Find full details including value/percentage
-    if (!winnerParticipantData) {
-        console.error('Could not find full winner details in startRouletteAnimation.');
-        isSpinning = false;
-        updateDepositButtonState();
-        resetToJackpotView();
-        return;
-    }
-
-    console.log('Starting animation for Winner:', winnerParticipantData.user.username);
-
-    // Start Spin Sound
-    const sound = DOMElements.audio.spinSound;
-    if (sound) {
-        sound.volume = 0.7;
-        sound.currentTime = 0;
-        sound.playbackRate = 1.0;
-        sound.play().catch(e => console.error('Error playing spin sound:', e));
-    } else {
-        console.warn("Spin sound element not found.");
-    }
-
-    // Delay slightly to allow items to render before selecting winner element
-    setTimeout(() => {
-        const track = DOMElements.roulette.rouletteTrack;
-        const items = track?.querySelectorAll('.roulette-item');
-        if (!track || !items || items.length === 0) {
-            console.error('Cannot spin, no items rendered.');
-            isSpinning = false;
-            updateDepositButtonState();
-            resetToJackpotView();
+        // --- Handle Empty Round ---
+        if (round.participants.length === 0 || round.items.length === 0 || round.totalValue <= 0) {
+            console.log(`Round ${round.roundId} ended with no valid participants or value.`);
+            await Round.updateOne({ _id: roundMongoId }, { $set: { status: 'completed', completedTime: new Date() } });
+            io.emit('roundCompleted', { roundId: round.roundId, message: "No participants." });
+            isRolling = false;
+            setTimeout(createNewRound, 5000);
             return;
         }
 
-        // --- Select Winning Element ---
-        const minIndexPercent = 0.65;
-        const maxIndexPercent = 0.85;
-        const minIndex = Math.floor(items.length * minIndexPercent);
-        const maxIndex = Math.floor(items.length * maxIndexPercent);
+        // --- Tax Calculation ---
+        let finalItems = [...round.items];
+        let finalTotalValue = round.totalValue;
+        let taxAmount = 0;
+        let taxedItemsInfo = [];
+        let itemsToTakeForTaxIds = [];
 
-        let winnerItemsIndices = [];
-        for (let i = minIndex; i <= maxIndex; i++) {
-            if (items[i]?.dataset?.userId === winnerId) { // Compare with winnerId
-                winnerItemsIndices.push(i);
+        if (finalTotalValue >= MIN_POT_FOR_TAX) {
+            const targetTaxValue = finalTotalValue * (TAX_MIN_PERCENT / 100);
+            const maxTaxValue = finalTotalValue * (TAX_MAX_PERCENT / 100);
+            const sortedItems = [...finalItems].sort((a, b) => a.price - b.price);
+            let currentTaxValue = 0;
+            for (const item of sortedItems) {
+                if (currentTaxValue + item.price <= maxTaxValue) {
+                    itemsToTakeForTaxIds.push(item._id.toString());
+                    taxedItemsInfo.push({ assetId: item.assetId, name: item.name, price: item.price });
+                    currentTaxValue += item.price;
+                    if (currentTaxValue >= targetTaxValue) break;
+                } else break;
+            }
+            if (itemsToTakeForTaxIds.length > 0) {
+                const taxedItemsIdsSet = new Set(itemsToTakeForTaxIds);
+                finalItems = finalItems.filter(item => !taxedItemsIdsSet.has(item._id.toString()));
+                taxAmount = currentTaxValue;
+                finalTotalValue -= taxAmount;
+                console.log(`Tax Applied for Round ${round.roundId}: $${taxAmount.toFixed(2)} (${itemsToTakeForTaxIds.length} items). New Pot Value: $${finalTotalValue.toFixed(2)}`);
             }
         }
 
-        if (winnerItemsIndices.length === 0) {
-            console.warn(`No winner items found in preferred range [${minIndex}-${maxIndex}]. Expanding search.`);
-            for (let i = 0; i < items.length; i++) {
-                 if (items[i]?.dataset?.userId === winnerId) { // Compare with winnerId
-                      winnerItemsIndices.push(i);
+        // --- Winner Calculation (Provably Fair) ---
+        const clientSeed = crypto.randomBytes(16).toString('hex');
+        const combinedString = round.serverSeed + clientSeed;
+        const provableHash = crypto.createHash('sha256').update(combinedString).digest('hex');
+        const decimalFromHash = parseInt(provableHash.substring(0, 8), 16);
+        const totalTickets = round.participants.reduce((sum, p) => sum + (p?.tickets || 0), 0);
+        if (totalTickets <= 0) throw new Error(`Cannot determine winner: Total tickets is zero or invalid for round ${round.roundId}.`);
+        const winningTicket = decimalFromHash % totalTickets;
+        let cumulativeTickets = 0;
+        let winner = null;
+        for (const participant of round.participants) {
+            if (!participant?.tickets || !participant.user) continue;
+            cumulativeTickets += participant.tickets;
+            if (winningTicket < cumulativeTickets) {
+                winner = participant.user; break;
+            }
+        }
+        if (!winner) throw new Error(`Winner selection failed for round ${round.roundId}. Winning Ticket: ${winningTicket}, Total Tickets: ${totalTickets}`);
+
+        // --- Prepare Final Database Update ---
+        const finalUpdateData = {
+            status: 'completed', completedTime: new Date(), clientSeed: clientSeed,
+            provableHash: provableHash, winningTicket: winningTicket, winner: winner._id,
+            taxAmount: taxAmount, taxedItems: taxedItemsInfo, totalValue: finalTotalValue,
+            items: finalItems.map(i => i._id) // Store IDs of remaining items
+        };
+        await Round.updateOne({ _id: roundMongoId }, { $set: finalUpdateData });
+        console.log(`Round ${round.roundId} completed. Winner: ${winner.username} (Ticket: ${winningTicket}/${totalTickets}, Value: $${finalTotalValue.toFixed(2)})`);
+
+        // Emit winner information
+        io.emit('roundWinner', {
+            roundId: round.roundId,
+            winner: { id: winner._id, steamId: winner.steamId, username: winner.username, avatar: winner.avatar },
+            winningTicket: winningTicket, totalValue: finalTotalValue, totalTickets: totalTickets,
+            serverSeed: round.serverSeed, clientSeed: clientSeed, provableHash: provableHash, serverSeedHash: round.serverSeedHash
+        });
+
+        // --- Initiate Payout ---
+        await sendWinningTradeOffer(round, winner, finalItems); // Pass the filtered items
+
+    } catch (err) {
+        console.error(`CRITICAL ERROR during endRound for round ${roundIdToEnd}:`, err);
+        try {
+            await Round.updateOne({ _id: roundMongoId }, { $set: { status: 'error' } });
+            io.emit('roundError', { roundId: roundIdToEnd, error: 'Internal server error during round finalization.' });
+        } catch (saveErr) {
+            console.error(`Failed to mark round ${roundIdToEnd} as error after initial error:`, saveErr);
+        }
+    } finally {
+        isRolling = false;
+        console.log(`Scheduling next round creation after round ${roundIdToEnd} finalization.`);
+        setTimeout(createNewRound, 10000);
+    }
+}
+/**
+ * Sends the winning trade offer to the winner.
+ * MODIFIED: Includes offerURL in the socket emit.
+ * @param {object} round - The completed Round lean object.
+ * @param {object} winner - The populated User lean object for the winner.
+ * @param {Array} itemsToSend - Array of lean Item objects to send (after tax).
+ */
+async function sendWinningTradeOffer(round, winner, itemsToSend) {
+    // Critical Check: Ensure bot is ready before attempting to send
+    if (!isBotReady) {
+        console.error(`PAYOUT_ERROR: Cannot send winnings for round ${round.roundId}: Steam Bot is not ready.`);
+        io.emit('notification', { type: 'error', userId: winner._id.toString(), message: `Bot Error: Payout for round ${round.roundId} requires manual processing. Contact support.` });
+        return;
+    }
+    if (!winner.tradeUrl) {
+        console.error(`PAYOUT_ERROR: Cannot send winnings for round ${round.roundId}: Winner ${winner.username} has no Trade URL set.`);
+        io.emit('notification', { type: 'error', userId: winner._id.toString(), message: 'Please set your Trade URL in your profile to receive winnings.' });
+        return;
+    }
+    // Check itemsToSend directly
+    if (!itemsToSend || itemsToSend.length === 0) {
+        console.log(`PAYOUT_INFO: No items to send for round ${round.roundId} (possibly all taxed or error).`);
+        // Use final round value (post-tax) for check
+        if (round.taxAmount > 0 && round.totalValue <= 0) { // If tax took everything
+            io.emit('notification', { type: 'info', userId: winner._id.toString(), message: `Round ${round.roundId} winnings ($${round.taxAmount.toFixed(2)}) were processed as site tax.` });
+        }
+        return;
+    }
+
+    console.log(`Attempting to send ${itemsToSend.length} winning items for round ${round.roundId} to ${winner.username}...`);
+
+    try {
+        const offer = manager.createOffer(winner.tradeUrl);
+        offer.addMyItems(itemsToSend.map(item => ({ // Map lean item objects
+            assetid: item.assetId,
+            appid: RUST_APP_ID,
+            contextid: RUST_CONTEXT_ID
+        })));
+        offer.setMessage(`Congratulations! Your winnings from Round #${round.roundId} on ${process.env.SITE_NAME || 'RustyDegen'}. Pot Value (after tax): $${round.totalValue.toFixed(2)}`);
+
+        // Use identity secret for auto-confirmation if available
+        const identitySecret = process.env.STEAM_IDENTITY_SECRET;
+        offer.send(!!identitySecret, (err, status) => { // Pass true/false based on secret existence
+            if (err) {
+                // Handle specific errors like invalid trade URL token
+                if (err.message.includes('revoked') || err.message.includes('invalid') || err.eresult === 26) { // EResult 26 is often invalid token
+                    console.error(`PAYOUT_ERROR: Trade offer failed for round ${round.roundId}: Invalid Trade URL/Token for ${winner.username}. Offer ID: ${offer.id}`);
+                    io.emit('notification', { type: 'error', userId: winner._id.toString(), message: 'Your Trade URL is invalid or expired. Please update it to receive winnings.' });
+                } else if (err.eresult === 15 || err.eresult === 16) { // EResult 15/16 often inventory full/private
+                    console.error(`PAYOUT_ERROR: Trade offer failed for round ${round.roundId}: Winner's inventory might be full or private. Offer ID: ${offer.id}`);
+                    io.emit('notification', { type: 'error', userId: winner._id.toString(), message: 'Could not send winnings. Ensure your Steam inventory is public and not full.' });
+                } else if (err.message?.includes('escrow') || err.eresult === 11) { // EResult 11 is often escrow
+                   console.warn(`PAYOUT_WARN: Offer ${offer.id} sent but likely held in escrow. Winner: ${winner.username}`);
+                   // Notify user about potential escrow
+                   io.emit('notification', { type: 'warning', userId: winner._id.toString(), message: `Winnings sent (Offer #${offer.id}), but may be held in escrow by Steam. Ensure Steam Guard Mobile Authenticator has been active for 7 days.` });
+                   // Still emit tradeOfferSent event below, as the offer *was* sent initially
+                } else {
+                    console.error(`PAYOUT_ERROR: Error sending trade offer ${offer.id} for round ${round.roundId}: EResult ${err.eresult} - ${err.message}`);
+                     // Send generic error to user
+                     io.emit('notification', { type: 'error', userId: winner._id.toString(), message: `Error sending winnings for round ${round.roundId}. Please contact support.` });
+                }
+                // TODO: Implement retry logic or manual intervention queue for failed payouts
+                return; // Stop if send fails initially
+            }
+
+            // Send was successful (or pending confirmation)
+            console.log(`PAYOUT_SUCCESS: Trade offer ${offer.id} sent to ${winner.username} for round ${round.roundId}. Status: ${status}`);
+
+             // Construct the offer URL regardless of status (it exists once sent)
+            const offerURL = `https://steamcommunity.com/tradeoffer/${offer.id}/`;
+
+            // Notify client about the sent offer, including the URL
+            io.emit('tradeOfferSent', {
+                roundId: round.roundId,
+                userId: winner._id.toString(),
+                username: winner.username,
+                offerId: offer.id,
+                offerURL: offerURL, // <-- ADDED URL
+                status: status // Include status if available/useful
+            });
+
+            // Handle confirmation pending status if needed (library handles auto-confirm)
+             if (status === 'pending' || status === 'pendingConfirmation') { // Check both possible statuses
+                 console.log(`Offer #${offer.id} requires confirmation (Status: ${status}). Check mobile authenticator if auto-confirmation is not setup or failed.`);
+                 if (!identitySecret) {
+                     // If no identitySecret, confirmation was never attempted automatically.
+                     console.warn(`Offer #${offer.id} requires confirmation, but STEAM_IDENTITY_SECRET is not provided for auto-confirmation.`);
+                     io.emit('notification', { type: 'info', userId: winner._id.toString(), message: `Winnings sent (Offer #${offer.id}), but require confirmation in Steam.` });
+                 } else {
+                     // The library likely tried and failed, or confirmation is genuinely needed.
+                     io.emit('notification', { type: 'warning', userId: winner._id.toString(), message: `Winnings sent (Offer #${offer.id}), but confirmation may be needed in Steam.` });
+                 }
+             }
+        }); // End offer.send callback
+
+    } catch (err) {
+        // Error already logged in the offer.send callback for specific cases
+        // General catch for other potential errors during offer creation/sending
+        console.error(`PAYOUT_ERROR: Unexpected error creating/sending trade offer for round ${round.roundId}:`, err);
+        // TODO: Notify admin/support
+        io.emit('notification', { type: 'error', userId: winner._id.toString(), message: `Error sending winnings for round ${round.roundId}. Please contact support.` });
+    }
+}
+
+
+// --- Authentication Routes ---
+// Apply auth rate limiter to the login initiation route
+app.get('/auth/steam', authLimiter, passport.authenticate('steam', { failureRedirect: '/' }));
+
+app.get('/auth/steam/return',
+    passport.authenticate('steam', { failureRedirect: '/' }),
+    (req, res) => {
+        // Successful authentication, redirect home.
+        res.redirect('/');
+    });
+
+// Logout Route
+app.post('/logout', (req, res, next) => {
+    req.logout(err => {
+        if (err) { return next(err); }
+        req.session.destroy(err => {
+            if (err) {
+                console.error("Error destroying session during logout:", err);
+                return res.status(500).json({ error: 'Logout failed.' });
+            }
+            res.clearCookie('connect.sid'); // Use the default session cookie name
+            res.json({ success: true });
+        });
+    });
+});
+
+
+// --- Middleware & API Routes ---
+function ensureAuthenticated(req, res, next) {
+    if (req.isAuthenticated()) { return next(); }
+    res.status(401).json({ error: 'Not authenticated' });
+}
+
+// Helper Middleware for validation results
+const handleValidationErrors = (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        // Log validation errors for debugging
+        console.warn("Validation Errors:", errors.array());
+        // Send only the first error message for simplicity, or customize as needed
+        return res.status(400).json({ error: errors.array()[0].msg });
+    }
+    next();
+};
+
+// GET User Profile
+app.get('/api/user', ensureAuthenticated, (req, res) => {
+    // Return only necessary, non-sensitive user data
+    // Add pendingDepositOfferId if you want frontend to know about it
+    const { _id, steamId, username, avatar, tradeUrl, balance, createdAt, pendingDepositOfferId } = req.user;
+    res.json({ _id, steamId, username, avatar, tradeUrl, balance, createdAt, pendingDepositOfferId });
+});
+
+// POST Update Trade URL
+app.post('/api/user/tradeurl',
+    sensitiveActionLimiter, // Apply stricter rate limit
+    ensureAuthenticated,
+    [ // Validation Rules
+        body('tradeUrl')
+            .trim()
+            // Allow empty string to clear the trade URL
+            .custom((value) => {
+                if (value === '') return true; // Allow empty string
+                // If not empty, validate URL format
+                const urlPattern = /^https:\/\/steamcommunity\.com\/tradeoffer\/new\/\?partner=\d+&token=[a-zA-Z0-9_-]+$/;
+                if (!urlPattern.test(value)) {
+                    throw new Error('Invalid Steam Trade URL format. Must include partner and token, or be empty.');
+                }
+                return true;
+            })
+    ],
+    handleValidationErrors, // Handle validation results
+    async (req, res) => {
+        // Validation passed if we reach here
+        const { tradeUrl } = req.body; // tradeUrl will be trimmed and either valid or empty string
+
+        try {
+            const updatedUser = await User.findByIdAndUpdate(
+                req.user._id,
+                { tradeUrl: tradeUrl }, // Set the validated or empty trade URL
+                { new: true, runValidators: true } // Return the updated document and run schema validators
+            );
+            if (!updatedUser) {
+                return res.status(404).json({ error: 'User not found.' });
+            }
+            console.log(`Trade URL updated for user: ${updatedUser.username}`);
+            res.json({ success: true, tradeUrl: updatedUser.tradeUrl });
+        } catch (err) {
+            // Check for Mongoose validation error (e.g., from schema match - unlikely with custom validator)
+            if (err.name === 'ValidationError') {
+                 console.error(`Trade URL Validation Error (Mongoose) for user ${req.user._id}:`, err.message);
+                 return res.status(400).json({ error: err.message });
+            }
+            console.error(`Error updating trade URL for user ${req.user._id}:`, err);
+            res.status(500).json({ error: 'Server error saving Trade URL.' });
+        }
+    });
+
+// GET User Inventory
+app.get('/api/inventory', ensureAuthenticated, async (req, res) => {
+    // Check bot readiness before attempting inventory fetch
+    if (!isBotReady) {
+        console.warn(`Inventory fetch failed for ${req.user.username}: Bot service is unavailable.`);
+        return res.status(503).json({ error: "Steam service temporarily unavailable. Please try again later." });
+    }
+
+    try {
+        // Use manager.getUserInventoryContents
+        const inventory = await new Promise((resolve, reject) => {
+            manager.getUserInventoryContents(req.user.steamId, RUST_APP_ID, RUST_CONTEXT_ID, true, (err, inv) => {
+                if (err) {
+                    if (err.message?.includes('profile is private') || err.eresult === 15) {
+                        return reject(new Error('Your Steam inventory is private. Please set it to public.'));
+                    }
+                    console.error(`Inventory Fetch Error (Manager): User ${req.user.steamId}: EResult ${err.eresult} - ${err.message || err}`);
+                    return reject(new Error(`Could not fetch inventory. Steam might be busy or inventory private.`));
+                }
+                resolve(inv || []); // Resolve with empty array if null/undefined
+            });
+        });
+
+        console.log(`Raw inventory items count for ${req.user.username}: ${inventory?.length}`);
+
+        if (!inventory?.length) return res.json([]);
+
+        // Process items: get prices, format data
+        const validItems = inventory
+            .map(item => {
+                const itemName = item.market_hash_name;
+                let price = 0;
+                if (itemName) price = getItemPrice(itemName);
+                else console.warn(`Inventory item missing market_hash_name: assetId ${item.assetid}`);
+
+                const finalPrice = (typeof price === 'number' && !isNaN(price)) ? price : 0;
+
+                if (!item.assetid || !item.icon_url || !itemName) { // Ensure name exists too
+                    console.warn(`Inventory item missing required properties: assetId ${item?.assetid}, Name ${itemName}, Icon ${item?.icon_url}`);
+                    return null;
+                }
+                const imageUrl = `https://community.akamai.steamstatic.com/economy/image/${item.icon_url}`;
+
+                return {
+                    assetId: item.assetid,
+                    name: itemName, // Use market_hash_name
+                    displayName: item.name,
+                    image: imageUrl,
+                    price: finalPrice,
+                    tradable: item.tradable,
+                    marketable: item.marketable
+                };
+            })
+            .filter(item => item && item.tradable && item.price >= MIN_ITEM_VALUE); // Filter nulls, non-tradables, low value
+
+        console.log(`Processed validItems count for ${req.user.username}: ${validItems.length}`);
+        res.json(validItems);
+
+    } catch (err) {
+        console.error(`Error in /api/inventory for ${req.user?.username || req.user?.steamId}:`, err.message);
+        res.status(500).json({ error: err.message || 'Server error fetching inventory.' });
+    }
+});
+
+
+// POST Initiate Deposit Request (NEW LOGIC - Creates offer FROM bot TO user)
+app.post('/api/deposit', // Kept endpoint name as /api/deposit for simplicity with frontend example
+    depositLimiter, // Apply deposit rate limit
+    ensureAuthenticated,
+    [ // Basic validation for asset IDs
+        body('assetIds').isArray({ min: 1, max: MAX_ITEMS_PER_DEPOSIT }).withMessage(`You can deposit between 1 and ${MAX_ITEMS_PER_DEPOSIT} items at a time.`),
+        body('assetIds.*').isString().isLength({ min: 5, max: 30 }).withMessage('Invalid asset ID format.') // Basic format check
+    ],
+    handleValidationErrors,
+    async (req, res) => {
+        const user = req.user; // User object attached by ensureAuthenticated/passport
+        const requestedAssetIds = req.body.assetIds;
+
+        // --- Pre-Checks ---
+        if (!isBotReady) {
+            return res.status(503).json({ error: "Deposit service temporarily unavailable (Bot offline)." });
+        }
+        if (!user.tradeUrl) {
+             // Should ideally be caught by frontend, but double-check
+            return res.status(400).json({ error: 'Please set your Steam Trade URL in your profile before depositing.' });
+        }
+         // Check if user already has a pending deposit offer
+        if (user.pendingDepositOfferId) {
+             try {
+                 // Attempt to fetch the existing offer to check its status
+                 const offer = await manager.getOffer(user.pendingDepositOfferId);
+                 if (offer && [
+                     TradeOfferManager.ETradeOfferState.Active, // Offer is valid and awaiting response
+                     TradeOfferManager.ETradeOfferState.Sent, // Offer sent but not yet active (less common here)
+                     TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation // Bot needs to confirm (shouldn't happen for requests)
+                   ].includes(offer.state))
+                {
+                     console.log(`User ${user.username} already has pending deposit offer ${user.pendingDepositOfferId}. State: ${TradeOfferManager.ETradeOfferState[offer.state]}`);
+                     const offerURL = `https://steamcommunity.com/tradeoffer/${user.pendingDepositOfferId}/`;
+                     // Return 409 Conflict status
+                     return res.status(409).json({
+                         error: 'You already have an active deposit offer waiting. Please accept or decline it on Steam before creating a new one.',
+                         offerId: user.pendingDepositOfferId,
+                         offerURL: offerURL // Send URL so frontend can link to it
+                     });
+                 } else {
+                      // Offer exists but is not active (e.g., accepted, declined, expired) - clear the flag
+                      console.log(`Clearing stale pending offer ${user.pendingDepositOfferId} for user ${user.username} (State: ${TradeOfferManager.ETradeOfferState[offer?.state]}).`);
+                      await User.findByIdAndUpdate(user._id, { pendingDepositOfferId: null });
+                 }
+             } catch (offerFetchError) {
+                 // Offer likely doesn't exist in manager's cache or error fetching - clear the flag
+                 console.warn(`Could not fetch pending offer ${user.pendingDepositOfferId}, clearing flag:`, offerFetchError.message);
+                 await User.findByIdAndUpdate(user._id, { pendingDepositOfferId: null });
+             }
+        }
+
+        // Check Round Status
+        if (!currentRound || currentRound.status !== 'active' || isRolling) {
+            return res.status(400).json({ error: 'Deposits are currently closed for this round.' });
+        }
+
+        // Fetch latest round data for limits check (atomic check is difficult, but check before creating offer)
+        let latestRoundData;
+        try {
+            // Use exec() to ensure a promise is returned from the Mongoose query
+            latestRoundData = await Round.findById(currentRound._id).select('participants items').lean().exec();
+            if (!latestRoundData) throw new Error('Could not fetch current round data.');
+
+            // Check participant limit (consider if user is already a participant)
+             const isNewParticipant = !latestRoundData.participants.some(p => p.user?.toString() === user._id.toString());
+             if (isNewParticipant && latestRoundData.participants.length >= MAX_PARTICIPANTS) {
+                 return res.status(400).json({ error: `Participant limit (${MAX_PARTICIPANTS}) reached.` });
+             }
+            // Check item limit
+            if (latestRoundData.items.length + requestedAssetIds.length > MAX_ITEMS_PER_POT) {
+                 const slotsLeft = MAX_ITEMS_PER_POT - latestRoundData.items.length;
+                 return res.status(400).json({ error: `Depositing ${requestedAssetIds.length} items would exceed the pot limit (${MAX_ITEMS_PER_POT}). Only ${slotsLeft} slots left.` });
+            }
+        } catch (dbErr) {
+            console.error(`Error fetching round data during deposit for ${user.username}:`, dbErr);
+            return res.status(500).json({ error: 'Internal server error checking round limits. Please try again.' });
+        }
+
+        // --- Verify Items and Calculate Value ---
+        let itemsToRequest = []; // Array to hold items formatted for the trade offer
+        let depositTotalValue = 0;
+        try {
+            // Fetch user's inventory from Steam to verify ownership and tradability
+            console.log(`Workspaceing inventory for ${user.username} (SteamID: ${user.steamId}) to verify deposit items...`);
+            const userInventory = await new Promise((resolve, reject) => {
+                manager.getUserInventoryContents(user.steamId, RUST_APP_ID, RUST_CONTEXT_ID, true, (err, inv) => {
+                    if (err) {
+                        if (err.message?.includes('profile is private') || err.eresult === 15) {
+                             return reject(new Error('Your Steam inventory is private. Please set it to public.'));
+                        }
+                         console.error(`Inventory Fetch Error (Deposit): User ${user.steamId}: EResult ${err.eresult}`, err);
+                         return reject(new Error(`Could not fetch your inventory. Ensure it's public and try again.`));
+                    }
+                    resolve(inv || []);
+                });
+            });
+            console.log(`Inventory fetched for ${user.username}. Found ${userInventory.length} items. Verifying selection...`);
+
+            const userInventoryMap = new Map(userInventory.map(item => [item.assetid, item]));
+
+            for (const assetId of requestedAssetIds) {
+                const inventoryItem = userInventoryMap.get(assetId);
+                if (!inventoryItem) {
+                    // SECURITY: If item isn't found after fetching fresh inventory, reject deposit.
+                    throw new Error(`Item with Asset ID ${assetId} not found in your current Steam inventory.`);
+                }
+                if (!inventoryItem.tradable) {
+                     // SECURITY: Check tradability again based on fresh inventory data.
+                    throw new Error(`Item '${inventoryItem.market_hash_name}' (ID: ${assetId}) is currently not tradable.`);
+                }
+
+                const price = getItemPrice(inventoryItem.market_hash_name);
+                if (price < MIN_ITEM_VALUE) {
+                    // Filter based on current price cache / fallback
+                    throw new Error(`Item '${inventoryItem.market_hash_name}' ($${price.toFixed(2)}) is below the minimum deposit value ($${MIN_ITEM_VALUE}).`);
+                }
+
+                // Add item details needed for the trade offer AND for processing upon acceptance
+                itemsToRequest.push({
+                    assetid: inventoryItem.assetid,
+                    appid: RUST_APP_ID,
+                    contextid: RUST_CONTEXT_ID,
+                    // Store price and name/image derived *during this verification* for processing on acceptance
+                    _price: price, // Use the price determined now
+                    _name: inventoryItem.market_hash_name,
+                     _image: `https://community.akamai.steamstatic.com/economy/image/${inventoryItem.icon_url}`
+                });
+                depositTotalValue += price;
+            }
+
+             // Final check if verification yielded any items
+             if (itemsToRequest.length === 0) {
+                 // This should only happen if all requested items failed verification
+                 throw new Error("None of the selected items could be verified for deposit.");
+             }
+             console.log(`Verified ${itemsToRequest.length} items for deposit for ${user.username}. Total Value: $${depositTotalValue.toFixed(2)}`);
+
+        } catch (verificationError) {
+            console.warn(`Deposit item verification failed for ${user.username}:`, verificationError.message);
+            // Send specific error message back to user
+            return res.status(400).json({ error: verificationError.message });
+        }
+
+        // --- Create and Send Trade Offer ---
+        const depositId = uuidv4(); // Unique ID for this deposit attempt
+        const offerMessage = `RustyDegen Deposit ID: ${depositId} | Round: ${currentRound.roundId}`; // Include round ID for context
+        let cleanupTimeout = null; // Define timeout variable
+
+        try {
+            const offer = manager.createOffer(user.tradeUrl); // Use the user's trade URL
+            // Use addTheirItems to request items FROM the user
+            offer.addTheirItems(itemsToRequest.map(({ assetid, appid, contextid }) => ({ assetid, appid, contextid })));
+            offer.setMessage(offerMessage); // Add the unique identifier
+
+            // Store pending deposit details *before* sending offer
+            pendingDeposits.set(depositId, {
+                userId: user._id, // User's MongoDB ID
+                roundId: currentRound._id, // Round's MongoDB ID
+                items: itemsToRequest, // Includes verified _price, _name, _image
+                totalValue: depositTotalValue,
+                steamId: user.steamId // Store user's SteamID for logging/lookup
+            });
+            console.log(`Stored pending deposit ${depositId} for user ${user.steamId}.`);
+
+            // Set timeout to clean up pending deposit if not accepted within manager's cancelTime
+            cleanupTimeout = setTimeout(() => {
+                 if(pendingDeposits.has(depositId)) {
+                     console.log(`Deposit attempt ${depositId} expired.`);
+                      pendingDeposits.delete(depositId);
+                      // Also clear the user flag if this was the offer they were associated with
+                      User.updateOne({ steamId: user.steamId, pendingDepositOfferId: offer?.id || 'expired' }, { pendingDepositOfferId: null }).catch(e => console.error("Error clearing user pending flag on expiry:", e));
+                 }
+            }, manager.cancelTime || 10 * 60 * 1000); // Use manager's cancelTime or default to 10 mins
+
+            // Send the offer (no auto-confirmation needed for requests)
+            console.log(`Sending deposit offer to ${user.username} (Trade URL: ${user.tradeUrl})...`);
+            const status = await new Promise((resolve, reject) => {
+                offer.send((err, status) => {
+                    if (err) return reject(err); // Handle errors below
+                    resolve(status);
+                });
+            });
+
+            // Offer sent successfully (or pending) - Update user's pending offer ID in DB
+            try {
+                await User.findByIdAndUpdate(user._id, { pendingDepositOfferId: offer.id });
+                console.log(`Set pendingDepositOfferId=${offer.id} for user ${user.username}.`);
+            } catch (dbUpdateError) {
+                 console.error(`CRITICAL: Failed to set pendingDepositOfferId for user ${user.username} after sending offer ${offer.id}.`, dbUpdateError);
+                 // Offer was sent, but DB state might be inconsistent. Need monitoring/manual fix.
+                  // Clean up pending data as the DB link failed
+                  pendingDeposits.delete(depositId);
+                  clearTimeout(cleanupTimeout); // Clear the expiry timeout
+                  // Attempt to cancel the sent offer? Risky if user already saw it.
+                  // offer.cancel().catch(cancelErr => console.error(`Failed to cancel offer ${offer.id} after DB update error:`, cancelErr));
+                  return res.status(500).json({ error: 'Failed to finalize deposit request state. Please contact support.' });
+            }
+
+            console.log(`Deposit offer ${offer.id} sent to ${user.username}. Status: ${status}. DepositID: ${depositId}`);
+            const offerURL = `https://steamcommunity.com/tradeoffer/${offer.id}/`;
+
+            // Respond to frontend with offer details
+            res.json({
+                success: true,
+                message: 'Deposit offer created! Please accept it on Steam to complete your deposit.',
+                offerId: offer.id,
+                offerURL: offerURL // Send URL for direct redirection
+            });
+
+        // Inside the catch block for offer.send
+        } catch (error) {
+            console.error(`Error sending deposit offer for ${user.username} (DepositID: ${depositId}): EResult ${error.eresult}`, error.message); // Log both
+            // Clean up pending data
+            pendingDeposits.delete(depositId);
+            if (cleanupTimeout) clearTimeout(cleanupTimeout); // Clear expiry timeout if it was set
+            await User.findByIdAndUpdate(user._id, { pendingDepositOfferId: null }).catch(e => console.error("Error clearing user flag on offer fail:", e));
+
+            let userMessage = 'Failed to create deposit trade offer. Please try again later.';
+            // Check based on message content if eresult is undefined
+            if (error.message.includes('unable to trade') && error.message.includes('reset your Steam account')) {
+                 userMessage = `Steam Error: Your account has a temporary trade restriction due to a recent password reset. Please wait for the restriction to lift. (${error.message})`;
+            } else if (error.message.includes('Trade URL') || error.message.includes('token') || error.eresult === 26) {
+                userMessage = 'Your Steam Trade URL might be invalid or expired. Please check it in your profile.';
+            } // ... other specific error checks based on eresult OR message ...
+            else if (error.eresult) { // Add fallback for other eresults
+                 userMessage += ` (Code: ${error.eresult})`;
+            }
+
+            res.status(500).json({ error: userMessage });
+        }
+    });
+
+
+// --- Trade Offer Manager Event Handling ---
+if (isBotConfigured && manager) {
+
+    // Listener for INCOMING offers (Offers sent TO the bot)
+    manager.on('newOffer', async (offer) => {
+        if (!isBotReady) return; // Ignore offers if bot isn't ready
+        if (offer.isOurOffer) return; // Ignore offers sent *by* the bot
+
+        // --- Auto-decline unsolicited deposit attempts ---
+        // Check if it looks like a deposit (user sending items, bot giving nothing)
+        if (offer.itemsToReceive && offer.itemsToReceive.length > 0 && (!offer.itemsToGive || offer.itemsToGive.length === 0)) {
+            // Check if it contains a deposit ID message - if so, it's likely a user manually sending after a failed attempt. Decline gently.
+             if (offer.message && offer.message.includes('RustyDegen Deposit ID:')) {
+                 console.log(`Offer #${offer.id} from ${offer.partner.getSteamID64()} looks like a manual deposit attempt. Declining.`);
+                 return offer.decline((err) => {
+                      if (err) console.error(`Error declining manual deposit offer ${offer.id}:`, err);
+                 });
+             } else {
+                 // Truly unsolicited item donation/deposit
+                 console.log(`Offer #${offer.id} from ${offer.partner.getSteamID64()} looks like an unsolicited item offer. Declining.`);
+                  return offer.decline((err) => {
+                       if (err) console.error(`Error declining unsolicited offer ${offer.id}:`, err);
+                  });
+             }
+        }
+
+        // Handle other incoming offers if needed (e.g., admin actions, specific item requests - unlikely for this app)
+        console.log(`Ignoring unexpected incoming offer #${offer.id} from ${offer.partner.getSteamID64()}. Items to receive: ${offer.itemsToReceive?.length}, Items to give: ${offer.itemsToGive?.length}`);
+        // Optionally decline other unexpected offers too
+        // offer.decline().catch(e => console.error(`Error declining unexpected offer ${offer.id}:`, e));
+    });
+
+    // Listener for offers SENT BY THE BOT changing state
+    manager.on('sentOfferChanged', async (offer, oldState) => {
+        // Log state changes for offers sent by the bot
+        if (offer.state !== oldState) {
+            console.log(`Bot Offer #${offer.id} state changed: ${TradeOfferManager.ETradeOfferState[oldState]} -> ${TradeOfferManager.ETradeOfferState[offer.state]} (Partner: ${offer.partner.getSteamID64()}) Message: "${offer.message}"`);
+        }
+
+        // --- Handle ACCEPTED DEPOSIT Offers (Sent by Bot, Accepted by User) ---
+        if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
+            // Attempt to extract deposit ID from the message
+            const messageMatch = offer.message.match(/Deposit ID: ([a-f0-9-]+)/i);
+            const depositId = messageMatch ? messageMatch[1] : null;
+
+            // Check if this is a known pending deposit
+            if (depositId && pendingDeposits.has(depositId)) {
+                const depositData = pendingDeposits.get(depositId);
+                pendingDeposits.delete(depositId); // Remove from pending map *immediately* to prevent reprocessing
+
+                console.log(`Processing accepted deposit offer #${offer.id} (DepositID: ${depositId}) for user ${depositData.steamId}`);
+
+                // Clear the user's pending offer flag in DB
+                User.updateOne({ steamId: depositData.steamId, pendingDepositOfferId: offer.id }, { pendingDepositOfferId: null })
+                    .then(updateRes => {
+                         if(updateRes.modifiedCount > 0) console.log(`Cleared pendingDepositOfferId flag for user ${depositData.steamId}`);
+                         else console.warn(`Could not clear pendingDepositOfferId flag for user ${depositData.steamId} (Offer ID: ${offer.id}) - maybe already cleared?`);
+                    })
+                    .catch(e => console.error("Error clearing user pending flag on deposit accept:", e));
+
+
+                // --- Double check round status before adding items ---
+                let depositRound;
+                try {
+                     depositRound = await Round.findById(depositData.roundId).select('status participants items').exec(); // Use exec() for promise
+                     if (!depositRound) throw new Error(`Round ${depositData.roundId} not found.`);
+                     if (depositRound.status !== 'active' || isRolling) { // Check isRolling flag too
+                          console.warn(`Deposit ${depositId} (Offer ${offer.id}) accepted, but round ${depositData.roundId} is no longer active/valid. Status: ${depositRound?.status}, Rolling: ${isRolling}. Items NOT added.`);
+                          // TODO: Decide how to handle items received when round is invalid (return items? credit balance?)
+                          io.emit('notification', { type: 'error', userId: depositData.userId.toString(), message: `Deposit Error: Round ended before your deposit (Offer #${offer.id}) could be processed. Items not added. Contact support.` });
+                          // Attempt to return items (this is complex, might need separate queue)
+                          // sendReturnOffer(depositData.steamId, offer.itemsToReceive, `Deposit for Round ${depositData.roundId} failed.`);
+                          return; // Stop processing this deposit
+                     }
+                     // Check limits again right before insertion (race condition mitigation)
+                     const isNewParticipantCheck = !depositRound.participants.some(p => p.user?.toString() === depositData.userId.toString());
+                     if (isNewParticipantCheck && depositRound.participants.length >= MAX_PARTICIPANTS) {
+                         console.warn(`Deposit ${depositId} (Offer ${offer.id}) accepted, but participant limit reached just before insertion. Items NOT added.`);
+                         io.emit('notification', { type: 'error', userId: depositData.userId.toString(), message: `Deposit Error: Participant limit reached before your deposit (Offer #${offer.id}) could be processed. Items not added. Contact support.` });
+                          // TODO: Handle returning items
+                         return;
+                     }
+                     if (depositRound.items.length + depositData.items.length > MAX_ITEMS_PER_POT) {
+                          console.warn(`Deposit ${depositId} (Offer ${offer.id}) accepted, but pot item limit reached just before insertion. Items NOT added.`);
+                           const slotsLeft = MAX_ITEMS_PER_POT - depositRound.items.length;
+                          io.emit('notification', { type: 'error', userId: depositData.userId.toString(), message: `Deposit Error: Pot item limit reached before your deposit (Offer #${offer.id}) could be processed. Only ${slotsLeft} slots left. Items not added. Contact support.` });
+                          // TODO: Handle returning items
+                          return;
+                     }
+                 } catch (roundCheckError) {
+                      console.error(`CRITICAL DB ERROR checking round status for accepted deposit ${depositId} (Offer ${offer.id}):`, roundCheckError);
+                      // TODO: Handle items - CRITICAL error state. Flag for admin. Return items?
+                       io.emit('notification', { type: 'error', userId: depositData.userId.toString(), message: `CRITICAL Deposit Error: Could not verify round for deposit (Offer #${offer.id}). Contact support immediately.` });
+                       // Maybe try to return items here if possible
+                      return;
+                 }
+
+
+                // --- Update Database (Items and Round) ---
+                try {
+                    // Create Item documents using data stored in pendingDeposits
+                    const itemDocuments = depositData.items.map(itemData => new Item({
+                        assetId: itemData.assetid,
+                        name: itemData._name, // Use verified name
+                        image: itemData._image, // Use verified image
+                        price: itemData._price, // Use verified price
+                        owner: depositData.userId, // Link to user's MongoDB ID
+                        roundId: depositData.roundId // Link to round's MongoDB ID
+                    }));
+
+                    // Insert items into DB
+                    const insertedItemsResult = await Item.insertMany(itemDocuments, { ordered: false });
+                     if (insertedItemsResult.length !== itemDocuments.length) {
+                          console.warn(`Deposit ${depositId}: Item insert count mismatch. Expected ${itemDocuments.length}, got ${insertedItemsResult.length}.`);
+                          // Some items might not have been inserted, potential issue. Continue cautiously.
+                     }
+                    const createdItemIds = insertedItemsResult.map(doc => doc._id);
+                    console.log(`Deposit ${depositId}: Inserted ${createdItemIds.length} items into DB.`);
+
+                    // --- Atomic Round Update using findOneAndUpdate ---
+                     // This approach finds the round, updates it in memory, and saves it.
+                     // Alternative is using updateOne with positional operators, which can be complex.
+                     const roundToUpdate = await Round.findById(depositData.roundId);
+                     if (!roundToUpdate) throw new Error("Round disappeared before final update.");
+                     if (roundToUpdate.status !== 'active') throw new Error("Round status changed before final update."); // Final status check
+
+                     // Find participant or add new
+                     let participantIndex = roundToUpdate.participants.findIndex(p => p.user?.toString() === depositData.userId.toString());
+                     const depositTickets = Math.max(1, Math.floor(depositData.totalValue / TICKET_VALUE_RATIO));
+
+                     if (participantIndex !== -1) {
+                          // Update existing participant
+                           roundToUpdate.participants[participantIndex].itemsValue += depositData.totalValue;
+                           roundToUpdate.participants[participantIndex].tickets += depositTickets;
+                     } else {
+                          // Add new participant
+                           // Final check for participant limit before adding
+                           if (roundToUpdate.participants.length >= MAX_PARTICIPANTS) {
+                                throw new Error(`Participant limit reached just before adding participant ${depositData.steamId}.`);
+                           }
+                           roundToUpdate.participants.push({
+                                user: depositData.userId,
+                                itemsValue: depositData.totalValue,
+                                tickets: depositTickets
+                           });
+                     }
+
+                     // Update total value and items list
+                     roundToUpdate.totalValue += depositData.totalValue;
+                      // Final check for item limit before adding
+                     if (roundToUpdate.items.length + createdItemIds.length > MAX_ITEMS_PER_POT) {
+                          throw new Error(`Pot item limit reached just before adding items for participant ${depositData.steamId}.`);
+                     }
+                     roundToUpdate.items.push(...createdItemIds);
+
+                     // Save the updated round document
+                     const savedRound = await roundToUpdate.save();
+
+                     // Populate the necessary fields for the event emission
+                     const latestRoundData = await Round.findById(savedRound._id)
+                          .populate('participants.user', 'steamId username avatar')
+                          // No need to populate items fully for this event
+                          .lean();
+                     // --- End Atomic Round Update ---
+
+                     if (!latestRoundData) throw new Error('Failed to fetch updated round data after deposit save.');
+
+                     currentRound = latestRoundData; // Update global state
+
+                     // --- Emit update to clients ---
+                     const updatedParticipantData = latestRoundData.participants.find(p => p.user?._id.toString() === depositData.userId.toString());
+                     const userInfo = updatedParticipantData?.user; // Get the populated user info
+
+                     if (updatedParticipantData && userInfo) {
+                          io.emit('participantUpdated', {
+                               roundId: latestRoundData.roundId,
+                               userId: userInfo._id.toString(), // Send MongoDB ID
+                               username: userInfo.username,
+                               avatar: userInfo.avatar,
+                               itemsValue: updatedParticipantData.itemsValue, // Send cumulative value
+                               tickets: updatedParticipantData.tickets, // Send cumulative tickets
+                               totalValue: latestRoundData.totalValue, // Send new round total
+                               depositedItems: depositData.items.map(i => ({ // Send items from *this* specific deposit
+                                   assetId: i.assetid, name: i._name, image: i._image, price: i._price
+                               }))
+                          });
+                     } else {
+                          // This case should ideally not happen if DB update succeeded
+                          console.error(`Failed to find updated participant data for user ${depositData.steamId} in round ${latestRoundData.roundId} after DB save.`);
+                     }
+
+                      // Start timer visually if this was the first participant joining
+                      if (latestRoundData.participants.length === 1 && !roundTimer) {
+                          console.log(`First participant (${userInfo?.username}) joined round ${latestRoundData.roundId} via deposit ${depositId}. Starting timer.`);
+                          startRoundTimer(); // Start the timer with default duration
+                      }
+
+                     console.log(`Deposit success processed for offer #${offer.id}. User: ${userInfo?.username}, Value: $${depositData.totalValue.toFixed(2)}`);
+
+                 } catch (dbErr) {
+                     console.error(`CRITICAL DATABASE/UPDATE ERROR processing accepted deposit offer ${offer.id} (DepositID: ${depositId}):`, dbErr);
+                     // TODO: System to handle items stuck in bot inventory. Flag for admin review. Return items?
+                     io.emit('notification', { type: 'error', userId: depositData.userId.toString(), message: `CRITICAL Deposit Error: Database issue after accepting deposit offer #${offer.id}. Please contact support IMMEDIATELY.` });
+                     // If items were created but round update failed, try to delete them?
+                      if (dbErr.message.includes("limit reached") && createdItemIds && createdItemIds.length > 0) {
+                          console.warn(`Attempting to delete orphaned items due to limit error for deposit ${depositId}`);
+                          await Item.deleteMany({ _id: { $in: createdItemIds } });
+                          // TODO: Attempt to return items to user
+                      }
+                     // Potentially mark round as error?
+                      if (currentRound) {
+                          await Round.updateOne({ _id: currentRound._id }, { $set: { status: 'error' } })
+                               .catch(e => console.error("Failed to set round status to error:", e));
+                          io.emit('roundError', { roundId: currentRound.roundId, error: 'Critical deposit database error.' });
+                      }
+                 }
+            } // End if (depositId && pendingDeposits.has(depositId))
+
+             // --- Handle ACCEPTED WINNING Offers (Sent by Bot, Accepted by User) ---
+             else if (offer.itemsToGive && offer.itemsToGive.length > 0 && (!offer.itemsToReceive || offer.itemsToReceive.length === 0)) {
+                 // This block handles when a user accepts a WINNINGS offer sent by the bot
+                 console.log(`Payout offer #${offer.id} accepted by recipient ${offer.partner.getSteamID64()}.`);
+                 // Optional: Add further logic here if needed, like marking payout complete in DB.
+                 // Find user by steamId to potentially emit notification confirming receipt
+                  User.findOne({ steamId: offer.partner.getSteamID64() }).lean().then(user => {
+                      if (user) {
+                           io.emit('notification', { type: 'success', userId: user._id.toString(), message: `Winnings from offer #${offer.id} successfully received!` });
+                      }
+                  }).catch(e => console.error("Error finding user for payout accepted notification:", e));
+              }
+              // Else: Offer accepted, but not a recognized deposit or payout (shouldn't happen with current logic)
+              else {
+                   console.warn(`Offer #${offer.id} was accepted, but it wasn't recognized as a pending deposit or a winnings payout. Message: "${offer.message}"`);
+              }
+        } // End if (offer.state === Accepted)
+
+        // --- Handle other state changes for offers SENT BY BOT (Declined, Expired, etc.) ---
+        else if (
+            offer.state === TradeOfferManager.ETradeOfferState.Declined ||
+            offer.state === TradeOfferManager.ETradeOfferState.Canceled || // Bot might cancel expired offers
+            offer.state === TradeOfferManager.ETradeOfferState.Expired ||
+            offer.state === TradeOfferManager.ETradeOfferState.InvalidItems ||
+            offer.state === TradeOfferManager.ETradeOfferState.Countered
+        ) {
+             console.warn(`Bot Offer #${offer.id} to ${offer.partner.getSteamID64()} ended unsuccessfully. State: ${TradeOfferManager.ETradeOfferState[offer.state]}.`);
+
+             // Check if it was a pending deposit offer that failed
+             const messageMatch = offer.message.match(/Deposit ID: ([a-f0-9-]+)/i);
+             const depositId = messageMatch ? messageMatch[1] : null;
+
+             if (depositId && pendingDeposits.has(depositId)) {
+                 // This was a deposit request that the user declined, or it expired/failed
+                 const depositData = pendingDeposits.get(depositId);
+                 console.warn(`Deposit offer ${offer.id} (DepositID: ${depositId}) for user ${depositData.steamId} was ${TradeOfferManager.ETradeOfferState[offer.state]}.`);
+                 pendingDeposits.delete(depositId); // Clean up pending data
+
+                 // Clear the user's pending offer flag in DB
+                 User.updateOne({ steamId: depositData.steamId, pendingDepositOfferId: offer.id }, { pendingDepositOfferId: null })
+                      .then(updateRes => {
+                           if(updateRes.modifiedCount > 0) console.log(`Cleared pendingDepositOfferId flag for user ${depositData.steamId} due to offer failure/expiry.`);
+                      })
+                      .catch(e => console.error("Error clearing user flag on deposit failure/expiry:", e));
+
+                 // Notify user
+                  const stateMessage = TradeOfferManager.ETradeOfferState[offer.state].toLowerCase();
+                 io.emit('notification', { type: 'error', userId: depositData.userId.toString(), message: `Your deposit offer (#${offer.id}) was ${stateMessage} and was cancelled.` });
+             }
+              // Check if it was a winnings payout offer that failed
+              else if (offer.itemsToGive && offer.itemsToGive.length > 0) {
+                  // This was a payout offer that the user declined, or it expired/failed
+                  console.warn(`Payout offer #${offer.id} failed. State: ${TradeOfferManager.ETradeOfferState[offer.state]}. Items returned to bot inventory.`);
+                  // Find user by steamId to emit notification
+                  User.findOne({ steamId: offer.partner.getSteamID64() }).lean().then(user => {
+                      if (user) {
+                           const stateMessage = TradeOfferManager.ETradeOfferState[offer.state].toLowerCase();
+                           io.emit('notification', { type: 'error', userId: user._id.toString(), message: `Failed to deliver winnings (Offer #${offer.id}). The offer was ${stateMessage}. Contact support if this persists.` });
+                      }
+                  }).catch(e => console.error("Error finding user for payout fail notification:", e));
+                  // TODO: Add logic to flag this failed payout for admin review/manual retry?
+              }
+        } // End if (Declined, Canceled, Expired, etc.)
+    }); // End manager.on('sentOfferChanged')
+
+} // End if (isBotConfigured && manager)
+
+
+// --- Round Info API Routes ---
+// Helper function to format round data for client
+function formatRoundForClient(round) { // Expects a lean object
+    if (!round) return null;
+
+    const timeLeft = (round.status === 'active' && round.endTime)
+        ? Math.max(0, Math.floor((new Date(round.endTime).getTime() - Date.now()) / 1000))
+        : (round.status === 'pending' ? ROUND_DURATION : 0);
+
+    const participantsFormatted = (round.participants || []).map(p => ({
+        user: p.user ? { id: p.user._id, steamId: p.user.steamId, username: p.user.username, avatar: p.user.avatar } : null,
+        itemsValue: p.itemsValue || 0,
+        tickets: p.tickets || 0
+    })).filter(p => p.user);
+
+    // Only include items if needed by client (can be large) - currently needed for display
+    const itemsFormatted = (round.items || []).map(i => ({
+        assetId: i.assetId,
+        name: i.name,
+        image: i.image,
+        price: i.price || 0,
+        owner: i.owner // Keep owner's Mongo ID
+    }));
+
+    let winnerDetails = null;
+    if (round.winner) {
+        winnerDetails = {
+            id: round.winner._id || round.winner,
+            steamId: round.winner.steamId || 'N/A',
+            username: round.winner.username || 'N/A',
+            avatar: round.winner.avatar || 'N/A'
+        };
+    }
+
+    return {
+        roundId: round.roundId,
+        status: round.status,
+        startTime: round.startTime,
+        endTime: round.endTime,
+        timeLeft: timeLeft,
+        totalValue: round.totalValue || 0,
+        serverSeedHash: round.serverSeedHash,
+        participants: participantsFormatted,
+        items: itemsFormatted, // Include formatted items
+        // Conditionally include completed round data
+        winner: winnerDetails,
+        winningTicket: round.status === 'completed' ? round.winningTicket : undefined,
+        serverSeed: round.status === 'completed' ? round.serverSeed : undefined,
+        clientSeed: round.status === 'completed' ? round.clientSeed : undefined,
+        provableHash: round.status === 'completed' ? round.provableHash : undefined,
+        taxAmount: round.taxAmount
+    };
+}
+
+// GET Current Round Data
+app.get('/api/round/current', async (req, res) => {
+    let roundToFormat = null;
+    try {
+        // Prioritize the in-memory currentRound if it exists and seems valid
+        if (currentRound?._id) {
+            roundToFormat = await Round.findById(currentRound._id)
+                 .populate('participants.user', 'steamId username avatar')
+                 .populate('items') // Populate full item details
+                 .populate('winner', 'steamId username avatar')
+                 .lean();
+            if (!roundToFormat) { currentRound = null; } // Clear if not found
+            else { currentRound = roundToFormat; } // Update memory
+        }
+
+        // Fallback: If no round in memory or fetch failed, check DB for *any* active round
+        if (!roundToFormat) {
+            roundToFormat = await Round.findOne({ status: { $in: ['active', 'rolling', 'pending'] } })
+                 .sort({ startTime: -1 })
+                 .populate('participants.user', 'steamId username avatar')
+                 .populate('items')
+                 .populate('winner', 'steamId username avatar')
+                 .lean();
+            if (roundToFormat && !currentRound) { // Restore to memory if found and memory is empty
+                 currentRound = roundToFormat;
+                 console.log(`Restored active/pending round ${currentRound.roundId} from DB via API.`);
+                 // Ensure timer is running if needed
+                 if (currentRound.status === 'active' && currentRound.participants?.length > 0 && currentRound.endTime && new Date(currentRound.endTime) > Date.now() && !roundTimer) {
+                     startRoundTimer(true);
+                 } else if (currentRound.status === 'active' && currentRound.participants?.length > 0 && !currentRound.endTime && !roundTimer) {
+                     startRoundTimer(false);
                  }
             }
         }
 
-        let winningElement, targetIndex;
-        if (winnerItemsIndices.length === 0) {
-            console.error(`No items found matching winner ID ${winnerId}. Using fallback index.`);
-            targetIndex = Math.max(0, Math.min(items.length - 1, Math.floor(items.length * 0.75)));
-            winningElement = items[targetIndex];
-             if (!winningElement) {
-                  console.error('Fallback winning element is invalid!');
-                  isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
-             }
+        const formattedData = formatRoundForClient(roundToFormat);
+
+        if (formattedData) {
+            res.json(formattedData);
         } else {
-            targetIndex = winnerItemsIndices[Math.floor(Math.random() * winnerItemsIndices.length)];
-            winningElement = items[targetIndex];
-             if (!winningElement) {
-                   console.error(`Selected winning element at index ${targetIndex} is invalid!`);
-                   isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
-             }
+            res.status(404).json({ error: 'No active or pending round found.' });
         }
-        // --- End Select Winning Element ---
-
-        console.log(`Selected winning element at index ${targetIndex} of ${items.length} total items`);
-
-        // Initiate the animation towards the selected element
-        // Pass the full participant data found earlier
-        handleRouletteSpinAnimation(winningElement, winnerParticipantData);
-    }, 100);
-}
-
-
-/**
- * Handles the core requestAnimationFrame loop for the roulette spin.
- * Calculates the target position (with adjusted variation) and animates towards it.
- * @param {HTMLElement} winningElement - The target DOM element.
- * @param {object} winner - Winner data { user, value, percentage }.
- */
-function handleRouletteSpinAnimation(winningElement, winner) {
-    const track = DOMElements.roulette.rouletteTrack;
-    const container = DOMElements.roulette.inlineRouletteContainer?.querySelector('.roulette-container');
-    const sound = DOMElements.audio.spinSound;
-
-    if (!winningElement || !track || !container) {
-        console.error("Missing elements for roulette animation loop.");
-        isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
-    }
-
-    const containerWidth = container.offsetWidth;
-    const itemWidth = winningElement.offsetWidth || 60; // Use updated width from CSS
-    const itemOffsetLeft = winningElement.offsetLeft;
-
-    // Calculate the offset needed to perfectly center the item under the ticker
-    const centerOffset = (containerWidth / 2) - (itemWidth / 2);
-    const perfectCenterScrollPosition = -(itemOffsetLeft - centerOffset);
-
-    // --- ADJUSTED VARIATION LOGIC START ---
-    const initialVariation = (Math.random() * 2 - 1) * (itemWidth * CONFIG.LANDING_POSITION_VARIATION);
-    const maxAllowedAbsVariation = itemWidth * 0.49; // Max offset based on item width
-
-    let finalVariation;
-    if (Math.abs(initialVariation) <= maxAllowedAbsVariation) {
-        finalVariation = initialVariation; // Use original variation if safe
-    } else {
-        // Snap to edge if variation would land in gap
-        finalVariation = Math.sign(initialVariation) * maxAllowedAbsVariation;
-        // console.log(`Initial variation ${initialVariation.toFixed(2)} too large, snapping to edge: ${finalVariation.toFixed(2)}`);
-    }
-
-    // Calculate the final target position using the adjusted variation
-    const targetScrollPosition = perfectCenterScrollPosition + finalVariation;
-    // --- ADJUSTED VARIATION LOGIC END ---
-
-    const finalTargetPosition = targetScrollPosition; // This is the definitive end point
-
-    // Animation parameters
-    const startPosition = parseFloat(track.style.transform?.match(/translateX\(([-.\d]+)px\)/)?.[1] || '0');
-    const duration = CONFIG.SPIN_DURATION_SECONDS * 1000;
-    const bounceDuration = CONFIG.BOUNCE_ENABLED ? 1200 : 0;
-    const totalAnimationTime = duration + bounceDuration;
-    const totalDistance = finalTargetPosition - startPosition;
-    const overshootAmount = totalDistance * CONFIG.BOUNCE_OVERSHOOT_FACTOR;
-
-    let startTime = performance.now();
-    spinStartTime = startTime;
-    let lastPosition = startPosition;
-    let lastTimestamp = startTime;
-
-    track.style.transition = 'none'; // Ensure direct transform manipulation
-
-    // Animation loop function
-    function animateRoulette(timestamp) {
-        if (!isSpinning) {
-            console.log("Animation loop stopped: isSpinning false.");
-            if (animationFrameId) cancelAnimationFrame(animationFrameId);
-            animationFrameId = null;
-            return;
-        }
-
-        const elapsed = timestamp - startTime;
-        let currentPosition;
-        let animationFinished = false;
-
-        if (elapsed <= duration) {
-            const animationPhaseProgress = elapsed / duration;
-            const easedProgress = easeOutAnimation(animationPhaseProgress);
-            currentPosition = startPosition + totalDistance * easedProgress;
-        } else if (CONFIG.BOUNCE_ENABLED && elapsed <= totalAnimationTime) {
-            const bouncePhaseProgress = (elapsed - duration) / bounceDuration;
-            const bounceDisplacementFactor = calculateBounce(bouncePhaseProgress);
-            currentPosition = finalTargetPosition - (overshootAmount * bounceDisplacementFactor);
-        } else {
-            currentPosition = finalTargetPosition;
-            animationFinished = true;
-        }
-
-        track.style.transform = `translateX(${currentPosition}px)`;
-
-        lastPosition = currentPosition;
-        lastTimestamp = timestamp;
-
-        if (!animationFinished) {
-            animationFrameId = requestAnimationFrame(animateRoulette);
-        } else {
-            console.log("Animation finished naturally in loop.");
-            animationFrameId = null;
-            finalizeSpin(winningElement, winner); // Call the next step
-        }
-    }
-
-    // Start the animation loop
-    if (animationFrameId) cancelAnimationFrame(animationFrameId);
-    animationFrameId = requestAnimationFrame(animateRoulette);
-}
-
-
-/**
- * Called when the roulette animation physically stops. Applies winner highlighting.
- * @param {HTMLElement} winningElement - The element that won.
- * @param {object} winner - Winner data { user, value, percentage }.
- */
-function finalizeSpin(winningElement, winner) {
-    // Prevent double execution or running with invalid data
-    if ((!isSpinning && winningElement?.classList.contains('winner-highlight')) || !winningElement || !winner?.user) {
-        console.log("FinalizeSpin called, but seems already finalized or data invalid.");
-        if (isSpinning) { isSpinning = false; updateDepositButtonState(); resetToJackpotView(); }
-        return;
-    }
-
-    console.log("Finalizing spin: Applying highlight.");
-    const winnerId = winner.user.id || winner.user._id; // Get winner ID
-    const userColor = getUserColor(winnerId); // Use ID to get color
-
-    // Add highlight class and inject dynamic CSS for the pulse animation
-    winningElement.classList.add('winner-highlight');
-    const styleId = 'winner-pulse-style';
-    document.getElementById(styleId)?.remove();
-
-    const style = document.createElement('style');
-    style.id = styleId;
-    style.textContent = `
-        .winner-highlight {
-            z-index: 5; border-width: 3px; border-color: ${userColor};
-            animation: winnerPulse 1.5s infinite; --winner-color: ${userColor};
-            transform: scale(1.05); /* Apply scale directly */
-        }
-        @keyframes winnerPulse {
-            0%, 100% { box-shadow: 0 0 15px var(--winner-color); transform: scale(1.05); }
-            50% { box-shadow: 0 0 25px var(--winner-color), 0 0 10px var(--winner-color); transform: scale(1.1); }
-        }`;
-    document.head.appendChild(style);
-
-    // Short delay before showing winner info box
-    setTimeout(() => {
-        handleSpinEnd(winningElement, winner);
-    }, 300);
-}
-
-
-/**
- * Handles the final actions after the spin animation ends. Displays winner info and triggers confetti.
- * @param {HTMLElement} winningElement - The element that won.
- * @param {object} winner - Winner data { user, value, percentage }.
- */
-function handleSpinEnd(winningElement, winner) {
-    if (!winningElement || !winner?.user) {
-        console.error("handleSpinEnd called with invalid data/element.");
-        if (!isSpinning) return; // Already stopped
-        isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
-    }
-
-    if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; } // Ensure animation frame is stopped
-
-    console.log("Handling spin end: Displaying winner info and confetti.");
-
-    const { winnerInfoBox, winnerAvatar, winnerName, winnerDeposit, winnerChance } = DOMElements.roulette;
-
-    // Check if all necessary winner display elements exist
-    if (winnerInfoBox && winnerAvatar && winnerName && winnerDeposit && winnerChance) {
-        const winnerId = winner.user.id || winner.user._id; // Get winner ID
-        const userColor = getUserColor(winnerId); // Use ID to get color
-
-        // Populate winner details
-        winnerAvatar.src = winner.user.avatar || '/img/default-avatar.png';
-        winnerAvatar.alt = winner.user.username || 'Winner';
-        winnerAvatar.style.borderColor = userColor;
-        winnerAvatar.style.boxShadow = `0 0 15px ${userColor}`;
-
-        winnerName.textContent = winner.user.username || 'Winner';
-        winnerName.style.color = userColor;
-
-        const depositValueStr = `$${(winner.value || 0).toFixed(2)}`;
-        const chanceValueStr = `${(winner.percentage || 0).toFixed(2)}%`;
-
-        // Clear previous text for typing effect
-        winnerDeposit.textContent = '';
-        winnerChance.textContent = '';
-
-        // Display and animate winner box
-        winnerInfoBox.style.display = 'flex';
-        winnerInfoBox.style.opacity = '0';
-        winnerInfoBox.style.animation = 'fadeIn 0.5s ease forwards';
-
-        // Typing effect for details
-        setTimeout(() => {
-            let depositIndex = 0; let chanceIndex = 0; const typeDelay = 35;
-            if (window.typeDepositInterval) clearInterval(window.typeDepositInterval);
-            if (window.typeChanceInterval) clearInterval(window.typeChanceInterval);
-
-            window.typeDepositInterval = setInterval(() => {
-                if (depositIndex < depositValueStr.length) {
-                    winnerDeposit.textContent += depositValueStr[depositIndex]; depositIndex++;
-                } else {
-                    clearInterval(window.typeDepositInterval); window.typeDepositInterval = null;
-                    window.typeChanceInterval = setInterval(() => {
-                        if (chanceIndex < chanceValueStr.length) {
-                            winnerChance.textContent += chanceValueStr[chanceIndex]; chanceIndex++;
-                        } else {
-                            clearInterval(window.typeChanceInterval); window.typeChanceInterval = null;
-                            setTimeout(() => { launchConfetti(userColor); }, 200); // Launch confetti using winner's color
-                            isSpinning = false; // Officially mark as not spinning
-                            updateDepositButtonState();
-                            console.log("isSpinning set to false after winner display/confetti.");
-                            setTimeout(resetToJackpotView, CONFIG.WINNER_DISPLAY_DURATION); // Schedule reset
-                        }
-                    }, typeDelay);
-                }
-            }, typeDelay);
-        }, 500); // Delay typing
-
-    } else {
-        console.error("Winner info display elements missing.");
-        isSpinning = false; // Still mark as not spinning
-        updateDepositButtonState();
-        resetToJackpotView(); // Reset view immediately
-    }
-}
-
-
-/**
- * Creates and launches confetti elements using the winner's color scheme.
- * @param {string} [mainColor='#00e676'] - Base confetti color.
- */
-function launchConfetti(mainColor = '#00e676') {
-    const container = DOMElements.roulette.confettiContainer;
-    if (!container) return;
-    clearConfetti(); // Clear previous first
-
-    const baseColor = mainColor;
-    const complementaryColor = getComplementaryColor(baseColor);
-    const lighterColor = lightenColor(baseColor, 30);
-    const darkerColor = darkenColor(baseColor, 30);
-    const colors = [baseColor, lighterColor, darkerColor, complementaryColor, '#ffffff', lightenColor(complementaryColor, 20)];
-
-    for (let i = 0; i < CONFIG.CONFETTI_COUNT; i++) {
-        const confetti = document.createElement('div');
-        confetti.className = 'confetti-piece'; // Use updated class name from CSS
-
-        confetti.style.left = `${Math.random() * 100}%`;
-        const animDuration = 2 + Math.random() * 3;
-        const animDelay = Math.random() * 1.5;
-
-        confetti.style.setProperty('--duration', `${animDuration}s`);
-        confetti.style.setProperty('--delay', `${animDelay}s`);
-        const color = colors[Math.floor(Math.random() * colors.length)];
-        confetti.style.setProperty('--color', color);
-
-        const size = Math.random() * 8 + 4;
-        confetti.style.width = `${size}px`;
-        confetti.style.height = `${size}px`;
-
-        const rotationStart = Math.random() * 360;
-        const rotationEnd = rotationStart + (Math.random() - 0.5) * 720;
-        const fallX = (Math.random() - 0.5) * 100;
-        confetti.style.setProperty('--fall-x', `${fallX}px`);
-        confetti.style.setProperty('--rotation-start', `${rotationStart}deg`);
-        confetti.style.setProperty('--rotation-end', `${rotationEnd}deg`);
-
-        if (Math.random() < 0.5) confetti.style.borderRadius = '50%';
-
-        container.appendChild(confetti);
-    }
-}
-
-
-/**
- * Clears confetti elements and removes winner highlighting styles.
- */
-function clearConfetti() {
-    if (DOMElements.roulette.confettiContainer) DOMElements.roulette.confettiContainer.innerHTML = '';
-    document.getElementById('winner-pulse-style')?.remove();
-    document.querySelectorAll('.roulette-item.winner-highlight').forEach(el => {
-        el.classList.remove('winner-highlight');
-        el.style.transform = ''; // Reset transform
-        // Reset border color based on user ID if available
-        if (el.dataset?.userId) el.style.borderColor = getUserColor(el.dataset.userId);
-        else el.style.borderColor = 'transparent';
-    });
-}
-
-
-/**
- * Resets the UI back to the main jackpot view after a round ends.
- */
-function resetToJackpotView() {
-    console.log("Resetting to jackpot view...");
-
-    // --- Clear Timers & Intervals ---
-    if (animationFrameId) cancelAnimationFrame(animationFrameId); animationFrameId = null;
-    if (window.soundFadeInInterval) clearInterval(window.soundFadeInInterval); window.soundFadeInInterval = null;
-    if (window.soundFadeOutInterval) clearInterval(window.soundFadeOutInterval); window.soundFadeOutInterval = null;
-    if (window.typeDepositInterval) clearInterval(window.typeDepositInterval); window.typeDepositInterval = null;
-    if (window.typeChanceInterval) clearInterval(window.typeChanceInterval); window.typeChanceInterval = null;
-    if (roundTimer) clearInterval(roundTimer); roundTimer = null;
-    timerActive = false;
-    // --- End Clear Timers ---
-
-    isSpinning = false; // Ensure state is reset
-    spinStartTime = 0;
-
-    const header = DOMElements.jackpot.jackpotHeader;
-    const rouletteContainer = DOMElements.roulette.inlineRouletteContainer;
-    const winnerInfoBox = DOMElements.roulette.winnerInfoBox;
-    const track = DOMElements.roulette.rouletteTrack;
-    if (!header || !rouletteContainer || !winnerInfoBox || !track) {
-        console.error("Missing elements for resetToJackpotView.");
-        return;
-    }
-
-    // Reset sound properties
-    const sound = DOMElements.audio.spinSound;
-    if (sound) {
-        sound.pause(); // Ensure sound stops
-        sound.currentTime = 0;
-        sound.volume = 1.0;
-        sound.playbackRate = 1.0;
-    }
-
-    // Fade out roulette elements
-    rouletteContainer.style.transition = 'opacity 0.5s ease';
-    rouletteContainer.style.opacity = '0';
-    if (winnerInfoBox.style.display !== 'none') {
-        winnerInfoBox.style.transition = 'opacity 0.3s ease';
-        winnerInfoBox.style.opacity = '0';
-    }
-    clearConfetti(); // Clear confetti and highlights
-
-    // After fade out, reset layout and fade in jackpot header
-    setTimeout(() => {
-        header.classList.remove('roulette-mode');
-        track.style.transition = 'none';
-        track.style.transform = 'translateX(0)';
-        track.innerHTML = ''; // Clear roulette items
-        rouletteContainer.style.display = 'none';
-        winnerInfoBox.style.display = 'none';
-        winnerInfoBox.style.opacity = '';
-        winnerInfoBox.style.animation = '';
-
-        // Get jackpot header elements
-        const valueDisplay = header.querySelector('.jackpot-value');
-        const timerDisplay = header.querySelector('.jackpot-timer');
-        const statsDisplay = header.querySelector('.jackpot-stats');
-
-        // Restore and fade in header elements with stagger
-        [valueDisplay, timerDisplay, statsDisplay].forEach((el, index) => {
-            if (el) {
-                // Reset display property based on computed style or default 'flex'
-                const computedStyle = window.getComputedStyle(el);
-                el.style.display = computedStyle.display !== 'none' ? computedStyle.display : 'flex';
-                el.style.opacity = '0'; // Start faded out
-                setTimeout(() => {
-                    el.style.transition = 'opacity 0.5s ease'; // Apply fade-in transition
-                    el.style.opacity = '1'; // Fade in
-                }, 50 + index * 50); // Stagger fade-in
-            }
-        });
-
-        // Reset visual state for a new round
-        initiateNewRoundVisualReset();
-        updateDepositButtonState(); // Update button state AFTER resetting
-
-        // Request fresh data from server
-        if (socket?.connected) { // Check if socket exists and is connected
-            console.log("Requesting fresh round data after reset.");
-            socket.emit('requestRoundData');
-        } else {
-            console.warn("Socket not connected, skipping requestRoundData after reset.");
-        }
-
-    }, 500); // Delay matches fade-out duration
-}
-
-
-/**
- * Performs the visual reset needed when a new round starts or view is reset.
- */
-function initiateNewRoundVisualReset() {
-    console.log("Initiating visual reset for new round display");
-
-    // Reset Timer UI
-    updateTimerUI(CONFIG.ROUND_DURATION); // Show full duration initially
-    if (DOMElements.jackpot.timerValue) {
-        DOMElements.jackpot.timerValue.classList.remove('urgent-pulse', 'timer-pulse');
-    }
-    if (roundTimer) clearInterval(roundTimer); roundTimer = null;
-    timerActive = false;
-
-    // Reset Participants List
-    const container = DOMElements.jackpot.participantsContainer;
-    const emptyMsg = DOMElements.jackpot.emptyPotMessage;
-    if (container && emptyMsg) {
-        container.innerHTML = ''; // Clear existing blocks
-        if (!container.contains(emptyMsg)) container.appendChild(emptyMsg); // Ensure empty message exists
-        emptyMsg.style.display = 'block'; // Show empty message
-    }
-
-    // Reset Pot Value and Participant Count Display
-    if (DOMElements.jackpot.potValue) DOMElements.jackpot.potValue.textContent = "$0.00";
-    if (DOMElements.jackpot.participantCount) {
-        DOMElements.jackpot.participantCount.textContent = `0/${CONFIG.MAX_PARTICIPANTS_DISPLAY}`;
-    }
-
-    userColorMap.clear(); // Clear user color mappings for the new round
-    updateDepositButtonState(); // Update deposit button state
-}
-
-/**
- * Helper function to find winner details from local round data.
- * @param {object} winnerData - Data containing winner ID.
- * @returns {object|null} Object with { user, value, percentage } or null.
- */
-function findWinnerFromData(winnerData) {
-    // Winner ID could be in winnerData.winner.id or winnerData.winner._id
-    const winnerId = winnerData?.winner?.id || winnerData?.winner?._id;
-    if (!winnerId) {
-        console.error("Missing winner ID in findWinnerFromData:", winnerData);
-        return null;
-    }
-
-    if (!currentRound || !currentRound.participants) {
-        console.warn("Missing currentRound/participants data for findWinnerFromData.");
-        // Try to return basic info if available directly in winnerData
-        if (winnerData.winner) return { user: { ...winnerData.winner }, percentage: 0, value: 0 };
-        return null;
-    }
-
-    // Find the participant whose user ID matches
-    const winnerParticipant = currentRound.participants.find(p => p.user?._id === winnerId || p.user === winnerId);
-
-    if (!winnerParticipant) {
-        console.warn(`Winner ID ${winnerId} not found in local participants.`);
-        if (winnerData.winner) return { user: { ...winnerData.winner }, percentage: 0, value: 0 };
-        return null;
-    }
-
-    const totalValue = Math.max(0.01, currentRound.totalValue || 0.01);
-    const participantValue = winnerParticipant.itemsValue || 0;
-    const percentage = (participantValue / totalValue) * 100;
-
-    return {
-        user: { ...(winnerParticipant.user) }, // Return a copy of the user object
-        percentage: percentage || 0,
-        value: participantValue
-    };
-}
-
-
-/**
- * Test function to trigger the roulette animation with mock or current round data.
- */
-function testRouletteAnimation() {
-    console.log("--- TESTING ROULETTE ANIMATION ---");
-
-    if (isSpinning) {
-        showNotification("Already spinning, test cancelled.", 'info');
-        return;
-    }
-
-    let testData = currentRound;
-
-    if (!testData || !testData.participants || testData.participants.length === 0) {
-        console.log('Using sample Rust test data for animation...');
-        // Use _id format for mock user IDs
-        testData = {
-            _id: 'mock-round-id', // Add a mock _id
-            roundId: `test-${Date.now()}`, status: 'active', totalValue: 215.50,
-            participants: [
-                { user: { _id: 'rust_user_1', username: 'Scrap King', avatar: 'https://avatars.steamstatic.com/fef49e7fa7e1997310d705b2a6158ff8dc1cdfeb_full.jpg' }, itemsValue: 150.25, tickets: 15025 },
-                { user: { _id: 'rust_user_2', username: 'Foundation Wipe', avatar: 'https://avatars.steamstatic.com/bb8a0a497b4b1f46b96b6b0775e9368fc8c5c3b4_full.jpg' }, itemsValue: 45.75, tickets: 4575 },
-                { user: { _id: 'rust_user_3', username: 'Heli Enjoyer', avatar: 'https://avatars.steamstatic.com/3c4c5a7c9968414c3a1ddd1e73cb8e6aeeec5f32_full.jpg' }, itemsValue: 19.50, tickets: 1950 }
-            ],
-            items: [ { owner: 'rust_user_1', name: 'Assault Rifle', price: 50.00, image: '/img/default-item.png' }, /* ... */ ]
-        };
-        currentRound = testData; // Update global state
-        // Visually reset and populate based on mock data
-        initiateNewRoundVisualReset();
-        updateRoundUI();
-        if (currentRound.participants?.length > 0) {
-            const sortedParticipants = [...currentRound.participants].sort((a, b) => (b.itemsValue || 0) - (a.itemsValue || 0));
-            sortedParticipants.forEach(p => {
-                const userItems = currentRound.items?.filter(item => item.owner === p.user?._id) || [];
-                // Pass data structure matching displayLatestDeposit expectation
-                const mockDepositData = { userId: p.user._id, username: p.user.username, avatar: p.user.avatar, itemsValue: p.itemsValue, depositedItems: userItems };
-                displayLatestDeposit(mockDepositData); // Will calculate initial %
-                // Remove animation class immediately
-                const element = DOMElements.jackpot.participantsContainer?.querySelector(`.player-deposit-container[data-user-id="${p.user._id}"]`);
-                if (element) element.classList.remove('player-deposit-new');
-            });
-            updateAllParticipantPercentages(); // Ensure all percentages correct after populating
-        }
-    } else {
-        currentRound.status = 'active'; // Ensure suitable status
-    }
-
-    if (!currentRound?.participants?.length > 0) {
-        showNotification('Test Error: No participants available for test spin.', 'error');
-        return;
-    }
-
-    const idx = Math.floor(Math.random() * currentRound.participants.length);
-    const winningParticipant = currentRound.participants[idx];
-
-    if (!winningParticipant?.user) {
-        console.error("Selected winning participant invalid:", winningParticipant);
-        showNotification('Test Error: Could not select valid winner.', 'error');
-        return;
-    }
-
-    const mockWinnerData = {
-        roundId: currentRound.roundId,
-        winner: winningParticipant.user, // Pass user object (should have _id)
-        winningTicket: Math.floor(Math.random() * (winningParticipant.tickets || 1)) + 1
-    };
-
-    console.log('Test Winner Selected:', mockWinnerData.winner.username);
-    handleWinnerAnnouncement(mockWinnerData); // Trigger animation flow
-}
-
-
-// --- Provably Fair Section Functions ---
-
-/**
- * Sends data to the backend API to verify a past round's fairness.
- */
-async function verifyRound() {
-    const { roundIdInput, serverSeedInput, clientSeedInput, verificationResultDisplay } = DOMElements.provablyFair;
-
-    if (!roundIdInput || !serverSeedInput || !clientSeedInput || !verificationResultDisplay) {
-        console.error("Verify form elements missing.");
-        return;
-    }
-
-    const roundId = roundIdInput.value.trim();
-    const serverSeed = serverSeedInput.value.trim();
-    const clientSeed = clientSeedInput.value.trim();
-    const resultEl = verificationResultDisplay;
-
-    // Frontend validation
-    let validationError = null;
-    if (!roundId || !serverSeed || !clientSeed) {
-        validationError = 'Please fill in all fields (Round ID, Server Seed, Client Seed).';
-    } else if (serverSeed.length !== 64 || !/^[a-f0-9]{64}$/i.test(serverSeed)) {
-        validationError = 'Invalid Server Seed format (should be 64 hexadecimal characters).';
-    } else if (clientSeed.length === 0) {
-        validationError = 'Client Seed cannot be empty.';
-    }
-
-    if (validationError) {
-        resultEl.style.display = 'block';
-        resultEl.className = 'verification-result error';
-        resultEl.innerHTML = `<p>${validationError}</p>`;
-        return;
-    }
-
-    try {
-        resultEl.style.display = 'block';
-        resultEl.className = 'verification-result loading';
-        resultEl.innerHTML = '<p>Verifying...</p>';
-
-        const response = await fetch('/api/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ roundId, serverSeed, clientSeed })
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-            throw new Error(result.error || `Verification failed (${response.status})`);
-        }
-
-        // Display result
-        resultEl.className = `verification-result ${result.verified ? 'success' : 'error'}`;
-        let html = `<h4>Result (Round #${result.roundId || roundId})</h4>`;
-
-        if (result.verified) {
-            html += `<p style="color: var(--success-color); font-weight: bold;">✅ Verified Fair.</p>`;
-            if (result.serverSeedHash) html += `<p><strong>Server Seed Hash (Used):</strong> <code class="seed-value">${result.serverSeedHash}</code></p>`;
-            if (result.serverSeed) html += `<p><strong>Server Seed (Provided):</strong> <code class="seed-value">${result.serverSeed}</code></p>`;
-            if (result.clientSeed) html += `<p><strong>Client Seed (Provided):</strong> <code class="seed-value">${result.clientSeed}</code></p>`;
-            if (result.combinedString) html += `<p><strong>Combined String (Server-Client):</strong> <code class="seed-value wrap-anywhere">${result.combinedString}</code></p>`;
-            if (result.finalHash) html += `<p><strong>Resulting SHA256 Hash:</strong> <code class="seed-value">${result.finalHash}</code></p>`;
-            if (result.winningTicket !== undefined) html += `<p><strong>Winning Ticket Number:</strong> ${result.winningTicket} (out of ${result.totalTickets || 'N/A'} total tickets)</p>`;
-            if (result.winnerUsername) html += `<p><strong>Verified Winner:</strong> ${result.winnerUsername}</p>`;
-            if (result.totalValue !== undefined) html += `<p><strong>Final Pot Value:</strong> $${result.totalValue.toFixed(2)}</p>`;
-        } else {
-            html += `<p style="color: var(--error-color); font-weight: bold;">❌ Verification Failed.</p>`;
-            html += `<p><strong>Reason:</strong> ${result.reason || 'Mismatch detected.'}</p>`;
-            if (result.serverSeedHash) html += `<p><strong>Expected Server Seed Hash:</strong> <code class="seed-value">${result.serverSeedHash}</code></p>`;
-            if (result.calculatedHash) html += `<p><strong>Calculated Hash from Provided Seed:</strong> <code class="seed-value">${result.calculatedHash}</code></p>`;
-            if (result.serverSeed) html += `<p><strong>Expected Server Seed:</strong> <code class="seed-value">${result.serverSeed}</code></p>`;
-            if (result.clientSeed) html += `<p><strong>Expected Client Seed:</strong> <code class="seed-value">${result.clientSeed}</code></p>`;
-            if (result.calculatedWinningTicket !== undefined) html += `<p><strong>Calculated Ticket from Inputs:</strong> ${result.calculatedWinningTicket}</p>`;
-            if (result.actualWinningTicket !== undefined) html += `<p><strong>Actual Recorded Ticket:</strong> ${result.actualWinningTicket}</p>`;
-            if (result.totalTickets !== undefined) html += `<p><strong>Total Tickets in Round:</strong> ${result.totalTickets}</p>`;
-        }
-        resultEl.innerHTML = html;
-
-    } catch (error) {
-        resultEl.style.display = 'block';
-        resultEl.className = 'verification-result error';
-        resultEl.innerHTML = `<p>Verification Error: ${error.message}</p>`;
-        console.error('Error verifying round:', error);
-    }
-}
-
-
-/**
- * Loads a page of past round history from the backend API.
- * @param {number} [page=1] - The page number to load.
- */
-async function loadPastRounds(page = 1) {
-    const tableBody = DOMElements.provablyFair.roundsTableBody;
-    const paginationContainer = DOMElements.provablyFair.roundsPagination;
-
-    if (!tableBody || !paginationContainer) {
-        console.warn("Rounds history table/pagination elements missing.");
-        return;
-    }
-
-    try {
-        tableBody.innerHTML = '<tr><td colspan="5" class="loading-message">Loading round history...</td></tr>';
-        paginationContainer.innerHTML = ''; // Clear old pagination
-
-        const response = await fetch(`/api/rounds?page=${page}&limit=10`);
-
-        if (!response.ok) {
-            throw new Error(`Failed to load round history (${response.status})`);
-        }
-        const data = await response.json();
-
-        if (!data || !Array.isArray(data.rounds) || typeof data.currentPage !== 'number' || typeof data.totalPages !== 'number') {
-            throw new Error('Invalid rounds data received from server.');
-        }
-
-        tableBody.innerHTML = ''; // Clear loading message
-
-        if (data.rounds.length === 0) {
-            const message = (page === 1) ? 'No past rounds found.' : 'No rounds found on this page.';
-            tableBody.innerHTML = `<tr><td colspan="5" class="no-rounds-message">${message}</td></tr>`;
-        } else {
-            data.rounds.forEach(round => {
-                const row = document.createElement('tr');
-                row.dataset.roundId = round.roundId;
-
-                let date = 'N/A';
-                const timeToFormat = round.completedTime || round.endTime;
-                if (timeToFormat) {
-                    try {
-                        const d = new Date(timeToFormat);
-                        if (!isNaN(d.getTime())) {
-                            date = d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
-                        }
-                    } catch (e) { console.error("Date formatting error:", e); }
-                }
-
-                // Escape single quotes in seeds for the onclick attribute
-                const serverSeedStr = (round.serverSeed || '').replace(/'/g, "\\'");
-                const clientSeedStr = (round.clientSeed || '').replace(/'/g, "\\'");
-                const roundIdStr = round.roundId || 'N/A';
-                const winnerUsername = round.winner?.username || (round.status === 'error' ? 'ERROR' : 'N/A');
-                const potValueStr = (round.totalValue !== undefined) ? `$${round.totalValue.toFixed(2)}` : '$0.00';
-
-                row.innerHTML = `
-                    <td>#${roundIdStr}</td>
-                    <td>${date}</td>
-                    <td>${potValueStr}</td>
-                    <td class="${round.winner ? 'winner-cell' : ''}">${winnerUsername}</td>
-                    <td>
-                        <button class="btn btn-secondary btn-small btn-details" onclick="window.showRoundDetails('${roundIdStr}')" ${roundIdStr === 'N/A' ? 'disabled' : ''}>Details</button>
-                        <button class="btn btn-secondary btn-small btn-verify" onclick="window.populateVerificationFields('${roundIdStr}', '${serverSeedStr}', '${clientSeedStr}')" ${!round.serverSeed ? 'disabled title="Seed not revealed yet"' : ''}>Verify</button>
-                    </td>`;
-                tableBody.appendChild(row);
-            });
-        }
-        createPagination(data.currentPage, data.totalPages);
-    } catch (error) {
-        tableBody.innerHTML = `<tr><td colspan="5" class="error-message">Error loading rounds: ${error.message}</td></tr>`;
-        console.error('Error loading past rounds:', error);
-    }
-}
-
-
-/**
- * Populates the verification form fields. Made globally accessible via window.
- * @param {string} roundId
- * @param {string} serverSeed
- * @param {string} clientSeed
- */
-window.populateVerificationFields = function(roundId, serverSeed, clientSeed) {
-    const { roundIdInput, serverSeedInput, clientSeedInput, verificationSection } = DOMElements.provablyFair;
-
-    if (roundIdInput) roundIdInput.value = roundId || '';
-    if (serverSeedInput) serverSeedInput.value = serverSeed || '';
-    if (clientSeedInput) clientSeedInput.value = clientSeed || '';
-
-    if (verificationSection) {
-        verificationSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-    }
-
-    if (!serverSeed && roundId && roundId !== 'N/A') {
-        showNotification(`Info: Server Seed for Round #${roundId} is revealed after the round ends.`, 'info');
-    }
-};
-
-/**
- * Placeholder function to show round details. Made globally accessible via window.
- * @param {string} roundId
- */
-window.showRoundDetails = async function(roundId) {
-    console.log(`Showing details for round ${roundId}`);
-    if (!roundId || roundId === 'N/A') {
-        showNotification('Info: Invalid Round ID for details.', 'info');
-        return;
-    }
-    showNotification(`Showing details for round #${roundId}... (Implementation needed)`, 'info');
-    // Future implementation needed: Fetch detailed round data (participants, items) and display in a modal or dedicated view.
-};
-
-
-/**
- * Creates pagination controls for the round history table.
- * @param {number} currentPage
- * @param {number} totalPages
- */
-function createPagination(currentPage, totalPages) {
-    const container = DOMElements.provablyFair.roundsPagination;
-    if (!container) return;
-    container.innerHTML = '';
-
-    if (totalPages <= 1) return;
-
-    const maxPagesToShow = 5; // Max number buttons (excluding prev/next, including ellipsis)
-
-    const createButton = (text, page, isActive = false, isDisabled = false, isEllipsis = false) => {
-        if (isEllipsis) {
-            const span = document.createElement('span');
-            span.className = 'page-ellipsis'; span.textContent = '...'; return span;
-        }
-        const button = document.createElement('button');
-        button.className = `page-button ${isActive ? 'active' : ''}`;
-        button.textContent = text; button.disabled = isDisabled;
-        if (!isDisabled && typeof page === 'number') {
-            button.addEventListener('click', (e) => { e.preventDefault(); loadPastRounds(page); });
-        }
-        return button;
-    };
-
-    // Previous Button
-    container.appendChild(createButton('« Prev', currentPage - 1, false, currentPage <= 1));
-
-    // Page Number Logic (modified from original for better handling of few pages)
-    if (totalPages <= maxPagesToShow) {
-        // Show all pages if total is less than or equal to max
-        for (let i = 1; i <= totalPages; i++) {
-            container.appendChild(createButton(i, i, i === currentPage));
-        }
-    } else {
-        // Complex case: Ellipsis needed
-        let pages = [];
-        pages.push(1); // Always show first page
-
-        // Calculate range around current page
-        const rangePadding = Math.floor((maxPagesToShow - 3) / 2); // -3 for first, last, ellipsis
-        let rangeStart = Math.max(2, currentPage - rangePadding);
-        let rangeEnd = Math.min(totalPages - 1, currentPage + rangePadding);
-
-        // Adjust range if it's too small
-        const rangeLength = rangeEnd - rangeStart + 1;
-        const needed = (maxPagesToShow - 3); // Number of middle buttons (excluding first, last, potentially two ellipsis)
-        if (rangeLength < needed) {
-             if (currentPage - rangeStart < rangeEnd - currentPage) { // If closer to start
-                 rangeEnd = Math.min(totalPages - 1, rangeStart + needed -1);
-             } else { // If closer to end
-                 rangeStart = Math.max(2, rangeEnd - needed + 1);
-             }
-        }
-
-        // Add ellipsis if needed before the range
-        if (rangeStart > 2) {
-            pages.push('...');
-        }
-
-        // Add the calculated range of pages
-        for (let i = rangeStart; i <= rangeEnd; i++) {
-            pages.push(i);
-        }
-
-        // Add ellipsis if needed after the range
-        if (rangeEnd < totalPages - 1) {
-            pages.push('...');
-        }
-
-        pages.push(totalPages); // Always show last page
-
-        // Render the determined pages/ellipsis
-        pages.forEach(page => {
-            if (page === '...') {
-                container.appendChild(createButton('...', null, false, true, true));
-            } else {
-                container.appendChild(createButton(page, page, page === currentPage));
-            }
-        });
-    }
-
-
-    // Next Button
-    container.appendChild(createButton('Next »', currentPage + 1, false, currentPage >= totalPages));
-}
-
-
-// --- Socket.IO Event Handlers ---
-function setupSocketConnection() {
-    socket.on('connect', () => {
-        console.log('Socket connected:', socket.id);
-        showNotification('Connected to server.', 'success', 2000);
-        socket.emit('requestRoundData'); // Request initial data
-    });
-
-    socket.on('disconnect', (reason) => {
-        console.log('Socket disconnected:', reason);
-        showNotification('Disconnected from server. Attempting to reconnect...', 'error', 5000);
-        updateDepositButtonState();
-    });
-
-    socket.on('connect_error', (error) => {
-        console.error('Socket connection error:', error);
-        showNotification('Connection Error. Please refresh.', 'error', 10000);
-        updateDepositButtonState();
-    });
-
-    // --- Round Lifecycle Events ---
-    socket.on('roundCreated', (data) => {
-        console.log('New round created:', data);
-        currentRound = data;
-        resetToJackpotView(); // Visual reset for the new round
-        updateRoundUI(); // Update display with new round data (e.g., hash)
-        updateDepositButtonState();
-    });
-
-    socket.on('participantUpdated', (data) => {
-        console.log('Participant updated:', data);
-        if (currentRound && currentRound.roundId === data.roundId) {
-            handleNewDeposit(data); // Process deposit and update percentages
-        } else if (!currentRound && data.roundId) {
-            console.warn("Participant update for unknown round. Requesting full data.");
-            socket.emit('requestRoundData');
-        }
-    });
-
-    socket.on('roundRolling', (data) => {
-        console.log('Round rolling event received:', data);
-        if (currentRound && currentRound.roundId === data.roundId) {
-            timerActive = false; // Stop client timer
-            if (roundTimer) { clearInterval(roundTimer); roundTimer = null; }
-            if (DOMElements.jackpot.timerValue) DOMElements.jackpot.timerValue.textContent = "Rolling";
-            if (DOMElements.jackpot.timerForeground) updateTimerCircle(0, CONFIG.ROUND_DURATION); // Set circle to empty
-            currentRound.status = 'rolling';
-            updateDepositButtonState(); // Disable deposits
-        }
-    });
-
-    socket.on('roundWinner', (data) => {
-        console.log('Round winner received:', data);
-        if (currentRound && currentRound.roundId === data.roundId) {
-            // Update local round state with winner info if not already set
-            if (!currentRound.winner) currentRound.winner = data.winner;
-            currentRound.status = 'rolling'; // Ensure status reflects rolling phase
-            handleWinnerAnnouncement(data); // Trigger animation
-        } else {
-            console.warn("Received winner for mismatched round ID.");
-        }
-    });
-
-    socket.on('roundCompleted', (data) => {
-        console.log('Round completed event received:', data);
-        if (currentRound && currentRound.roundId === data.roundId) {
-            currentRound.status = 'completed';
-            // Update seed info if provided
-            if(data.serverSeed) currentRound.serverSeed = data.serverSeed;
-            if(data.clientSeed) currentRound.clientSeed = data.clientSeed;
-        }
-        updateDepositButtonState(); // Keep deposits disabled
-        // Note: resetToJackpotView happens after winner animation delay
-    });
-
-    socket.on('roundError', (data) => {
-        console.error('Round Error event received:', data);
-        if (currentRound && currentRound.roundId === data.roundId) {
-            currentRound.status = 'error';
-            showNotification(`Round Error: ${data.error || 'Unknown error.'}`, 'error');
-            updateDepositButtonState();
-            // Optionally reset view immediately on error
-            resetToJackpotView();
-        }
-    });
-
-    // --- Initial/Sync Data ---
-    socket.on('roundData', (data) => {
-        console.log('Received initial/updated round data:', data);
-        if (!data || typeof data !== 'object') { // Add type check for data
-            console.error("Invalid round data received from server.");
-            showNotification('Error syncing with server.', 'error');
-             initiateNewRoundVisualReset(); // Reset to a known empty state
-            return;
-        }
-
-        currentRound = data; // Update local state
-        updateRoundUI();
-        updateDepositButtonState();
-
-        // --- Sync Timer and UI State ---
-        if (currentRound.status === 'rolling' || currentRound.status === 'completed') {
-            // If round is rolling/completed and we have a winner, but animation isn't running, start it
-             if (!isSpinning && currentRound.winner) {
-                 console.log("Connected mid-round with winner known, triggering animation.");
-                 handleWinnerAnnouncement(currentRound);
-             } else if (!isSpinning) { // If rolling/completed but no winner data OR already spinning, just reset
-                   console.log("Connected after round ended or rolling. Resetting view.");
-                   resetToJackpotView();
-             }
-        } else if (currentRound.status === 'active') {
-             // If round is active, has participants, has time left, and timer isn't running client-side -> start/sync it
-             if (currentRound.participants?.length > 0 && currentRound.timeLeft > 0 && !timerActive) {
-                 console.log(`Received active round data. Starting/syncing timer from ${currentRound.timeLeft}s.`);
-                 timerActive = true;
-                 startClientTimer(currentRound.timeLeft);
-             }
-             // If server says time is up, but client timer is still running, stop it
-             else if (currentRound.timeLeft <= 0 && timerActive) {
-                 console.log("Server data indicates time up, stopping client timer.");
-                 timerActive = false;
-                 if (roundTimer) clearInterval(roundTimer); roundTimer = null;
-                 updateTimerUI(0);
-                 updateDepositButtonState();
-             }
-             // If server says no participants, but client timer is running, stop it
-              else if (currentRound.participants?.length === 0 && timerActive) {
-                  console.log("Server data indicates no participants, stopping client timer.");
-                  timerActive = false;
-                  if (roundTimer) clearInterval(roundTimer); roundTimer = null;
-                  updateTimerUI(CONFIG.ROUND_DURATION); // Reset timer display visually
-                  updateDepositButtonState();
-              } else if (!timerActive) {
-                  // If timer isn't active, ensure UI reflects current timeLeft from server
-                  updateTimerUI(currentRound.timeLeft);
-              }
-        } else if (currentRound.status === 'pending') {
-            console.log("Received pending round state.");
-            initiateNewRoundVisualReset(); // Reset to empty state
-            if(DOMElements.jackpot.timerValue) DOMElements.jackpot.timerValue.textContent = "Waiting";
-            updateDepositButtonState();
-        } else if (!currentRound.status) {
-             console.warn("Received round data with no status. Resetting.");
-             initiateNewRoundVisualReset();
-        }
-
-        // --- Re-render deposits on initial connect/sync ---
-        const container = DOMElements.jackpot.participantsContainer;
-        if(container && data.participants?.length > 0) {
-            console.log("Rendering existing deposits from full round data.");
-            container.innerHTML = ''; // Clear first
-            if (DOMElements.jackpot.emptyPotMessage) DOMElements.jackpot.emptyPotMessage.style.display = 'none';
-
-            // Ensure participants have user details before sorting/displaying
-             const validParticipants = data.participants.filter(p => p.user && p.user._id);
-
-             // Sort participants for consistent display (e.g., by total value descending)
-             const sortedParticipants = [...validParticipants].sort((a,b) => (b.itemsValue || 0) - (a.itemsValue || 0));
-
-             sortedParticipants.forEach(p => {
-                 // Find items associated with this participant
-                 const participantItems = data.items?.filter(item => item.owner === p.user._id) || [];
-                 displayLatestDeposit({ // Simulate deposit event structure
-                     userId: p.user._id,
-                     username: p.user.username,
-                     avatar: p.user.avatar,
-                     itemsValue: p.itemsValue, // Use participant's cumulative value for display
-                     depositedItems: participantItems, // Show items linked to this participant
-                 });
-                  // Remove animation class immediately after adding
-                  const element = container.querySelector(`.player-deposit-container[data-user-id="${p.user._id}"]`);
-                  if (element) element.classList.remove('player-deposit-new');
-             });
-              // Update all percentages after rendering initial deposits
-              updateAllParticipantPercentages();
-
-        } else if (container && (!data.participants || data.participants.length === 0)) {
-            // Ensure empty message is shown if data confirms no participants
-            initiateNewRoundVisualReset();
-        }
-
-    });
-
-     // MODIFIED: Trade Offer Sent Handler - uses offerURL for link
-     socket.on('tradeOfferSent', (data) => {
-         console.log('Trade offer sent event received:', data);
-         if (currentUser && data.userId === currentUser._id && data.offerURL) {
-              // Offer a more direct link for winnings
-              showNotification(`Trade Offer Sent: <a href="${data.offerURL}" target="_blank" rel="noopener noreferrer" class="notification-link">Click here to accept your winnings on Steam!</a> (#${data.offerId})`, 'success', 10000);
-         } else if (currentUser && data.userId === currentUser._id) {
-              // Fallback if URL is missing (shouldn't happen with backend changes)
-              showNotification(`Trade Offer Sent: Check Steam for your winnings! (#${data.offerId})`, 'success', 8000);
-         }
-     });
-
-    // --- Notification Event (Generic) ---
-    socket.on('notification', (data) => {
-       console.log('Notification event received:', data);
-       // Show notification if it's general (no userId) or targeted at the current user
-       if (!data.userId || (currentUser && data.userId === currentUser._id)) {
-        showNotification(data.message || 'Received notification from server.', data.type || 'info', data.duration || 4000);
-       }
-    });
-}
-
-// --- Event Listener Setup ---
-function setupEventListeners() {
-    // Navigation Links
-    DOMElements.nav.homeLink?.addEventListener('click', (e) => { e.preventDefault(); showPage(DOMElements.pages.homePage); });
-    DOMElements.nav.aboutLink?.addEventListener('click', (e) => { e.preventDefault(); showPage(DOMElements.pages.aboutPage); });
-    DOMElements.nav.tosLink?.addEventListener('click', (e) => { e.preventDefault(); showPage(DOMElements.pages.tosPage); }); // Added TOS
-    DOMElements.nav.faqLink?.addEventListener('click', (e) => { e.preventDefault(); showPage(DOMElements.pages.faqPage); });
-    DOMElements.nav.fairLink?.addEventListener('click', (e) => { e.preventDefault(); showPage(DOMElements.pages.fairPage); });
-
-    // Login Button (with integrated age check)
-    DOMElements.user.loginButton?.addEventListener('click', () => {
-        if (localStorage.getItem('ageVerified') === 'true') {
-            console.log("Age already verified, proceeding to Steam login.");
-            window.location.href = '/auth/steam'; // Backend auth route
-        } else {
-            console.log("Age not verified, showing verification modal.");
-            const { checkbox: ageCheckbox, agreeButton: ageAgreeButton } = DOMElements.ageVerification;
-            if(ageCheckbox) ageCheckbox.checked = false;
-            if(ageAgreeButton) ageAgreeButton.disabled = true;
-            showModal(DOMElements.ageVerification.modal);
-        }
-    });
-
-    // --- User Profile Dropdown Listeners (MODIFIED) ---
-    const { userProfile, userDropdownMenu, logoutButton, profileDropdownButton } = DOMElements.user;
-
-    // Toggle dropdown menu
-    userProfile?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (userDropdownMenu) {
-            const isVisible = userDropdownMenu.style.display === 'block';
-            userDropdownMenu.style.display = isVisible ? 'none' : 'block';
-            userProfile?.setAttribute('aria-expanded', !isVisible);
-            userProfile?.classList.toggle('open', !isVisible);
-        }
-    });
-    userProfile?.addEventListener('keydown', (e) => {
-         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.target.click(); }
-    });
-
-    // Logout Button
-    logoutButton?.addEventListener('click', (e) => { e.stopPropagation(); handleLogout(); });
-    logoutButton?.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleLogout(); } });
-
-    // *** NEW: Profile Button (inside dropdown) Listener ***
-    profileDropdownButton?.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation(); // Prevent closing dropdown immediately
-        const menu = DOMElements.user.userDropdownMenu;
-        const modal = DOMElements.profileModal.modal;
-
-        if (currentUser && modal) {
-            populateProfileModal(); // Populate with current user data
-            showModal(modal); // Show the profile modal
-        } else if (!currentUser) {
-            showNotification("Please log in to view your profile.", "info");
-        } else {
-            console.error("Profile modal element not found.");
-        }
-
-        // Hide dropdown after clicking profile
-        if (menu) menu.style.display = 'none';
-        userProfile?.setAttribute('aria-expanded', 'false');
-        userProfile?.classList.remove('open');
-    });
-
-    // --- NEW: Profile Modal Listeners ---
-    DOMElements.profileModal.saveBtn?.addEventListener('click', handleProfileSave);
-    DOMElements.profileModal.closeBtn?.addEventListener('click', () => hideModal(DOMElements.profileModal.modal));
-    DOMElements.profileModal.cancelBtn?.addEventListener('click', () => hideModal(DOMElements.profileModal.modal)); // Also hide on Cancel
-
-    // --- Deposit Modal Trigger ---
-    DOMElements.deposit.showDepositModalButton?.addEventListener('click', () => {
-        const button = DOMElements.deposit.showDepositModalButton;
-        if (button.disabled) {
-            showNotification(button.title || 'Deposits are currently closed.', 'info'); return;
-        }
-        if (!currentUser) {
-            showNotification('Login Required: Please log in first.', 'error'); return;
-        }
-        // Check trade URL from current user data (should be populated by checkLoginStatus or saved via profile)
-         if (!currentUser.tradeUrl) {
-             console.log("Trade URL missing for user. Prompting user to set it in profile.");
-             showNotification('Trade URL Required: Please open your profile (click your avatar) and set your Steam Trade URL before depositing.', 'error', 6000);
-             // Automatically open the NEW profile modal instead of the dropdown
-             if (DOMElements.profileModal.modal) {
-                 populateProfileModal();
-                 showModal(DOMElements.profileModal.modal);
-             }
-             return;
-         }
-        showModal(DOMElements.deposit.depositModal);
-        loadUserInventory();
-    });
-
-    // Deposit Modal Controls
-    DOMElements.deposit.closeDepositModalButton?.addEventListener('click', () => hideModal(DOMElements.deposit.depositModal));
-    // MODIFIED: Main deposit button now calls requestDepositOffer
-    DOMElements.deposit.depositButton?.addEventListener('click', requestDepositOffer);
-    // ADDED: Listener for the new accept button
-    DOMElements.deposit.acceptDepositOfferBtn?.addEventListener('click', () => {
-         if (currentDepositOfferURL) {
-              console.log("Opening Steam trade offer:", currentDepositOfferURL);
-              window.open(currentDepositOfferURL, '_blank', 'noopener,noreferrer');
-              const { depositStatusText } = DOMElements.deposit;
-              if(depositStatusText) depositStatusText.textContent = "Check Steam tab...";
-              // Optionally hide modal or provide further instructions
-              // hideModal(DOMElements.deposit.depositModal);
-         } else {
-              console.error("No deposit offer URL found for accept button.");
-              showNotification("Error: Could not find the trade offer URL.", "error");
-         }
-    });
-
-    // Age Verification Modal Controls
-    const { modal: ageModal, checkbox: ageCheckbox, agreeButton: ageAgreeButton } = DOMElements.ageVerification;
-    if (ageModal && ageCheckbox && ageAgreeButton) {
-        ageCheckbox.addEventListener('change', () => {
-            ageAgreeButton.disabled = !ageCheckbox.checked;
-        });
-        ageAgreeButton.addEventListener('click', () => {
-            if (ageCheckbox.checked) {
-                localStorage.setItem('ageVerified', 'true');
-                hideModal(ageModal);
-                console.log("Age verification agreed. Proceeding to Steam login.");
-                window.location.href = '/auth/steam'; // Proceed to login
-            }
-        });
-        ageAgreeButton.disabled = !ageCheckbox.checked; // Initial state
-    }
-
-    // Test Buttons
-     const testSpinBtn = document.getElementById('testSpinButton');
-     const testDepositBtn = document.getElementById('testDepositButton');
-     if (testSpinBtn) testSpinBtn.addEventListener('click', testRouletteAnimation);
-     if (testDepositBtn) testDepositBtn.addEventListener('click', testDeposit);
-
-
-    // Provably Fair Verify Button
-    DOMElements.provablyFair.verifyButton?.addEventListener('click', verifyRound);
-
-    // --- Global Listeners (MODIFIED) ---
-    window.addEventListener('click', (e) => {
-        const profileModal = DOMElements.profileModal.modal;
-
-        // Close dropdown when clicking outside
-        if (userDropdownMenu && userProfile && userDropdownMenu.style.display === 'block' &&
-            !userProfile.contains(e.target) && !userDropdownMenu.contains(e.target)) {
-            userDropdownMenu.style.display = 'none';
-            userProfile.setAttribute('aria-expanded', 'false');
-            userProfile.classList.remove('open');
-        }
-        // Close modals on backdrop click
-        if (e.target === DOMElements.deposit.depositModal) hideModal(DOMElements.deposit.depositModal);
-        // Close profile modal on backdrop click
-        if (e.target === profileModal) hideModal(profileModal);
-        // Age verification backdrop click behavior (optional)
-        if (e.target === DOMElements.ageVerification.modal) {
-            // Decide if clicking backdrop closes age verification
-            // hideModal(DOMElements.ageVerification.modal);
-        }
-    });
-
-    document.addEventListener('keydown', function(event) {
-        const profileModal = DOMElements.profileModal.modal;
-        const depositModal = DOMElements.deposit.depositModal;
-
-        // Escape Key Logic
-        if (event.key === 'Escape') {
-             // Close open modals first (priority)
-             if (profileModal?.style.display === 'flex') {
-                 hideModal(profileModal);
-             } else if (depositModal?.style.display === 'flex') {
-                 hideModal(depositModal);
-             }
-             // Then close dropdown if no modal was closed
-             else if (userDropdownMenu && userDropdownMenu.style.display === 'block') {
-                 userDropdownMenu.style.display = 'none';
-                 userProfile?.setAttribute('aria-expanded', 'false');
-                 userProfile?.classList.remove('open');
-                 userProfile?.focus(); // Return focus to the profile button
-             }
-        }
-
-        // Spacebar test trigger (only if home page visible and not in modal/input)
-        if (event.code === 'Space' &&
-            DOMElements.pages.homePage?.style.display === 'block' &&
-            !isSpinning &&
-            !document.querySelector('.modal[style*="display: flex"]') && // Check if any modal is open
-            !['INPUT', 'TEXTAREA', 'SELECT', 'BUTTON'].includes(document.activeElement?.tagName)) // Check if focus is on interactive element
-        {
-            console.log("Spacebar pressed for test spin.");
-             if (testSpinBtn) testSpinBtn.click(); // Trigger the button's click handler
-            event.preventDefault();
-        }
-    });
-}
-
-// --- NEW Helper Functions for Profile Modal ---
-
-/**
- * Populates the profile modal fields, including pending offer status.
- */
-function populateProfileModal() {
-    const modalElements = DOMElements.profileModal; if (!currentUser || !modalElements.modal) return;
-    modalElements.avatar.src = currentUser.avatar || '/img/default-avatar.png'; modalElements.name.textContent = currentUser.username || 'User';
-    modalElements.deposited.textContent = `$${(currentUser.totalDeposited || 0).toFixed(2)}`; modalElements.tradeUrlInput.value = currentUser.tradeUrl || '';
-    // Handle Pending Offer Status Display (ADDED/MODIFIED PART)
-    const statusDiv = modalElements.pendingOfferStatus; if (!statusDiv) return;
-    if (currentUser.pendingDepositOfferId) {
-        const offerId = currentUser.pendingDepositOfferId; const offerURL = `https://steamcommunity.com/tradeoffer/${offerId}/`;
-        // Use innerHTML to create a clickable link
-        statusDiv.innerHTML = `<p>⚠️ You have a <a href="${offerURL}" target="_blank" rel="noopener noreferrer" class="profile-pending-link">pending deposit offer (#${offerId})</a> awaiting action on Steam.</p>`;
-        statusDiv.style.display = 'block';
-    } else {
-        statusDiv.style.display = 'none';
-        statusDiv.innerHTML = ''; // Clear content when no offer
-    }
-}
-
-/**
- * Handles saving profile changes (currently just trade URL).
- */
-async function handleProfileSave() {
-    const { tradeUrlInput, saveBtn } = DOMElements.profileModal;
-    if (!tradeUrlInput || !saveBtn) return;
-    if (!currentUser) {
-         showNotification("Not logged in.", "error");
-         return;
-     }
-
-    const newTradeUrl = tradeUrlInput.value.trim();
-
-    // Basic URL validation (Improve this regex as needed)
-    const urlPattern = /^https?:\/\/steamcommunity\.com\/tradeoffer\/new\/\?partner=\d+&token=[a-zA-Z0-9_-]+$/i;
-    if (!newTradeUrl) {
-        // Allow clearing the trade URL
-        console.log("Attempting to clear Trade URL.");
-    } else if (!urlPattern.test(newTradeUrl)) {
-        // If not empty, validate the format
-        showNotification('Invalid Steam Trade URL format. Please check and try again. It should look like https://steamcommunity.com/tradeoffer/new/?partner=...&token=...', 'error', 6000);
-        return;
-    }
-
-    saveBtn.disabled = true;
-    saveBtn.textContent = 'Saving...';
-
-    try {
-        const response = await fetch('/api/user/tradeurl', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ tradeUrl: newTradeUrl }), // Send empty string to clear
-        });
-
-        const result = await response.json();
-
-        if (!response.ok || !result.success) {
-            throw new Error(result.error || `Failed to save trade URL (${response.status})`);
-        }
-
-        // Success! Update local state and notify user
-        currentUser.tradeUrl = newTradeUrl; // Update with the new value (could be empty string)
-        showNotification(newTradeUrl ? 'Trade URL saved successfully!' : 'Trade URL cleared successfully!', 'success');
-        updateDepositButtonState(); // ADDED: Re-check deposit button state
-        hideModal(DOMElements.profileModal.modal); // Close modal on success
-
-    } catch (error) {
-        console.error("Error saving trade URL:", error);
-        showNotification(`Error saving Trade URL: ${error.message}`, 'error');
-    } finally {
-        saveBtn.disabled = false;
-        saveBtn.textContent = 'Save Changes';
-    }
-}
-
-
-// --- Initialization ---
-document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM fully loaded and parsed.");
-
-    // Check age verification status first
-    const ageVerified = localStorage.getItem('ageVerified') === 'true';
-
-    // Initialize core components
-    checkLoginStatus(); // Check login status (which updates UI)
-    setupEventListeners();
-    setupSocketConnection();
-    showPage(DOMElements.pages.homePage); // Show home page by default
-    initiateNewRoundVisualReset(); // Reset UI elements to default state
-
-    // If age is not verified, ensure modal is shown (even if checkLoginStatus ran first)
-    if (!ageVerified && DOMElements.ageVerification.modal) {
-        // Ensure initial state of checkbox/button
-        const { checkbox: ageCheckbox, agreeButton: ageAgreeButton } = DOMElements.ageVerification;
-        if(ageCheckbox) ageCheckbox.checked = false;
-        if(ageAgreeButton) ageAgreeButton.disabled = true;
-        showModal(DOMElements.ageVerification.modal);
+    } catch (err) {
+        console.error('Error fetching/formatting current round data:', err);
+        res.status(500).json({ error: 'Server error retrieving round details.' });
     }
 });
 
-console.log("main.js (Combined Version, Modified - Trade Offer Flow) loaded.");
+// GET Past Rounds (History)
+app.get('/api/rounds',
+    [ // Validation Rules
+        query('page').optional().isInt({ min: 1 }).toInt().withMessage('Page must be a positive integer.'),
+        query('limit').optional().isInt({ min: 1, max: 50 }).toInt().withMessage('Limit must be between 1 and 50.')
+    ],
+    handleValidationErrors,
+    async (req, res) => {
+        try {
+            const page = req.query.page || 1;
+            const limit = req.query.limit || 10;
+            const skip = (page - 1) * limit;
+            const queryFilter = { status: { $in: ['completed', 'error'] } };
+
+            const [rounds, totalCount] = await Promise.all([
+                Round.find(queryFilter)
+                     .sort('-roundId')
+                     .skip(skip)
+                     .limit(limit)
+                     .populate('winner', 'username avatar steamId')
+                     .select('roundId startTime endTime completedTime totalValue winner serverSeed serverSeedHash clientSeed winningTicket provableHash status taxAmount taxedItems') // Select fields
+                     .lean(),
+                Round.countDocuments(queryFilter)
+            ]);
+
+            res.json({
+                rounds: rounds,
+                totalPages: Math.ceil(totalCount / limit),
+                currentPage: page,
+                totalRounds: totalCount
+            });
+        } catch (err) {
+            console.error('Error fetching past rounds:', err);
+            res.status(500).json({ error: 'Server error fetching round history.' });
+        }
+    });
+
+// POST Verify Provably Fair
+app.post('/api/verify',
+    sensitiveActionLimiter,
+    [ // Validation Rules
+        body('roundId').notEmpty().isInt({ min: 1 }).toInt(),
+        body('serverSeed').trim().notEmpty().isHexadecimal().isLength({ min: 64, max: 64 }),
+        body('clientSeed').trim().notEmpty().isString().isLength({ min: 1, max: 128 })
+    ],
+    handleValidationErrors,
+    async (req, res) => {
+        const { roundId, serverSeed, clientSeed } = req.body;
+        try {
+            const round = await Round.findOne({ roundId: roundId, status: 'completed' })
+                 .populate('participants.user', 'username')
+                 .populate('winner', 'username')
+                 .lean();
+            if (!round) return res.status(404).json({ error: `Completed round #${roundId} not found.` });
+
+            // 1. Verify Server Seed Hash
+            const providedHash = crypto.createHash('sha256').update(serverSeed).digest('hex');
+            if (providedHash !== round.serverSeedHash) {
+                return res.json({ verified: false, reason: 'Server Seed Hash mismatch.', expectedHash: round.serverSeedHash, providedSeed: serverSeed, calculatedHash: providedHash });
+            }
+            // 2. Verify Seeds Match Record (if available)
+            if (round.serverSeed && round.clientSeed) {
+                if (serverSeed !== round.serverSeed || clientSeed !== round.clientSeed) {
+                    return res.json({ verified: false, reason: 'Provided seeds do not match the official round seeds.', expectedServerSeed: round.serverSeed, expectedClientSeed: round.clientSeed, providedServerSeed: serverSeed, providedClientSeed: clientSeed });
+                }
+            }
+            // 3. Recalculate Winning Ticket
+            const combinedString = serverSeed + clientSeed;
+            const calculatedProvableHash = crypto.createHash('sha256').update(combinedString).digest('hex');
+            // Verify calculated provable hash matches stored provable hash (if available)
+            if (round.provableHash && calculatedProvableHash !== round.provableHash) {
+                 return res.json({ verified: false, reason: 'Calculated Provable Hash does not match recorded hash.', expectedProvableHash: round.provableHash, calculatedProvableHash: calculatedProvableHash, combinedString: combinedString });
+            }
+            const decimalFromHash = parseInt(calculatedProvableHash.substring(0, 8), 16);
+            const totalTickets = round.participants?.reduce((sum, p) => sum + (p?.tickets || 0), 0) ?? 0;
+            if (totalTickets <= 0) return res.json({ verified: false, reason: 'Round had zero total tickets.' });
+            const calculatedWinningTicket = decimalFromHash % totalTickets;
+            // 4. Compare Calculated vs Actual Ticket
+            if (calculatedWinningTicket !== round.winningTicket) {
+                 return res.json({ verified: false, reason: 'Calculated winning ticket does not match the recorded winning ticket.', calculatedTicket: calculatedWinningTicket, actualWinningTicket: round.winningTicket, provableHashUsed: calculatedProvableHash, totalTickets: totalTickets });
+            }
+            // If all checks pass
+            res.json({
+                verified: true, roundId: round.roundId, serverSeed: serverSeed, serverSeedHash: round.serverSeedHash, clientSeed: clientSeed,
+                combinedString: combinedString, finalHash: calculatedProvableHash, winningTicket: calculatedWinningTicket,
+                totalTickets: totalTickets, totalValue: round.totalValue, winnerUsername: round.winner?.username || 'N/A'
+            });
+        } catch (err) {
+            console.error(`Error verifying round ${roundId}:`, err);
+            res.status(500).json({ error: 'Server error during verification.' });
+        }
+    });
+
+
+// --- Socket.io Connection Handling ---
+io.on('connection', (socket) => {
+    // console.log(`Client connected: ${socket.id}`);
+
+    // Send current round data on connection request
+    socket.on('requestRoundData', async () => {
+        try {
+            // Re-use the logic from the API endpoint to get consistent data
+            let roundToSend = null;
+             if (currentRound?._id) {
+                 roundToSend = await Round.findById(currentRound._id)
+                       .populate('participants.user', 'steamId username avatar')
+                       .populate('items') // Send items for initial load
+                       .populate('winner', 'steamId username avatar')
+                       .lean();
+                 if (!roundToSend) { currentRound = null; }
+                 else { currentRound = roundToSend; }
+             }
+             if (!roundToSend) {
+                 roundToSend = await Round.findOne({ status: { $in: ['active', 'rolling', 'pending'] } })
+                       .sort({ startTime: -1 })
+                       .populate('participants.user', 'steamId username avatar')
+                       .populate('items') // Send items for initial load
+                       .populate('winner', 'steamId username avatar')
+                       .lean();
+                 if (roundToSend && !currentRound) {
+                      currentRound = roundToSend;
+                      console.log(`Restored active/pending round ${currentRound.roundId} from DB on client socket request.`);
+                      // Check and potentially start timer
+                      if (currentRound.status === 'active' && currentRound.participants?.length > 0 && currentRound.endTime && new Date(currentRound.endTime) > Date.now() && !roundTimer) {
+                          startRoundTimer(true);
+                      } else if (currentRound.status === 'active' && currentRound.participants?.length > 0 && !currentRound.endTime && !roundTimer) {
+                          startRoundTimer(false);
+                      }
+                 }
+             }
+
+            const formattedData = formatRoundForClient(roundToSend); // formatRoundForClient now includes items
+
+            if (formattedData) {
+                socket.emit('roundData', formattedData);
+            } else {
+                socket.emit('noActiveRound'); // Tell client no round is active
+            }
+        } catch (err) {
+            console.error(`Error fetching round data for socket ${socket.id}:`, err);
+            socket.emit('roundError', { error: 'Failed to load round data.' });
+        }
+    }); // End 'requestRoundData' listener
+
+    socket.on('disconnect', (reason) => {
+        // console.log(`Client disconnected: ${socket.id}. Reason: ${reason}`);
+    });
+});
+
+// --- Server Startup ---
+async function startApp() {
+    console.log("Performing initial price cache refresh from rust.scmm.app...");
+    await refreshPriceCache(); // Wait for the first refresh attempt
+
+    // Schedule periodic cache refresh
+    setInterval(async () => {
+        try { await refreshPriceCache(); }
+        catch (refreshErr) { console.error("Error during scheduled price cache refresh:", refreshErr); }
+    }, PRICE_REFRESH_INTERVAL_MS);
+    console.log(`Scheduled price cache refresh every ${PRICE_REFRESH_INTERVAL_MS / 60000} minutes.`);
+
+    // Start HTTP server
+    const PORT = process.env.PORT || 3000;
+    server.listen(PORT, () => {
+        console.log(`Server listening on port ${PORT}`);
+        console.log(`Site URL configured as: ${process.env.SITE_URL}`);
+
+        // Bot status check
+        if (!isBotConfigured) { console.log("INFO: Steam Bot not configured. Trade features disabled."); }
+        else if (!isBotReady) { console.log("INFO: Steam Bot login attempt may have failed or is pending. Check logs."); }
+        else { console.log("INFO: Steam Bot is ready."); } // Bot logged in and cookies set
+
+        // Call ensureInitialRound AFTER server listens and bot status is known
+        ensureInitialRound();
+    });
+}
+startApp(); // Call the async startup function
+
+// --- Graceful Shutdown ---
+function gracefulShutdown() {
+    console.log('Received shutdown signal. Closing server...');
+    io.close(); // Close socket connections
+    server.close(async () => { // Make callback async
+        console.log('HTTP server closed.');
+        try {
+            await mongoose.connection.close();
+            console.log('MongoDB connection closed.');
+             // Stop polling if manager exists
+             if (manager) {
+                 console.log('Stopping TradeOfferManager polling...');
+                 // You might need to access the internal poller to stop it cleanly
+                 // Or rely on process exit stopping it. Check library docs if needed.
+             }
+            process.exit(0); // Exit cleanly
+        } catch (e) {
+            console.error("Error during shutdown:", e);
+            process.exit(1);
+        }
+    });
+    // Force shutdown after a timeout
+    setTimeout(() => {
+        console.error('Could not close connections gracefully, forcing shutdown.');
+        process.exit(1);
+    }, 10000); // 10 seconds timeout
+}
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown); // Handle Ctrl+C
+
+// --- Basic Error Handling Middleware (Place LAST) ---
+app.use((err, req, res, next) => {
+    console.error("Unhandled Error:", err.stack || err);
+    const status = err.status || 500;
+    const message = process.env.NODE_ENV === 'production' ? 'An unexpected server error occurred.' : (err.message || 'Unknown server error.');
+    // Avoid sending sensitive error details in production
+    // Check if headers already sent
+    if (res.headersSent) {
+        return next(err); // Delegate to default Express handler
+    }
+    res.status(status).json({ error: message });
+});
