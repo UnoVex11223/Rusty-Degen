@@ -4,6 +4,7 @@
 // - Updated profile modal to display total deposited/won.
 // - Removed display of skin names, showing only image and price.
 // - Retained profile dropdown and modal logic from previous updates.
+// - Added Chat Functionality
 
 // Ensure Socket.IO client library is loaded before this script
 
@@ -27,6 +28,7 @@ const CONFIG = {
     BOUNCE_DAMPING: 0.35,
     BOUNCE_FREQUENCY: 3.5,
     LANDING_POSITION_VARIATION: 0.60,
+    MAX_CHAT_MESSAGES: 100, // Max messages to keep in chat display
 };
 
 const COLOR_PALETTE = [
@@ -124,6 +126,13 @@ const DOMElements = {
         agreeButton: document.getElementById('agreeButton'),
     },
     notificationBar: document.getElementById('notification-bar'),
+    // CHAT ELEMENTS
+    chat: {
+        messagesContainer: document.getElementById('chatMessagesContainer'),
+        messageInput: document.getElementById('chatMessageInput'),
+        sendMessageBtn: document.getElementById('chatSendMessageBtn'),
+        onlineUsersDisplay: document.getElementById('chatOnlineUsers'),
+    }
 };
 
 let currentUser = null;
@@ -138,6 +147,8 @@ let userColorMap = new Map();
 let notificationTimeout = null;
 let spinStartTime = 0;
 let currentDepositOfferURL = null;
+let chatMessageQueue = []; // For potentially batching display updates
+let canScrollChat = true; // Flag to control auto-scrolling
 
 function showModal(modalElement) {
     if (modalElement) modalElement.style.display = 'flex';
@@ -250,6 +261,107 @@ function darkenColor(hex, percent) {
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
 }
 
+// --- CHAT FUNCTIONALITY START ---
+function sanitizeChatMessage(text) {
+    const tempDiv = document.createElement('div');
+    tempDiv.textContent = text;
+    return tempDiv.innerHTML; // Basic sanitization by converting to text then back to HTML entities
+}
+
+function displayChatMessage(messageData) {
+    const messagesContainer = DOMElements.chat.messagesContainer;
+    if (!messagesContainer || !messageData) return;
+
+    const { type = 'user', user, text, timestamp } = messageData;
+    const messageElement = document.createElement('div');
+    messageElement.classList.add('chat-message');
+
+    const messageTime = timestamp ? new Date(timestamp) : new Date();
+    const timeString = messageTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+    if (type === 'system' || !user) {
+        messageElement.classList.add('system-message');
+        messageElement.innerHTML = `<span class="message-text">${sanitizeChatMessage(text)}</span>`;
+    } else {
+        messageElement.dataset.userId = user.steamId || user.id; // Use steamId if available for consistency
+        const avatarSrc = user.avatar || '/img/default-avatar.png';
+        const username = user.username || 'Anonymous';
+        const userChatColor = getUserColor(user.steamId || user.id); // Get consistent color for user
+
+        messageElement.innerHTML = `
+            <img src="${avatarSrc}" alt="${username}'s avatar" class="message-avatar" style="border-color: ${userChatColor};">
+            <div class="message-content">
+                <div class="message-user-info">
+                    <span class="message-username" style="color: ${userChatColor};">${sanitizeChatMessage(username)}</span>
+                    <span class="message-timestamp">${timeString}</span>
+                </div>
+                <span class="message-text">${sanitizeChatMessage(text)}</span>
+            </div>
+        `;
+        // Add class if message is from the current logged-in user for potential styling
+        if (currentUser && (currentUser.steamId === user.steamId || currentUser._id === user.id)) {
+            messageElement.classList.add('current-user');
+        }
+    }
+
+    // Add new message to the top (because container is column-reverse)
+    messagesContainer.insertBefore(messageElement, messagesContainer.firstChild);
+
+    // Limit number of messages displayed
+    while (messagesContainer.children.length > CONFIG.MAX_CHAT_MESSAGES) {
+        messagesContainer.removeChild(messagesContainer.lastChild); // Remove oldest (which is at the bottom due to column-reverse)
+    }
+
+    // Auto-scroll to bottom (top in column-reverse) if user hasn't scrolled up
+    if (canScrollChat) {
+        messagesContainer.scrollTop = 0; // Scroll to the top (which is visually the bottom)
+    }
+}
+
+
+function sendChatMessage() {
+    const inputField = DOMElements.chat.messageInput;
+    const sendButton = DOMElements.chat.sendMessageBtn;
+    if (!inputField || !currentUser) {
+        if (!currentUser) showNotification('Please log in to chat.', 'info');
+        return;
+    }
+
+    const messageText = inputField.value.trim();
+    if (messageText.length > 0 && messageText.length <= 200) {
+        socket.emit('chatMessageSent', { text: messageText });
+        inputField.value = ''; // Clear input after sending
+        inputField.focus();
+    } else if (messageText.length > 200) {
+        showNotification('Message too long (max 200 characters).', 'warning');
+    }
+}
+
+function updateChatOnlineUsers(count) {
+    const onlineUsersDisplay = DOMElements.chat.onlineUsersDisplay;
+    if (onlineUsersDisplay) {
+        onlineUsersDisplay.textContent = count;
+    }
+}
+
+function updateChatInputState() {
+    const inputField = DOMElements.chat.messageInput;
+    const sendButton = DOMElements.chat.sendMessageBtn;
+    if (!inputField || !sendButton) return;
+
+    if (currentUser) {
+        inputField.disabled = false;
+        sendButton.disabled = false;
+        inputField.placeholder = "Type your message...";
+    } else {
+        inputField.disabled = true;
+        sendButton.disabled = true;
+        inputField.placeholder = "Sign in to chat";
+    }
+}
+// --- CHAT FUNCTIONALITY END ---
+
+
 async function handleLogout() {
     console.log("Attempting logout...");
     try {
@@ -268,6 +380,7 @@ async function handleLogout() {
         currentUser = null;
         updateUserUI();
         updateDepositButtonState();
+        updateChatInputState(); // Update chat input state on logout
         showNotification('You have been successfully signed out.', 'success');
     } catch (error) {
         console.error('Logout Error:', error);
@@ -363,6 +476,7 @@ async function checkLoginStatus() {
     } finally {
         updateUserUI();
         updateDepositButtonState();
+        updateChatInputState(); // Update chat input based on login
     }
 }
 
@@ -1564,16 +1678,21 @@ function setupSocketConnection() {
         console.log('Socket connected:', socket.id);
         showNotification('Connected to server.', 'success', 2000);
         socket.emit('requestRoundData');
+        socket.emit('requestInitialChatMessages'); // Request initial chat messages on connect
+        socket.emit('requestChatUserCount'); // Request user count on connect
     });
     socket.on('disconnect', (reason) => {
         console.log('Socket disconnected:', reason);
         showNotification('Disconnected from server. Attempting to reconnect...', 'error', 5000);
         updateDepositButtonState();
+        updateChatInputState(); // Disable chat on disconnect
+        if (DOMElements.chat.onlineUsersDisplay) DOMElements.chat.onlineUsersDisplay.textContent = '0';
     });
     socket.on('connect_error', (error) => {
         console.error('Socket connection error:', error);
         showNotification('Connection Error. Please refresh.', 'error', 10000);
         updateDepositButtonState();
+        updateChatInputState(); // Disable chat on connection error
     });
     socket.on('roundCreated', (data) => {
         console.log('New round created:', data); currentRound = data;
@@ -1690,6 +1809,30 @@ function setupSocketConnection() {
         showNotification(data.message || 'Received notification from server.', data.type || 'info', data.duration || 4000);
        }
     });
+
+    // CHAT SOCKET HANDLERS
+    socket.on('initialChatMessages', (messages) => {
+        const messagesContainer = DOMElements.chat.messagesContainer;
+        if (messagesContainer) {
+            messagesContainer.innerHTML = ''; // Clear existing
+             // Add a default welcome message if no initial messages or to ensure it's always there
+            displayChatMessage({ type: 'system', text: 'Welcome to the chat! Please be respectful.' });
+            if (Array.isArray(messages)) {
+                messages.forEach(msg => displayChatMessage(msg));
+            }
+            messagesContainer.scrollTop = 0; // Scroll to bottom (top due to column-reverse)
+        }
+    });
+    socket.on('newChatMessage', (messageData) => {
+        displayChatMessage(messageData);
+    });
+    socket.on('chatUserCount', (count) => {
+        updateChatOnlineUsers(count);
+    });
+    socket.on('chatError', (errorMessage) => {
+        showNotification(`Chat Error: ${errorMessage}`, 'error');
+    });
+
 }
 
 function setupEventListeners() {
@@ -1783,6 +1926,26 @@ function setupEventListeners() {
     }
     // Test buttons and their listeners are removed.
     DOMElements.provablyFair.verifyButton?.addEventListener('click', verifyRound);
+
+    // CHAT EVENT LISTENERS
+    DOMElements.chat.sendMessageBtn?.addEventListener('click', sendChatMessage);
+    DOMElements.chat.messageInput?.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault(); // Prevent new line in input
+            sendChatMessage();
+        }
+    });
+    // Handle chat scroll detection to disable/enable auto-scroll
+    const messagesContainer = DOMElements.chat.messagesContainer;
+    if (messagesContainer) {
+        messagesContainer.addEventListener('scroll', () => {
+            // If scrolled up significantly from the bottom (top in column-reverse)
+            // A threshold of 20px seems reasonable
+            canScrollChat = messagesContainer.scrollTop < 20;
+        });
+    }
+
+
     window.addEventListener('click', (e) => {
         const profileModal = DOMElements.profileModal.modal;
         if (userDropdownMenu && userProfile && userDropdownMenu.style.display === 'block' && !userProfile.contains(e.target) && !userDropdownMenu.contains(e.target)) {
@@ -1866,7 +2029,7 @@ async function handleProfileSave() {
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM fully loaded and parsed.");
     const ageVerified = localStorage.getItem('ageVerified') === 'true';
-    checkLoginStatus();
+    checkLoginStatus(); // This will also call updateChatInputState
     setupEventListeners();
     setupSocketConnection();
     showPage(DOMElements.pages.homePage);
@@ -1877,6 +2040,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(ageAgreeButton) ageAgreeButton.disabled = true;
         showModal(DOMElements.ageVerification.modal);
     }
+    updateChatInputState(); // Initial call
 });
 
-console.log("main.js updated: Test functions removed, profile stats added, skin names hidden.");
+console.log("main.js updated: Chat functionality added.");
