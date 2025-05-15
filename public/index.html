@@ -112,12 +112,18 @@
                 </div>
 
                 <div id="profile-pending-offer-status" class="profile-pending-offer-status" style="display: none; margin-bottom: 15px; padding: 10px; background-color: var(--background-light); border: 1px solid var(--secondary-dark); border-radius: 4px; text-align: center;">
-                    </div>
+                </div>
 
                 <div class="profile-modal-stats">
-                    <span class="profile-modal-stat-label">Total Deposited:</span>
-                    <span class="profile-modal-stat-value" id="profileModalDeposited">$0.00</span>
+                    <div class="profile-modal-stat-item">
+                        <span class="profile-modal-stat-label">Total Deposited:</span>
+                        <span class="profile-modal-stat-value" id="profileModalDeposited">$0.00</span>
                     </div>
+                    <div class="profile-modal-stat-item">
+                        <span class="profile-modal-stat-label">Total Won:</span>
+                        <span class="profile-modal-stat-value" id="profileModalWon">$0.00</span>
+                    </div>
+                </div>
 
                 <div class="form-group profile-modal-trade-url">
                     <label for="profileModalTradeUrl">Steam Trade URL</label>
@@ -250,11 +256,7 @@
 
                     <div class="deposit-button-container" id="depositBtnContainer">
                         <button class="btn btn-deposit" id="showDepositModal" title="Log in to deposit" disabled>DEPOSIT SKINS</button>
-                         <div class="test-buttons-container" style="margin-top: 10px;">
-                            <button class="btn btn-secondary btn-small" id="testSpinButton">Test Roulette</button>
-                            <button class="btn btn-secondary btn-small" id="testDepositButton">Test Deposit</button>
                         </div>
-                    </div>
 
                     <div class="current-items-section" id="currentItems">
                         <h3 class="section-title">CURRENT ITEMS IN POT</h3>
@@ -285,8 +287,7 @@
             <section id="tos-page" style="display: none;">
                  <div class="content-card">
                      <h1>Terms of Service</h1>
-                     <p><small>Last Updated: April 27, 2025</small></p>
-                     <div class="content-section">
+                     <p><small>Last Updated: May 15, 2025</small></p> <div class="content-section">
                          <h3 class="content-section-title">1. Acceptance of Terms</h3>
                          <div class="content-section-body">
                              <p>Welcome to Rusty Degen (referred to as "the Service" or "Website"). These Terms of Service ("Terms") outline the rules and regulations for using our platform. By accessing or utilizing any part of the Service, you signify your binding agreement to these Terms. If you disagree with any portion of these Terms, you are prohibited from using the Service.</p>
@@ -321,7 +322,7 @@
                              <p>Winning chances vary based on game rules and deposited value, as determined by our Provably Fair system where applicable.</p>
                              <p>Winners must claim items via the designated Steam trade offer system. Ensure your Steam Trade URL is accurate on our Website and that your Steam inventory settings allow incoming offers (set to public).</p>
                              <p>Winning trade offers should be accepted promptly. Offers not accepted within a reasonable timeframe (e.g., 12-24 hours, subject to change) of being sent may be cancelled, potentially resulting in forfeiture of winnings. If you encounter issues receiving winnings, contact support promptly.</p>
-                             <p>A commission (typically 0-10%, see FAQ for current rate) is applied to each jackpot round's total value to support site maintenance, development, and operational costs. This fee is deducted from the item pool before the winner receives the remaining items.</p>
+                             <p>A commission (typically 5-10%, see FAQ for current rate) is applied to each jackpot round's total value to support site maintenance, development, and operational costs. This fee is deducted from the item pool before the winner receives the remaining items.</p>
                          </div>
                      </div>
                       <div class="content-section">
@@ -452,8 +453,7 @@
                          <div class="content-section-body">
                              <p>After a round is complete and the Server Seed is revealed, you can use this tool (or any external SHA256 tool) to verify the outcome:</p>
                              <div class="verify-form">
-                                 <div class="form-group">
-                                     <label for="round-id">Round ID:</label>
+                                 <div class="form-group form-group-full-width"> <label for="round-id">Round ID:</label>
                                      <input type="number" id="round-id" placeholder="Enter round ID from history">
                                  </div>
                                  <div class="form-group">
@@ -464,7 +464,8 @@
                                      <label for="client-seed">Client Seed:</label>
                                      <input type="text" id="client-seed" placeholder="Enter the Client Seed for the round">
                                  </div>
-                                 <button class="btn btn-primary" id="verify-btn" style="grid-column: 1 / -1;">Verify Round</button> </div>
+                                 <button class="btn btn-primary" id="verify-btn" style="grid-column: 1 / -1;">Verify Round</button>
+                            </div>
                              <div id="verification-result" class="verification-result" style="display: none;">
                                  </div>
                          </div>
