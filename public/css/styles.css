@@ -1,3 +1,4 @@
+/* styles.css */
 /*=========================
  VARIABLES & BASE STYLES
  =========================*/
@@ -277,7 +278,6 @@ code { /* General code tag styling */
     display: inline-block; /* Initially hidden by JS */
     color: var(--warning-color); /* Use warning color */
     font-size: 1.1rem;
-    /* margin-left: 5px; */ /* Positioned by flex gap in container */
     cursor: help; /* Indicate tooltip */
     animation: pulseWarning 1.5s infinite ease-in-out;
     vertical-align: middle; /* Align with text/avatar */
@@ -294,10 +294,42 @@ code { /* General code tag styling */
 /* --- Dropdown Menu (New Simplified Structure) --- */
 .dropdown-menu {
     display: none; /* JS toggles this to 'block' */
-    position: absolute; top: calc(100% + 10px); right: 0; z-index: 1000;
-    background-color: var(--background-dark); border: 1px solid var(--border-color);
-    border-radius: 8px; box-shadow: var(--shadow-lg); min-width: 200px; overflow: hidden;
+    position: absolute;
+    top: calc(100% + 10px); /* Position below the user-profile */
+    left: 50%; /* Start from center of profile container */
+    transform: translateX(-50%); /* Center the dropdown */
+    /* If profile container is far right, this might push dropdown off-screen.
+       Alternative: left: auto; right: 0; if always aligning to the right edge of profile container */
+    /* For aligning with the avatar, more complex calc might be needed if profile width is variable.
+       A simpler approach is to ensure user-profile-container is not excessively wide. */
+    /* Let's try aligning to the left of user-profile-container, then shifting a bit if avatar is on left */
+    /* left: 0; /* Aligns to the left edge of user-profile-container */
+    /* transform: translateX(0); /* Reset transform if using left:0 */
+
+    /* Updated Alignment: Align to the start of the profile trigger.
+       Assuming user-profile-container is the reference. */
+    right: 0; /* Default to align right edge of dropdown with right edge of container */
+    left: auto; /* Override previous left */
+    transform: none; /* Reset transform */
+
+    z-index: 1000;
+    background-color: var(--background-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    min-width: 200px; /* Or adjust to content */
+    overflow: hidden;
 }
+
+/* If the avatar is on the left and you want the dropdown to roughly start there: */
+.user-profile-container .dropdown-menu {
+    /* This assumes .user-profile is the clickable trigger within .user-profile-container */
+    /* To align with the start of the .user-profile element: */
+    left: 0; /* Align dropdown's left to container's left */
+    right: auto; /* Override the right:0 */
+}
+
+
 .dropdown-actions { padding: 8px 0; }
 
 .dropdown-item {
@@ -598,25 +630,24 @@ code { /* General code tag styling */
 }
 .roulette-track {
     display: flex; position: absolute; left: 0; top: 0; height: 100%;
-    /* Padding ensures the first/last items can center under the ticker */
-    padding-left: calc(50% - 45px); /* (item_width + margin) / 2 */
+    padding-left: calc(50% - 45px); 
     padding-right: calc(50% - 45px);
-    will-change: transform; transition: none; /* JS handles animation */
+    will-change: transform; transition: none; 
 }
 
 .roulette-item {
-    flex: 0 0 auto; /* Prevent shrinking/growing */
-    width: 90px; /* Item width */
-    height: 80px; /* Item height */
-    margin: 5px; /* Margin around items */
+    flex: 0 0 auto; 
+    width: 90px; 
+    height: 80px; 
+    margin: 5px; 
     background: rgba(30, 35, 40, 0.8);
     border-radius: 6px;
     box-shadow: var(--shadow-md);
     overflow: hidden;
     transition: transform var(--transition-medium), box-shadow var(--transition-medium);
-    border: 2px solid transparent; /* Default border */
+    border: 2px solid transparent; 
     position: relative;
-    backface-visibility: hidden; /* Improve performance */
+    backface-visibility: hidden; 
     display: flex;
     align-items: center;
     justify-content: center;
@@ -633,7 +664,7 @@ code { /* General code tag styling */
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Cover the area */
+    object-fit: cover; 
     transition: transform var(--transition-medium);
     border: none;
     border-radius: 0;
@@ -680,7 +711,7 @@ code { /* General code tag styling */
 .congrats { font-size: 1.2rem !important; color: var(--primary-color); font-weight: 700; margin-top: 5px !important; text-transform: uppercase; letter-spacing: 2px; animation: colorPulse 3s infinite; text-shadow: 0 0 8px currentColor; }
 @keyframes colorPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 
-.return-btn { display: none !important; } /* Assuming this button is unused */
+.return-btn { display: none !important; } 
 
 .confetti-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 18; }
 .confetti-piece {
@@ -713,9 +744,8 @@ code { /* General code tag styling */
     width: 280px;
     padding: 14px 30px;
     max-width: none;
-    /* Inherits .btn, .btn-deposit */
 }
-/* Style for disabled state */
+
 #showDepositModal.deposit-disabled {
      background: var(--background-light);
      opacity: 0.6;
@@ -723,11 +753,8 @@ code { /* General code tag styling */
      box-shadow: none;
      color: var(--text-secondary);
 }
-#showDepositModal.deposit-disabled:before { display: none; } /* Hide shine */
+#showDepositModal.deposit-disabled:before { display: none; } 
 
-
-.test-buttons-container { display: flex; gap: 10px; justify-content: center; }
-.test-buttons-container .btn-secondary { width: auto; }
 
 .current-items-section {
     padding: 25px;
@@ -737,7 +764,7 @@ code { /* General code tag styling */
     border-radius: 0 0 12px 12px;
     border-top: 1px solid var(--border-color);
 }
-.section-title { /* Applies to "CURRENT ITEMS IN POT" */
+.section-title { 
     font-size: 1.2rem;
     font-weight: 600;
     margin-bottom: 25px;
@@ -780,22 +807,21 @@ code { /* General code tag styling */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    transition: color var(--transition-fast); /* Smooth color transition */
+    transition: color var(--transition-fast); 
 }
 .player-items-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: flex-start; }
 .player-deposit-item {
     width: 80px; height: 100px; background: rgba(22, 27, 34, 0.7); border-radius: 5px;
     overflow: hidden; box-shadow: var(--shadow-sm); transition: transform var(--transition-fast);
     border: 1px solid var(--border-color); flex: 0 0 auto; display: flex; flex-direction: column;
-    border-left-width: 3px; border-left-style: solid; /* Keep colored border */
-    /* border-left-color: var(--border-color); /* Color set by JS */
+    border-left-width: 3px; border-left-style: solid; 
 }
 .player-deposit-item:hover { transform: translateY(-3px); box-shadow: var(--shadow-md), 0 0 8px rgba(0, 230, 118, 0.2); }
 .player-deposit-item-image { width: 100%; height: 60px; object-fit: contain; background-color: var(--background-medium); border-bottom: 1px solid rgba(48, 54, 61, 0.5); display: block; }
 .player-deposit-item-info { padding: 4px; height: 40px; display: flex; flex-direction: column; justify-content: center; flex-grow: 1; }
 .player-deposit-item-name { font-size: 0.65rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); margin-bottom: 2px; }
-.player-deposit-item-value { font-size: 0.7rem; font-weight: 700; /* Color set by JS */ }
-.player-deposit-item-more { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; padding: 5px; margin-top: 5px; /* Color set by JS */ }
+.player-deposit-item-value { font-size: 0.7rem; font-weight: 700; }
+.player-deposit-item-more { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; padding: 5px; margin-top: 5px; }
 @keyframes newDepositPulse {
     0% { transform: translateY(20px); opacity: 0; }
     100% { transform: translateY(0); opacity: 1; }
@@ -809,7 +835,7 @@ code { /* General code tag styling */
 .modal {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background-color: rgba(0, 0, 0, 0.85);
-    display: none; /* Toggled by JS */
+    display: none; 
     justify-content: center; align-items: center; z-index: 1000; padding: 20px;
     backdrop-filter: blur(5px);
 }
@@ -817,7 +843,7 @@ code { /* General code tag styling */
     background-color: var(--background-medium);
     border-radius: 12px;
     width: 100%;
-    max-width: 700px; /* Default max-width */
+    max-width: 700px; 
     max-height: 90vh;
     display: flex;
     flex-direction: column;
@@ -828,7 +854,7 @@ code { /* General code tag styling */
 }
 .age-verification .modal-content { max-width: 500px; }
 #depositModal .modal-content { max-width: 900px; }
-#tradeUrlModal .modal-content { max-width: 600px; } /* Kept for now */
+#tradeUrlModal .modal-content { max-width: 600px; } 
 
 @keyframes modalIn {
     from { opacity: 0; transform: scale(0.9) translateY(-20px); }
@@ -871,14 +897,14 @@ code { /* General code tag styling */
     flex-shrink: 0;
     display: flex;
     justify-content: flex-end;
-    align-items: center; /* Align items vertically */
+    align-items: center; 
     gap: 10px;
 }
 
 /* Form Elements */
 .form-group { margin-bottom: 20px; }
 .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary); font-family: var(--font-primary); }
-.form-group input[type="text"], .form-group input[type="url"], .form-group input[type="password"], .form-group input[type="email"], .form-group textarea {
+.form-group input[type="text"], .form-group input[type="url"], .form-group input[type="number"], .form-group input[type="password"], .form-group input[type="email"], .form-group textarea {
     width: 100%; padding: 12px 15px; border: 1px solid var(--border-color);
     border-radius: 4px; background-color: var(--background-dark); color: var(--text-primary);
     font-family: var(--font-primary); font-size: 1rem;
@@ -975,9 +1001,30 @@ code { /* General code tag styling */
 .profile-modal-user-info { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 25px; text-align: center; }
 .profile-modal-avatar { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--primary-color); object-fit: cover; }
 .profile-modal-name { font-family: var(--font-primary); font-size: 1.5em; font-weight: 600; color: var(--text-primary); margin-top: 5px; }
-.profile-modal-stats { text-align: center; margin-bottom: 30px; padding: 15px; background-color: var(--background-light); border-radius: 5px; border: 1px solid var(--border-color); }
-.profile-modal-stat-label { display: block; font-size: 0.9em; color: var(--text-secondary); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
-.profile-modal-stat-value { font-family: var(--font-mono); font-size: 1.6em; font-weight: 700; color: var(--secondary-light); }
+
+.profile-modal-stats {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 15px;
+    background-color: var(--background-light);
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    display: flex; /* Added for side-by-side items */
+    justify-content: space-around; /* Distribute items */
+    gap: 10px; /* Space between items */
+}
+.profile-modal-stat-item {
+    flex: 1; /* Allow items to grow and share space */
+}
+.profile-modal-stat-label {
+    display: block; font-size: 0.9em; color: var(--text-secondary);
+    margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;
+}
+.profile-modal-stat-value {
+    font-family: var(--font-mono); font-size: 1.6em; font-weight: 700;
+    color: var(--secondary-light);
+}
+
 .profile-modal-trade-url { margin-bottom: 15px; }
 #profileModalTradeUrl { font-family: var(--font-mono); font-size: 0.95em; }
 .profile-modal-help-text { margin-top: 10px; font-size: 0.8em; }
@@ -985,10 +1032,9 @@ code { /* General code tag styling */
 
 /* --- Profile Modal Pending Offer Status --- */
 .profile-pending-offer-status {
-    /* display: none; /* Controlled by JS */
-    margin-bottom: 20px; /* Space below */
+    margin-bottom: 20px; 
     padding: 12px 15px;
-    background-color: rgba(255, 193, 7, 0.1); /* Light warning background */
+    background-color: rgba(255, 193, 7, 0.1); 
     border: 1px solid var(--warning-color);
     border-radius: 4px;
     text-align: center;
@@ -997,7 +1043,7 @@ code { /* General code tag styling */
 .profile-pending-offer-status p { margin: 0; color: var(--warning-color); line-height: 1.5; }
 .profile-pending-offer-status a, .profile-pending-link { color: var(--secondary-light) !important; font-weight: bold; text-decoration: underline !important; }
 .profile-pending-offer-status a:hover, .profile-pending-link:hover { color: var(--secondary-color) !important; opacity: 0.9; }
-.profile-pending-offer-status i { margin-right: 5px; } /* Example for icon */
+.profile-pending-offer-status i { margin-right: 5px; } 
 
 
 /*=========================
@@ -1035,14 +1081,23 @@ code { /* General code tag styling */
 #faq-page .content-section-title { color: var(--secondary-color); cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-left: none; padding-left: 0; }
 #faq-page .content-section-title::after { content: '+'; font-size: 1.5rem; color: var(--primary-color); transition: transform 0.3s ease; }
 #faq-page .content-section.active .content-section-title::after { content: '-'; transform: rotate(180deg); }
-/* FAQ body visibility is handled by JS in index.html */
 
 /* Provably Fair Page */
 #fair-page .content-card { padding-bottom: 40px; }
 #fair-page #provably-fair-verification { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 25px; margin-top: 30px; border: 1px solid var(--border-color); }
-#fair-page .verify-form { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background-color: transparent; padding: 0; border: none; margin: 0 0 25px 0; }
+#fair-page .verify-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Default two columns for seed inputs */
+    gap: 20px;
+    background-color: transparent; padding: 0; border: none; margin: 0 0 25px 0;
+}
+/* Make Round ID form group span full width */
+#fair-page .verify-form .form-group-full-width {
+    grid-column: 1 / -1; /* Span across all columns */
+}
+
 #fair-page .form-group { margin-bottom: 0; }
-#fair-page .verify-form button { grid-column: 1 / -1; /* Make button span full width */ }
+#fair-page .verify-form button { grid-column: 1 / -1; }
 #fair-page .verification-result { margin-top: 20px; padding: 15px; border-radius: 6px; background-color: var(--background-light); border: 1px solid var(--border-color); }
 #fair-page .history-table { width: 100%; border-collapse: collapse; margin-top: 25px; background-color: rgba(22, 27, 34, 0.4); }
 #fair-page .history-table th, #fair-page .history-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
@@ -1082,47 +1137,41 @@ code { /* General code tag styling */
 
 
 /* --- ADDED: Deposit Modal Footer Enhancements --- */
-
-/* Style for the new "Accept on Steam" button */
 #acceptDepositOfferBtn {
-    /* Inherits base .btn styles */
-    background-color: var(--success-color); /* Green background */
+    background-color: var(--success-color); 
     color: white;
     border: 1px solid var(--success-color);
-    padding: 10px 15px; /* Match other footer buttons */
-    font-size: 1rem; /* Match other modal footer buttons */
-    /* Ensure it inherits flex alignment from footer */
+    padding: 10px 15px; 
+    font-size: 1rem; 
     display: inline-flex;
     align-items: center;
     justify-content: center;
 }
 
 #acceptDepositOfferBtn:hover:not(:disabled) {
-    background-color: #45a049; /* Darker green */
+    background-color: #45a049; 
     border-color: #45a049;
-    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4); /* Green shadow */
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4); 
     transform: translateY(-2px);
 }
 
-#acceptDepositOfferBtn i { /* Style for the external link icon */
+#acceptDepositOfferBtn i { 
     margin-left: 8px;
     font-size: 0.9em;
 }
 
-/* Style for the status text area in the deposit modal footer */
 .deposit-status-text {
-    flex-grow: 1; /* Allow it to take available space */
+    flex-grow: 1; 
     text-align: left;
-    padding: 0 10px; /* Add some padding */
+    padding: 0 10px; 
     font-size: 0.9em;
     line-height: 1.4;
-    color: var(--text-secondary); /* Default color */
+    color: var(--text-secondary); 
     transition: color 0.3s ease;
-    display: flex; /* Align text vertically */
+    display: flex; 
     align-items: center;
 }
 
-/* Status-specific colors for the text */
 .deposit-status-text.info { color: var(--info-color); }
 .deposit-status-text.success { color: var(--success-color); }
 .deposit-status-text.warning { color: var(--warning-color); }
@@ -1130,20 +1179,16 @@ code { /* General code tag styling */
 
 
 /* --- ADDED: Pending Offer Indicators --- */
-
-/* Header Indicator */
 .pending-offer-indicator {
-    display: inline-block; /* Initially hidden by JS */
-    color: var(--warning-color); /* Warning color */
+    display: inline-block; 
+    color: var(--warning-color); 
     font-size: 1.1rem;
-    /* margin-left: 5px; /* Positioned by flex gap in container */
-    cursor: help; /* Indicate tooltip */
+    cursor: help; 
     animation: pulseWarning 1.5s infinite ease-in-out;
-    vertical-align: middle; /* Align with text/avatar */
+    vertical-align: middle; 
     line-height: 1;
 }
 
-/* Define pulse animation if not already defined */
 @keyframes pulseWarning {
     0%, 100% { transform: scale(1); opacity: 1; }
     50% { transform: scale(1.15); opacity: 0.7; }
@@ -1154,7 +1199,7 @@ code { /* General code tag styling */
     background-color: var(--background-dark);
     color: var(--text-secondary);
     padding: 20px 0;
-    margin-top: 40px; /* Add space above footer */
+    margin-top: 40px; 
     text-align: center;
     font-size: 0.85rem;
     border-top: 1px solid var(--border-color);
