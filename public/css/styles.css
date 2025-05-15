@@ -20,7 +20,7 @@
     --success-color: #4caf50; /* Green */
     --info-color: #2196f3; /* Blue */
     --warning-color: #ffc107; /* Amber/Yellow */
-    --jackpot-tab-color: #00ff8c; /* Bright neon green for jackpot tab - distinct as intended */
+    --jackpot-tab-color: #00ff8c; /* Bright neon green for jackpot tab */
 
     /* Fonts */
     --font-primary: 'Rajdhani', sans-serif;
@@ -60,8 +60,7 @@ body {
     margin: 0 auto;
     padding: 0 15px;
 }
-
-/* Typography */
+css/* Typography */
 h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-secondary); /* Titillium for headings */
     font-weight: 700;
@@ -96,20 +95,20 @@ code { /* General code tag styling */
     color: var(--secondary-light);
     font-size: 0.9em;
     border: 1px solid var(--border-color);
-    word-break: break-all; /* Ensure long code strings wrap */
+    word-break: break-all;
 }
 
 /*=========================
  UTILITIES & HELPERS
  =========================*/
 
-/* Visually hidden label for accessibility */
+/* Visually hidden label */
 .sr-only {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
     overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
 }
 
-/* Custom Scrollbars */
+/* Custom Scrollbars (Optional but nice) */
 /* Firefox */
 * {
     scrollbar-width: thin;
@@ -119,25 +118,10 @@ code { /* General code tag styling */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--background-dark); border-radius: 4px; }
 ::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 4px; border: 2px solid var(--background-dark); }
-::-webkit-scrollbar-thumb:hover { background-color: var(--primary-dark); }
-
-/* --- Accessibility & Focus --- */
-*:focus-visible { /* Modern focus indicator for keyboard users */
-  outline: 2px solid var(--primary-light);
-  outline-offset: 2px;
-  box-shadow: 0 0 0 4px rgba(0, 230, 118, 0.2); /* Optional: glow effect */
-}
-/* For elements that don't typically show an outline but are focusable via JS */
-[tabindex="-1"]:focus-visible {
-  outline: none;
-  box-shadow: none;
-}
-
-
-/* Notification Bar */
+::-webkit-scrollbar-thumb:hover { background-color: var(--primary-dark); }/* Notification Bar */
 .notification-bar {
     position: fixed;
-    top: -100px; /* Start hidden, JS will add 'show' class */
+    top: -100px; /* Start hidden */
     left: 50%;
     transform: translateX(-50%);
     width: auto;
@@ -146,29 +130,29 @@ code { /* General code tag styling */
     background-color: var(--background-medium);
     color: var(--text-primary);
     border: 1px solid var(--border-color);
-    border-top: none; /* Remove top border as it slides from top */
+    border-top: none;
     border-radius: 0 0 8px 8px;
     box-shadow: var(--shadow-lg);
     text-align: center;
-    z-index: 2000; /* Ensure it's above most other content */
+    z-index: 2000; /* High z-index */
     font-size: 0.95rem;
     font-weight: 500;
     transition: top var(--transition-slow) ease-in-out;
-    white-space: normal; /* Allow wrapping for longer messages */
-    overflow-wrap: break-word; /* Ensure long words break */
+    white-space: normal; /* Allow wrapping */
+    overflow-wrap: break-word;
 }
 .notification-bar.show { top: 0; /* Slide into view */ }
 
-/* Notification types */
+/* Style types */
 .notification-bar.success { background-color: rgba(76, 175, 80, 0.95); border-color: var(--success-color); color: #ffffff; }
 .notification-bar.error { background-color: rgba(244, 67, 54, 0.95); border-color: var(--error-color); color: #ffffff; }
 .notification-bar.info { background-color: rgba(33, 150, 243, 0.95); border-color: var(--info-color); color: #ffffff; }
-.notification-bar.warning { background-color: rgba(255, 193, 7, 0.95); border-color: var(--warning-color); color: var(--background-dark); }
+.notification-bar.warning { background-color: rgba(255, 193, 7, 0.95); border-color: var(--warning-color); color: var(--background-dark); } /* Updated warning */
 
-/* Links within notifications */
+/* Allow links within notifications */
 .notification-bar a,
-.notification-link {
-    color: inherit !important;
+.notification-link { /* Added class for flexibility */
+    color: inherit !important; /* Inherit color from parent */
     font-weight: bold;
     text-decoration: underline !important;
     cursor: pointer;
@@ -189,16 +173,16 @@ code { /* General code tag styling */
     padding: 10px 0;
     border-bottom: 1px solid var(--border-color);
     box-shadow: var(--shadow-md);
-    position: sticky; /* Keep header at the top on scroll */
+    position: sticky;
     top: 0;
-    z-index: 100; /* Ensure header is above other page content */
+    z-index: 100;
 }
 
 .header-container {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    flex-wrap: wrap; /* Allow wrapping on smaller screens */
+    flex-wrap: wrap;
     gap: 15px;
 }
 
@@ -209,9 +193,8 @@ code { /* General code tag styling */
 
 .header-left { gap: 20px; flex: 1; min-width: 0; justify-content: flex-start; }
 .header-center { flex-grow: 2; justify-content: center; min-width: 0; text-align: center; }
-.header-right { gap: 10px; flex: 1; min-width: 0; justify-content: flex-end; }
-
-.logo h1 {
+.header-right { gap: 10px; flex: 1; min-width: 0; justify-content: flex-end; } /* Reduced gap */
+css.logo h1 {
     font-family: var(--font-mono);
     font-size: 1.8rem;
     font-weight: 700;
@@ -227,7 +210,7 @@ code { /* General code tag styling */
 .primary-nav ul, .secondary-nav ul, .main-nav ul {
     list-style: none; display: flex; padding: 0; margin: 0; gap: 15px;
 }
-.main-nav ul { justify-content: center; width: 100%; } /* Center main navigation */
+.main-nav ul { justify-content: center; width: 100%; }
 
 /* General Nav Link Styles */
 .primary-nav a, .secondary-nav a, .main-nav a {
@@ -245,7 +228,7 @@ code { /* General code tag styling */
 .primary-nav a.active, .secondary-nav a.active, .main-nav a.active { color: var(--primary-color); }
 
 /* Jackpot Tab Specific Styles */
-.jackpot-tab { /* This is likely the 'home-link' */
+.jackpot-tab {
     font-size: 1.6rem; padding: 10px 15px; color: var(--jackpot-tab-color);
     text-shadow: 0 0 10px var(--jackpot-tab-color), 0 0 15px var(--jackpot-tab-color);
     letter-spacing: 1px; font-weight: 700;
@@ -254,69 +237,82 @@ code { /* General code tag styling */
 .jackpot-tab:hover { color: var(--jackpot-tab-color); text-shadow: 0 0 15px var(--jackpot-tab-color), 0 0 20px var(--jackpot-tab-color); }
 
 /* User Controls */
-.user-controls { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+.user-controls { 
+    display: flex; 
+    align-items: center; 
+    gap: 10px; 
+    justify-content: flex-end; 
+    position: relative; /* Added for positioning context */
+}
 
+/* Improved user profile container positioning */
 .user-profile-container {
     position: relative;
     display: flex;
     align-items: center;
     gap: 8px;
 }
-
+/* --- User Profile Trigger (Improved) --- */
 .user-profile {
     display: flex;
     align-items: center;
     gap: 10px;
     cursor: pointer;
-    padding: 5px 8px;
+    padding: 5px 8px; /* Slightly increased padding */
     border-radius: 4px;
     transition: background-color var(--transition-fast);
 }
-.user-profile:hover, .user-profile.open { background-color: rgba(255, 255, 255, 0.05); } /* Added .open state */
-.user-profile:focus-visible { /* Ensure focus is visible on the trigger */
-    outline: 2px solid var(--primary-light);
-    outline-offset: 1px;
-}
+.user-profile:hover { background-color: rgba(255, 255, 255, 0.05); }
+.user-profile:focus { outline: none; box-shadow: 0 0 0 2px var(--primary-light); }
+.user-profile.open { background-color: rgba(255, 255, 255, 0.07); } /* Added style for open state */
 
 .user-avatar-container { position: relative; display: flex; flex-shrink: 0; }
 .user-avatar {
     width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary-color);
     object-fit: cover; box-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
 }
-.user-status { /* Example for online/offline status dot, if needed */
+.user-status {
     position: absolute; bottom: 0; right: 0; width: 10px; height: 10px;
     border-radius: 50%; border: 2px solid var(--background-medium);
 }
 .user-status.online { background-color: var(--success-color); }
-.user-status.offline { background-color: #9e9e9e; }
+.user-status.offline { background-color: #9e9e9e; } /* Grey for offline */
 
 .user-name {
-    font-family: var(--font-secondary); font-weight: 600; font-size: 0.95rem;
-    color: var(--text-primary); white-space: nowrap; overflow: hidden;
-    text-overflow: ellipsis; transition: color var(--transition-fast);
-    max-width: 150px; /* Prevent overly long names from breaking layout */
+    font-family: var(--font-secondary);
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color var(--transition-fast);
+    max-width: 150px; /* Limit name width */
 }
-.user-profile:hover .user-name, .user-profile.open .user-name { color: var(--primary-light); }
+.user-profile:hover .user-name { color: var(--primary-light); }
 
+/* --- Pending Offer Indicator (Header) --- */
 .pending-offer-indicator {
-    display: none; /* JS toggles this */
-    color: var(--warning-color);
-    font-size: 1.1rem; /* Adjust size as needed */
-    cursor: help; /* Indicate it's a status/tooltip */
+    display: inline-block; /* Initially hidden by JS */
+    color: var(--warning-color); /* Use warning color */
+    font-size: 1.1rem;
+    cursor: help; /* Indicate tooltip */
     animation: pulseWarning 1.5s infinite ease-in-out;
-    vertical-align: middle;
+    vertical-align: middle; /* Align with text/avatar */
     line-height: 1;
-    margin-left: 5px; /* Space from username/avatar */
+    margin-right: 5px; /* Add some spacing */
 }
+
 @keyframes pulseWarning {
     0%, 100% { transform: scale(1); opacity: 1; }
     50% { transform: scale(1.15); opacity: 0.7; }
 }
 
+/* --- Improved Dropdown Menu --- */
 .dropdown-menu {
-    display: none; /* JS toggles this */
+    display: none; /* JS toggles this to 'block' */
     position: absolute;
-    top: calc(100% + 5px);
+    top: calc(100% + 5px); /* Position closer to profile */
     right: 0;
     z-index: 1000;
     background-color: var(--background-dark);
@@ -324,50 +320,84 @@ code { /* General code tag styling */
     border-radius: 8px;
     box-shadow: var(--shadow-lg);
     min-width: 200px;
-    overflow: hidden; /* Ensures border-radius applies to children */
-    animation: dropdownFadeIn 0.2s ease;
+    overflow: hidden;
+    animation: dropdownFadeIn 0.2s ease; /* Smooth appearance */
 }
+
 @keyframes dropdownFadeIn {
     from { opacity: 0; transform: translateY(-5px); }
     to { opacity: 1; transform: translateY(0); }
 }
+Continue with dropdown styles:
+css.dropdown-actions { padding: 8px 0; }
 
-.dropdown-actions { padding: 8px 0; }
 .dropdown-item {
-    display: flex; align-items: center; gap: 12px; padding: 12px 20px;
-    background: none; border: none; width: 100%; text-align: left;
-    color: var(--text-secondary); font-size: 0.95rem; font-family: var(--font-primary);
-    font-weight: 500; cursor: pointer; transition: background-color var(--transition-fast), color var(--transition-fast);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    font-family: var(--font-primary);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 .dropdown-item:hover { background-color: var(--background-light); color: var(--primary-color); }
 .dropdown-item .icon { width: 18px; text-align: center; color: var(--text-accent); flex-shrink: 0; }
 .dropdown-item:hover .icon { color: var(--primary-color); }
 
+/* Logout button specific styling */
 #logoutButton {
-    border-top: 1px solid var(--border-color); margin-top: 5px;
+    border-top: 1px solid var(--border-color);
+    margin-top: 5px;
     color: var(--error-color) !important;
 }
 #logoutButton .icon { color: var(--error-color) !important; }
 #logoutButton:hover { background-color: rgba(244, 67, 54, 0.1) !important; color: var(--error-color) !important; }
 #logoutButton:hover .icon { color: var(--error-color) !important; }
 
-.dropdown-trade-history { border-top: 1px solid var(--border-color); margin-top: 5px; padding-top: 5px; }
-#tradeHistoryButton { color: var(--secondary-light) !important; }
+/* Trade History Menu Section */
+.dropdown-trade-history {
+    border-top: 1px solid var(--border-color);
+    margin-top: 5px;
+    padding-top: 5px;
+}
+
+/* Trade History button styling */
+#tradeHistoryButton {
+    color: var(--secondary-light) !important;
+}
 #tradeHistoryButton .icon { color: var(--secondary-light) !important; }
 #tradeHistoryButton:hover { background-color: rgba(255, 145, 0, 0.1) !important; color: var(--secondary-color) !important; }
 #tradeHistoryButton:hover .icon { color: var(--secondary-color) !important; }
-
 
 /*=========================
  BUTTONS
  =========================*/
 .btn {
-    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    padding: 10px 20px; border: none; border-radius: 4px;
-    font-family: var(--font-primary); font-weight: 600; font-size: 1rem;
-    text-transform: uppercase; cursor: pointer; transition: var(--transition-medium);
-    background-color: var(--background-light); color: var(--text-primary);
-    text-align: center; line-height: 1.2; white-space: nowrap;
+    display: inline-flex; /* Use flex for easy icon alignment */
+    align-items: center;
+    justify-content: center;
+    gap: 8px; /* Space between icon and text */
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-family: var(--font-primary);
+    font-weight: 600;
+    font-size: 1rem;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: var(--transition-medium);
+    background-color: var(--background-light);
+    color: var(--text-primary);
+    text-align: center;
+    line-height: 1.2;
+    white-space: nowrap;
 }
 .btn:hover:not(:disabled) {
     transform: translateY(-2px);
@@ -381,133 +411,188 @@ code { /* General code tag styling */
     box-shadow: none !important;
     opacity: 0.6;
 }
-.btn i { font-size: 1em; line-height: 1; }
-
+.btn i { /* Style for icons within buttons */
+     font-size: 1em; /* Match text size */
+     line-height: 1; /* Prevent extra spacing */
+}
+/* Login Button */
 #loginButton {
-    padding: 8px 15px; font-size: 0.9rem; background-color: var(--success-color);
-    color: white; box-shadow: var(--shadow-sm);
+    padding: 8px 15px; /* Slightly adjusted */
+    font-size: 0.9rem;
+    background-color: var(--success-color); /* Steam green */
+    color: white;
+    box-shadow: var(--shadow-sm);
 }
 #loginButton:hover:not(:disabled) { background-color: #45a049; transform: translateY(-1px); box-shadow: var(--shadow-md); }
-#loginButton i { margin-right: 6px; }
+#loginButton i { margin-right: 6px; /* Keep margin for steam icon */ }
 
-.btn-primary { background-color: var(--primary-color); color: var(--background-dark); }
+/* Primary Button */
+.btn-primary {
+    background-color: var(--primary-color);
+    color: var(--background-dark);
+}
 .btn-primary:hover:not(:disabled) { background-color: var(--primary-dark); }
 
-.btn-deposit { /* For main "Deposit Rust Skins" and modal "Request Deposit Offer" */
+/* Deposit Button (Main Trigger & Inside Modal Request) */
+.btn-deposit {
     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-    color: var(--background-dark); font-size: 1.2rem; padding: 12px 30px;
-    border-radius: 8px; box-shadow: 0 4px 20px rgba(0, 230, 118, 0.4);
-    position: relative; overflow: hidden;
+    color: var(--background-dark);
+    font-size: 1.2rem;
+    padding: 12px 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 230, 118, 0.4);
+    position: relative;
+    overflow: hidden;
 }
-.btn-deposit:before {
+.btn-deposit:before { /* Shine effect */
     content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
     transition: left var(--transition-slow) ease;
 }
 .btn-deposit:hover:not(:disabled):before { left: 100%; }
-.btn-deposit.deposit-disabled,
-#showDepositModal.deposit-disabled { /* Shared disabled style for main and modal deposit buttons */
-    background: var(--background-light) !important; /* Important to override gradient */
-    opacity: 0.6; cursor: not-allowed; box-shadow: none !important;
-    color: var(--text-secondary) !important; transform: none !important;
+.btn-deposit.deposit-disabled { /* Specific style for disabled state */
+     background: var(--background-light);
+     opacity: 0.6;
+     cursor: not-allowed;
+     box-shadow: none;
+     color: var(--text-secondary);
 }
-.btn-deposit.deposit-disabled:before,
-#showDepositModal.deposit-disabled:before { display: none; }
+.btn-deposit.deposit-disabled:before { display: none; } /* Hide shine */
 
 
+/* Secondary Button */
 .btn-secondary {
-    background-color: var(--background-light); color: var(--text-primary);
-    border: 1px solid var(--border-color); border-radius: 8px;
-    font-size: 0.9rem; padding: 8px 15px;
+    background-color: var(--background-light);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    padding: 8px 15px;
 }
 .btn-secondary:hover:not(:disabled) {
-    background-color: var(--background-medium); transform: translateY(-2px); box-shadow: var(--shadow-md);
+    background-color: var(--background-medium);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
-.btn-small { padding: 5px 10px; font-size: 0.8rem; }
-
-.btn-details { margin-right: 5px; margin-bottom: 5px; vertical-align: middle; }
-.btn-verify {
+/* Small Button Variant */
+.btn-small {
+     padding: 5px 10px;
+     font-size: 0.8rem;
+}
+Now focusing on the round history table and form styling:
+css/* Specific Buttons from History/Verify */
+.btn-details { /* Inherits .btn, .btn-secondary, .btn-small */ margin-right: 5px; margin-bottom: 5px; vertical-align: middle; }
+.btn-verify { /* Inherits .btn, .btn-secondary, .btn-small */
     margin-right: 5px; margin-bottom: 5px; vertical-align: middle;
-    background-color: var(--secondary-color); color: var(--background-dark); border-color: var(--secondary-color);
+    background-color: var(--secondary-color);
+    color: var(--background-dark); border-color: var(--secondary-color);
 }
 .btn-verify:hover:not(:disabled) { background-color: var(--secondary-dark); border-color: var(--secondary-dark); }
 
-.btn-accept-offer { /* For "View Offer" in trade history */
+/* Accept Offer Button (for viewing trade offers) */
+.btn-accept-offer { /* Inherits .btn, .btn-secondary, .btn-small */
     margin-right: 5px; margin-bottom: 5px; vertical-align: middle;
-    background-color: var(--success-color); color: white; border-color: var(--success-color);
+    background-color: var(--success-color);
+    color: white; border-color: var(--success-color);
 }
 .btn-accept-offer:hover:not(:disabled) { background-color: #45a049; border-color: #45a049; }
 
-#acceptDepositOfferBtn { /* For "Accept on Steam" in deposit modal */
-    background-color: var(--success-color); color: white; border: 1px solid var(--success-color);
-    padding: 10px 15px; font-size: 1rem; display: inline-flex;
-    align-items: center; justify-content: center;
+/* Success Button (for Accept on Steam) */
+.btn-success { /* Inherits .btn */
+     background-color: var(--success-color);
+     color: white;
+     border-color: var(--success-color);
 }
-#acceptDepositOfferBtn:hover:not(:disabled) {
-    background-color: #45a049; border-color: #45a049;
-    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4); transform: translateY(-2px);
+.btn-success:hover:not(:disabled) {
+     background-color: #45a049; /* Darker green */
+     border-color: #45a049;
+     box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
 }
-#acceptDepositOfferBtn i { margin-left: 8px; font-size: 0.9em; }
-
 
 /*=========================
  MAIN CONTENT & SECTIONS
  =========================*/
 
-.main-content { padding: 30px 0; }
+.main-content {
+    padding: 30px 0;
+}
 
-.content-card { /* Used for static pages like About, TOS, FAQ, Fair */
-    max-width: 900px; margin: 30px auto;
+.content-card {
+    max-width: 900px;
+    margin: 30px auto;
     background: linear-gradient(135deg, var(--background-medium), var(--background-light));
-    border-radius: 12px; box-shadow: var(--shadow-lg);
-    border: 1px solid var(--border-color); overflow: hidden; padding: 30px;
-}
-.content-card h1 {
-    color: var(--primary-color); font-size: 2.2rem; margin-bottom: 25px;
-    text-align: center; border-bottom: 1px solid var(--border-color);
-    padding-bottom: 15px; text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
-}
-
-.jackpot-section { /* Main container for jackpot elements */
-    background-color: var(--background-medium);
     border-radius: 12px;
-    overflow: hidden; /* Important for child border-radius */
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border-color);
-    position: relative; /* For absolute positioning of roulette/winner info */
+    overflow: hidden;
+    padding: 30px;
 }
 
+.content-card h1 {
+    color: var(--primary-color);
+    font-size: 2.2rem;
+    margin-bottom: 25px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 15px;
+    text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
+}
+
+.jackpot-section {
+    background-color: var(--background-medium);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    position: relative;
+}
 /*=========================
  JACKPOT HEADER & TIMER
  =========================*/
 
 .jackpot-header {
-    display: flex; justify-content: center; align-items: center;
-    gap: 30px; padding: 25px 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    padding: 25px 20px;
     background: linear-gradient(135deg, var(--background-medium), var(--background-light));
     border-bottom: 1px solid var(--border-color);
-    border-radius: 12px 12px 0 0; /* Match parent if it's the top element */
+    border-radius: 12px 12px 0 0;
     box-shadow: var(--shadow-sm);
-    min-height: 170px; position: relative; overflow: hidden; z-index: 5;
-    transition: height 0.5s ease, min-height 0.5s ease, background 0.3s ease, padding 0.3s ease;
-    flex-wrap: wrap; /* Allow wrapping for smaller screens */
+    min-height: 170px;
+    position: relative;
+    overflow: hidden;
+    z-index: 5;
+    transition: height 0.5s ease, min-height 0.5s ease, background 0.3s ease;
+    flex-wrap: wrap;
 }
-.jackpot-header.roulette-mode { /* Applied when roulette is active */
+
+.jackpot-header.roulette-mode {
     background: linear-gradient(135deg, var(--background-dark), var(--background-medium));
-    height: 140px; min-height: 140px;
-    padding-top: 0; padding-bottom: 0; /* Reduce padding in roulette mode */
+    height: 140px;
+    min-height: 140px;
+    align-items: center;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 .jackpot-timer, .jackpot-value, .jackpot-stats {
-    min-width: 170px; display: flex; flex-direction: column;
-    justify-content: center; align-items: center; text-align: center;
-    flex: 1 1 170px; padding: 15px 5px;
+    min-width: 170px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    flex: 1 1 170px;
+    padding: 15px 5px;
 }
 
 .jackpot-value h2 {
     font-size: 4.2rem; font-weight: 700; color: var(--primary-color); margin: 0;
-    font-family: var(--font-mono); line-height: 1.1;
+    font-family: var(--font-mono);
+    line-height: 1.1;
     animation: valueGlow 1.8s infinite ease-in-out;
 }
 @keyframes valueGlow {
@@ -544,65 +629,80 @@ code { /* General code tag styling */
     font-size: 3.8rem; font-weight: 700; color: var(--text-primary);
     display: block; line-height: 1.1; margin-top: 10px;
 }
-.value-label, .timer-label, .stat-label {
-    margin-top: 10px; font-size: 0.9rem; letter-spacing: 1px;
-    color: var(--text-secondary); text-transform: uppercase; display: block;
-}
 
-/*=========================
+.value-label, .timer-label, .stat-label {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    display: block;
+}/*=========================
  ROULETTE ANIMATION
  =========================*/
 
-.inline-roulette { /* Main container shown during spin, covers jackpot header area */
+.inline-roulette {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: transparent; /* Allows header gradient to show through initially */
-    z-index: 10; /* Above header content, below modals */
-    overflow: hidden;
-    border-radius: 12px 12px 0 0; /* Match jackpot-header */
-    display: none; /* JS toggles to flex */
+    background: transparent; z-index: 10; overflow: hidden;
+    border-radius: 12px 12px 0 0;
+    display: flex;
     align-items: center;
     justify-content: center;
-    /* opacity & transform handled by JS for fade-in */
 }
-.roulette-container { /* Inner container for the track and ticker */
+.roulette-container {
     position: relative; width: 90%;
-    max-width: 1000px; /* Max width of the roulette itself */
-    height: 90px; /* Height of the spinning items track */
-    overflow: hidden;
-    background-color: rgba(13, 17, 23, 0.7); /* Semi-transparent dark background */
-    border-radius: 8px;
+    max-width: 1000px;
+    height: 90px; overflow: hidden;
+    background-color: rgba(13, 17, 23, 0.7); border-radius: 8px;
     border: 1px solid var(--border-color);
-    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6); /* Inner shadow for depth */
-    backdrop-filter: blur(2px); /* Frosted glass effect behind track */
+    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6); backdrop-filter: blur(2px);
 }
 .roulette-track {
     display: flex; position: absolute; left: 0; top: 0; height: 100%;
-    padding-left: calc(50% - 35px); /* (item_width_visual / 2) - (margin / 2) approx. */
-    padding-right: calc(50% - 35px);
-    will-change: transform; /* Optimize for transform animations */
-    transition: none; /* JS handles transform animation directly */
+    /* Padding ensures the first/last items can center under the ticker */
+    padding-left: calc(50% - 45px); /* (item_width + margin) / 2 */
+    padding-right: calc(50% - 45px);
+    will-change: transform; transition: none; /* JS handles animation */
 }
+
 .roulette-item {
-    flex: 0 0 auto; width: 60px; height: 80px; /* Adjusted for new item width + margin */
-    margin: 5px;
-    background: rgba(30, 35, 40, 0.8); border-radius: 6px;
-    box-shadow: var(--shadow-md); overflow: hidden;
+    flex: 0 0 auto; /* Prevent shrinking/growing */
+    width: 90px; /* Item width */
+    height: 80px; /* Item height */
+    margin: 5px; /* Margin around items */
+    background: rgba(30, 35, 40, 0.8);
+    border-radius: 6px;
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
     transition: transform var(--transition-medium), box-shadow var(--transition-medium);
-    border: 2px solid transparent; position: relative;
-    backface-visibility: hidden; display: flex;
-    align-items: center; justify-content: center; padding: 0;
+    border: 2px solid transparent; /* Default border */
+    position: relative;
+    backface-visibility: hidden; /* Improve performance */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
 }
+
 .roulette-item:hover {
-    transform: translateY(-5px) scale(1.05); box-shadow: var(--shadow-lg); z-index: 1;
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: var(--shadow-lg);
+    z-index: 1;
 }
+
 .roulette-avatar {
-    display: block; width: 100%; height: 100%;
-    object-fit: cover; transition: transform var(--transition-medium);
-    border: none; border-radius: 0; /* Avatar itself has no border radius if item has one */
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Cover the area */
+    transition: transform var(--transition-medium);
+    border: none;
+    border-radius: 0;
 }
+
 .roulette-item:hover .roulette-avatar { transform: scale(1.1); }
 
-.roulette-ticker { /* The central marker */
+.roulette-ticker {
     position: absolute; top: 0; left: 50%; transform: translateX(-50%);
     width: 4px; height: 100%; z-index: 15; pointer-events: none;
 }
@@ -611,43 +711,37 @@ code { /* General code tag styling */
     background: linear-gradient(to bottom, rgba(0,230,118,0), rgba(0,230,118,0.8) 40%, rgba(0,230,118,0.8) 60%, rgba(0,230,118,0));
     box-shadow: 0 0 10px rgba(0, 230, 118, 0.7);
 }
-.roulette-ticker::before, .roulette-ticker::after { /* Triangle parts of the ticker */
+.roulette-ticker::before, .roulette-ticker::after {
     content: ''; position: absolute; left: 50%; transform: translateX(-50%);
     width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent;
     filter: drop-shadow(0 0 3px rgba(0, 230, 118, 0.5));
 }
 .roulette-ticker::before { top: -6px; border-bottom: 8px solid rgba(0, 230, 118, 0.8); }
 .roulette-ticker::after { bottom: -6px; border-top: 8px solid rgba(0, 230, 118, 0.8); }
-
-.winner-info { /* Box that appears over roulette showing winner details */
+css.winner-info {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     background: radial-gradient(circle, rgba(20, 25, 30, 0.95), rgba(13, 17, 23, 0.98));
-    padding: 10px; display: none; /* JS toggles to flex */
-    flex-direction: column; justify-content: center; align-items: center;
-    text-align: center; box-sizing: border-box; z-index: 20;
-    opacity: 0; /* JS handles animation */
+    padding: 10px; display: flex; flex-direction: column; justify-content: center;
+    align-items: center; text-align: center; box-sizing: border-box;
+    z-index: 20; opacity: 0; display: none;
     backdrop-filter: blur(3px);
 }
-@keyframes fadeInUp { /* General purpose fade in up animation */
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 .winner-header { display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
 .winner-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary-color); box-shadow: 0 0 10px rgba(0, 230, 118, 0.5); margin-right: 10px; object-fit: cover; flex-shrink: 0; }
-.winner-header h3 { margin: 0; font-size: 1.1rem; color: var(--text-primary); } /* Ensure winner name color is primary text */
+.winner-header h3 { margin: 0; font-size: 1.1rem; }
 .winner-details { margin-top: 5px; font-size: 0.9rem; }
 .winner-details p { margin: 3px 0; font-size: 0.9rem; color: var(--text-secondary); }
 .winner-details span { color: var(--primary-light); font-weight: bold; }
 .congrats { font-size: 1.2rem !important; color: var(--primary-color); font-weight: 700; margin-top: 5px !important; text-transform: uppercase; letter-spacing: 2px; animation: colorPulse 3s infinite; text-shadow: 0 0 8px currentColor; }
 @keyframes colorPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 
-.return-btn { display: none !important; } /* Kept from original, assuming not used */
+.return-btn { display: none !important; } /* Assuming this button is unused */
 
 .confetti-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 18; }
 .confetti-piece {
-    position: absolute; width: 8px; height: 8px; background-color: var(--color, var(--primary-color)); /* Fallback color */
-    top: -20px; opacity: 0.9;
-    animation: confettiFall var(--duration, 3s) linear var(--delay, 0s) forwards;
+    position: absolute; width: 8px; height: 8px; background-color: var(--color);
+    top: -20px; opacity: 0.9; animation: confettiFall var(--duration, 3s) linear var(--delay, 0s) forwards;
     transform-origin: center center;
 }
 @keyframes confettiFall {
@@ -660,25 +754,53 @@ code { /* General code tag styling */
  =========================*/
 
 .deposit-button-container {
-    padding: 25px; background-color: var(--background-medium);
-    z-index: 5; position: relative; border-top: 1px solid var(--border-color);
-    display: flex; flex-direction: column; align-items: center; gap: 15px;
+    padding: 25px;
+    background-color: var(--background-medium);
+    z-index: 5;
+    position: relative;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
 }
-#showDepositModal { width: 280px; padding: 14px 30px; max-width: none; }
 
-.test-buttons-container { display: flex; gap: 10px; justify-content: center; margin-top: 10px; } /* Added margin */
+#showDepositModal {
+    width: 280px;
+    padding: 14px 30px;
+    max-width: none;
+    /* Inherits .btn, .btn-deposit */
+}
+/* Style for disabled state */
+#showDepositModal.deposit-disabled {
+     background: var(--background-light);
+     opacity: 0.6;
+     cursor: not-allowed;
+     box-shadow: none;
+     color: var(--text-secondary);
+}
+#showDepositModal.deposit-disabled:before { display: none; } /* Hide shine */
+css.test-buttons-container { display: flex; gap: 10px; justify-content: center; }
 .test-buttons-container .btn-secondary { width: auto; }
 
 .current-items-section {
-    padding: 25px; z-index: 5; position: relative;
+    padding: 25px;
+    z-index: 5;
+    position: relative;
     background-color: var(--background-medium);
-    border-radius: 0 0 12px 12px; /* Match parent if it's the bottom element */
+    border-radius: 0 0 12px 12px;
     border-top: 1px solid var(--border-color);
 }
-.section-title {
-    font-size: 1.2rem; font-weight: 600; margin-bottom: 25px;
-    color: var(--text-primary); text-transform: uppercase; letter-spacing: 1.2px;
-    border-bottom: 1px solid var(--border-color); padding-bottom: 12px; text-align: center;
+.section-title { /* Applies to "CURRENT ITEMS IN POT" */
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 25px;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 12px;
+    text-align: center;
 }
 .empty-pot-message {
     text-align: center; padding: 40px 20px; color: var(--text-secondary); font-size: 1.1rem;
@@ -686,9 +808,14 @@ code { /* General code tag styling */
     border: 1px dashed var(--border-color); display: block; margin: 15px 0;
 }
 
-.items-container { /* Vertical list of player deposits */
-    display: flex; flex-direction: column; gap: 15px; padding: 10px; min-height: 100px;
+.items-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 10px;
+    min-height: 100px;
 }
+
 .player-deposit-container {
     background: linear-gradient(to bottom, var(--background-light), var(--background-medium));
     border-radius: 8px; padding: 15px; border: 1px solid var(--border-color);
@@ -698,34 +825,17 @@ code { /* General code tag styling */
 .player-deposit-container:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
 .player-deposit-header { display: flex; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(48, 54, 61, 0.5); }
 .player-avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 12px; border: 2px solid var(--primary-color); object-fit: cover; flex-shrink: 0; }
-.player-info { flex: 1; min-width: 0; } /* Prevent overflow issues */
+.player-info { flex: 1; min-width: 0; }
 .player-name { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .player-deposit-value {
-    font-size: 0.9rem; font-weight: 600; color: var(--text-secondary); /* Default, JS sets specific color */
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    transition: color var(--transition-fast);
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color var(--transition-fast); /* Smooth color transition */
 }
-.player-items-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: flex-start; }
-.player-deposit-item {
-    width: 80px; height: 100px; background: rgba(22, 27, 34, 0.7); border-radius: 5px;
-    overflow: hidden; box-shadow: var(--shadow-sm); transition: transform var(--transition-fast);
-    border: 1px solid var(--border-color); flex: 0 0 auto; display: flex; flex-direction: column;
-    border-left-width: 3px; border-left-style: solid; /* Color set by JS */
-}
-.player-deposit-item:hover { transform: translateY(-3px); box-shadow: var(--shadow-md), 0 0 8px rgba(0, 230, 118, 0.2); }
-.player-deposit-item-image { width: 100%; height: 60px; object-fit: contain; background-color: var(--background-dark); border-bottom: 1px solid rgba(48, 54, 61, 0.5); display: block; }
-.player-deposit-item-info { padding: 4px; height: 40px; display: flex; flex-direction: column; justify-content: center; flex-grow: 1; }
-.player-deposit-item-name { font-size: 0.65rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); margin-bottom: 2px; }
-.player-deposit-item-value { font-size: 0.7rem; font-weight: 700; /* Color set by JS */ }
-.player-deposit-item-more { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; padding: 5px; margin-top: 5px; /* Color set by JS */ }
-
-@keyframes newDepositPulse { /* Entry animation for new deposit blocks */
-    from { transform: translateY(20px) scale(0.95); opacity: 0; }
-    to { transform: translateY(0) scale(1); opacity: 1; }
-}
-.player-deposit-new { animation: newDepositPulse 0.5s ease-out forwards; }
-
-
 /*=========================
  MODALS
  =========================*/
@@ -739,22 +849,21 @@ code { /* General code tag styling */
 }
 .modal-content {
     background-color: var(--background-medium);
-    border-radius: 12px; width: 100%;
-    max-width: 700px; /* Default max-width, can be overridden */
-    max-height: 90vh; /* Prevent modal from being taller than viewport */
-    display: flex; flex-direction: column;
-    box-shadow: var(--shadow-lg); border: 1px solid var(--border-color);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 700px; /* Default max-width */
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
     animation: modalIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    overflow: hidden; /* Important for child border-radius and body scroll */
+    overflow: hidden;
 }
-/* Specific modal sizes */
-.age-verification .modal-content,
-#profileModal .modal-content { max-width: 480px; }
+.age-verification .modal-content { max-width: 500px; }
 #depositModal .modal-content { max-width: 900px; }
-#tradeHistoryModal .modal-content { max-width: 800px; }
-/* For dynamically created round details modal, if needed */
-.round-details-modal .modal-content { max-width: 750px; }
-
+#tradeUrlModal .modal-content { max-width: 600px; } /* Kept for now */
+#tradeHistoryModal .modal-content { max-width: 800px; } /* New: Trade History Modal */
 
 @keyframes modalIn {
     from { opacity: 0; transform: scale(0.9) translateY(-20px); }
@@ -762,13 +871,20 @@ code { /* General code tag styling */
 }
 
 .modal-header {
-    padding: 15px 25px; border-bottom: 1px solid var(--border-color);
-    display: flex; justify-content: space-between; align-items: center;
+    padding: 15px 25px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     background: linear-gradient(135deg, var(--background-medium), var(--background-light));
-    border-radius: 12px 12px 0 0; flex-shrink: 0; /* Prevent shrinking */
+    border-radius: 12px 12px 0 0;
+    flex-shrink: 0;
 }
 .modal-header h2 {
-    margin: 0; color: var(--primary-color); font-size: 1.4rem; font-family: var(--font-primary);
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 1.4rem;
+    font-family: var(--font-primary);
 }
 .close-btn {
     background: none; border: none; color: var(--text-secondary); font-size: 1.8rem;
@@ -783,29 +899,32 @@ code { /* General code tag styling */
 .modal-body li { margin-bottom: 8px; color: var(--text-secondary); }
 
 .modal-footer {
-    padding: 15px 25px; border-top: 1px solid var(--border-color);
-    background-color: var(--background-light); border-radius: 0 0 12px 12px;
-    flex-shrink: 0; /* Prevent shrinking */
-    display: flex; justify-content: flex-end; align-items: center; gap: 10px;
+    padding: 15px 25px;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--background-light);
+    border-radius: 0 0 12px 12px;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center; /* Align items vertically */
+    gap: 10px;
 }
-
-/* Form Elements */
+Form elements and inventory styling:
+css/* Form Elements */
 .form-group { margin-bottom: 20px; }
 .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary); font-family: var(--font-primary); }
-.form-group input[type="text"],
-.form-group input[type="url"],
-.form-group input[type="password"],
-.form-group input[type="email"],
-.form-group textarea,
-.form-group input[type="number"] {
+.form-group input[type="text"], .form-group input[type="url"], .form-group input[type="password"], .form-group input[type="email"], .form-group textarea, .form-group input[type="number"] {
     width: 100%; padding: 12px 15px; border: 1px solid var(--border-color);
     border-radius: 4px; background-color: var(--background-dark); color: var(--text-primary);
     font-family: var(--font-primary); font-size: 1rem;
     transition: border-color var(--transition-medium), box-shadow var(--transition-medium);
     box-sizing: border-box;
+    height: 47px; /* Standardize height */
 }
-/* Focus style for inputs is handled by global *:focus-visible */
-
+.form-group input:focus, .form-group textarea:focus {
+    border-color: var(--primary-color); outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.2);
+}
 .checkbox-container { display: flex; align-items: center; margin: 15px 0; }
 .checkbox-container input[type="checkbox"] { margin-right: 10px; width: 18px; height: 18px; accent-color: var(--primary-color); cursor: pointer; flex-shrink: 0; }
 .checkbox-container label { cursor: pointer; color: var(--text-primary); line-height: 1.3; }
@@ -824,11 +943,8 @@ code { /* General code tag styling */
     max-height: 300px; overflow-y: auto; background-color: var(--background-light);
     padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);
 }
-.empty-inventory-message, .inventory-loading .loading-message, .error-message { /* Combined for consistency */
-    grid-column: 1 / -1; text-align: center; color: var(--text-secondary); padding: 20px;
-}
-.error-message { color: var(--error-color); } /* Specific for errors */
-
+.empty-inventory-message, .error-message { grid-column: 1 / -1; text-align: center; color: var(--text-secondary); padding: 20px; }
+.error-message { color: var(--error-color); }
 .inventory-item {
     background-color: var(--background-medium); border-radius: 4px; overflow: hidden; cursor: pointer;
     transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
@@ -840,8 +956,8 @@ code { /* General code tag styling */
 .item-details { padding: 8px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; min-height: 50px; }
 .item-name { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; line-height: 1.2; }
 .inventory-item .item-value { font-size: 0.85rem; font-weight: 700; color: var(--primary-color); text-align: right; margin-top: auto; }
-
-/* Selected Items (Deposit Modal) */
+Selected items and loading indicator styles:
+css/* Selected Items (Deposit Modal) */
 .selected-items { margin-top: 20px; }
 .selected-items h3 { font-size: 1rem; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
 .selected-items-container {
@@ -876,12 +992,10 @@ code { /* General code tag styling */
 .total-value span:last-child { color: var(--primary-color); font-family: var(--font-mono); }
 
 /* Loading indicator */
-.loading-indicator { /* Used for inventory and trade history loading */
-    display: none; /* JS toggles this */
-    flex-direction: column; align-items: center; justify-content: center;
+.loading-indicator {
+    display: none; flex-direction: column; align-items: center; justify-content: center;
     padding: 30px; background-color: transparent; border-radius: 8px;
-    margin: 20px 0; color: var(--text-secondary);
-    grid-column: 1 / -1; /* For grid layouts */
+    margin: 20px 0; color: var(--text-secondary); grid-column: 1 / -1;
 }
 .spinner {
     width: 40px; height: 40px; border: 4px solid rgba(0, 230, 118, 0.3);
@@ -889,20 +1003,9 @@ code { /* General code tag styling */
     animation: spin 1s linear infinite; margin-bottom: 15px;
 }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-/* Deposit Modal Footer Status Text */
-.deposit-status-text {
-    flex-grow: 1; text-align: left; padding: 0 10px;
-    font-size: 0.9em; line-height: 1.4; color: var(--text-secondary);
-    transition: color 0.3s ease; display: flex; align-items: center;
-}
-.deposit-status-text.info { color: var(--info-color); }
-.deposit-status-text.success { color: var(--success-color); }
-.deposit-status-text.warning { color: var(--warning-color); }
-.deposit-status-text.error { color: var(--error-color); }
-
-
-/* --- Profile Modal Styles --- */
+Profile modal styling:
+css/* --- Profile Modal Styles --- */
+#profileModal .modal-content { max-width: 480px; }
 .profile-modal-body { padding: 30px 35px; }
 .profile-modal-user-info { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 25px; text-align: center; }
 .profile-modal-avatar { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--primary-color); object-fit: cover; }
@@ -915,43 +1018,89 @@ code { /* General code tag styling */
 .profile-modal-help-text { margin-top: 10px; font-size: 0.8em; }
 .profile-modal-footer { justify-content: space-between; background-color: var(--background-light); padding: 15px 25px; border-top: 1px solid var(--border-color); border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
 
+/* --- Profile Modal Pending Offer Status --- */
 .profile-pending-offer-status {
-    margin-bottom: 20px; padding: 12px 15px;
-    background-color: rgba(255, 193, 7, 0.1);
-    border: 1px solid var(--warning-color); border-radius: 4px;
-    text-align: center; font-size: 0.9em;
+    /* display: none; /* Controlled by JS */
+    margin-bottom: 20px; /* Space below */
+    padding: 12px 15px;
+    background-color: rgba(255, 193, 7, 0.1); /* Light warning background */
+    border: 1px solid var(--warning-color);
+    border-radius: 4px;
+    text-align: center;
+    font-size: 0.9em;
 }
 .profile-pending-offer-status p { margin: 0; color: var(--warning-color); line-height: 1.5; }
 .profile-pending-offer-status a, .profile-pending-link { color: var(--secondary-light) !important; font-weight: bold; text-decoration: underline !important; }
 .profile-pending-offer-status a:hover, .profile-pending-link:hover { color: var(--secondary-color) !important; opacity: 0.9; }
-.profile-pending-offer-status i { margin-right: 5px; }
-
-
+.profile-pending-offer-status i { margin-right: 5px; } /* Example for icon */
 /* --- Trade History Modal Styles --- */
-/* .trade-history-container and .trade-history-list are good as placeholders if not directly used */
-.trade-history-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-.trade-history-table th {
-    background-color: var(--background-light); color: var(--primary-color);
-    font-weight: 600; text-transform: uppercase; font-size: 0.85rem;
-    padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color);
-    position: sticky; top: 0; z-index: 1; /* For scrollable table body */
+.trade-history-container {
+    background-color: var(--background-light);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    margin-bottom: 20px;
+    overflow: hidden;
 }
-.trade-history-table td { padding: 12px 15px; border-bottom: 1px solid var(--border-color); vertical-align: middle; }
-.trade-history-table tr:last-child td { border-bottom: none; }
-.trade-history-table tbody tr:hover { background-color: rgba(255, 255, 255, 0.05); }
-.empty-history-message { /* For trade history empty state */
-    text-align: center; padding: 30px; color: var(--text-secondary); font-style: italic;
+
+.trade-history-list {
+    padding: 0;
+    margin: 0;
+    list-style-type: none;
 }
-.trade-history-status { display: inline-block; padding: 3px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
-.trade-history-status.pending { background-color: rgba(255, 193, 7, 0.2); color: var(--warning-color); }
-.trade-history-status.accepted { background-color: rgba(76, 175, 80, 0.2); color: var(--success-color); }
-.trade-history-status.declined { background-color: rgba(244, 67, 54, 0.2); color: var(--error-color); }
-.trade-history-status.expired { background-color: rgba(158, 158, 158, 0.2); color: var(--text-secondary); }
-.trade-history-status.info { background-color: rgba(33, 150, 243, 0.2); color: var(--info-color); }
 
+.trade-history-item {
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
 
-/*=========================
- STATIC PAGES & PROVABLY FAIR
+.trade-history-item:last-child {
+    border-bottom: none;
+}
+
+.trade-history-item:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.trade-info {
+    flex: 1;
+}
+
+.trade-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+}
+
+.trade-details {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.trade-value {
+    color: var(--primary-color);
+    margin-top: 3px;
+    font-family: var(--font-mono);
+}
+
+.trade-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.empty-history-message {
+    text-align: center;
+    padding: 30px;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+Static pages and final styles:
+css/*=========================
+ STATIC PAGES (FAQ, FAIR, ABOUT, TOS)
  =========================*/
 
 .content-section { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(48, 54, 61, 0.5); line-height: 1.7; }
@@ -961,180 +1110,549 @@ code { /* General code tag styling */
 .content-section-body p { margin-bottom: 15px; line-height: 1.7; color: var(--text-secondary); }
 .content-section-body p:last-child { margin-bottom: 0; }
 .content-section-body ul, .content-section-body ol { margin: 15px 0 15px 25px; padding-left: 20px; }
-.content-section-body li { margin-bottom: 10px; color: var(--text-secondary); }
+.content-section-body li { margin-bottom: 10px; }
 .content-section-body strong { color: var(--text-accent); font-weight: 600; }
 .content-section-body a { color: var(--primary-light); text-decoration: underline; }
 .content-section-body a:hover { color: var(--primary-color); }
 .content-section-body code { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; }
 
-/* Specific Page Styles */
-#about-page .content-section-body p { text-align: justify; padding: 0 5px; }
-#about-page .content-section-title { color: var(--primary-light); }
-
-#tos-page .content-section { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 20px; margin-bottom: 25px; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
-#tos-page .content-section:last-child { border-bottom: 1px solid var(--border-color); }
-#tos-page .content-section-title { margin-top: 0; border-left: 3px solid var(--secondary-color); }
-#tos-page ul { margin-left: 20px; margin-bottom: 15px; list-style-type: disc; }
-#tos-page ul li { margin-bottom: 10px; color: var(--text-secondary); }
-
-#faq-page .content-section { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 20px; margin-bottom: 20px; transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
-#faq-page .content-section:last-child { border-bottom: 1px solid var(--border-color); }
-#faq-page .content-section:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
-#faq-page .content-section-title { color: var(--secondary-color); cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-left: none; padding-left: 0; }
-#faq-page .content-section-title::after { content: '+'; font-size: 1.5rem; color: var(--primary-color); transition: transform 0.3s ease; }
-#faq-page .content-section.active .content-section-title::after { content: '-'; transform: rotate(180deg); }
-/* FAQ body visibility is handled by JS (not in this CSS file) */
-
-/* Provably Fair Page */
-#fair-page .content-card { padding-bottom: 40px; }
-#fair-page #provably-fair-verification { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 25px; margin-top: 30px; border: 1px solid var(--border-color); }
-#fair-page .verify-form { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background-color: transparent; padding: 0; border: none; margin: 0 0 25px 0; }
-#fair-page .form-group { margin-bottom: 0; }
-#fair-page .verify-form button { grid-column: 1 / -1; }
-#fair-page .verification-result { margin-top: 20px; padding: 15px; border-radius: 6px; background-color: var(--background-light); border: 1px solid var(--border-color); }
-#fair-page .history-table { width: 100%; border-collapse: collapse; margin-top: 25px; background-color: rgba(22, 27, 34, 0.4); }
-#fair-page .history-table th, #fair-page .history-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
-#fair-page .history-table th { background-color: var(--background-light); color: var(--primary-color); font-weight: 600; }
-#fair-page .history-table tr:hover { background-color: var(--background-light); }
-
-/* Provably Fair Verification Form & Result - General */
-.verify-form { background-color: var(--background-light); padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--border-color); }
-.verification-result { margin-top: 15px; padding: 15px; border-radius: 4px; background-color: var(--background-light); display: none; /* JS toggles */ border: 1px solid var(--border-color); line-height: 1.5; }
-.verification-result.loading { background-color: var(--background-medium); border-color: var(--secondary-light); color: var(--text-primary); }
-.verification-result.success { background-color: rgba(0, 230, 118, 0.1); border-color: var(--success-color); color: var(--text-primary); }
-.verification-result.error { background-color: rgba(244, 67, 54, 0.1); border-color: var(--error-color); color: var(--text-primary); }
-.verification-result h4 { margin-top: 0; margin-bottom: 15px; color: var(--primary-color); }
-.verification-result p { margin-bottom: 8px; word-wrap: break-word; }
-.verification-result strong { color: var(--text-accent); }
-.verification-result code.seed-value { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; display: inline-block; }
-.verification-result code.wrap-anywhere { word-break: break-all; } /* Ensure long seeds wrap */
-
-/* Round History Table - General */
+/* Round History Table - Base styles */
 .table-container { overflow-x: auto; margin-bottom: 20px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 8px; }
-.history-table { width: 100%; min-width: 600px; /* Ensure table has min-width for smaller viewports */ border-collapse: collapse; font-size: 0.9rem; }
+.history-table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 0.9rem; }
 .history-table th, .history-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; vertical-align: middle; }
 .history-table tr:last-child td { border-bottom: none; }
 .history-table th { background-color: var(--background-medium); color: var(--primary-color); font-weight: 600; text-transform: uppercase; font-size: 0.85rem; position: sticky; top: 0; z-index: 1; }
 .history-table .loading-message, .history-table .no-rounds-message, .history-table .error-message { text-align: center; color: var(--text-secondary); padding: 20px; font-style: italic; white-space: normal; }
 .history-table .error-message { color: var(--error-color); font-style: normal; }
 .history-table tbody tr:hover { background-color: rgba(255, 255, 255, 0.05); }
-.history-table td:last-child { white-space: normal; text-align: right; } /* Allow buttons to wrap if needed */
-
-/* Pagination */
-.pagination-container { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
-.page-button { padding: 6px 10px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary); cursor: pointer; transition: var(--transition-fast); font-size: 0.9rem; }
-.page-button:hover:not(:disabled) { background-color: var(--primary-dark); color: var(--background-dark); border-color: var(--primary-dark); }
-.page-button.active { background-color: var(--primary-color); color: var(--background-dark); border-color: var(--primary-color); cursor: default; }
-.page-button:disabled { opacity: 0.5; cursor: not-allowed; }
-.page-ellipsis { color: var(--text-secondary); padding: 6px 0; margin: 0 2px; }
-
-/* Round Details Modal (Dynamically created with ID #roundDetailsModalInstance) */
-/* It will inherit .modal and .modal-content styles. Specifics can be added if needed. */
-.round-details-modal .modal-content .content-section {
-    border-bottom: 1px solid var(--border-color); /* Ensure consistent borders */
+.history-table td:last-child { white-space: normal; text-align: right; }
+/* PaginationRetryClaude hit the max length for a message and has paused its response. You can write Continue to keep the chat going.IContinueEditContinuing with styles.css, focusing on pagination, forms and footer:
+css/* Pagination */
+.pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0;
+    gap: 5px;
 }
-.round-details-modal .modal-content .content-section:last-child {
-    border-bottom: none;
-}
-.participant-details-table { /* Table within round details modal */
-    font-size: 0.85rem;
-}
-.participant-details-table th {
-    font-size: 0.8rem;
-}
-
-/* --- FOOTER --- */
-.main-footer {
-    background-color: var(--background-dark);
+.pagination button {
+    background-color: var(--background-medium);
+    border: 1px solid var(--border-color);
     color: var(--text-secondary);
-    padding: 25px 0; /* Increased padding */
-    margin-top: 50px; /* Increased space above footer */
-    text-align: center;
-    font-size: 0.9rem; /* Slightly larger font */
-    border-top: 1px solid var(--border-color);
-    line-height: 1.7; /* Improved readability */
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-family: var(--font-primary);
+    font-size: 0.9rem;
+    transition: all 0.2s ease;
 }
-.main-footer p {
+.pagination button:hover:not(:disabled) {
+    background-color: var(--primary-color);
+    color: var(--background-dark);
+}
+.pagination button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+.pagination button.active {
+    background-color: var(--primary-color);
+    color: var(--background-dark);
+    border-color: var(--primary-color);
+}
+.pagination .page-info {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0 10px;
+}
+
+/* Form Panel (for Verify Fair Modal) */
+.form-panel {
+    background-color: var(--background-light);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+.form-panel h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+.form-panel .form-group:last-child {
+    margin-bottom: 0;
+}
+
+/* Result Panel (for verification results) */
+.result-panel {
+    background-color: var(--background-light);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    margin-top: 25px;
+    display: none; /* Initially hidden */
+}
+.result-panel.success {
+    border-color: var(--success-color);
+    background-color: rgba(76, 175, 80, 0.1);
+}
+.result-panel.error {
+    border-color: var(--error-color);
+    background-color: rgba(244, 67, 54, 0.1);
+}
+.result-panel h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+}
+.result-panel.success h3 {
+    color: var(--success-color);
+}
+.result-panel.error h3 {
+    color: var(--error-color);
+}
+.result-data {
+    margin-top: 15px;
+    padding: 15px;
+    background-color: var(--background-medium);
+    border-radius: 5px;
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    word-break: break-all;
+}
+.result-data pre {
+    margin: 0;
+    white-space: pre-wrap;
+}
+.result-row {
+    display: flex;
     margin-bottom: 10px;
 }
-.main-footer a {
-    color: var(--text-accent); /* Use accent color for links */
-    text-decoration: none; /* Remove underline by default */
-    margin: 0 8px;
-    transition: color var(--transition-fast), text-decoration var(--transition-fast);
+.result-row:last-child {
+    margin-bottom: 0;
 }
-.main-footer a:hover {
+.result-label {
+    font-weight: 600;
+    color: var(--text-secondary);
+    min-width: 200px;
+    flex-shrink: 0;
+}
+.result-value {
+    color: var(--text-primary);
+}
+css/*=========================
+ FOOTER
+ =========================*/
+
+.main-footer {
+    background-color: var(--background-medium);
+    border-top: 1px solid var(--border-color);
+    padding: 30px 0;
+    color: var(--text-secondary);
+    margin-top: 50px;
+}
+.footer-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 30px;
+}
+.footer-section {
+    flex: 1;
+    min-width: 200px;
+}
+.footer-section h3 {
     color: var(--primary-color);
-    text-decoration: underline; /* Underline on hover */
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+    font-weight: 600;
 }
-
-/* --- Form Styling for Round ID Input (Provably Fair) --- */
-#round-id, #server-seed, #client-seed {
+.footer-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.footer-nav li {
+    margin-bottom: 8px;
+}
+.footer-nav a {
+    color: var(--text-secondary);
+    transition: var(--transition-medium);
+    text-decoration: none;
+}
+.footer-nav a:hover {
+    color: var(--primary-color);
+}
+.footer-text {
+    line-height: 1.6;
+    font-size: 0.9rem;
+}
+.footer-bottom {
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+    font-size: 0.85rem;
+}
+.footer-logo {
     font-family: var(--font-mono);
-    letter-spacing: 0.5px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    color: var(--text-primary);
 }
-#round-id { /* Ensure it matches other inputs if needed */
-    height: auto; /* Let padding define height, or set specific if needed */
-    font-size: 1rem;
-    padding: 12px 15px; /* Consistent padding */
+.footer-logo span {
+    color: var(--primary-color);
+}
+.social-links {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+.social-links a {
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    transition: var(--transition-medium);
+}
+.social-links a:hover {
+    color: var(--primary-color);
+    transform: translateY(-3px);
 }
 
-/* Responsive Adjustments (Example - add more as needed) */
-@media (max-width: 768px) {
+
+/* Small screens (mobile) */
+@media (max-width: 576px) {
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.5rem; }
+    h3 { font-size: 1.2rem; }
+    
     .header-container {
         flex-direction: column;
-        align-items: stretch; /* Stretch items to full width */
+        gap: 10px;
     }
     .header-left, .header-center, .header-right {
-        justify-content: center; /* Center items in mobile view */
         width: 100%;
-        flex-basis: auto; /* Allow them to take their content size */
+        justify-content: center;
     }
-    .main-nav ul {
-        flex-direction: column;
-        align-items: center;
-        gap: 5px;
+    .primary-nav, .secondary-nav {
+        display: none; /* Hide on small screens */
     }
+    
     .jackpot-header {
         flex-direction: column;
-        gap: 15px; /* Reduced gap for smaller screens */
-        min-height: auto; /* Allow height to adjust to content */
+        min-height: 280px;
+        padding: 15px 10px;
+        gap: 10px;
+    }
+    .jackpot-value h2 {
+        font-size: 3rem;
+    }
+    .timer-circle {
+        width: 100px;
+        height: 100px;
+    }
+    .timer-text {
+        font-size: 2.8rem;
+    }
+    .stat-value {
+        font-size: 2.8rem;
+    }
+    
+    .modal-content {
+        width: 95%;
+    }
+    .modal-header h2 {
+        font-size: 1.2rem;
+    }
+    .modal-body {
         padding: 15px;
     }
-    .jackpot-header.roulette-mode {
-        height: auto; /* Allow height to adjust */
-        min-height: 120px; /* Ensure some space for roulette */
+    
+    .inventory-items {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     }
-    .jackpot-value h2, .timer-text, .stat-value {
-        font-size: 2.8rem; /* Smaller fonts for header stats */
+    
+    .footer-section {
+        min-width: 100%;
     }
-    .timer-circle { width: 100px; height: 100px; }
-    .timer-text { font-size: 2.5rem; }
+}
 
-    #fair-page .verify-form {
-        grid-template-columns: 1fr; /* Stack form inputs */
+/* Medium screens (tablets) */
+@media (min-width: 577px) and (max-width: 991px) {
+    .header-container {
+        flex-wrap: wrap;
     }
+    .header-center {
+        order: 3;
+        width: 100%;
+        margin-top: 10px;
+    }
+    .main-nav ul {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+    
+    .jackpot-header {
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .inventory-items {
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    }
+}
+
+/* Fix for user menu on tablet/mobile */
+@media (max-width: 991px) {
+    .dropdown-menu {
+        right: 0;
+        left: auto;
+        width: 250px;
+    }
+}
+
+/* Fix for scrollable modals on small/medium screens */
+@media (max-height: 700px) {
     .modal-content {
-        max-width: 95%;
-        margin: 10px;
+        max-height: 95vh;
     }
-    .player-items-grid {
-        justify-content: center; /* Center items on smaller screens */
+    .modal-body {
+        max-height: 70vh;
+        overflow-y: auto;
     }
 }
 
-@media (max-width: 480px) {
-    .logo h1 { font-size: 1.5rem; }
-    .jackpot-tab { font-size: 1.3rem; }
-    .jackpot-value h2, .timer-text, .stat-value { font-size: 2.2rem; }
-    .timer-circle { width: 80px; height: 80px; }
-    .timer-text { font-size: 2rem; }
-    .btn-deposit, #showDepositModal { width: 100%; font-size: 1rem; padding: 12px 20px; }
-    .content-card { padding: 20px; }
-    .content-card h1 { font-size: 1.8rem; }
-    .modal-header h2 { font-size: 1.2rem; }
-    .modal-body { padding: 15px; }
-    .modal-footer { padding: 10px 15px; flex-direction: column; gap: 10px; }
-    .modal-footer .btn { width: 100%; }
+css/*=========================
+ ANIMATIONS & EFFECTS
+ =========================*/
+
+/* Hover and Focus Styles */
+.btn:focus, .form-group input:focus, .modal-content:focus, button:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.2);
 }
 
+/* Subtle hover animations */
+a, button, .inventory-item, .player-deposit-container, .selected-item-display {
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Status badges (for trade status) */
+.status-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+.status-pending {
+    background-color: rgba(33, 150, 243, 0.2);
+    color: #90caf9;
+    border: 1px solid #1976d2;
+}
+.status-accepted {
+    background-color: rgba(76, 175, 80, 0.2);
+    color: #a5d6a7;
+    border: 1px solid #388e3c;
+}
+.status-declined, .status-canceled, .status-error {
+    background-color: rgba(244, 67, 54, 0.2);
+    color: #ef9a9a;
+    border: 1px solid #d32f2f;
+}
+.status-expired {
+    background-color: rgba(158, 158, 158, 0.2);
+    color: #bdbdbd;
+    border: 1px solid #757575;
+}
+
+/* Custom tooltip styles */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+.tooltip .tooltip-text {
+    visibility: hidden;
+    background-color: rgba(0, 0, 0, 0.85);
+    color: #fff;
+    text-align: center;
+    border-radius: 4px;
+    padding: 5px 10px;
+    position: absolute;
+    z-index: 100;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+.tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+.tooltip .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: rgba(0, 0, 0, 0.85) transparent transparent transparent;
+}
+
+/* Fade in/out animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes fadeOut {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+.fadeIn { animation: fadeIn 0.3s forwards; }
+.fadeOut { animation: fadeOut 0.3s forwards; }
+
+/* Mobile-friendly menu toggle (if needed) */
+.menu-toggle {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-primary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 5px;
+}
+@media (max-width: 991px) {
+    .menu-toggle {
+        display: block;
+    }
+}
+Adding the final styles to address any potential dropdown alignment issues and fixes:
+css/*=========================
+ DROPDOWN FIXES
+ =========================*/
+
+/* Fixed positioning for dropdown to prevent overflow issues */
+.user-profile-container {
+    position: relative;
+}
+.dropdown-menu {
+    position: absolute;
+    right: 0; /* Align to the right edge of the container */
+    top: calc(100% + 10px); /* Position below with a small gap */
+    z-index: 1000;
+    min-width: 220px;
+    width: auto;
+    transform-origin: top right;
+}
+
+/* Dynamic vertical positioning to prevent cutoff */
+@media (max-height: 650px) {
+    .dropdown-menu {
+        max-height: calc(100vh - 100px);
+        overflow-y: auto;
+    }
+}
+
+/* Ensure proper width on small screens */
+@media (max-width: 576px) {
+    .dropdown-menu {
+        width: 100%;
+        min-width: 100%;
+        max-width: 100%;
+        left: 0;
+        right: 0;
+    }
+}
+
+/* Fix for dropdown position in Firefox */
+@-moz-document url-prefix() {
+    .dropdown-menu {
+        top: calc(100% + 5px);
+    }
+}
+
+/* Fix for dropdown position in Safari */
+@media not all and (min-resolution:.001dpcm) {
+    @supports (-webkit-appearance:none) {
+        .dropdown-menu {
+            transform: translateZ(0);
+        }
+    }
+}
+
+/* Fix hover effects on touch devices */
+@media (hover: hover) {
+    .dropdown-item:hover,
+    .btn:hover {
+        transition: all 0.2s ease;
+    }
+}
+@media (hover: none) {
+    .dropdown-item:active,
+    .btn:active {
+        background-color: var(--background-light);
+    }
+    .btn-primary:active,
+    .btn-deposit:active {
+        background-color: var(--primary-dark);
+    }
+}
+
+/*=========================
+ APP-SPECIFIC UTILITY CLASSES
+ =========================*/
+
+.primary-text { color: var(--primary-color) !important; }
+.secondary-text { color: var(--secondary-color) !important; }
+.success-text { color: var(--success-color) !important; }
+.error-text { color: var(--error-color) !important; }
+.warning-text { color: var(--warning-color) !important; }
+
+/* Add width helpers */
+.w-100 { width: 100% !important; }
+.w-75 { width: 75% !important; }
+.w-50 { width: 50% !important; }
+.w-auto { width: auto !important; }
+
+/* Add spacing helpers */
+.mt-1 { margin-top: 0.25rem !important; }
+.mt-2 { margin-top: 0.5rem !important; }
+.mt-3 { margin-top: 1rem !important; }
+.mt-4 { margin-top: 2rem !important; }
+.mb-1 { margin-bottom: 0.25rem !important; }
+.mb-2 { margin-bottom: 0.5rem !important; }
+.mb-3 { margin-bottom: 1rem !important; }
+.mb-4 { margin-bottom: 2rem !important; }
+.py-2 { padding-top: 0.5rem !important; padding-bottom: 0.5rem !important; }
+.py-3 { padding-top: 1rem !important; padding-bottom: 1rem !important; }
+.px-2 { padding-left: 0.5rem !important; padding-right: 0.5rem !important; }
+.px-3 { padding-left: 1rem !important; padding-right: 1rem !important; }
+
+/* Text alignment */
+.text-center { text-align: center !important; }
+.text-right { text-align: right !important; }
+.text-left { text-align: left !important; }
+
+/* Display helpers */
+.d-none { display: none !important; }
+.d-block { display: block !important; }
+.d-flex { display: flex !important; }
+.flex-wrap { flex-wrap: wrap !important; }
+.align-center { align-items: center !important; }
+.justify-center { justify-content: center !important; }
+.justify-between { justify-content: space-between !important; }
+.justify-end { justify-content: flex-end !important; }
+
+/* Cursor helpers */
+.cursor-pointer { cursor: pointer !important; }
+.cursor-default { cursor: default !important; }
+.cursor-help { cursor: help !important; }
+.cursor-not-allowed { cursor: not-allowed !important; }
