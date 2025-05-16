@@ -10,18 +10,19 @@
     --secondary-color: #ff9100; /* Orange */
     --secondary-dark: #ff6d00;
     --secondary-light: #ffab40;
-    --background-dark: #0d1117; /* Very Dark Blue/Black */
-    --background-medium: #161b22; /* Dark Blue/Grey */
-    --background-light: #21262d; /* Medium Blue/Grey */
-    --text-primary: #ffffff; /* White */
-    --text-secondary: #b3b3b3; /* Light Grey */
-    --text-accent: #69f0ae; /* Light Neon Green */
-    --border-color: #30363d; /* Darker Border Grey */
-    --error-color: #f44336; /* Red */
-    --success-color: #4caf50; /* Green */
-    --info-color: #2196f3; /* Blue */
-    --warning-color: #ffc107; /* Amber/Yellow */
-    --jackpot-tab-color: #00ff8c; /* Bright neon green for jackpot tab */
+    --background-dark: #0d1117;
+    --background-medium: #161b22;
+    --background-light: #21262d;
+    --text-primary: #e6edf3; /* Softer white for better readability */
+    --text-secondary: #909dab; /* Softer grey */
+    --text-accent: var(--primary-light);
+    --border-color: #30363d; /* Main border color */
+    --border-light: #444c56; /* Lighter border for subtle divisions */
+    --error-color: #f44336;
+    --success-color: #4caf50;
+    --info-color: #2196f3;
+    --warning-color: #ffc107;
+    --jackpot-tab-color: #00ff8c;
 
     /* Fonts */
     --font-primary: 'Rajdhani', sans-serif;
@@ -29,18 +30,23 @@
     --font-mono: 'JetBrains Mono', monospace;
 
     /* Transitions */
-    --transition-fast: all 0.2s ease;
-    --transition-medium: all 0.3s ease;
-    --transition-slow: all 0.5s ease;
+    --transition-fast: all 0.2s ease-in-out;
+    --transition-medium: all 0.3s ease-in-out;
+    --transition-slow: all 0.5s ease-in-out;
 
-     /* Shadows */
-     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
-     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-     --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.4);
+    /* Shadows - More subtle and modern */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);
 
-    /* Chat Specific */
-    --chat-width: 320px; /* Width of the chat sidebar */
-    --chat-gap: 25px; /* MODIFIED: Slightly increased gap for better separation */
+
+    /* Layout Specifics */
+    --header-height: 65px; /* Fixed header height */
+    --container-padding: 20px;
+    --main-content-max-width: 1600px; /* Max width for the content area including chat */
+    --chat-sidebar-width: 320px;
+    --layout-gap: 24px; /* Gap between jackpot area and chat */
 }
 
 * {
@@ -61,79 +67,74 @@ body {
 
 .container {
     width: 100%;
-    /* MODIFIED: Adjusted max-width to better reflect common screen real estate with a sidebar */
-    max-width: 1400px; /* Was calc(1200px + var(--chat-width) + var(--chat-gap)); Max width for the overall layout */
+    max-width: 1200px; /* Default max width for general content */
     margin: 0 auto;
-    padding: 0 20px; /* MODIFIED: Slightly more padding */
+    padding: 0 var(--container-padding);
 }
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
     font-family: var(--font-secondary);
-    font-weight: 700;
-    margin-bottom: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.8em;
     color: var(--text-primary);
     line-height: 1.3;
 }
 
-h1 { font-size: 2.4rem; } /* MODIFIED: Slightly adjusted for balance */
-h2 { font-size: 1.9rem; } /* MODIFIED */
-h3 { font-size: 1.4rem; } /* MODIFIED */
+h1 { font-size: 2.2rem; text-shadow: 0 0 10px rgba(0,230,118,0.1); }
+h2 { font-size: 1.7rem; }
+h3 { font-size: 1.25rem; }
 
 a {
     text-decoration: none;
     color: var(--primary-light);
-    transition: var(--transition-medium);
+    transition: color var(--transition-fast);
 }
-a:hover {
+a:hover, a:focus {
     color: var(--primary-color);
+    outline: none;
 }
 
 p {
-    margin-bottom: 1rem;
+    margin-bottom: 1em;
     color: var(--text-secondary);
 }
 
 code {
-    background-color: var(--background-dark);
-    padding: 3px 6px;
+    background-color: rgba(0,0,0,0.25);
+    padding: 0.2em 0.45em;
     border-radius: 4px;
     font-family: var(--font-mono);
     color: var(--secondary-light);
-    font-size: 0.9em;
-    border: 1px solid var(--border-color);
-    word-break: break-all;
+    font-size: 0.85em;
+    border: 1px solid var(--border-light);
 }
 
-/*=========================
- UTILITIES & HELPERS
- =========================*/
-.sr-only {
-    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
-    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
-}
+/* Custom Scrollbars */
 * {
     scrollbar-width: thin;
-    scrollbar-color: var(--primary-color) var(--background-dark);
+    scrollbar-color: var(--primary-color) var(--background-medium);
 }
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: var(--background-dark); border-radius: 4px; }
-::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 4px; border: 2px solid var(--background-dark); }
+::-webkit-scrollbar-track { background: var(--background-medium); border-radius: 4px; }
+::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 4px; border: 2px solid var(--background-medium); }
 ::-webkit-scrollbar-thumb:hover { background-color: var(--primary-dark); }
 
+/* Notification Bar */
 .notification-bar {
     position: fixed; top: -100px; left: 50%; transform: translateX(-50%);
-    width: auto; max-width: 90%; padding: 12px 25px; background-color: var(--background-medium);
-    color: var(--text-primary); border: 1px solid var(--border-color); border-top: none;
-    border-radius: 0 0 8px 8px; box-shadow: var(--shadow-lg); text-align: center;
-    z-index: 2000; font-size: 0.95rem; font-weight: 500;
-    transition: top var(--transition-slow) ease-in-out; white-space: normal; overflow-wrap: break-word;
+    min-width: 320px; max-width: 90%; width: auto; padding: 12px 24px;
+    background-color: var(--background-medium); color: var(--text-primary);
+    border: 1px solid var(--border-color); border-top: none;
+    border-radius: 0 0 6px 6px; box-shadow: var(--shadow-lg); text-align: center;
+    z-index: 10000; font-size: 0.9rem; font-weight: 500;
+    transition: top 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .notification-bar.show { top: 0; }
-.notification-bar.success { background-color: rgba(76, 175, 80, 0.95); border-color: var(--success-color); color: #ffffff; }
-.notification-bar.error { background-color: rgba(244, 67, 54, 0.95); border-color: var(--error-color); color: #ffffff; }
-.notification-bar.info { background-color: rgba(33, 150, 243, 0.95); border-color: var(--info-color); color: #ffffff; }
-.notification-bar.warning { background-color: rgba(255, 193, 7, 0.95); border-color: var(--warning-color); color: var(--background-dark); }
+.notification-bar.success { background-color: var(--success-color); border-color: var(--success-color); color: #fff; }
+.notification-bar.error   { background-color: var(--error-color); border-color: var(--error-color); color: #fff; }
+.notification-bar.info    { background-color: var(--info-color); border-color: var(--info-color); color: #fff; }
+.notification-bar.warning { background-color: var(--warning-color); border-color: var(--warning-color); color: var(--background-dark); }
 .notification-bar a, .notification-link {
     color: inherit !important; font-weight: bold; text-decoration: underline !important;
     cursor: pointer; transition: opacity var(--transition-fast);
@@ -145,531 +146,649 @@ code {
  =========================*/
 .main-header {
     background-color: var(--background-medium);
-    padding: 10px 0;
+    height: var(--header-height);
     border-bottom: 1px solid var(--border-color);
     box-shadow: var(--shadow-md);
-    position: sticky; top: 0; z-index: 1000; /* MODIFIED: Increased z-index for header */
+    position: sticky; top: 0; z-index: 1000;
+    display: flex; align-items: center;
 }
-
-.header-container {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 15px;
-    /* This will now use the wider .container's max-width if it's a direct child,
-       or if it's nested, it would need its own max-width. Assuming direct for now. */
+.header-container { /* This container is nested inside .main-header and .container */
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; max-width: var(--main-content-max-width); /* Header content spans wider */
+    margin: 0 auto; padding: 0 var(--container-padding); /* Consistent padding */
 }
-
 .header-left, .header-center, .header-right {
-    display: flex;
-    align-items: center;
+    display: flex; align-items: center; gap: 20px;
 }
-.header-left { gap: 25px; flex: 1; min-width: 0; justify-content: flex-start; } /* MODIFIED: Increased gap slightly */
-.header-center { flex-grow: 1.5; justify-content: center; min-width: 0; text-align: center; } /* MODIFIED: Adjusted flex-grow */
-.header-right { gap: 15px; flex: 1; min-width: 0; justify-content: flex-end; } /* MODIFIED: Increased gap */
+.header-left { flex-shrink: 0; } /* Logo and primary nav */
+.header-center { flex-grow: 1; justify-content: center; } /* Jackpot tab centered */
+.header-right { flex-shrink: 0; } /* Secondary nav and user controls */
 
 .logo h1 {
-    font-family: var(--font-mono); font-size: 1.7rem; /* MODIFIED: Slightly smaller for balance */
-    font-weight: 700; margin: 0; letter-spacing: 0.5px; /* MODIFIED */
-    text-shadow: 0 0 8px rgba(0, 230, 118, 0.4); color: var(--text-primary); white-space: nowrap;
+    font-family: var(--font-mono); font-size: 1.5rem;
+    font-weight: 700; margin: 0; letter-spacing: 0.5px;
+    color: var(--text-primary); white-space: nowrap;
 }
 .logo span { color: var(--primary-color); }
 
 .primary-nav ul, .secondary-nav ul, .main-nav ul {
-    list-style: none; display: flex; padding: 0; margin: 0; gap: 10px; /* MODIFIED: Reduced gap for tighter nav groups */
+    list-style: none; display: flex; padding: 0; margin: 0; gap: 10px;
 }
-.main-nav ul { justify-content: center; width: 100%; }
 
-/* MODIFIED: Tab-like appearance for main navigation */
-.main-nav a, .primary-nav a, .secondary-nav a {
-    font-weight: 600;
-    font-size: 0.95rem; /* MODIFIED: Slightly smaller for refinement */
+/* Refined Tab/Link Styling */
+.primary-nav a, .secondary-nav a, .main-nav a {
+    font-weight: 500; font-size: 0.9rem;
     font-family: var(--font-primary);
-    padding: 10px 15px; /* MODIFIED: Increased padding for better click area */
-    border-radius: 6px; /* MODIFIED: Slightly more rounded */
-    transition: var(--transition-medium);
-    position: relative;
+    padding: 0.5em 1em; /* Use em for padding relative to font size */
+    border-radius: 5px;
+    transition: background-color var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
     color: var(--text-secondary);
-    display: block;
-    white-space: nowrap;
-    border-bottom: 3px solid transparent; /* MODIFIED: Base for active state */
+    border: 1px solid transparent; /* Base border for smooth transition */
+    line-height: 1.4;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
-
-.main-nav a:hover, .primary-nav a:hover, .secondary-nav a:hover,
-.main-nav a:focus, .primary-nav a:focus, .secondary-nav a:focus { /* Added focus state */
+.primary-nav a:hover, .secondary-nav a:hover, .main-nav a:hover,
+.primary-nav a:focus, .secondary-nav a:focus, .main-nav a:focus {
     color: var(--primary-light);
-    background-color: rgba(255, 255, 255, 0.03); /* MODIFIED: Subtle hover background */
+    background-color: var(--background-light);
+    border-color: var(--border-light);
 }
-
-.main-nav a.active, .primary-nav a.active, .secondary-nav a.active {
+.primary-nav a.active, .secondary-nav a.active, .main-nav a.active {
     color: var(--primary-color);
-    font-weight: 700; /* MODIFIED: Bolder active state */
-    background-color: rgba(0, 230, 118, 0.05); /* MODIFIED: Subtle active background */
-    border-bottom-color: var(--primary-color); /* MODIFIED: Underline for active state */
+    font-weight: 600;
+    background-color: rgba(0, 230, 118, 0.1);
+    border-color: var(--primary-color);
 }
 
-/* Remove ::after pseudo-elements for underlines if using border-bottom */
-.primary-nav a::after, .secondary-nav a::after, .main-nav a::after {
-    content: none; /* MODIFIED: Removed old underline style */
-}
-
-/* Jackpot Tab Specific Styles */
-.jackpot-tab { /* This is the main "JACKPOT" link in header-center */
-    font-size: 1.5rem; /* MODIFIED: Adjusted size */
-    padding: 12px 20px; /* MODIFIED: Adjusted padding */
+.jackpot-tab { /* Main central "JACKPOT" tab */
+    font-size: 1.3rem; padding: 0.6em 1.2em;
     color: var(--jackpot-tab-color);
-    text-shadow: 0 0 8px var(--jackpot-tab-color), 0 0 12px var(--jackpot-tab-color); /* MODIFIED */
-    letter-spacing: 1px;
-    font-weight: 700;
-    border-radius: 8px; /* MODIFIED: More prominent rounding */
+    text-shadow: 0 0 6px var(--jackpot-tab-color), 0 0 9px var(--jackpot-tab-color);
+    font-weight: 600;
 }
-.jackpot-tab.active { /* Ensure active state for jackpot tab is distinct */
-    background-color: rgba(0, 255, 140, 0.1); /* MODIFIED: Different active background */
-    border-bottom-color: var(--jackpot-tab-color);
-    box-shadow: 0 0 15px rgba(0, 255, 140, 0.3);
+.jackpot-tab.active {
+    background-color: rgba(0, 255, 140, 0.15);
+    border-color: var(--jackpot-tab-color);
+    box-shadow: 0 0 10px rgba(0, 255, 140, 0.2);
 }
-.jackpot-tab:hover {
-    color: var(--jackpot-tab-color);
-    text-shadow: 0 0 12px var(--jackpot-tab-color), 0 0 18px var(--jackpot-tab-color); /* MODIFIED */
-    background-color: rgba(0, 255, 140, 0.05); /* MODIFIED: Hover for jackpot tab */
+.jackpot-tab:hover, .jackpot-tab:focus {
+    background-color: rgba(0, 255, 140, 0.1);
+    border-color: var(--primary-light);
 }
 
-.user-controls { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
-.user-profile-container { position: relative; display: flex; align-items: center; gap: 8px; }
+/* User Controls */
+.user-controls { display: flex; align-items: center; gap: 15px; }
+.user-profile-container { position: relative; display: flex; align-items: center; gap: 6px; }
 .user-profile {
-    display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px; border-radius: 4px;
-     transition: background-color var(--transition-fast);
+    display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 5px 6px; border-radius: 5px;
+    transition: background-color var(--transition-fast);
 }
-.user-profile:hover { background-color: rgba(255, 255, 255, 0.05); }
-.user-profile:focus { outline: none; box-shadow: 0 0 0 2px var(--primary-light); }
-.user-avatar-container { position: relative; display: flex; flex-shrink: 0; }
+.user-profile:hover, .user-profile.open { background-color: var(--background-light); }
+.user-profile:focus-visible { outline: 2px solid var(--primary-light); outline-offset: 1px; }
 .user-avatar {
-    width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary-color);
-    object-fit: cover; box-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
+    width: 36px; height: 36px; border-radius: 50%; border: 2px solid var(--primary-color);
+    object-fit: cover; box-shadow: 0 0 6px rgba(0, 230, 118, 0.2);
 }
 .user-status {
-    position: absolute; bottom: 0; right: 0; width: 10px; height: 10px;
+    position: absolute; bottom: -1px; right: -1px; width: 10px; height: 10px;
     border-radius: 50%; border: 2px solid var(--background-medium);
 }
 .user-status.online { background-color: var(--success-color); }
-.user-status.offline { background-color: #9e9e9e; }
 .user-name {
-    font-family: var(--font-secondary); font-weight: 600; font-size: 0.95rem;
+    font-family: var(--font-secondary); font-weight: 500; font-size: 0.85rem;
     color: var(--text-primary); white-space: nowrap; overflow: hidden;
-    text-overflow: ellipsis; transition: color var(--transition-fast); max-width: 150px;
+    text-overflow: ellipsis; max-width: 110px;
 }
-.user-profile:hover .user-name { color: var(--primary-light); }
 .pending-offer-indicator {
-    display: inline-block; color: var(--warning-color); font-size: 1.1rem;
-    cursor: help; animation: pulseWarning 1.5s infinite ease-in-out;
-    vertical-align: middle; line-height: 1;
-}
-@keyframes pulseWarning {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.15); opacity: 0.7; }
+    color: var(--warning-color); font-size: 0.9rem; cursor: help;
+    animation: pulseWarning 1.5s infinite ease-in-out;
+    position: absolute; top: -3px; right: -6px; background-color: var(--background-medium);
+    border-radius: 50%; padding: 2px; line-height: 0;
 }
 .dropdown-menu {
-    display: none; position: absolute; top: calc(100% + 10px);
-    right: 0; left: auto; transform: none;
-    z-index: 1000; background-color: var(--background-dark);
-    border: 1px solid var(--border-color); border-radius: 8px;
+    display: none; position: absolute; top: calc(100% + 6px);
+    right: 0; z-index: 1010; background-color: var(--background-dark);
+    border: 1px solid var(--border-color); border-radius: 6px;
     box-shadow: var(--shadow-lg); min-width: 200px; overflow: hidden;
+    padding: 5px 0;
 }
-.user-profile-container .dropdown-menu { left: 0; right: auto; }
-.dropdown-actions { padding: 8px 0; }
 .dropdown-item {
-    display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: none;
-    border: none; width: 100%; text-align: left; color: var(--text-secondary);
-    font-size: 0.95rem; font-family: var(--font-primary); font-weight: 500;
-    cursor: pointer; transition: background-color var(--transition-fast), color var(--transition-fast);
+    display: flex; align-items: center; gap: 10px; padding: 9px 14px;
+    color: var(--text-secondary); font-size: 0.85rem;
 }
 .dropdown-item:hover { background-color: var(--background-light); color: var(--primary-color); }
-.dropdown-item .icon { width: 18px; text-align: center; color: var(--text-accent); flex-shrink: 0; }
-.dropdown-item:hover .icon { color: var(--primary-color); }
-#logoutButton {
-    border-top: 1px solid var(--border-color); margin-top: 5px; color: var(--error-color) !important;
-}
+.dropdown-item .icon { width: 15px; text-align: center; color: var(--text-accent); }
+#logoutButton { border-top: 1px solid var(--border-light); margin-top: 4px; padding-top: 9px; color: var(--error-color) !important; }
 #logoutButton .icon { color: var(--error-color) !important; }
-#logoutButton:hover { background-color: rgba(244, 67, 54, 0.1) !important; color: var(--error-color) !important; }
-#logoutButton:hover .icon { color: var(--error-color) !important; }
+#logoutButton:hover { background-color: rgba(244, 67, 54, 0.08) !important; }
 
 /*=========================
  BUTTONS
  =========================*/
 .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-    padding: 10px 20px; border: none; border-radius: 6px; /* MODIFIED: consistent rounding */
-    font-family: var(--font-primary); font-weight: 600; font-size: 1rem;
-    text-transform: uppercase; cursor: pointer; transition: var(--transition-medium);
-    background-color: var(--background-light); color: var(--text-primary);
-    text-align: center; line-height: 1.2; white-space: nowrap;
+    padding: 0.6em 1.2em; border: 1px solid transparent;
+    border-radius: 5px; font-family: var(--font-primary); font-weight: 600;
+    font-size: 0.9rem; text-transform: uppercase; cursor: pointer; letter-spacing: 0.5px;
+    transition: var(--transition-medium); background-color: var(--background-light);
+    color: var(--text-primary); text-align: center;
 }
-.btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 230, 118, 0.3); /* Primary color shadow */
-}
+.btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.btn:active:not(:disabled) { transform: translateY(0px); box-shadow: none; }
+.btn:focus-visible { outline: 2px solid var(--primary-light); outline-offset: 1px; }
 .btn:disabled {
     background-color: var(--background-light) !important; color: var(--text-secondary) !important;
-    cursor: not-allowed; transform: none !important; box-shadow: none !important; opacity: 0.6;
+    cursor: not-allowed; opacity: 0.5;
 }
-.btn i { font-size: 1em; line-height: 1; }
+.btn i { font-size: 0.9em; }
+
 #loginButton {
-    padding: 8px 15px; font-size: 0.9rem; background-color: var(--success-color);
-    color: white; box-shadow: var(--shadow-sm); border-radius: 6px;
+    padding: 0.55em 1em; font-size: 0.8rem; background-color: var(--success-color);
+    color: white; box-shadow: none; border-color: var(--success-color);
 }
-#loginButton:hover:not(:disabled) { background-color: #45a049; transform: translateY(-1px); box-shadow: var(--shadow-md); }
-#loginButton i { margin-right: 6px; }
-.btn-primary { background-color: var(--primary-color); color: var(--background-dark); }
-.btn-primary:hover:not(:disabled) { background-color: var(--primary-dark); }
+#loginButton:hover:not(:disabled) { background-color: #3c823f; border-color: #3c823f; }
+
+.btn-primary { background-color: var(--primary-color); color: #000; border-color: var(--primary-color); }
+.btn-primary:hover:not(:disabled) { background-color: var(--primary-dark); border-color: var(--primary-dark); }
+
 .btn-deposit {
-    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
-    color: var(--background-dark); font-size: 1.2rem; padding: 12px 30px;
-    border-radius: 8px; box-shadow: 0 4px 20px rgba(0, 230, 118, 0.4);
-    position: relative; overflow: hidden;
+    background: linear-gradient(45deg, var(--primary-color), var(--primary-dark));
+    color: #000; font-size: 1.05rem; padding: 0.75em 1.8em;
+    border-radius: 6px; box-shadow: 0 2px 8px rgba(0, 230, 118, 0.3);
+    border: none;
 }
-.btn-deposit:before {
-    content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left var(--transition-slow) ease;
-}
-.btn-deposit:hover:not(:disabled):before { left: 100%; }
+.btn-deposit:hover:not(:disabled) { box-shadow: 0 4px 12px rgba(0, 230, 118, 0.4); }
 .btn-deposit.deposit-disabled {
-     background: var(--background-light); opacity: 0.6; cursor: not-allowed;
-     box-shadow: none; color: var(--text-secondary);
-}
-.btn-deposit.deposit-disabled:before { display: none; }
-.btn-secondary {
-    background-color: var(--background-light); color: var(--text-primary);
-    border: 1px solid var(--border-color); border-radius: 6px; /* MODIFIED */
-    font-size: 0.9rem; padding: 8px 15px;
-}
-.btn-secondary:hover:not(:disabled) {
-    background-color: var(--background-medium); transform: translateY(-2px); box-shadow: var(--shadow-md);
-}
-.btn-small { padding: 6px 12px; font-size: 0.8rem; border-radius: 4px;} /* MODIFIED */
-.btn-details { margin-right: 5px; margin-bottom: 5px; vertical-align: middle; }
-.btn-verify {
-    margin-right: 5px; margin-bottom: 5px; vertical-align: middle;
-    background-color: var(--secondary-color); color: var(--background-dark); border-color: var(--secondary-color);
-}
-.btn-verify:hover:not(:disabled) { background-color: var(--secondary-dark); border-color: var(--secondary-dark); }
-.btn-success { background-color: var(--success-color); color: white; border-color: var(--success-color); }
-.btn-success:hover:not(:disabled) {
-     background-color: #45a049; border-color: #45a049; box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+     background: var(--background-light); color: var(--text-secondary); opacity: 0.6;
 }
 
+.btn-secondary {
+    background-color: var(--background-light); color: var(--text-primary);
+    border: 1px solid var(--border-light);
+}
+.btn-secondary:hover:not(:disabled) { background-color: var(--background-medium); border-color: var(--text-secondary); }
+.btn-small { padding: 0.45em 0.9em; font-size: 0.75rem; }
+.btn-success { background-color: var(--success-color); color: white; border-color: var(--success-color); }
+.btn-success:hover:not(:disabled) { background-color: #3c823f; border-color: #3c823f; }
+
+
 /*=========================
- MAIN CONTENT & SECTIONS
+ MAIN CONTENT LAYOUT
  =========================*/
 .main-content {
-    padding: 25px 0; /* MODIFIED: Slightly less top/bottom padding */
+    padding: var(--layout-gap) 0;
+}
+.main-content > .container { /* Targets the direct container child of main-content */
+    max-width: var(--main-content-max-width); /* Allow this specific container to be wider */
 }
 
 .home-page-layout {
     display: flex;
-    gap: var(--chat-gap);
-    align-items: stretch; /* MODIFIED: Make jackpot and chat same height */
+    gap: var(--layout-gap);
+    align-items: stretch; /* Critical for same height columns */
 }
 
 .jackpot-main-area {
-    flex: 1;
-    min-width: 0;
-    display: flex; /* Added for inner jackpot-section to fill height */
-    flex-direction: column; /* Added */
+    flex: 1; /* Grow to take available space */
+    min-width: 0; /* Prevents overflow issues with flex items */
+    display: flex; /* To make jackpot-section fill its height */
+    flex-direction: column;
 }
 
 .jackpot-section {
     background-color: var(--background-medium);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: var(--shadow-lg);
+    border-radius: 8px; /* Softer radius */
     border: 1px solid var(--border-color);
-    position: relative;
+    box-shadow: var(--shadow-md);
     display: flex;
     flex-direction: column;
-    height: 100%; /* Fills the jackpot-main-area */
+    height: 100%; /* Fill available height from jackpot-main-area */
+    overflow: hidden; /* Contains rounded corners */
 }
 
-/* Content cards for static pages */
-.content-card {
-    max-width: 900px;
-    margin: 30px auto;
-    background: linear-gradient(135deg, var(--background-medium), var(--background-light));
-    border-radius: 12px;
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--border-color);
-    overflow: hidden;
-    padding: 30px 40px; /* MODIFIED: Slightly more horizontal padding */
-}
-.content-card h1 {
-    color: var(--primary-color); font-size: 2.2rem; margin-bottom: 25px;
-    text-align: center; border-bottom: 1px solid var(--border-color);
-    padding-bottom: 15px; text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
-}
-
-/* Jackpot Header & Timer */
+/* Jackpot Header */
 .jackpot-header {
-    display: flex; justify-content: space-around; /* MODIFIED: Better distribution */
-    align-items: center; gap: 20px; /* MODIFIED: Reduced gap */
-    padding: 20px; /* MODIFIED: Uniform padding */
-    background: linear-gradient(135deg, var(--background-medium), var(--background-light));
-    border-bottom: 1px solid var(--border-color); border-radius: 12px 12px 0 0;
-    box-shadow: var(--shadow-sm); min-height: 160px; /* MODIFIED */
-    position: relative; overflow: hidden; z-index: 5;
-    transition: height 0.5s ease, min-height 0.5s ease, background 0.3s ease;
-    flex-wrap: wrap; flex-shrink: 0;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 15px; /* Reduced gap slightly */
+    padding: 18px; /* Adjusted padding */
+    background: linear-gradient(140deg, var(--background-light) 0%, var(--background-medium) 100%);
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 8px 8px 0 0;
+    min-height: 140px; /* Slightly reduced */
+    flex-shrink: 0;
 }
 .jackpot-header.roulette-mode {
-    background: linear-gradient(135deg, var(--background-dark), var(--background-medium));
-    height: 130px; min-height: 130px; /* MODIFIED */
-    align-items: center; padding-top: 0; padding-bottom: 0;
+    background: linear-gradient(140deg, var(--background-dark) 0%, var(--background-medium) 100%);
+    height: 110px; min-height: 110px; /* Adjusted for roulette */
 }
 .jackpot-timer, .jackpot-value, .jackpot-stats {
-    min-width: 150px; /* MODIFIED */
-    display: flex; flex-direction: column; justify-content: center;
-    align-items: center; text-align: center;
-    flex: 1 1 150px; /* MODIFIED */
-    padding: 10px 5px; /* MODIFIED */
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+    text-align: center; flex: 1; padding: 5px; min-width: 130px;
 }
-.jackpot-value h2 {
-    font-size: 3.8rem; /* MODIFIED */
-    font-weight: 700; color: var(--primary-color); margin: 0;
-    font-family: var(--font-mono); line-height: 1.1;
-    animation: valueGlow 1.8s infinite ease-in-out;
-}
+.jackpot-value h2 { font-size: 3rem; line-height: 1.1; animation: valueGlow 2s infinite alternate; }
 @keyframes valueGlow {
-    0%, 100% { text-shadow: 0 0 8px rgba(0, 230, 118, 0.4); }
-    50% { text-shadow: 0 0 20px var(--primary-color), 0 0 10px var(--primary-light); }
+    from { text-shadow: 0 0 5px rgba(0,230,118,0.3), 0 0 10px rgba(0,230,118,0.2); }
+    to { text-shadow: 0 0 15px var(--primary-color), 0 0 25px var(--primary-light); }
 }
-.timer-circle {
-    position: relative; width: 120px; height: 120px; /* MODIFIED */
-    display: flex; justify-content: center; align-items: center; margin: 0 auto 8px auto; /* MODIFIED */
-}
-.timer-progress { width: 100%; height: 100%; transform: rotate(-90deg); }
-.timer-background, .timer-foreground { fill: none; stroke-width: 7px; } /* MODIFIED */
-.timer-background { stroke: var(--background-light); }
-.timer-foreground {
-    stroke: var(--primary-color); stroke-linecap: round; stroke-dashoffset: 0;
-    transition: stroke-dashoffset 1s linear; filter: drop-shadow(0 0 3px var(--primary-color)); /* MODIFIED */
-}
-.timer-text {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    font-size: 3.5rem; /* MODIFIED */
-    font-weight: 700; color: var(--primary-color); font-family: var(--font-mono);
-}
-.timer-pulse { animation: timerPulse 2s infinite ease-in-out; }
-.urgent-pulse {
-    animation: urgentPulse 0.6s infinite ease-in-out;
-    color: var(--error-color) !important; text-shadow: 0 0 5px rgba(244, 67, 54, 0.5);
-}
-@keyframes timerPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-@keyframes urgentPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.08); } }
-.stat-value {
-    font-size: 3.5rem; /* MODIFIED */
-    font-weight: 700; color: var(--text-primary);
-    display: block; line-height: 1.1; margin-top: 8px; /* MODIFIED */
-}
-.value-label, .timer-label, .stat-label {
-    margin-top: 8px; /* MODIFIED */
-    font-size: 0.85rem; /* MODIFIED */
-    letter-spacing: 0.8px; /* MODIFIED */
-    color: var(--text-secondary); text-transform: uppercase; display: block;
-}
+.timer-circle { width: 100px; height: 100px; margin-bottom: 4px; }
+.timer-progress { stroke-width: 7px; }
+.timer-text { font-size: 2.6rem; }
+.stat-value { font-size: 2.6rem; margin-top: 4px; }
+.value-label, .timer-label, .stat-label { font-size: 0.75rem; letter-spacing: 0.8px; text-transform: uppercase; margin-top: 4px; }
 
-/* Roulette, Deposit, Items Sections styling largely unchanged unless directly related to wonkiness */
-/* ... (roulette styles remain the same) ... */
-/* ... (deposit button container styles remain the same) ... */
-/* ... (current items section - minor adjustments for flex) ... */
+/* Deposit Button Area */
+.deposit-button-container {
+    padding: 18px;
+    background-color: var(--background-medium); /* Match section */
+    border-top: 1px solid var(--border-light);
+    border-bottom: 1px solid var(--border-light);
+    display: flex; justify-content: center; align-items: center;
+    flex-shrink: 0;
+}
+#showDepositModal { font-size: 1rem; padding: 10px 24px; min-width: 240px; }
 
+/* Current Items Section */
 .current-items-section {
-    padding: 20px; /* MODIFIED */
-    z-index: 5; position: relative; background-color: var(--background-medium);
-    border-radius: 0 0 12px 12px; border-top: 1px solid var(--border-color);
-    flex-grow: 1; display: flex; flex-direction: column; overflow: hidden;
+    padding: 18px;
+    flex-grow: 1; /* Allows this section to take remaining space */
+    display: flex; flex-direction: column;
+    overflow: hidden; /* Important for child overflow-y:auto */
+    background-color: var(--background-medium); /* Match jackpot-section */
+    border-radius: 0 0 8px 8px;
 }
 .section-title {
-    font-size: 1.1rem; /* MODIFIED */
-    font-weight: 600; margin-bottom: 20px; /* MODIFIED */
-    color: var(--text-primary); text-transform: uppercase; letter-spacing: 1px; /* MODIFIED */
-    border-bottom: 1px solid var(--border-color); padding-bottom: 10px; /* MODIFIED */
-    text-align: center; flex-shrink: 0;
+    font-size: 1rem; font-weight: 500; margin-bottom: 15px;
+    padding-bottom: 8px; text-align: center; flex-shrink: 0;
+    border-bottom: 1px solid var(--border-light); color: var(--text-secondary);
+    text-transform: uppercase; letter-spacing: 1px;
 }
 .empty-pot-message {
-    text-align: center; padding: 30px 20px; /* MODIFIED */
-    color: var(--text-secondary); font-size: 1rem; /* MODIFIED */
-    background-color: var(--background-light); border-radius: 8px;
-    border: 1px dashed var(--border-color); display: flex; /* MODIFIED */
-    margin: 10px 0; flex-grow: 1; /* MODIFIED */
-    align-items: center; justify-content: center;
+    text-align: center; padding: 20px; color: var(--text-secondary);
+    font-size: 0.95rem; background-color: rgba(0,0,0,0.15); border-radius: 5px;
+    border: 1px dashed var(--border-light);
+    flex-grow: 1; display: flex; align-items: center; justify-content: center;
 }
 .items-container {
-    display: flex; flex-direction: column; gap: 12px; /* MODIFIED */
-    padding: 5px; /* MODIFIED: Reduced padding slightly if scrollbar appears */
-    flex-grow: 1; overflow-y: auto;
+    display: flex; flex-direction: column; gap: 10px;
+    flex-grow: 1; overflow-y: auto; padding: 8px 4px; /* Add slight padding for scrollbar */
 }
-
-/* Modals styling largely unchanged */
-/* ... (modal styles remain the same) ... */
-/* ... (form elements remain the same) ... */
-/* ... (inventory modal styles remain the same) ... */
-/* ... (profile modal styles remain the same) ... */
-/* ... (static pages, FAQ, Fair, etc., styles remain the same) ... */
-/* ... (deposit modal footer enhancements remain the same) ... */
-/* ... (pending offer indicators remain the same) ... */
-/* ... (footer styles remain the same) ... */
+.player-deposit-container {
+    background: var(--background-light);
+    border-radius: 5px; padding: 10px; border: 1px solid var(--border-light);
+    box-shadow: var(--shadow-sm);
+}
+.player-avatar { width: 32px; height: 32px; margin-right: 10px; }
+.player-name { font-size: 0.95rem; }
+.player-deposit-value { font-size: 0.8rem; }
+.player-items-grid { gap: 5px; margin-top: 8px; }
+.player-deposit-item { width: 65px; height: 85px; border-radius: 4px; }
+.player-deposit-item-image { height: 45px; }
+.player-deposit-item-info { padding: 3px; height: auto; min-height: 35px; } /* Auto height */
+.player-deposit-item-value { font-size: 0.65rem; }
 
 
 /*=========================
- CHAT STYLES - Check for potential adjustments for symmetry
+ CHAT SIDEBAR
  =========================*/
 .chat-sidebar {
-    width: var(--chat-width);
-    flex-shrink: 0;
+    width: var(--chat-sidebar-width);
+    flex-shrink: 0; /* Prevent chat sidebar from shrinking */
     background-color: var(--background-medium);
-    border-radius: 12px;
+    border-radius: 8px;
     border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-md);
     display: flex;
     flex-direction: column;
-    /* Height will be determined by align-items: stretch on .home-page-layout */
-    /* Fallback if stretch doesn't work as expected, or for specific needs */
-    /* min-height: 600px; /* Example min height */
-    /* max-height: 750px; /* Example max height */
+    /* Height is determined by align-items: stretch on .home-page-layout */
+    overflow: hidden; /* Important for border-radius on children */
 }
+
 .chat-widget-container {
-    display: flex; flex-direction: column;
-    height: 100%; overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Fill the sidebar */
 }
+
 .chat-header {
-    padding: 12px 18px; /* MODIFIED: Adjusted padding */
-    background: linear-gradient(135deg, var(--background-light), var(--background-medium));
+    padding: 10px 15px; /* Slightly reduced padding */
+    background: linear-gradient(140deg, var(--background-light) 0%, var(--background-medium) 100%);
     border-bottom: 1px solid var(--border-color);
-    border-radius: 12px 12px 0 0; display: flex;
-    justify-content: space-between; align-items: center; flex-shrink: 0;
+    border-radius: 8px 8px 0 0; /* Match parent */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+    height: 50px; /* Consistent height */
 }
 .chat-header h3 {
-    margin: 0; font-size: 1rem; /* MODIFIED */
-    color: var(--primary-color); font-weight: 600;
+    margin: 0;
+    font-size: 0.9rem; /* Cleaner size */
+    color: var(--primary-light);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
 }
 .online-count {
-    font-size: 0.8rem; /* MODIFIED */
-    color: var(--text-secondary); display: flex; align-items: center; gap: 5px; /* MODIFIED */
+    font-size: 0.75rem; /* Cleaner size */
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
-.online-count i { color: var(--text-accent); }
+.online-count i { color: var(--success-color); font-size: 0.85em; }
+
 .chat-messages-container {
-    flex-grow: 1; padding: 12px; /* MODIFIED */
-    overflow-y: auto; display: flex; flex-direction: column-reverse; gap: 10px; /* MODIFIED */
+    flex-grow: 1;
+    padding: 12px; /* Consistent padding */
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column-reverse; /* Newest messages at the bottom */
+    gap: 10px;
+    background-color: var(--background-dark); /* Darker area for messages */
 }
 .chat-message {
-    display: flex; gap: 8px; /* MODIFIED */
-    align-items: flex-start; padding: 8px 10px; /* MODIFIED */
-    border-radius: 6px; background-color: rgba(33, 38, 45, 0.7);
-    animation: chatMessageFadeIn 0.3s ease-out; max-width: 95%;
-}
-@keyframes chatMessageFadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    padding: 7px 10px; /* Slightly tighter padding */
+    border-radius: 5px;
+    background-color: var(--background-light); /* Bubble color */
+    border: 1px solid var(--border-light);
+    animation: chatMessageFadeIn 0.25s ease-out;
+    max-width: 96%; /* Prevent full width for very short messages */
+    word-break: break-word; /* Ensure long words wrap */
 }
 .chat-message-avatar {
-    width: 30px; height: 30px; /* MODIFIED */
-    border-radius: 50%; object-fit: cover; flex-shrink: 0;
-    margin-top: 2px; border: 1px solid var(--border-color);
+    width: 28px; height: 28px; /* Slightly smaller */
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    margin-top: 2px;
+    border: 1px solid var(--border-color);
 }
 .chat-message-content { display: flex; flex-direction: column; min-width: 0; }
 .chat-message-user {
-    font-size: 0.85rem; /* MODIFIED */
-    font-weight: 600; color: var(--text-primary);
-    margin-bottom: 2px; /* MODIFIED */
-    word-break: break-all;
+    font-size: 0.8rem; /* Slightly smaller username */
+    font-weight: 600;
+    margin-bottom: 2px;
 }
 .chat-message-text {
-    font-size: 0.85rem; /* MODIFIED */
-    color: var(--text-secondary); line-height: 1.4; /* MODIFIED */
-    word-wrap: break-word; white-space: pre-wrap;
+    font-size: 0.85rem; /* Standard text size */
+    color: var(--text-secondary);
+    line-height: 1.5;
+    white-space: pre-wrap; /* Preserve spaces and newlines typed by user */
 }
 .chat-message.system-message {
-    background-color: transparent; font-style: italic;
-    font-size: 0.8rem; /* MODIFIED */
-    color: var(--text-secondary); text-align: center;
-    justify-content: center; padding: 4px 0; /* MODIFIED */
+    background-color: transparent; border: none; font-style: italic;
+    font-size: 0.75rem; color: var(--text-secondary); text-align: center;
+    justify-content: center; padding: 4px 0;
 }
+
 .chat-input-area {
-    padding: 12px; /* MODIFIED */
-    border-top: 1px solid var(--border-color); background-color: var(--background-light);
-    border-radius: 0 0 12px 12px; display: flex; gap: 8px; /* MODIFIED */
-    align-items: center; flex-shrink: 0;
+    padding: 10px; /* Tighter padding */
+    border-top: 1px solid var(--border-color);
+    background-color: var(--background-light);
+    border-radius: 0 0 8px 8px; /* Match parent */
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-shrink: 0;
+    height: 55px; /* Consistent height */
 }
 #chatMessageInput {
-    flex-grow: 1; padding: 8px 10px; /* MODIFIED */
+    flex-grow: 1; padding: 8px 10px;
     border: 1px solid var(--border-color); border-radius: 4px;
     background-color: var(--background-dark); color: var(--text-primary);
-    font-family: var(--font-primary); font-size: 0.85rem; /* MODIFIED */
-    outline: none; transition: border-color var(--transition-medium), box-shadow var(--transition-medium);
+    font-family: var(--font-primary); font-size: 0.85rem;
+    outline: none; transition: var(--transition-fast);
 }
 #chatMessageInput:focus {
-    border-color: var(--primary-color); box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.2);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.2);
 }
-#chatMessageInput:disabled {
-    background-color: var(--background-medium); cursor: not-allowed; opacity: 0.7;
-}
-#chatSendMessageBtn { padding: 8px 12px; font-size: 0.85rem; } /* MODIFIED */
-#chatSendMessageBtn i { font-size: 0.9em; }
+#chatMessageInput:disabled { background-color: var(--background-medium); cursor: not-allowed; opacity: 0.7; }
+#chatSendMessageBtn { padding: 8px 12px; font-size: 0.8rem; }
 
-/* Responsive adjustments */
-@media (max-width: 1350px) { /* MODIFIED: Adjusted breakpoint for stacking earlier */
+
+/*=========================
+ RESPONSIVE ADJUSTMENTS
+ =========================*/
+@media (max-width: 1400px) { /* Adjust when main layout might start to feel cramped */
+    .container.full-width-container { /* The one holding home-page-layout */
+         padding-left: var(--layout-gap);
+         padding-right: var(--layout-gap);
+    }
+     .home-page-layout {
+        max-width: none; /* Let it fill the full-width-container */
+    }
+}
+
+@media (max-width: 1024px) { /* Stack jackpot and chat for tablets */
     .home-page-layout {
         flex-direction: column;
-        align-items: center; /* Center items when stacked */
-    }
-    .chat-sidebar, .jackpot-main-area {
-        width: 100%;
-        max-width: 800px; /* MODIFIED: Give jackpot area a max-width when stacked */
-    }
-    .chat-sidebar {
-        max-height: 450px; /* Adjust height for stacked view */
-        height: 450px; /* Fixed height for stacked view */
+        align-items: center; /* Center content when stacked */
     }
     .jackpot-main-area {
-         margin-bottom: var(--chat-gap); /* Add gap below jackpot when stacked */
+        width: 100%;
+        max-width: 700px; /* Give jackpot a max width when stacked */
+        min-width: unset;
     }
-    .container { /* Max width for general content on smaller screens */
-        max-width: 960px;
+    .chat-sidebar {
+        width: 100%;
+        max-width: 700px; /* Match jackpot area width */
+        height: 400px; /* Fixed height for chat when stacked */
+        margin-top: var(--layout-gap);
     }
+    /* Adjust header for tablets - maybe condense some nav items or make logo smaller */
+    .header-left, .header-right { gap: 15px; }
+    .primary-nav a, .secondary-nav a, .main-nav a { font-size: 0.85rem; padding: 0.5em 0.8em; }
+    .jackpot-tab { font-size: 1.2rem; }
+    .logo h1 { font-size: 1.4rem; }
 }
 
-@media (max-width: 768px) {
-    .header-left { flex-basis: 100%; justify-content: center; text-align: center; gap: 15px; }
-    .header-center { order: -1; flex-basis: 100%; margin-bottom: 10px;} /* Logo and main tab center, then other navs */
-    .header-right { justify-content: center; flex-basis: 100%; }
-    .primary-nav ul, .secondary-nav ul { justify-content: center; flex-wrap: wrap; }
-    .main-header { padding: 15px 0; }
+@media (max-width: 768px) { /* Mobile refinements */
+    :root { --header-height: auto; --layout-gap: 15px; } /* Dynamic header height */
+    .main-header { padding: 10px 0; }
+    .header-container { flex-direction: column; gap: 10px; }
+    .header-left, .header-center, .header-right { width: 100%; justify-content: center; }
+    .primary-nav ul, .secondary-nav ul { flex-wrap: wrap; justify-content: center; gap: 5px 8px;}
+    .main-content > .container { max-width: 100%; } /* Let content use full available width */
+    .home-page-layout { max-width: 100%; }
+    .jackpot-main-area, .chat-sidebar { max-width: 100%; }
 
-    .jackpot-header {
-        flex-direction: column; gap: 15px; min-height: auto; padding: 15px; /* MODIFIED */
-    }
-    .jackpot-timer, .jackpot-value, .jackpot-stats {
-        min-width: auto; flex-basis: auto; width: 100%; /* MODIFIED */
-    }
-    .jackpot-value h2 { font-size: 3.2rem; } /* MODIFIED */
-    .timer-text { font-size: 2.8rem; } /* MODIFIED */
-    .stat-value { font-size: 2.8rem; } /* MODIFIED */
-    .timer-circle { width: 100px; height: 100px; } /* MODIFIED */
-
-    .chat-sidebar { max-height: 400px; height: 400px; }
-    .home-page-layout { gap: 20px; } /* Reduce gap when stacked on mobile */
-    .jackpot-main-area { max-width: 100%; } /* Full width on mobile */
-    .container { padding: 0 15px; }
+    .jackpot-header { flex-direction: column; min-height: auto; padding: 15px; gap: 10px; }
+    .jackpot-value h2 { font-size: 2.8rem; }
+    .timer-text, .stat-value { font-size: 2.5rem; }
+    .timer-circle { width: 90px; height: 90px; }
+    .chat-sidebar { height: 350px; }
 }
 
 @media (max-width: 480px) {
-    .jackpot-value h2 { font-size: 2.8rem; }
-    .timer-text { font-size: 2.5rem; }
-    .stat-value { font-size: 2.5rem; }
-    .timer-circle { width: 90px; height: 90px; }
-    .value-label, .timer-label, .stat-label { font-size: 0.8rem;}
-    .section-title { font-size: 1rem; }
-    .chat-header h3 {font-size: 0.9rem;}
-    .chat-message-text, .chat-message-user { font-size: 0.8rem;}
-    #chatMessageInput { font-size: 0.8rem;}
+    .container { padding: 0 10px; }
+    .jackpot-value h2 { font-size: 2.4rem; }
+    .timer-text, .stat-value { font-size: 2.1rem; }
+    .timer-circle { width: 80px; height: 80px; }
+    .value-label, .timer-label, .stat-label { font-size: 0.7rem;}
+    .section-title { font-size: 0.9rem; }
+    .chat-header h3 {font-size: 0.85rem;}
+    .chat-header { height: 45px; padding: 8px 12px; }
+    .chat-messages-container { padding: 10px; }
+    .chat-message-text, .chat-message-user { font-size: 0.75rem;}
+    .chat-input-area { height: 50px; padding: 8px; }
+    #chatMessageInput, #chatSendMessageBtn { font-size: 0.75rem; padding: 7px 9px;}
+    .btn { font-size: 0.85rem; padding: 0.55em 1.1em;}
+    #loginButton { font-size: 0.75rem; }
 }
+
+/* Styles for Modals, static content pages (FAQ, TOS etc.) should be appended here
+   from your original styles (1).css if they were not part of the provided snippet
+   and are intended to be kept. The focus of this revision was primarily on layout,
+   tabs, symmetry, and integrating the chat visually.
+*/
+
+/* Re-adding some of the other styles from your original file that were not in the first block */
+/* Ensure these don't conflict heavily with the revised layout above */
+
+/* Fallback for other .content-card if not a static page, or adjust if needed */
+/* .content-card { ... } */ /* Already defined above for static pages */
+
+/* Roulette, Deposit, Items Sections from original - check for conflicts */
+/* ... (Roulette styles are quite specific, usually okay) ... */
+/* ... (Deposit button container from original) ... */
+/* ... (Current items section and item display from original) ... */
+
+/* Modals */
+.modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.88); /* Darker overlay */
+    display: none;
+    justify-content: center; align-items: center; z-index: 2000; /* Higher z-index for modals */
+    padding: 15px;
+    backdrop-filter: blur(4px);
+}
+.modal-content {
+    background-color: var(--background-medium);
+    border-radius: 8px; /* Consistent radius */
+    width: 100%;
+    max-width: 700px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-xl); /* Stronger shadow for modals */
+    border: 1px solid var(--border-light);
+    animation: modalIn 0.3s ease-out;
+    overflow: hidden;
+}
+/* Specific modal sizes */
+.age-verification .modal-content { max-width: 480px; }
+#depositModal .modal-content { max-width: 880px; } /* Slightly adjusted */
+#tradeUrlModal .modal-content { max-width: 550px; }
+#profileModal .modal-content { max-width: 460px; }
+
+
+@keyframes modalIn {
+    from { opacity: 0; transform: translateY(-20px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-header {
+    padding: 12px 20px; /* Adjusted padding */
+    border-bottom: 1px solid var(--border-color);
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--background-light); /* Simpler background */
+    border-radius: 8px 8px 0 0;
+    flex-shrink: 0;
+}
+.modal-header h2 {
+    margin: 0; color: var(--primary-light); font-size: 1.2rem; /* Adjusted */
+    font-weight: 500;
+}
+.close-btn {
+    background: none; border: none; color: var(--text-secondary); font-size: 1.6rem;
+    line-height: 1; cursor: pointer; transition: var(--transition-fast); padding: 4px;
+}
+.close-btn:hover { color: var(--primary-color); transform: rotate(90deg) scale(1.1); }
+
+.modal-body { padding: 20px 25px; overflow-y: auto; flex-grow: 1; }
+.modal-body p { margin-bottom: 1em; color: var(--text-secondary); font-size: 0.9rem;}
+.modal-body ul { list-style-position: inside; margin-bottom: 1em; padding-left: 0; }
+.modal-body li { margin-bottom: 0.5em; color: var(--text-secondary); font-size: 0.9rem;}
+
+.modal-footer {
+    padding: 12px 20px; border-top: 1px solid var(--border-color);
+    background-color: var(--background-light);
+    border-radius: 0 0 8px 8px;
+    flex-shrink: 0; display: flex; justify-content: flex-end;
+    align-items: center; gap: 10px;
+}
+
+/* Form Elements - kept from original, generally okay */
+.form-group { margin-bottom: 18px; }
+.form-group label { display: block; margin-bottom: 6px; font-weight: 500; font-size:0.85rem; color: var(--text-primary); }
+.form-group input[type="text"], .form-group input[type="url"], .form-group input[type="number"], .form-group input[type="password"], .form-group input[type="email"], .form-group textarea {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border-color);
+    border-radius: 4px; background-color: var(--background-dark); color: var(--text-primary);
+    font-family: var(--font-primary); font-size: 0.9rem;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.form-group input:focus, .form-group textarea:focus {
+    border-color: var(--primary-color); outline: none;
+    box-shadow: 0 0 0 2.5px rgba(0, 230, 118, 0.25);
+}
+.checkbox-container { display: flex; align-items: flex-start; margin: 15px 0; gap: 8px;}
+.checkbox-container input[type="checkbox"] { margin-top: 3px; width: 16px; height: 16px; accent-color: var(--primary-color); cursor: pointer; flex-shrink: 0; }
+.checkbox-container label { cursor: pointer; color: var(--text-primary); line-height: 1.4; font-size: 0.85rem;}
+.help-text { font-size: 0.8rem; color: var(--text-secondary); margin-top: 8px; }
+
+/* Inventory Modal Styles - Minor tweaks for consistency */
+.inventory-container { margin-bottom: 15px; }
+.inventory-container h3 {
+    font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 8px;
+    text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500;
+}
+.inventory-items {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px;
+    max-height: 280px; overflow-y: auto; background-color: rgba(0,0,0,0.1);
+    padding: 12px; border-radius: 6px; border: 1px solid var(--border-light);
+}
+.inventory-item {
+    border: 1px solid var(--border-light); /* Changed from transparent */
+    background-color: var(--background-medium);
+}
+.inventory-item:hover { transform: translateY(-2px); border-color: var(--primary-light); box-shadow: var(--shadow-sm); }
+.inventory-item.selected { border-color: var(--primary-color); box-shadow: 0 0 10px rgba(0, 230, 118, 0.3); transform: scale(1.02); }
+.item-details { padding: 6px; min-height: 45px; }
+.item-name { font-size: 0.8rem; }
+.inventory-item .item-value { font-size: 0.8rem; }
+
+.selected-items h3 { font-size: 0.9rem; }
+.selected-items-container {
+    min-height: 70px; max-height: 160px; background-color: rgba(0,0,0,0.1);
+    padding: 8px; border-radius: 6px; border: 1px solid var(--border-light); margin-bottom: 12px;
+}
+.selected-item-display { width: 70px; border-radius: 3px; border: 1px solid var(--border-light); }
+.selected-item-display img { height: 50px; }
+.selected-item-display .item-name { font-size: 0.65rem; }
+.selected-item-display .item-value { font-size: 0.7rem; }
+.total-value {
+    padding: 8px 12px; margin-top: 8px; font-weight: 500; font-size: 1rem;
+    border-radius: 5px; background-color: rgba(0,0,0,0.15);
+}
+
+/* Profile Modal Styles */
+.profile-modal-body { padding: 25px 30px; }
+.profile-modal-avatar { width: 70px; height: 70px; }
+.profile-modal-name { font-size: 1.3em; }
+.profile-modal-stats { margin-bottom: 25px; padding: 12px; }
+.profile-modal-stat-label { font-size: 0.8em; }
+.profile-modal-stat-value { font-size: 1.4em; }
+
+/* Static Pages (FAQ, TOS, etc.) - kept from original, generally okay */
+.content-section { margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid var(--border-light); }
+.content-section-title { font-size: 1.25rem; margin-bottom: 12px; padding-left: 10px; }
+.content-section-body p { font-size: 0.9rem; }
+#tos-page .content-section { background-color:transparent; border: none; padding: 0; }
+#tos-page .content-section-title { border-left: 3px solid var(--secondary-color); }
+#faq-page .content-section { background-color: transparent; border:none; padding: 0; padding-bottom: 15px; border-bottom: 1px solid var(--border-light);}
+#faq-page .content-section-title { color: var(--secondary-light); }
+
+/* Provably Fair Page & History Table - kept from original, generally okay */
+#fair-page #provably-fair-verification { background-color: transparent; border:1px solid var(--border-light); padding: 20px; }
+.verify-form { padding: 0; margin-bottom: 20px; }
+.verification-result { background-color: var(--background-light); border: 1px solid var(--border-light); }
+.table-container { background-color: transparent; border: 1px solid var(--border-light); }
+.history-table th, .history-table td { padding: 10px 12px; font-size: 0.85rem;}
+.history-table th { background-color: var(--background-light); }
+
+/* Footer */
+.main-footer {
+    background-color: var(--background-dark); color: var(--text-secondary);
+    padding: 25px 0; margin-top: var(--layout-gap); text-align: center;
+    font-size: 0.8rem; border-top: 1px solid var(--border-color);
+}
+.main-footer p { margin-bottom: 6px; line-height: 1.6; }
+.main-footer a { color: var(--text-secondary); text-decoration: none; border-bottom: 1px dotted var(--text-secondary); }
+.main-footer a:hover { color: var(--primary-light); border-bottom-color: var(--primary-light); }
