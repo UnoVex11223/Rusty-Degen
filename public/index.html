@@ -204,12 +204,11 @@
     </header>
 
     <main class="main-content">
-        <div class="container">
-
+        <div class="container full-width-container"> {/* Added full-width-container for the main layout control */}
             <section id="home-page">
-                <div class="home-page-layout">
+                <div class="home-page-layout"> {/* This will control jackpot and chat */}
                     <div class="jackpot-main-area">
-                        <div class="jackpot-section">
+                        <div class="jackpot-section"> {/* This section will now fill height properly */}
                             <div class="jackpot-header" id="jackpotHeader">
                                 <div class="jackpot-value">
                                     <h2 id="potValue">$0.00</h2>
@@ -289,9 +288,10 @@
                             </div>
                         </div>
                     </aside>
-                    </div>
+                </div>
             </section>
 
+            {/* Other sections (About, TOS, FAQ, Fair) remain unchanged */}
             <section id="about-page" style="display: none;">
                 <div class="content-card">
                     <h1>About Rusty Degen</h1>
