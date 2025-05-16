@@ -207,66 +207,89 @@
         <div class="container">
 
             <section id="home-page">
-                <div class="jackpot-section">
-                    <div class="jackpot-header" id="jackpotHeader">
-                        <div class="jackpot-value">
-                            <h2 id="potValue">$0.00</h2>
-                            <span class="value-label">CURRENT POT</span>
-                        </div>
-                        <div class="jackpot-timer">
-                            <div class="timer-circle">
-                                <svg class="timer-progress" viewBox="0 0 100 100">
-                                    <circle class="timer-background" cx="50" cy="50" r="42"></circle>
-                                    <circle class="timer-foreground" cx="50" cy="50" r="42"></circle>
-                                </svg>
-                                <div class="timer-text">
-                                    <span id="timerValue">--</span>
+                <div class="home-page-layout">
+                    <div class="jackpot-main-area">
+                        <div class="jackpot-section">
+                            <div class="jackpot-header" id="jackpotHeader">
+                                <div class="jackpot-value">
+                                    <h2 id="potValue">$0.00</h2>
+                                    <span class="value-label">CURRENT POT</span>
                                 </div>
-                            </div>
-                            <span class="timer-label">SECONDS LEFT</span>
-                        </div>
-                        <div class="jackpot-stats">
-                            <span class="stat-value" id="participantCount">0/--</span>
-                            <span class="stat-label">PARTICIPANTS</span>
-                        </div>
-
-                        <div class="inline-roulette" id="inlineRoulette" style="display: none;">
-                            <div class="roulette-container">
-                                <div class="roulette-track" id="rouletteTrack">
+                                <div class="jackpot-timer">
+                                    <div class="timer-circle">
+                                        <svg class="timer-progress" viewBox="0 0 100 100">
+                                            <circle class="timer-background" cx="50" cy="50" r="42"></circle>
+                                            <circle class="timer-foreground" cx="50" cy="50" r="42"></circle>
+                                        </svg>
+                                        <div class="timer-text">
+                                            <span id="timerValue">--</span>
+                                        </div>
                                     </div>
-                                <div class="roulette-ticker">
-                                    <div class="ticker-line"></div>
+                                    <span class="timer-label">SECONDS LEFT</span>
+                                </div>
+                                <div class="jackpot-stats">
+                                    <span class="stat-value" id="participantCount">0/--</span>
+                                    <span class="stat-label">PARTICIPANTS</span>
+                                </div>
+
+                                <div class="inline-roulette" id="inlineRoulette" style="display: none;">
+                                    <div class="roulette-container">
+                                        <div class="roulette-track" id="rouletteTrack"></div>
+                                        <div class="roulette-ticker"><div class="ticker-line"></div></div>
+                                    </div>
+                                    <div class="winner-info" id="winnerInfo" style="display: none;">
+                                        <div class="winner-header">
+                                            <img src="/img/default-avatar.png" alt="Winner Avatar" class="winner-avatar" id="winnerAvatar">
+                                            <h3 id="winnerName">WINNER NAME</h3>
+                                        </div>
+                                        <div class="winner-details">
+                                            <p>Deposited: <span id="winnerDeposit">$0.00</span></p>
+                                            <p>Chance: <span id="winnerChance">0.00%</span></p>
+                                            <p class="congrats">Congratulations!</p>
+                                        </div>
+                                        <div class="confetti-container" id="confettiContainer"></div>
+                                    </div>
+                                    <audio id="spinSound" src="/audio/spin-sound.mp3" preload="auto"></audio>
+                                    <audio id="depositSound" src="/audio/deposit-join.mp3" preload="auto"></audio>
+                                    <button class="btn btn-primary return-btn" id="returnToJackpot" style="display: none;">Return</button>
                                 </div>
                             </div>
-                            <div class="winner-info" id="winnerInfo" style="display: none;">
-                                <div class="winner-header">
-                                    <img src="/img/default-avatar.png" alt="Winner Avatar" class="winner-avatar" id="winnerAvatar">
-                                    <h3 id="winnerName">WINNER NAME</h3>
-                                </div>
-                                <div class="winner-details">
-                                    <p>Deposited: <span id="winnerDeposit">$0.00</span></p>
-                                    <p>Chance: <span id="winnerChance">0.00%</span></p>
-                                    <p class="congrats">Congratulations!</p>
-                                </div>
-                                <div class="confetti-container" id="confettiContainer"></div>
+
+                            <div class="deposit-button-container" id="depositBtnContainer">
+                                <button class="btn btn-deposit" id="showDepositModal" title="Log in to deposit" disabled>DEPOSIT SKINS</button>
                             </div>
-                            <audio id="spinSound" src="/audio/spin-sound.mp3" preload="auto"></audio> <audio id="depositSound" src="/audio/deposit-join.mp3" preload="auto"></audio> <button class="btn btn-primary return-btn" id="returnToJackpot" style="display: none;">Return</button>
+
+                            <div class="current-items-section" id="currentItems">
+                                <h3 class="section-title">CURRENT ITEMS IN POT</h3>
+                                <div class="items-container" id="itemsContainer">
+                                    <div class="empty-pot-message" id="emptyPotMessage" style="display: block;">
+                                        <p>No items in the current pot. Be the first to deposit!</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="deposit-button-container" id="depositBtnContainer">
-                        <button class="btn btn-deposit" id="showDepositModal" title="Log in to deposit" disabled>DEPOSIT SKINS</button>
+                    <aside class="chat-sidebar">
+                        <div class="chat-widget-container">
+                            <div class="chat-header">
+                                <h3>COMMUNITY CHAT</h3>
+                                <div class="online-count">
+                                    <i class="fas fa-users"></i> <span id="chatOnlineUsers">0</span> Online
+                                </div>
+                            </div>
+                            <div class="chat-messages-container" id="chatMessagesContainer">
+                                <div class="chat-message system-message">Welcome to the chat!</div>
+                            </div>
+                            <div class="chat-input-area">
+                                <input type="text" id="chatMessageInput" placeholder="Type your message..." maxlength="200" disabled>
+                                <button class="btn btn-primary btn-small" id="chatSendMessageBtn" disabled>
+                                    <i class="fas fa-paper-plane"></i> SEND
+                                </button>
+                            </div>
                         </div>
-
-                    <div class="current-items-section" id="currentItems">
-                        <h3 class="section-title">CURRENT ITEMS IN POT</h3>
-                        <div class="items-container" id="itemsContainer">
-                            <div class="empty-pot-message" id="emptyPotMessage" style="display: block;">
-                                <p>No items in the current pot. Be the first to deposit!</p>
-                            </div>
-                            </div>
+                    </aside>
                     </div>
-                </div>
             </section>
 
             <section id="about-page" style="display: none;">
@@ -287,7 +310,8 @@
             <section id="tos-page" style="display: none;">
                  <div class="content-card">
                      <h1>Terms of Service</h1>
-                     <p><small>Last Updated: May 15, 2025</small></p> <div class="content-section">
+                     <p><small>Last Updated: May 15, 2025</small></p>
+                     <div class="content-section">
                          <h3 class="content-section-title">1. Acceptance of Terms</h3>
                          <div class="content-section-body">
                              <p>Welcome to Rusty Degen (referred to as "the Service" or "Website"). These Terms of Service ("Terms") outline the rules and regulations for using our platform. By accessing or utilizing any part of the Service, you signify your binding agreement to these Terms. If you disagree with any portion of these Terms, you are prohibited from using the Service.</p>
@@ -453,7 +477,8 @@
                          <div class="content-section-body">
                              <p>After a round is complete and the Server Seed is revealed, you can use this tool (or any external SHA256 tool) to verify the outcome:</p>
                              <div class="verify-form">
-                                 <div class="form-group form-group-full-width"> <label for="round-id">Round ID:</label>
+                                 <div class="form-group form-group-full-width">
+                                     <label for="round-id">Round ID:</label>
                                      <input type="number" id="round-id" placeholder="Enter round ID from history">
                                  </div>
                                  <div class="form-group">
@@ -520,7 +545,6 @@
                     const item = title.closest('.faq-item');
                     const body = item.querySelector('.content-section-body');
                     if (item && body) {
-                         // Close other items
                         document.querySelectorAll('#faq-page .faq-item.active').forEach(openItem => {
                             if (openItem !== item) {
                                 openItem.classList.remove('active');
@@ -528,25 +552,21 @@
                                 if (openBody) openBody.style.display = 'none';
                             }
                         });
-                         // Toggle current item
                         item.classList.toggle('active');
                         body.style.display = item.classList.contains('active') ? 'block' : 'none';
                     }
                 });
             });
 
-            // Footer/Modal TOS Links
-             const setupLink = (linkId, pageElementId) => {
+            const setupLink = (linkId, pageElementId) => {
                  const link = document.getElementById(linkId);
                  const page = document.getElementById(pageElementId);
-                  // Check if showPage is globally available (it should be from main.js)
-                 if (link && page && typeof window.showPage === 'function') {
+                 if (link && page && typeof window.showPage === 'function') { // Check if global showPage exists
                       link.addEventListener('click', (e) => {
                            e.preventDefault();
-                           window.showPage(page);
-                           // If it's the modal link, also close the modal
+                           window.showPage(page); // Call global showPage
                            const modal = link.closest('.modal');
-                           if (modal && typeof window.hideModal === 'function') {
+                           if (modal && typeof window.hideModal === 'function') { // Check for global hideModal
                                 window.hideModal(modal);
                            }
                       });
