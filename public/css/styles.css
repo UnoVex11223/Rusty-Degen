@@ -1,3 +1,4 @@
+/* styles.css */
 /*=========================
  VARIABLES & BASE STYLES
  =========================*/
@@ -277,7 +278,6 @@ code { /* General code tag styling */
     display: inline-block; /* Initially hidden by JS */
     color: var(--warning-color); /* Use warning color */
     font-size: 1.1rem;
-    /* margin-left: 5px; */ /* Positioned by flex gap in container */
     cursor: help; /* Indicate tooltip */
     animation: pulseWarning 1.5s infinite ease-in-out;
     vertical-align: middle; /* Align with text/avatar */
@@ -294,10 +294,42 @@ code { /* General code tag styling */
 /* --- Dropdown Menu (New Simplified Structure) --- */
 .dropdown-menu {
     display: none; /* JS toggles this to 'block' */
-    position: absolute; top: calc(100% + 10px); right: 0; z-index: 1000;
-    background-color: var(--background-dark); border: 1px solid var(--border-color);
-    border-radius: 8px; box-shadow: var(--shadow-lg); min-width: 200px; overflow: hidden;
+    position: absolute;
+    top: calc(100% + 10px); /* Position below the user-profile */
+    left: 50%; /* Start from center of profile container */
+    transform: translateX(-50%); /* Center the dropdown */
+    /* If profile container is far right, this might push dropdown off-screen.
+       Alternative: left: auto; right: 0; if always aligning to the right edge of profile container */
+    /* For aligning with the avatar, more complex calc might be needed if profile width is variable.
+       A simpler approach is to ensure user-profile-container is not excessively wide. */
+    /* Let's try aligning to the left of user-profile-container, then shifting a bit if avatar is on left */
+    /* left: 0; /* Aligns to the left edge of user-profile-container */
+    /* transform: translateX(0); /* Reset transform if using left:0 */
+
+    /* Updated Alignment: Align to the start of the profile trigger.
+       Assuming user-profile-container is the reference. */
+    right: 0; /* Default to align right edge of dropdown with right edge of container */
+    left: auto; /* Override previous left */
+    transform: none; /* Reset transform */
+
+    z-index: 1000;
+    background-color: var(--background-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    min-width: 200px; /* Or adjust to content */
+    overflow: hidden;
 }
+
+/* If the avatar is on the left and you want the dropdown to roughly start there: */
+.user-profile-container .dropdown-menu {
+    /* This assumes .user-profile is the clickable trigger within .user-profile-container */
+    /* To align with the start of the .user-profile element: */
+    left: 0; /* Align dropdown's left to container's left */
+    right: auto; /* Override the right:0 */
+}
+
+
 .dropdown-actions { padding: 8px 0; }
 
 .dropdown-item {
@@ -475,6 +507,27 @@ code { /* General code tag styling */
     text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
 }
 
+/* --- HOME PAGE LAYOUT --- */
+.home-page-layout {
+    display: flex;
+    gap: 20px; /* Space between jackpot area and chat sidebar */
+}
+
+.jackpot-main-area {
+    flex-grow: 3; /* Jackpot area takes more space */
+    min-width: 0; /* Allow shrinking */
+}
+
+.chat-sidebar {
+    flex-grow: 1; /* Chat sidebar takes less space */
+    min-width: 0; /* Allow shrinking */
+    max-width: 320px; /* Max width for the chat sidebar */
+    display: flex; /* To make the chat widget container fill height if needed */
+    flex-direction: column;
+}
+/* --- END HOME PAGE LAYOUT --- */
+
+
 .jackpot-section {
     background-color: var(--background-medium);
     border-radius: 12px;
@@ -482,6 +535,9 @@ code { /* General code tag styling */
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border-color);
     position: relative;
+    display: flex; /* Added for potential height consistency if jackpot-main-area has fixed height */
+    flex-direction: column; /* Stack elements vertically */
+    height: 100%; /* Try to fill jackpot-main-area height */
 }
 
 /*=========================
@@ -598,25 +654,24 @@ code { /* General code tag styling */
 }
 .roulette-track {
     display: flex; position: absolute; left: 0; top: 0; height: 100%;
-    /* Padding ensures the first/last items can center under the ticker */
-    padding-left: calc(50% - 45px); /* (item_width + margin) / 2 */
+    padding-left: calc(50% - 45px); 
     padding-right: calc(50% - 45px);
-    will-change: transform; transition: none; /* JS handles animation */
+    will-change: transform; transition: none; 
 }
 
 .roulette-item {
-    flex: 0 0 auto; /* Prevent shrinking/growing */
-    width: 90px; /* Item width */
-    height: 80px; /* Item height */
-    margin: 5px; /* Margin around items */
+    flex: 0 0 auto; 
+    width: 90px; 
+    height: 80px; 
+    margin: 5px; 
     background: rgba(30, 35, 40, 0.8);
     border-radius: 6px;
     box-shadow: var(--shadow-md);
     overflow: hidden;
     transition: transform var(--transition-medium), box-shadow var(--transition-medium);
-    border: 2px solid transparent; /* Default border */
+    border: 2px solid transparent; 
     position: relative;
-    backface-visibility: hidden; /* Improve performance */
+    backface-visibility: hidden; 
     display: flex;
     align-items: center;
     justify-content: center;
@@ -633,7 +688,7 @@ code { /* General code tag styling */
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Cover the area */
+    object-fit: cover; 
     transition: transform var(--transition-medium);
     border: none;
     border-radius: 0;
@@ -680,7 +735,7 @@ code { /* General code tag styling */
 .congrats { font-size: 1.2rem !important; color: var(--primary-color); font-weight: 700; margin-top: 5px !important; text-transform: uppercase; letter-spacing: 2px; animation: colorPulse 3s infinite; text-shadow: 0 0 8px currentColor; }
 @keyframes colorPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 
-.return-btn { display: none !important; } /* Assuming this button is unused */
+.return-btn { display: none !important; } 
 
 .confetti-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 18; }
 .confetti-piece {
@@ -713,9 +768,8 @@ code { /* General code tag styling */
     width: 280px;
     padding: 14px 30px;
     max-width: none;
-    /* Inherits .btn, .btn-deposit */
 }
-/* Style for disabled state */
+
 #showDepositModal.deposit-disabled {
      background: var(--background-light);
      opacity: 0.6;
@@ -723,11 +777,8 @@ code { /* General code tag styling */
      box-shadow: none;
      color: var(--text-secondary);
 }
-#showDepositModal.deposit-disabled:before { display: none; } /* Hide shine */
+#showDepositModal.deposit-disabled:before { display: none; } 
 
-
-.test-buttons-container { display: flex; gap: 10px; justify-content: center; }
-.test-buttons-container .btn-secondary { width: auto; }
 
 .current-items-section {
     padding: 25px;
@@ -736,8 +787,9 @@ code { /* General code tag styling */
     background-color: var(--background-medium);
     border-radius: 0 0 12px 12px;
     border-top: 1px solid var(--border-color);
+    flex-grow: 1; /* Allow this section to take remaining space in jackpot-section */
 }
-.section-title { /* Applies to "CURRENT ITEMS IN POT" */
+.section-title { 
     font-size: 1.2rem;
     font-weight: 600;
     margin-bottom: 25px;
@@ -760,7 +812,10 @@ code { /* General code tag styling */
     gap: 15px;
     padding: 10px;
     min-height: 100px;
+    max-height: calc(100vh - 500px); /* Example: Adjust based on other elements' heights */
+    overflow-y: auto;
 }
+
 
 .player-deposit-container {
     background: linear-gradient(to bottom, var(--background-light), var(--background-medium));
@@ -780,22 +835,21 @@ code { /* General code tag styling */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    transition: color var(--transition-fast); /* Smooth color transition */
+    transition: color var(--transition-fast); 
 }
 .player-items-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: flex-start; }
 .player-deposit-item {
     width: 80px; height: 100px; background: rgba(22, 27, 34, 0.7); border-radius: 5px;
     overflow: hidden; box-shadow: var(--shadow-sm); transition: transform var(--transition-fast);
     border: 1px solid var(--border-color); flex: 0 0 auto; display: flex; flex-direction: column;
-    border-left-width: 3px; border-left-style: solid; /* Keep colored border */
-    /* border-left-color: var(--border-color); /* Color set by JS */
+    border-left-width: 3px; border-left-style: solid; 
 }
 .player-deposit-item:hover { transform: translateY(-3px); box-shadow: var(--shadow-md), 0 0 8px rgba(0, 230, 118, 0.2); }
 .player-deposit-item-image { width: 100%; height: 60px; object-fit: contain; background-color: var(--background-medium); border-bottom: 1px solid rgba(48, 54, 61, 0.5); display: block; }
 .player-deposit-item-info { padding: 4px; height: 40px; display: flex; flex-direction: column; justify-content: center; flex-grow: 1; }
 .player-deposit-item-name { font-size: 0.65rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); margin-bottom: 2px; }
-.player-deposit-item-value { font-size: 0.7rem; font-weight: 700; /* Color set by JS */ }
-.player-deposit-item-more { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; padding: 5px; margin-top: 5px; /* Color set by JS */ }
+.player-deposit-item-value { font-size: 0.7rem; font-weight: 700; }
+.player-deposit-item-more { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; padding: 5px; margin-top: 5px; }
 @keyframes newDepositPulse {
     0% { transform: translateY(20px); opacity: 0; }
     100% { transform: translateY(0); opacity: 1; }
@@ -803,372 +857,57 @@ code { /* General code tag styling */
 .player-deposit-new { animation: newDepositPulse 0.5s ease-out forwards; }
 
 /*=========================
- MODALS
+ CHAT STYLES
  =========================*/
-
-.modal {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background-color: rgba(0, 0, 0, 0.85);
-    display: none; /* Toggled by JS */
-    justify-content: center; align-items: center; z-index: 1000; padding: 20px;
-    backdrop-filter: blur(5px);
-}
-.modal-content {
+.chat-widget-container {
     background-color: var(--background-medium);
     border-radius: 12px;
-    width: 100%;
-    max-width: 700px; /* Default max-width */
-    max-height: 90vh;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
     display: flex;
     flex-direction: column;
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--border-color);
-    animation: modalIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    overflow: hidden;
-}
-.age-verification .modal-content { max-width: 500px; }
-#depositModal .modal-content { max-width: 900px; }
-#tradeUrlModal .modal-content { max-width: 600px; } /* Kept for now */
-
-@keyframes modalIn {
-    from { opacity: 0; transform: scale(0.9) translateY(-20px); }
-    to { opacity: 1; transform: scale(1) translateY(0); }
+    height: 100%; /* Make chat widget fill sidebar height */
+    overflow: hidden; /* Prevent content spill */
 }
 
-.modal-header {
-    padding: 15px 25px;
-    border-bottom: 1px solid var(--border-color);
+.chat-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: linear-gradient(135deg, var(--background-medium), var(--background-light));
-    border-radius: 12px 12px 0 0;
-    flex-shrink: 0;
-}
-.modal-header h2 {
-    margin: 0;
-    color: var(--primary-color);
-    font-size: 1.4rem;
-    font-family: var(--font-primary);
-}
-.close-btn {
-    background: none; border: none; color: var(--text-secondary); font-size: 1.8rem;
-    line-height: 1; cursor: pointer; transition: var(--transition-medium); padding: 5px;
-}
-.close-btn:hover { color: var(--primary-color); transform: rotate(90deg); }
-
-.modal-body { padding: 25px; overflow-y: auto; flex-grow: 1; line-height: 1.7; }
-.modal-body p { margin-bottom: 15px; color: var(--text-secondary); }
-.modal-body p:last-child { margin-bottom: 0; }
-.modal-body ul { list-style: disc; margin: 15px 0 15px 25px; padding-left: 15px; }
-.modal-body li { margin-bottom: 8px; color: var(--text-secondary); }
-
-.modal-footer {
-    padding: 15px 25px;
-    border-top: 1px solid var(--border-color);
-    background-color: var(--background-light);
-    border-radius: 0 0 12px 12px;
-    flex-shrink: 0;
-    display: flex;
-    justify-content: flex-end;
-    align-items: center; /* Align items vertically */
-    gap: 10px;
-}
-
-/* Form Elements */
-.form-group { margin-bottom: 20px; }
-.form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary); font-family: var(--font-primary); }
-.form-group input[type="text"], .form-group input[type="url"], .form-group input[type="password"], .form-group input[type="email"], .form-group textarea {
-    width: 100%; padding: 12px 15px; border: 1px solid var(--border-color);
-    border-radius: 4px; background-color: var(--background-dark); color: var(--text-primary);
-    font-family: var(--font-primary); font-size: 1rem;
-    transition: border-color var(--transition-medium), box-shadow var(--transition-medium);
-    box-sizing: border-box;
-}
-.form-group input:focus, .form-group textarea:focus {
-    border-color: var(--primary-color); outline: none;
-    box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.2);
-}
-.checkbox-container { display: flex; align-items: center; margin: 15px 0; }
-.checkbox-container input[type="checkbox"] { margin-right: 10px; width: 18px; height: 18px; accent-color: var(--primary-color); cursor: pointer; flex-shrink: 0; }
-.checkbox-container label { cursor: pointer; color: var(--text-primary); line-height: 1.3; }
-.help-text { font-size: 0.9rem; color: var(--text-secondary); margin-top: 10px; }
-.help-text a { color: var(--primary-light); text-decoration: underline; }
-.help-text a:hover { color: var(--primary-color); }
-
-/* Inventory Modal Styles */
-.inventory-container { margin-bottom: 20px; }
-.inventory-container h3 {
-    font-size: 1rem; color: var(--text-secondary); margin-bottom: 10px;
-    text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;
-}
-.inventory-items {
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px;
-    max-height: 300px; overflow-y: auto; background-color: var(--background-light);
-    padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);
-}
-.empty-inventory-message, .error-message { grid-column: 1 / -1; text-align: center; color: var(--text-secondary); padding: 20px; }
-.error-message { color: var(--error-color); }
-.inventory-item {
-    background-color: var(--background-medium); border-radius: 4px; overflow: hidden; cursor: pointer;
-    transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
-    border: 2px solid transparent; display: flex; flex-direction: column;
-}
-.inventory-item:hover { transform: translateY(-3px); border-color: rgba(0, 230, 118, 0.3); }
-.inventory-item.selected { border-color: var(--primary-color); box-shadow: 0 0 15px rgba(0, 230, 118, 0.4); transform: scale(1.03); }
-.inventory-item img { width: 100%; height: 80px; object-fit: contain; background-color: var(--background-dark); display: block; border-bottom: 1px solid var(--border-color); }
-.item-details { padding: 8px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; min-height: 50px; }
-.item-name { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; line-height: 1.2; }
-.inventory-item .item-value { font-size: 0.85rem; font-weight: 700; color: var(--primary-color); text-align: right; margin-top: auto; }
-
-/* Selected Items (Deposit Modal) */
-.selected-items { margin-top: 20px; }
-.selected-items h3 { font-size: 1rem; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
-.selected-items-container {
-    display: flex; flex-wrap: wrap; gap: 10px;
-    min-height: 80px; max-height: 180px; overflow-y: auto;
-    background-color: var(--background-light); padding: 10px;
-    border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;
-}
-.selected-item-display {
-    position: relative; width: 80px; border-radius: 4px; overflow: hidden;
-    background-color: var(--background-medium); border: 1px solid var(--border-color);
-    flex-shrink: 0; display: flex; flex-direction: column; cursor: pointer;
-    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
-}
-.selected-item-display:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
-.selected-item-display img { width: 100%; height: 60px; object-fit: contain; background-color: var(--background-dark); display: block; }
-.selected-item-display .item-name { font-size: 0.7rem; font-weight: 500; padding: 3px 5px 0 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-secondary); text-align: center; }
-.selected-item-display .item-value { font-size: 0.75rem; font-weight: 600; padding: 0 5px 3px 5px; color: var(--primary-light); text-align: center; }
-.remove-item-btn {
-    position: absolute; top: 3px; right: 3px; width: 18px; height: 18px;
-    background-color: rgba(0, 0, 0, 0.7); color: white; border-radius: 50%; border: none;
-    font-size: 10px; line-height: 18px; cursor: pointer; display: flex;
-    align-items: center; justify-content: center; transition: background-color var(--transition-fast), transform var(--transition-fast);
-    padding: 0; z-index: 1;
-}
-.remove-item-btn:hover { background-color: var(--error-color); transform: scale(1.1); }
-.total-value {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 10px 15px; background-color: var(--background-light); border-radius: 4px;
-    border: 1px solid var(--border-color); margin-top: 10px; font-weight: 600; font-size: 1.1rem;
-}
-.total-value span:last-child { color: var(--primary-color); font-family: var(--font-mono); }
-
-/* Loading indicator */
-.loading-indicator {
-    display: none; flex-direction: column; align-items: center; justify-content: center;
-    padding: 30px; background-color: transparent; border-radius: 8px;
-    margin: 20px 0; color: var(--text-secondary); grid-column: 1 / -1;
-}
-.spinner {
-    width: 40px; height: 40px; border: 4px solid rgba(0, 230, 118, 0.3);
-    border-radius: 50%; border-top-color: var(--primary-color);
-    animation: spin 1s linear infinite; margin-bottom: 15px;
-}
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-
-/* --- Profile Modal Styles --- */
-#profileModal .modal-content { max-width: 480px; }
-.profile-modal-body { padding: 30px 35px; }
-.profile-modal-user-info { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 25px; text-align: center; }
-.profile-modal-avatar { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--primary-color); object-fit: cover; }
-.profile-modal-name { font-family: var(--font-primary); font-size: 1.5em; font-weight: 600; color: var(--text-primary); margin-top: 5px; }
-.profile-modal-stats { text-align: center; margin-bottom: 30px; padding: 15px; background-color: var(--background-light); border-radius: 5px; border: 1px solid var(--border-color); }
-.profile-modal-stat-label { display: block; font-size: 0.9em; color: var(--text-secondary); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px; }
-.profile-modal-stat-value { font-family: var(--font-mono); font-size: 1.6em; font-weight: 700; color: var(--secondary-light); }
-.profile-modal-trade-url { margin-bottom: 15px; }
-#profileModalTradeUrl { font-family: var(--font-mono); font-size: 0.95em; }
-.profile-modal-help-text { margin-top: 10px; font-size: 0.8em; }
-.profile-modal-footer { justify-content: space-between; background-color: var(--background-light); padding: 15px 25px; border-top: 1px solid var(--border-color); border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
-
-/* --- Profile Modal Pending Offer Status --- */
-.profile-pending-offer-status {
-    /* display: none; /* Controlled by JS */
-    margin-bottom: 20px; /* Space below */
     padding: 12px 15px;
-    background-color: rgba(255, 193, 7, 0.1); /* Light warning background */
-    border: 1px solid var(--warning-color);
-    border-radius: 4px;
-    text-align: center;
-    font-size: 0.9em;
-}
-.profile-pending-offer-status p { margin: 0; color: var(--warning-color); line-height: 1.5; }
-.profile-pending-offer-status a, .profile-pending-link { color: var(--secondary-light) !important; font-weight: bold; text-decoration: underline !important; }
-.profile-pending-offer-status a:hover, .profile-pending-link:hover { color: var(--secondary-color) !important; opacity: 0.9; }
-.profile-pending-offer-status i { margin-right: 5px; } /* Example for icon */
-
-
-/*=========================
- STATIC PAGES (FAQ, FAIR, ABOUT, TOS)
- =========================*/
-
-.content-section { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(48, 54, 61, 0.5); line-height: 1.7; }
-.content-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-.content-section-title { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); margin-bottom: 15px; padding-left: 12px; border-left: 3px solid var(--primary-color); }
-.content-section-body { padding: 0 15px; }
-.content-section-body p { margin-bottom: 15px; line-height: 1.7; color: var(--text-secondary); }
-.content-section-body p:last-child { margin-bottom: 0; }
-.content-section-body ul, .content-section-body ol { margin: 15px 0 15px 25px; padding-left: 20px; }
-.content-section-body li { margin-bottom: 10px; }
-.content-section-body strong { color: var(--text-accent); font-weight: 600; }
-.content-section-body a { color: var(--primary-light); text-decoration: underline; }
-.content-section-body a:hover { color: var(--primary-color); }
-.content-section-body code { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; }
-
-/* About Page */
-#about-page .content-section-body p { text-align: justify; padding: 0 5px; }
-#about-page .content-section-title { color: var(--primary-light); }
-
-/* TOS Page */
-#tos-page .content-section { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 20px; margin-bottom: 25px; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
-#tos-page .content-section:last-child { border-bottom: 1px solid var(--border-color); }
-#tos-page .content-section-title { margin-top: 0; border-left: 3px solid var(--secondary-color); }
-#tos-page ul { margin-left: 20px; margin-bottom: 15px; list-style-type: disc; }
-#tos-page ul li { margin-bottom: 10px; color: var(--text-secondary); }
-
-/* FAQ Page */
-#faq-page .content-section { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 20px; margin-bottom: 20px; transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
-#faq-page .content-section:last-child { border-bottom: 1px solid var(--border-color); }
-#faq-page .content-section:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
-#faq-page .content-section-title { color: var(--secondary-color); cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-left: none; padding-left: 0; }
-#faq-page .content-section-title::after { content: '+'; font-size: 1.5rem; color: var(--primary-color); transition: transform 0.3s ease; }
-#faq-page .content-section.active .content-section-title::after { content: '-'; transform: rotate(180deg); }
-/* FAQ body visibility is handled by JS in index.html */
-
-/* Provably Fair Page */
-#fair-page .content-card { padding-bottom: 40px; }
-#fair-page #provably-fair-verification { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 25px; margin-top: 30px; border: 1px solid var(--border-color); }
-#fair-page .verify-form { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; background-color: transparent; padding: 0; border: none; margin: 0 0 25px 0; }
-#fair-page .form-group { margin-bottom: 0; }
-#fair-page .verify-form button { grid-column: 1 / -1; /* Make button span full width */ }
-#fair-page .verification-result { margin-top: 20px; padding: 15px; border-radius: 6px; background-color: var(--background-light); border: 1px solid var(--border-color); }
-#fair-page .history-table { width: 100%; border-collapse: collapse; margin-top: 25px; background-color: rgba(22, 27, 34, 0.4); }
-#fair-page .history-table th, #fair-page .history-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
-#fair-page .history-table th { background-color: var(--background-light); color: var(--primary-color); font-weight: 600; }
-#fair-page .history-table tr:hover { background-color: var(--background-light); }
-
-/* Provably Fair Verification Form & Result - Base styles */
-.verify-form { background-color: var(--background-light); padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--border-color); }
-.verification-result { margin-top: 15px; padding: 15px; border-radius: 4px; background-color: var(--background-light); display: none; border: 1px solid var(--border-color); line-height: 1.5; }
-.verification-result.loading { background-color: var(--background-medium); border-color: var(--secondary-light); color: var(--text-primary); }
-.verification-result.success { background-color: rgba(0, 230, 118, 0.1); border-color: var(--success-color); color: var(--text-primary); }
-.verification-result.error { background-color: rgba(244, 67, 54, 0.1); border-color: var(--error-color); color: var(--text-primary); }
-.verification-result h4 { margin-top: 0; margin-bottom: 15px; color: var(--primary-color); }
-.verification-result p { margin-bottom: 8px; word-wrap: break-word; }
-.verification-result strong { color: var(--text-accent); }
-.verification-result code.seed-value { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; display: inline-block; }
-.verification-result code.wrap-anywhere { word-break: break-all; }
-
-/* Round History Table - Base styles */
-.table-container { overflow-x: auto; margin-bottom: 20px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 8px; }
-.history-table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 0.9rem; }
-.history-table th, .history-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; vertical-align: middle; }
-.history-table tr:last-child td { border-bottom: none; }
-.history-table th { background-color: var(--background-medium); color: var(--primary-color); font-weight: 600; text-transform: uppercase; font-size: 0.85rem; position: sticky; top: 0; z-index: 1; }
-.history-table .loading-message, .history-table .no-rounds-message, .history-table .error-message { text-align: center; color: var(--text-secondary); padding: 20px; font-style: italic; white-space: normal; }
-.history-table .error-message { color: var(--error-color); font-style: normal; }
-.history-table tbody tr:hover { background-color: rgba(255, 255, 255, 0.05); }
-.history-table td:last-child { white-space: normal; text-align: right; }
-
-/* Pagination */
-.pagination-container { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
-.page-button { padding: 6px 10px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary); cursor: pointer; transition: var(--transition-fast); font-size: 0.9rem; }
-.page-button:hover:not(:disabled) { background-color: var(--primary-dark); color: var(--background-dark); border-color: var(--primary-dark); }
-.page-button.active { background-color: var(--primary-color); color: var(--background-dark); border-color: var(--primary-color); cursor: default; }
-.page-button:disabled { opacity: 0.5; cursor: not-allowed; }
-.page-ellipsis { color: var(--text-secondary); padding: 6px 0; margin: 0 2px; }
-
-
-/* --- ADDED: Deposit Modal Footer Enhancements --- */
-
-/* Style for the new "Accept on Steam" button */
-#acceptDepositOfferBtn {
-    /* Inherits base .btn styles */
-    background-color: var(--success-color); /* Green background */
-    color: white;
-    border: 1px solid var(--success-color);
-    padding: 10px 15px; /* Match other footer buttons */
-    font-size: 1rem; /* Match other modal footer buttons */
-    /* Ensure it inherits flex alignment from footer */
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    background: linear-gradient(135deg, var(--background-medium), var(--background-light));
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 12px 12px 0 0;
 }
 
-#acceptDepositOfferBtn:hover:not(:disabled) {
-    background-color: #45a049; /* Darker green */
-    border-color: #45a049;
-    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4); /* Green shadow */
-    transform: translateY(-2px);
-}
-
-#acceptDepositOfferBtn i { /* Style for the external link icon */
-    margin-left: 8px;
-    font-size: 0.9em;
-}
-
-/* Style for the status text area in the deposit modal footer */
-.deposit-status-text {
-    flex-grow: 1; /* Allow it to take available space */
-    text-align: left;
-    padding: 0 10px; /* Add some padding */
-    font-size: 0.9em;
-    line-height: 1.4;
-    color: var(--text-secondary); /* Default color */
-    transition: color 0.3s ease;
-    display: flex; /* Align text vertically */
-    align-items: center;
-}
-
-/* Status-specific colors for the text */
-.deposit-status-text.info { color: var(--info-color); }
-.deposit-status-text.success { color: var(--success-color); }
-.deposit-status-text.warning { color: var(--warning-color); }
-.deposit-status-text.error { color: var(--error-color); }
-
-
-/* --- ADDED: Pending Offer Indicators --- */
-
-/* Header Indicator */
-.pending-offer-indicator {
-    display: inline-block; /* Initially hidden by JS */
-    color: var(--warning-color); /* Warning color */
+.chat-header h3 {
+    margin: 0;
     font-size: 1.1rem;
-    /* margin-left: 5px; /* Positioned by flex gap in container */
-    cursor: help; /* Indicate tooltip */
-    animation: pulseWarning 1.5s infinite ease-in-out;
-    vertical-align: middle; /* Align with text/avatar */
-    line-height: 1;
+    color: var(--primary-color);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }
 
-/* Define pulse animation if not already defined */
-@keyframes pulseWarning {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.15); opacity: 0.7; }
-}
-
-/* --- ADDED: Footer --- */
-.main-footer {
-    background-color: var(--background-dark);
-    color: var(--text-secondary);
-    padding: 20px 0;
-    margin-top: 40px; /* Add space above footer */
-    text-align: center;
+.online-count {
+    display: flex;
+    align-items: center;
+    gap: 6px;
     font-size: 0.85rem;
-    border-top: 1px solid var(--border-color);
+    color: var(--text-secondary);
 }
 
-.main-footer p {
-    margin-bottom: 8px;
-    line-height: 1.5;
+.online-count i {
+    color: var(--success-color);
+    font-size: 0.9rem;
 }
-.main-footer a {
-    color: var(--text-secondary);
-    text-decoration: underline;
-    margin: 0 5px;
-}
-.main-footer a:hover {
-    color: var(--primary-light);
+
+.chat-messages-container {
+    flex-grow: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column-reverse; /* Newest messages at the bottom */
+    gap: 10px; /* Space between messages */
+    background-color: var(--background-medium); /* Match overall container */
 }
