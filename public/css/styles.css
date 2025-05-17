@@ -57,7 +57,7 @@ body {
 
 .container {
     width: 100%;
-    max-width: 1600px; /* Increased max-width to accommodate chat */
+    max-width: 1200px; /* Standard max width */
     margin: 0 auto;
     padding: 0 15px;
 }
@@ -298,6 +298,16 @@ code { /* General code tag styling */
     top: calc(100% + 10px); /* Position below the user-profile */
     left: 50%; /* Start from center of profile container */
     transform: translateX(-50%); /* Center the dropdown */
+    /* If profile container is far right, this might push dropdown off-screen.
+       Alternative: left: auto; right: 0; if always aligning to the right edge of profile container */
+    /* For aligning with the avatar, more complex calc might be needed if profile width is variable.
+       A simpler approach is to ensure user-profile-container is not excessively wide. */
+    /* Let's try aligning to the left of user-profile-container, then shifting a bit if avatar is on left */
+    /* left: 0; /* Aligns to the left edge of user-profile-container */
+    /* transform: translateX(0); /* Reset transform if using left:0 */
+
+    /* Updated Alignment: Align to the start of the profile trigger.
+       Assuming user-profile-container is the reference. */
     right: 0; /* Default to align right edge of dropdown with right edge of container */
     left: auto; /* Override previous left */
     transform: none; /* Reset transform */
@@ -311,9 +321,12 @@ code { /* General code tag styling */
     overflow: hidden;
 }
 
+/* If the avatar is on the left and you want the dropdown to roughly start there: */
 .user-profile-container .dropdown-menu {
-    left: 0; 
-    right: auto; 
+    /* This assumes .user-profile is the clickable trigger within .user-profile-container */
+    /* To align with the start of the .user-profile element: */
+    left: 0; /* Align dropdown's left to container's left */
+    right: auto; /* Override the right:0 */
 }
 
 
@@ -445,7 +458,8 @@ code { /* General code tag styling */
 }
 
 /* Specific Buttons from History/Verify */
-.btn-verify { 
+.btn-details { /* Inherits .btn, .btn-secondary, .btn-small */ margin-right: 5px; margin-bottom: 5px; vertical-align: middle; }
+.btn-verify { /* Inherits .btn, .btn-secondary, .btn-small */
     margin-right: 5px; margin-bottom: 5px; vertical-align: middle;
     background-color: var(--secondary-color);
     color: var(--background-dark); border-color: var(--secondary-color);
@@ -453,7 +467,7 @@ code { /* General code tag styling */
 .btn-verify:hover:not(:disabled) { background-color: var(--secondary-dark); border-color: var(--secondary-dark); }
 
 /* Success Button (for Accept on Steam) */
-.btn-success { 
+.btn-success { /* Inherits .btn */
      background-color: var(--success-color);
      color: white;
      border-color: var(--success-color);
@@ -465,159 +479,6 @@ code { /* General code tag styling */
 }
 
 /*=========================
- LAYOUT & CHAT
- =========================*/
-.home-page-layout {
-    display: flex;
-    gap: 20px; /* Space between jackpot area and chat */
-    align-items: flex-start; /* Align items to the top */
-}
-
-.jackpot-main-area {
-    flex: 3; /* Jackpot area takes more space */
-    min-width: 0; /* Prevents overflow issues in flex items */
-}
-
-.chat-area {
-    flex: 1; /* Chat area takes less space */
-    min-width: 0; /* Prevents overflow issues in flex items */
-    max-width: 380px; /* Max width for chat */
-    background-color: var(--background-medium);
-    border-radius: 12px;
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-lg);
-    display: flex;
-    flex-direction: column;
-    height: calc(100vh - 120px); /* Example height, adjust as needed, considering header/footer */
-    max-height: 700px; /* Max height for chat, can be adjusted */
-    position: sticky; /* Optional: make chat sticky while scrolling page */
-    top: 80px; /* Adjust based on header height */
-}
-
-.chat-header {
-    padding: 15px;
-    border-bottom: 1px solid var(--border-color);
-    background: linear-gradient(135deg, var(--background-medium), var(--background-light));
-    border-radius: 12px 12px 0 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-.chat-header h3 {
-    margin: 0;
-    font-size: 1.1rem;
-    color: var(--primary-light);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-.chat-online-users {
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-.chat-online-users i {
-    color: var(--primary-color);
-}
-
-.chat-messages-container {
-    flex-grow: 1;
-    padding: 10px 15px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column-reverse; /* Newest messages at the bottom, visually */
-    gap: 12px;
-}
-.chat-message {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-    animation: fadeInMessage 0.3s ease-out;
-}
-@keyframes fadeInMessage {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-.chat-message-avatar {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: 2px solid var(--primary-color); /* Default, will be overridden by JS */
-    object-fit: cover;
-    flex-shrink: 0;
-}
-.chat-message-content {
-    display: flex;
-    flex-direction: column;
-    background-color: var(--background-light);
-    padding: 8px 12px;
-    border-radius: 0 8px 8px 8px;
-    max-width: calc(100% - 42px); /* Max width to prevent overflow with avatar */
-}
-.chat-message-user {
-    font-size: 0.9rem;
-    font-weight: 700;
-    margin-bottom: 4px;
-    color: var(--primary-light); /* Default, will be overridden */
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-.chat-message-text {
-    font-size: 0.95rem;
-    color: var(--text-primary);
-    line-height: 1.4;
-    margin: 0;
-    word-wrap: break-word; /* Ensure long words break */
-    white-space: pre-wrap; /* Preserve whitespace and newlines */
-}
-/* System messages in chat */
-.chat-message.system-message {
-    font-style: italic;
-    color: var(--text-secondary);
-    font-size: 0.85rem;
-    text-align: center;
-    padding: 5px 0;
-    background-color: transparent;
-    justify-content: center;
-}
-
-
-.chat-input-area {
-    display: flex;
-    padding: 15px;
-    border-top: 1px solid var(--border-color);
-    background-color: var(--background-light);
-    border-radius: 0 0 12px 12px;
-    gap: 10px;
-}
-#chatMessageInput {
-    flex-grow: 1;
-    padding: 10px 15px;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    background-color: var(--background-dark);
-    color: var(--text-primary);
-    font-family: var(--font-primary);
-    font-size: 0.95rem;
-}
-#chatMessageInput:focus {
-    border-color: var(--primary-color);
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.2);
-}
-.btn-send-chat {
-    padding: 10px 12px;
-    font-size: 1rem;
-    flex-shrink: 0;
-}
-.btn-send-chat i {
-    font-size: 1.1em;
-}
-
-
-/*=========================
  MAIN CONTENT & SECTIONS
  =========================*/
 
@@ -626,7 +487,7 @@ code { /* General code tag styling */
 }
 
 .content-card {
-    max-width: 900px; /* Max width for static pages, jackpot area is handled by flex */
+    max-width: 900px;
     margin: 30px auto;
     background: linear-gradient(135deg, var(--background-medium), var(--background-light));
     border-radius: 12px;
@@ -635,11 +496,6 @@ code { /* General code tag styling */
     overflow: hidden;
     padding: 30px;
 }
-/* Ensure static pages (about, tos etc) are not displayed by default, home page elements are handled by the new layout */
-#about-page, #tos-page, #faq-page, #fair-page {
-    display: none; /* Initially hidden, JS will show them */
-}
-
 
 .content-card h1 {
     color: var(--primary-color);
@@ -651,6 +507,17 @@ code { /* General code tag styling */
     text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
 }
 
+/* Jackpot Page Layout */
+#home-page {
+    /* Takes full width by default if .container is its parent */
+}
+
+.jackpot-and-chat-container {
+    display: flex;
+    gap: 20px; /* Space between jackpot section and chat */
+    align-items: flex-start; /* Align items to the top */
+}
+
 .jackpot-section {
     background-color: var(--background-medium);
     border-radius: 12px;
@@ -658,10 +525,10 @@ code { /* General code tag styling */
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border-color);
     position: relative;
-    display: flex; /* Added for internal structure */
-    flex-direction: column; /* Stack header, deposit button, items section */
-    height: 100%; /* Make it take full height of its flex container if needed */
+    flex: 3; /* Takes up more space */
+    min-width: 0; /* Prevents overflow issues with flex items */
 }
+
 
 /*=========================
  JACKPOT HEADER & TIMER
@@ -910,7 +777,6 @@ code { /* General code tag styling */
     background-color: var(--background-medium);
     border-radius: 0 0 12px 12px;
     border-top: 1px solid var(--border-color);
-    flex-grow: 1; /* Allow this section to take available space if jackpot-section is flex column */
 }
 .section-title {
     font-size: 1.2rem;
@@ -967,11 +833,12 @@ code { /* General code tag styling */
 .player-deposit-item:hover { transform: translateY(-3px); box-shadow: var(--shadow-md), 0 0 8px rgba(0, 230, 118, 0.2); }
 .player-deposit-item-image { width: 100%; height: 60px; object-fit: contain; background-color: var(--background-medium); border-bottom: 1px solid rgba(48, 54, 61, 0.5); display: block; }
 .player-deposit-item-info { padding: 4px; height: 40px; display: flex; flex-direction: column; justify-content: center; flex-grow: 1; }
+.player-deposit-item-name { font-size: 0.65rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); margin-bottom: 2px; }
 .player-deposit-item-value { font-size: 0.7rem; font-weight: 700; }
 .player-deposit-item-more { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; padding: 5px; margin-top: 5px; }
 @keyframes newDepositPulse {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
 }
 .player-deposit-new { animation: newDepositPulse 0.5s ease-out forwards; }
 
@@ -1091,6 +958,7 @@ code { /* General code tag styling */
 .inventory-item.selected { border-color: var(--primary-color); box-shadow: 0 0 15px rgba(0, 230, 118, 0.4); transform: scale(1.03); }
 .inventory-item img { width: 100%; height: 80px; object-fit: contain; background-color: var(--background-dark); display: block; border-bottom: 1px solid var(--border-color); }
 .item-details { padding: 8px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; min-height: 50px; }
+.item-name { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; line-height: 1.2; }
 .inventory-item .item-value { font-size: 0.85rem; font-weight: 700; color: var(--primary-color); text-align: right; margin-top: auto; }
 
 /* Selected Items (Deposit Modal) */
@@ -1110,6 +978,7 @@ code { /* General code tag styling */
 }
 .selected-item-display:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
 .selected-item-display img { width: 100%; height: 60px; object-fit: contain; background-color: var(--background-dark); display: block; }
+.selected-item-display .item-name { font-size: 0.7rem; font-weight: 500; padding: 3px 5px 0 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-secondary); text-align: center; }
 .selected-item-display .item-value { font-size: 0.75rem; font-weight: 600; padding: 0 5px 3px 5px; color: var(--primary-light); text-align: center; }
 .remove-item-btn {
     position: absolute; top: 3px; right: 3px; width: 18px; height: 18px;
@@ -1154,12 +1023,12 @@ code { /* General code tag styling */
     background-color: var(--background-light);
     border-radius: 5px;
     border: 1px solid var(--border-color);
-    display: flex; 
-    justify-content: space-around; 
-    gap: 10px; 
+    display: flex; /* Added for side-by-side items */
+    justify-content: space-around; /* Distribute items */
+    gap: 10px; /* Space between items */
 }
 .profile-modal-stat-item {
-    flex: 1; 
+    flex: 1; /* Allow items to grow and share space */
 }
 .profile-modal-stat-label {
     display: block; font-size: 0.9em; color: var(--text-secondary);
@@ -1215,7 +1084,7 @@ code { /* General code tag styling */
 /* TOS Page */
 #tos-page .content-section { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 20px; margin-bottom: 25px; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
 #tos-page .content-section:last-child { border-bottom: 1px solid var(--border-color); }
-#tos-page .content-section-title { margin-top: 0; border-left: 3px solid var(--secondary-color); } /* TOS titles use secondary color for border */
+#tos-page .content-section-title { margin-top: 0; border-left: 3px solid var(--secondary-color); }
 #tos-page ul { margin-left: 20px; margin-bottom: 15px; list-style-type: disc; }
 #tos-page ul li { margin-bottom: 10px; color: var(--text-secondary); }
 
@@ -1223,25 +1092,22 @@ code { /* General code tag styling */
 #faq-page .content-section { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 20px; margin-bottom: 20px; transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
 #faq-page .content-section:last-child { border-bottom: 1px solid var(--border-color); }
 #faq-page .content-section:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
-#faq-page .content-section-title { color: var(--secondary-color); cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-left: none; padding-left: 0; } /* FAQ titles use secondary color */
+#faq-page .content-section-title { color: var(--secondary-color); cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-left: none; padding-left: 0; }
 #faq-page .content-section-title::after { content: '+'; font-size: 1.5rem; color: var(--primary-color); transition: transform 0.3s ease; }
 #faq-page .content-section.active .content-section-title::after { content: '-'; transform: rotate(180deg); }
 
 /* Provably Fair Page */
 #fair-page .content-card { padding-bottom: 40px; }
-#fair-page .content-section-title { /* Ensure no orange highlight */
-    color: var(--text-primary);
-    border-left-color: var(--primary-color);
-}
 #fair-page #provably-fair-verification { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 25px; margin-top: 30px; border: 1px solid var(--border-color); }
 #fair-page .verify-form {
     display: grid;
-    grid-template-columns: 1fr 1fr; 
+    grid-template-columns: 1fr 1fr; /* Default two columns for seed inputs */
     gap: 20px;
     background-color: transparent; padding: 0; border: none; margin: 0 0 25px 0;
 }
+/* Make Round ID form group span full width */
 #fair-page .verify-form .form-group-full-width {
-    grid-column: 1 / -1; 
+    grid-column: 1 / -1; /* Span across all columns */
 }
 
 #fair-page .form-group { margin-bottom: 0; }
@@ -1337,7 +1203,10 @@ code { /* General code tag styling */
     line-height: 1;
 }
 
-/* Keyframes for pulseWarning is already defined above */
+@keyframes pulseWarning {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: 0.7; }
+}
 
 /* --- ADDED: Footer --- */
 .main-footer {
@@ -1361,4 +1230,161 @@ code { /* General code tag styling */
 }
 .main-footer a:hover {
     color: var(--primary-light);
+}
+
+/*=========================
+ CHAT STYLES
+ =========================*/
+.chat-container {
+    flex: 1; /* Takes up remaining space, or a fixed proportion */
+    min-width: 280px; /* Minimum width for the chat */
+    max-width: 350px; /* Maximum width for the chat */
+    background-color: var(--background-medium);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    height: auto; /* Adjust as needed, or make it fit content */
+    max-height: 700px; /* Example max height, matches jackpot section approx */
+    overflow: hidden; /* Important for maintaining layout */
+}
+
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background: linear-gradient(135deg, var(--background-medium), var(--background-light));
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 12px 12px 0 0;
+}
+
+.chat-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.chat-online-status {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+#chatOnlineUsers {
+    font-weight: bold;
+    color: var(--primary-light);
+}
+
+.chat-messages-container {
+    flex-grow: 1;
+    padding: 10px 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column-reverse; /* Newest messages at the bottom, scrolls to bottom */
+    gap: 10px;
+    background-color: var(--background-dark); /* Slightly darker for message area */
+}
+
+/* Custom scrollbar for chat messages (if not using global) */
+.chat-messages-container::-webkit-scrollbar {
+    width: 6px;
+}
+.chat-messages-container::-webkit-scrollbar-track {
+    background: var(--background-medium);
+    border-radius: 3px;
+}
+.chat-messages-container::-webkit-scrollbar-thumb {
+    background-color: var(--primary-dark);
+    border-radius: 3px;
+}
+
+
+.chat-message {
+    display: flex;
+    align-items: flex-start; /* Align avatar with top of message content */
+    gap: 10px;
+    padding: 8px;
+    border-radius: 6px;
+    background-color: var(--background-light); /* Individual message background */
+    border: 1px solid var(--border-color);
+    max-width: 95%; /* Prevent messages from taking full width if short */
+    word-wrap: break-word; /* Ensure long words break */
+}
+.chat-message.system-message {
+    background-color: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-style: italic;
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 5px 0;
+    max-width: 100%;
+}
+
+
+.chat-message-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 2px solid transparent; /* Border color set by JS based on user */
+}
+
+.chat-message-content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0; /* For text wrapping */
+}
+
+.chat-message-user {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 3px;
+    /* Color set by JS */
+}
+
+.chat-message-text {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+    margin: 0; /* Reset paragraph margin */
+    white-space: pre-wrap; /* Preserve line breaks and spaces */
+}
+
+
+.chat-input-area {
+    display: flex;
+    padding: 10px 15px;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--background-light);
+    gap: 10px;
+}
+
+#chatMessageInput {
+    flex-grow: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--background-dark);
+    color: var(--text-primary);
+    font-family: var(--font-primary);
+    font-size: 0.9rem;
+}
+#chatMessageInput:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.15);
+}
+#chatMessageInput::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+#chatSendMessageBtn {
+    padding: 10px 15px;
+    font-size: 0.9rem;
+    /* Uses .btn and .btn-primary styles */
 }
