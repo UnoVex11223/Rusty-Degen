@@ -298,26 +298,23 @@ code { /* General code tag styling */
     top: calc(100% + 10px); /* Position below the user-profile */
     left: 50%; /* Start from center of profile container */
     transform: translateX(-50%); /* Center the dropdown */
-    /* Align right edge of dropdown with right edge of profile trigger for typical desktop view */
-    right: 0;
+    right: 0; /* Default to align right edge of dropdown with right edge of container */
     left: auto; /* Override previous left */
-    transform: none; /* Reset transform if aligning right */
+    transform: none; /* Reset transform */
     z-index: 1000;
     background-color: var(--background-dark);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     box-shadow: var(--shadow-lg);
-    min-width: 220px; /* Adjusted for longer text like "Winning History" */
+    min-width: 200px; /* Or adjust to content */
     overflow: hidden;
 }
 
 .user-profile-container .dropdown-menu {
-    /* If profile container is small, aligning left of container to left of dropdown is better */
-    /* Example: For left-aligned profile button */
-    /* left: 0; right: auto; transform: none; */
-
-    /* For right-aligned profile (current setup), align dropdown's right to container's right */
-     left: auto; right: 0; transform: none;
+    /* Adjusted to better align with the profile trigger */
+    left: auto;
+    right: 0; /* Align to the right of the profile trigger */
+    transform: none;
 }
 
 
@@ -642,16 +639,16 @@ code { /* General code tag styling */
 }
 .roulette-track {
     display: flex; position: absolute; left: 0; top: 0; height: 100%;
-    padding-left: calc(50% - 45px); /* Half of item width */
-    padding-right: calc(50% - 45px); /* Half of item width */
+    padding-left: calc(50% - 45px);
+    padding-right: calc(50% - 45px);
     will-change: transform; transition: none;
 }
 
 .roulette-item {
     flex: 0 0 auto;
-    width: 90px; /* Item width */
-    height: 80px; /* Item height */
-    margin: 5px; /* Margin around item */
+    width: 90px;
+    height: 80px;
+    margin: 5px;
     background: rgba(30, 35, 40, 0.8);
     border-radius: 6px;
     box-shadow: var(--shadow-md);
@@ -659,17 +656,17 @@ code { /* General code tag styling */
     transition: transform var(--transition-medium), box-shadow var(--transition-medium);
     border: 2px solid transparent;
     position: relative;
-    backface-visibility: hidden; /* Improve rendering performance */
+    backface-visibility: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0; /* Remove padding if image is main content */
+    padding: 0;
 }
 
 .roulette-item:hover {
     transform: translateY(-5px) scale(1.05);
     box-shadow: var(--shadow-lg);
-    z-index: 1; /* Bring to front on hover */
+    z-index: 1;
 }
 
 .roulette-avatar {
@@ -678,14 +675,14 @@ code { /* General code tag styling */
     height: 100%;
     object-fit: cover;
     transition: transform var(--transition-medium);
-    border: none; /* Remove border from avatar if item has one */
-    border-radius: 0; /* Remove border-radius if item handles it */
+    border: none;
+    border-radius: 0;
 }
 
 .roulette-item:hover .roulette-avatar { transform: scale(1.1); }
 
 .roulette-item.winner-highlight {
-    /* Styles applied via JS in finalizeSpin */
+    /* Styles applied via JS */
 }
 
 .roulette-ticker {
@@ -710,7 +707,7 @@ code { /* General code tag styling */
     background: radial-gradient(circle, rgba(20, 25, 30, 0.95), rgba(13, 17, 23, 0.98));
     padding: 10px; display: flex; flex-direction: column; justify-content: center;
     align-items: center; text-align: center; box-sizing: border-box;
-    z-index: 20; opacity: 0; display: none; /* Initially hidden, controlled by JS */
+    z-index: 20; opacity: 0; display: none;
     backdrop-filter: blur(3px);
 }
 @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
@@ -723,7 +720,7 @@ code { /* General code tag styling */
 .congrats { font-size: 1.2rem !important; color: var(--primary-color); font-weight: 700; margin-top: 5px !important; text-transform: uppercase; letter-spacing: 2px; animation: colorPulse 3s infinite; text-shadow: 0 0 8px currentColor; }
 @keyframes colorPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 
-.return-btn { display: none !important; /* If not used, can be removed from HTML too */ }
+.return-btn { display: none !important; }
 
 .confetti-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 18; }
 .confetti-piece {
@@ -859,7 +856,7 @@ code { /* General code tag styling */
 .modal {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background-color: rgba(0, 0, 0, 0.85);
-    display: none; /* Controlled by JS */
+    display: none;
     justify-content: center; align-items: center; z-index: 1000; padding: 20px;
     backdrop-filter: blur(5px);
 }
@@ -867,19 +864,20 @@ code { /* General code tag styling */
     background-color: var(--background-medium);
     border-radius: 12px;
     width: 100%;
-    max-width: 700px; /* Default max width */
+    max-width: 700px;
     max-height: 90vh;
     display: flex;
     flex-direction: column;
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border-color);
     animation: modalIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    overflow: hidden; /* Let modal-body handle scroll */
+    overflow: hidden;
 }
 .age-verification .modal-content { max-width: 500px; }
 #depositModal .modal-content { max-width: 900px; }
 #tradeUrlModal .modal-content { max-width: 600px; }
-.winning-history-modal .modal-content { max-width: 800px; } /* For Winning History */
+/* NEW: Winning History Modal Size */
+.winning-history-modal .modal-content { max-width: 800px; }
 
 
 @keyframes modalIn {
@@ -1011,7 +1009,7 @@ code { /* General code tag styling */
 .loading-indicator {
     display: none; flex-direction: column; align-items: center; justify-content: center;
     padding: 30px; background-color: transparent; border-radius: 8px;
-    margin: 20px 0; color: var(--text-secondary); grid-column: 1 / -1; /* For use in grid layouts */
+    margin: 20px 0; color: var(--text-secondary); grid-column: 1 / -1;
 }
 .spinner {
     width: 40px; height: 40px; border: 4px solid rgba(0, 230, 118, 0.3);
@@ -1070,6 +1068,118 @@ code { /* General code tag styling */
 .profile-pending-offer-status a, .profile-pending-link { color: var(--secondary-light) !important; font-weight: bold; text-decoration: underline !important; }
 .profile-pending-offer-status a:hover, .profile-pending-link:hover { color: var(--secondary-color) !important; opacity: 0.9; }
 .profile-pending-offer-status i { margin-right: 5px; }
+
+
+/* --- NEW: Winning History Modal Styles --- */
+.winning-history-modal-body { padding: 0; /* Remove padding for full-width table container */ }
+.winning-history-table-container {
+    max-height: 60vh; /* Limit height to allow scrolling */
+    overflow-y: auto;
+    padding: 20px; /* Add padding inside the scrollable container */
+}
+.winning-history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+}
+.winning-history-table th,
+.winning-history-table td {
+    padding: 10px 12px;
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+.winning-history-table th {
+    background-color: var(--background-light);
+    color: var(--primary-light);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    position: sticky; /* Make header sticky */
+    top: 0;
+    z-index: 1;
+}
+.winning-history-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+.winning-history-table td .game-id-cell {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    max-width: 120px; /* Limit width and allow wrap/ellipsis */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block; /* For ellipsis to work */
+    vertical-align: middle;
+}
+.winning-history-table td .amount-won-cell {
+    font-weight: bold;
+    color: var(--primary-color);
+    font-family: var(--font-mono);
+}
+.winning-history-table td .trade-offer-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    text-decoration: none;
+    transition: background-color 0.2s ease, color 0.2s ease;
+}
+.winning-history-table td .trade-offer-link.status-accepted {
+    background-color: rgba(var(--success-color-rgb, 76, 175, 80), 0.15);
+    color: var(--success-color);
+    border: 1px solid var(--success-color);
+}
+.winning-history-table td .trade-offer-link.status-accepted:hover {
+    background-color: rgba(var(--success-color-rgb, 76, 175, 80), 0.3);
+}
+.winning-history-table td .trade-offer-link.status-pending,
+.winning-history-table td .trade-offer-link.status-sent {
+    background-color: rgba(var(--info-color-rgb, 33, 150, 243), 0.15);
+    color: var(--info-color);
+    border: 1px solid var(--info-color);
+}
+.winning-history-table td .trade-offer-link.status-pending:hover,
+.winning-history-table td .trade-offer-link.status-sent:hover {
+    background-color: rgba(var(--info-color-rgb, 33, 150, 243), 0.3);
+}
+.winning-history-table td .trade-offer-link.status-declined,
+.winning-history-table td .trade-offer-link.status-expired,
+.winning-history-table td .trade-offer-link.status-canceled,
+.winning-history-table td .trade-offer-link.status-error {
+    background-color: rgba(var(--error-color-rgb, 244, 67, 54), 0.15);
+    color: var(--error-color);
+    border: 1px solid var(--error-color);
+}
+.winning-history-table td .trade-offer-link.status-declined:hover,
+.winning-history-table td .trade-offer-link.status-expired:hover,
+.winning-history-table td .trade-offer-link.status-canceled:hover,
+.winning-history-table td .trade-offer-link.status-error:hover {
+    background-color: rgba(var(--error-color-rgb, 244, 67, 54), 0.3);
+}
+.winning-history-table td .trade-offer-link.status-unknown,
+.winning-history-table td .no-trade-offer {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+.winning-history-table td .trade-offer-link i {
+    font-size: 0.9em;
+}
+#noWinningsMessage {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Define RGB versions of status colors for RGBA usage if needed */
+:root {
+    --success-color-rgb: 76, 175, 80;
+    --info-color-rgb: 33, 150, 243;
+    --error-color-rgb: 244, 67, 54;
+}
 
 
 /*=========================
@@ -1142,40 +1252,16 @@ code { /* General code tag styling */
 .verification-result code.seed-value { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; display: inline-block; }
 .verification-result code.wrap-anywhere { word-break: break-all; }
 
-/* Round History Table - Base styles (used for both Provably Fair and Winning History) */
+/* Round History Table - Base styles */
 .table-container { overflow-x: auto; margin-bottom: 20px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 8px; }
 .history-table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 0.9rem; }
 .history-table th, .history-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; vertical-align: middle; }
 .history-table tr:last-child td { border-bottom: none; }
 .history-table th { background-color: var(--background-medium); color: var(--primary-color); font-weight: 600; text-transform: uppercase; font-size: 0.85rem; position: sticky; top: 0; z-index: 1; }
-.history-table .loading-message, .history-table .no-rounds-message, .history-table .error-message, .empty-history-message {
-    text-align: center; color: var(--text-secondary); padding: 20px; font-style: italic; white-space: normal;
-}
-.history-table .error-message, .empty-history-message.error { color: var(--error-color); font-style: normal; } /* Error style for empty message too */
+.history-table .loading-message, .history-table .no-rounds-message, .history-table .error-message { text-align: center; color: var(--text-secondary); padding: 20px; font-style: italic; white-space: normal; }
+.history-table .error-message { color: var(--error-color); font-style: normal; }
 .history-table tbody tr:hover { background-color: rgba(255, 255, 255, 0.05); }
-.history-table td:last-child { white-space: normal; text-align: right; } /* Allow wrap and align right for action buttons */
-
-/* Winning History Table Specifics */
-.winning-history-table td { white-space: normal; } /* Allow wrapping for longer statuses */
-.winning-history-table td:nth-child(3) { font-weight: bold; color: var(--primary-light); } /* Amount Won */
-.winning-history-table td:nth-child(4) { text-align: center; } /* Trade Status/Link centered */
-
-.trade-link {
-    color: var(--secondary-light); text-decoration: underline; display: inline-flex; align-items: center; gap: 5px;
-    transition: color var(--transition-fast);
-}
-.trade-link:hover { color: var(--secondary-color); }
-.trade-link.pending i { color: var(--warning-color); }
-
-.trade-status {
-    font-weight: 600; padding: 3px 8px; border-radius: 4px; font-size: 0.85em;
-    display: inline-flex; align-items: center; gap: 5px;
-}
-.trade-status.accepted { color: var(--success-color); background-color: rgba(76, 175, 80, 0.15); border: 1px solid rgba(76, 175, 80, 0.3); }
-.trade-status.failed { color: var(--error-color); background-color: rgba(244, 67, 54, 0.15); border: 1px solid rgba(244, 67, 54, 0.3); }
-.trade-status.pending { color: var(--warning-color); background-color: rgba(255, 193, 7, 0.15); border: 1px solid rgba(255, 193, 7, 0.3); }
-.trade-status i { font-size: 0.9em; }
-
+.history-table td:last-child { white-space: normal; text-align: right; }
 
 /* Pagination */
 .pagination-container { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
@@ -1239,11 +1325,10 @@ code { /* General code tag styling */
     line-height: 1;
 }
 
-/* Defined earlier, ensure it's not duplicated:
 @keyframes pulseWarning {
     0%, 100% { transform: scale(1); opacity: 1; }
     50% { transform: scale(1.15); opacity: 0.7; }
-} */
+}
 
 /* --- ADDED: Footer --- */
 .main-footer {
@@ -1349,13 +1434,7 @@ code { /* General code tag styling */
     max-width: 95%; /* Prevent messages from taking full width */
     word-wrap: break-word; /* Ensure long words break */
     box-shadow: var(--shadow-sm);
-    animation: chatMessageFadeIn 0.3s ease-out; /* Added for new messages */
 }
-@keyframes chatMessageFadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
 .chat-message.system-message {
     background-color: transparent;
     border: none;
@@ -1366,7 +1445,6 @@ code { /* General code tag styling */
     text-align: center;
     padding: 5px 0;
     max-width: 100%;
-    animation: none; /* No fade-in for system messages if preferred */
 }
 
 .chat-message-avatar {
@@ -1470,6 +1548,6 @@ code { /* General code tag styling */
 @media (min-width: 1200px) {
     .jackpot-and-chat-container {
         position: relative;
-        left: 150px;  
+        left: 150px;   
     }
 }
