@@ -1401,3 +1401,10 @@ code { /* General code tag styling */
     padding: 10px 15px;
     font-size: 0.9rem;
 }
+
+@media (min-width: 1200px) {
+    .jackpot-and-chat-container {
+        position: relative;
+        left: 95px;   /* ⬅️ change this number to match the blue-line distance */
+    }
+}
