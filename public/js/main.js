@@ -4,7 +4,8 @@
 // - Updated profile modal to display total deposited/won.
 // - Removed display of skin names, showing only image and price.
 // - Retained profile dropdown and modal logic from previous updates.
-// - ADDED: Basic frontend chat functionality.
+// - ADDED: Frontend chat functionality, integrated with socket.io.
+// - REMOVED: "Details" button from Provably Fair round history.
 
 // Ensure Socket.IO client library is loaded before this script
 
@@ -28,7 +29,7 @@ const CONFIG = {
     BOUNCE_DAMPING: 0.35,
     BOUNCE_FREQUENCY: 3.5,
     LANDING_POSITION_VARIATION: 0.60,
-    MAX_CHAT_MESSAGES: 10, // ADDED: Max chat messages to display
+    MAX_CHAT_MESSAGES: 10, // Max chat messages to display
 };
 
 const COLOR_PALETTE = [
@@ -126,7 +127,6 @@ const DOMElements = {
         agreeButton: document.getElementById('agreeButton'),
     },
     notificationBar: document.getElementById('notification-bar'),
-    // ADDED: Chat DOM Elements
     chat: {
         onlineUsers: document.getElementById('chatOnlineUsers'),
         messagesContainer: document.getElementById('chatMessagesContainer'),
@@ -147,7 +147,7 @@ let userColorMap = new Map();
 let notificationTimeout = null;
 let spinStartTime = 0;
 let currentDepositOfferURL = null;
-let onlineUserCount = 0; // ADDED: For chat
+let onlineUserCount = 0;
 
 function showModal(modalElement) {
     if (modalElement) modalElement.style.display = 'flex';
@@ -278,7 +278,7 @@ async function handleLogout() {
         currentUser = null;
         updateUserUI();
         updateDepositButtonState();
-        updateChatUI(); // ADDED: Update chat on logout
+        updateChatUI();
         showNotification('You have been successfully signed out.', 'success');
     } catch (error) {
         console.error('Logout Error:', error);
@@ -374,7 +374,7 @@ async function checkLoginStatus() {
     } finally {
         updateUserUI();
         updateDepositButtonState();
-        updateChatUI(); // ADDED: Update chat on login status check
+        updateChatUI();
     }
 }
 
@@ -455,7 +455,6 @@ function displayInventoryItems() {
         const itemElement = document.createElement('div');
         itemElement.className = 'inventory-item';
         itemElement.dataset.assetId = item.assetId;
-        // itemElement.dataset.name = item.name; // Name not stored on element for display
         itemElement.dataset.image = item.image;
         itemElement.dataset.price = item.price.toFixed(2);
         itemElement.title = `$${item.price.toFixed(2)}`; // Tooltip only shows price
@@ -1466,7 +1465,7 @@ async function loadPastRounds(page = 1) {
         console.warn("Rounds history table/pagination elements missing."); return;
     }
     try {
-        tableBody.innerHTML = '<tr><td colspan="5" class="loading-message">Loading round history...</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="4" class="loading-message">Loading round history...</td></tr>'; // colspan changed to 4
         paginationContainer.innerHTML = '';
         const response = await fetch(`/api/rounds?page=${page}&limit=10`);
         if (!response.ok) throw new Error(`Failed to load round history (${response.status})`);
@@ -1477,7 +1476,7 @@ async function loadPastRounds(page = 1) {
         tableBody.innerHTML = '';
         if (data.rounds.length === 0) {
             const message = (page === 1) ? 'No past rounds found.' : 'No rounds found on this page.';
-            tableBody.innerHTML = `<tr><td colspan="5" class="no-rounds-message">${message}</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="4" class="no-rounds-message">${message}</td></tr>`; // colspan changed to 4
         } else {
             data.rounds.forEach(round => {
                 const row = document.createElement('tr');
@@ -1499,7 +1498,6 @@ async function loadPastRounds(page = 1) {
                     <td>#${roundIdStr}</td> <td>${date}</td> <td>${potValueStr}</td>
                     <td class="${round.winner ? 'winner-cell' : ''}">${winnerUsername}</td>
                     <td>
-                        <button class="btn btn-secondary btn-small btn-details" onclick="window.showRoundDetails('${roundIdStr}')" ${roundIdStr === 'N/A' ? 'disabled' : ''}>Details</button>
                         <button class="btn btn-secondary btn-small btn-verify" onclick="window.populateVerificationFields('${roundIdStr}', '${serverSeedStr}', '${clientSeedStr}')" ${!round.serverSeed ? 'disabled title="Seed not revealed yet"' : ''}>Verify</button>
                     </td>`;
                 tableBody.appendChild(row);
@@ -1507,7 +1505,7 @@ async function loadPastRounds(page = 1) {
         }
         createPagination(data.currentPage, data.totalPages);
     } catch (error) {
-        tableBody.innerHTML = `<tr><td colspan="5" class="error-message">Error loading rounds: ${error.message}</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="4" class="error-message">Error loading rounds: ${error.message}</td></tr>`; // colspan changed to 4
         console.error('Error loading past rounds:', error);
     }
 }
@@ -1521,13 +1519,8 @@ window.populateVerificationFields = function(roundId, serverSeed, clientSeed) {
     if (!serverSeed && roundId && roundId !== 'N/A') showNotification(`Info: Server Seed for Round #${roundId} is revealed after the round ends.`, 'info');
 };
 
-window.showRoundDetails = async function(roundId) {
-    console.log(`Showing details for round ${roundId}`);
-    if (!roundId || roundId === 'N/A') {
-        showNotification('Info: Invalid Round ID for details.', 'info'); return;
-    }
-    showNotification(`Showing details for round #${roundId}... (Implementation needed)`, 'info');
-};
+// window.showRoundDetails is removed as the button is removed. If needed elsewhere, it can be kept.
+// For now, assuming it's only for the removed button.
 
 function createPagination(currentPage, totalPages) {
     const container = DOMElements.provablyFair.roundsPagination;
@@ -1571,11 +1564,13 @@ function createPagination(currentPage, totalPages) {
     container.appendChild(createButton('Next »', currentPage + 1, false, currentPage >= totalPages));
 }
 
-// --- ADDED: Chat Functionality ---
 function updateChatUI() {
     const { messageInput, sendMessageBtn, onlineUsers } = DOMElements.chat;
     if (currentUser) {
-        if (messageInput) messageInput.disabled = false;
+        if (messageInput) {
+            messageInput.disabled = false;
+            messageInput.placeholder = 'Type your message...';
+        }
         if (sendMessageBtn) sendMessageBtn.disabled = false;
     } else {
         if (messageInput) {
@@ -1584,17 +1579,20 @@ function updateChatUI() {
         }
         if (sendMessageBtn) sendMessageBtn.disabled = true;
     }
-    if (onlineUsers) onlineUsers.textContent = onlineUserCount; // Mocked for now
+    if (onlineUsers) onlineUsers.textContent = onlineUserCount;
 }
 
 function displayChatMessage(messageData) {
     const { messagesContainer } = DOMElements.chat;
     if (!messagesContainer) return;
 
-    const { type = 'user', username, avatar, message, userId } = messageData;
+    const { type = 'user', username, avatar, message, userId, userSteamId } = messageData; // Added userSteamId from backend
 
     const messageElement = document.createElement('div');
     messageElement.classList.add('chat-message');
+    if (userId) messageElement.dataset.userId = userId;
+    if (userSteamId) messageElement.dataset.userSteamId = userSteamId;
+
 
     if (type === 'system') {
         messageElement.classList.add('system-message');
@@ -1602,7 +1600,7 @@ function displayChatMessage(messageData) {
     } else {
         const userAvatarSrc = avatar || '/img/default-avatar.png';
         const displayName = username || 'Anonymous';
-        const userColor = getUserColor(userId || 'system'); // Use a default ID for system-like user messages if needed
+        const userColor = getUserColor(userId || 'system-user');
 
         messageElement.innerHTML = `
             <img src="${userAvatarSrc}" alt="${displayName}" class="chat-message-avatar" style="border-color: ${userColor};">
@@ -1611,14 +1609,12 @@ function displayChatMessage(messageData) {
                 <p class="chat-message-text"></p>
             </div>
         `;
-        // Set text content safely to prevent XSS
         const textElement = messageElement.querySelector('.chat-message-text');
-        if (textElement) textElement.textContent = message;
+        if (textElement) textElement.textContent = message; // Sanitize/escape if displaying HTML
     }
 
-    messagesContainer.insertBefore(messageElement, messagesContainer.firstChild); // Add to top for column-reverse
+    messagesContainer.insertBefore(messageElement, messagesContainer.firstChild);
 
-    // Keep only the last MAX_CHAT_MESSAGES
     while (messagesContainer.children.length > CONFIG.MAX_CHAT_MESSAGES) {
         messagesContainer.removeChild(messagesContainer.lastChild);
     }
@@ -1630,14 +1626,7 @@ function handleSendMessage() {
 
     const messageText = messageInput.value.trim();
     if (messageText) {
-        // Mock sending: Display message locally and clear input
-        // In a real app, this would emit to the server: socket.emit('chatMessage', messageText);
-        displayChatMessage({
-            username: currentUser.username,
-            avatar: currentUser.avatar,
-            message: messageText,
-            userId: currentUser._id
-        });
+        socket.emit('chatMessage', messageText); // Send to server
         messageInput.value = '';
     }
 }
@@ -1653,7 +1642,14 @@ function setupChatEventListeners() {
         }
     });
 }
-// --- END ADDED: Chat Functionality ---
+
+function updateChatOnlineUsers(count) {
+    onlineUserCount = count;
+    const { onlineUsers } = DOMElements.chat;
+    if (onlineUsers) {
+        onlineUsers.textContent = onlineUserCount;
+    }
+}
 
 
 function setupSocketConnection() {
@@ -1661,15 +1657,13 @@ function setupSocketConnection() {
         console.log('Socket connected:', socket.id);
         showNotification('Connected to server.', 'success', 2000);
         socket.emit('requestRoundData');
-        // ADDED: Request initial chat data (e.g., online users, recent messages if implemented on backend)
-        // socket.emit('requestChatData');
-        updateChatOnlineUsers(Math.floor(Math.random() * 20) + 5); // Mock online users
+        // No need to mock online users here, backend will send 'updateUserCount'
     });
     socket.on('disconnect', (reason) => {
         console.log('Socket disconnected:', reason);
         showNotification('Disconnected from server. Attempting to reconnect...', 'error', 5000);
         updateDepositButtonState();
-        updateChatOnlineUsers(0); // Mock: users go to 0 on disconnect
+        updateChatOnlineUsers(0);
     });
     socket.on('connect_error', (error) => {
         console.error('Socket connection error:', error);
@@ -1792,22 +1786,12 @@ function setupSocketConnection() {
        }
     });
 
-    // ADDED: Socket listeners for chat
-    // socket.on('chatMessage', (data) => {
-    //     displayChatMessage(data);
-    // });
-    // socket.on('updateUserCount', (count) => {
-    //     updateChatOnlineUsers(count);
-    // });
-}
-
-// ADDED: Function to update online user count display
-function updateChatOnlineUsers(count) {
-    onlineUserCount = count;
-    const { onlineUsers } = DOMElements.chat;
-    if (onlineUsers) {
-        onlineUsers.textContent = onlineUserCount;
-    }
+    socket.on('chatMessage', (data) => { // Receive messages from server
+        displayChatMessage(data);
+    });
+    socket.on('updateUserCount', (count) => { // Receive user count from server
+        updateChatOnlineUsers(count);
+    });
 }
 
 
@@ -1900,7 +1884,6 @@ function setupEventListeners() {
         });
         ageAgreeButton.disabled = !ageCheckbox.checked;
     }
-    // Test buttons and their listeners are removed.
     DOMElements.provablyFair.verifyButton?.addEventListener('click', verifyRound);
     window.addEventListener('click', (e) => {
         const profileModal = DOMElements.profileModal.modal;
@@ -1925,10 +1908,8 @@ function setupEventListeners() {
                  userProfile?.focus();
              }
         }
-        // Removed spacebar test trigger
     });
 
-    // ADDED: Chat Event Listeners
     setupChatEventListeners();
 }
 
@@ -1937,9 +1918,9 @@ function populateProfileModal() {
     if (!currentUser || !modalElements.modal) return;
 
     modalElements.avatar.src = currentUser.avatar || '/img/default-avatar.png';
-    modalElements.name.textContent = currentUser.username || 'User'; // Username only
+    modalElements.name.textContent = currentUser.username || 'User';
     modalElements.deposited.textContent = `$${(currentUser.totalDepositedValue || 0).toFixed(2)}`;
-    modalElements.won.textContent = `$${(currentUser.totalWinningsValue || 0).toFixed(2)}`; // Display total won
+    modalElements.won.textContent = `$${(currentUser.totalWinningsValue || 0).toFixed(2)}`;
     modalElements.tradeUrlInput.value = currentUser.tradeUrl || '';
 
     const statusDiv = modalElements.pendingOfferStatus;
@@ -1962,7 +1943,7 @@ async function handleProfileSave() {
     }
     const newTradeUrl = tradeUrlInput.value.trim();
     const urlPattern = /^https?:\/\/steamcommunity\.com\/tradeoffer\/new\/\?partner=\d+&token=[a-zA-Z0-9_-]+$/i;
-    if (newTradeUrl && !urlPattern.test(newTradeUrl)) { // Validate only if not empty
+    if (newTradeUrl && !urlPattern.test(newTradeUrl)) {
         showNotification('Invalid Steam Trade URL format. Please check or leave empty to clear.', 'error', 6000); return;
     }
     saveBtn.disabled = true; saveBtn.textContent = 'Saving...';
@@ -1999,17 +1980,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if(ageAgreeButton) ageAgreeButton.disabled = true;
         showModal(DOMElements.ageVerification.modal);
     }
-    // Initial chat UI update
     updateChatUI();
-    // Mock initial user count
-    updateChatOnlineUsers(Math.floor(Math.random() * 20) + 5);
-    // Mock some initial chat messages
-    displayChatMessage({ type: 'system', message: 'Chat connected. Be respectful!' });
-    setTimeout(() => {
-        displayChatMessage({ username: 'SystemBot', avatar: '/img/default-avatar.png', message: 'Remember to read the rules before playing.', userId: 'system-bot-id' });
-    }, 1000);
-
-
+    // No need for mock user count or messages if backend handles it
+    // displayChatMessage({ type: 'system', message: 'Chat connected. Be respectful!' });
 });
 
-console.log("main.js updated: Test functions removed, profile stats added, skin names hidden, basic chat JS added.");
+console.log("main.js updated: Provably Fair Details button removed, chat connected to backend.");
