@@ -1671,10 +1671,7 @@ function setupEventListeners() {
     DOMElements.nav.fairLink?.addEventListener('click', (e) => { e.preventDefault(); showPage(DOMElements.pages.fairPage); });
 
 
-    // User controls
-    DOMElements.user.loginButton?.addEventListener('click', () => {
-        window.location.href = '/auth/steam';
-    });
+    // User controls (login button is now a direct link)
     // ... (user profile dropdown, logout unchanged) ...
     const { userProfile, userDropdownMenu, logoutButton, profileDropdownButton, winningHistoryDropdownButton } = DOMElements.user;
     userProfile?.addEventListener('click', (e) => { e.stopPropagation(); if (userDropdownMenu) { const isVisible = userDropdownMenu.style.display === 'block'; userDropdownMenu.style.display = isVisible ? 'none' : 'block'; userProfile?.setAttribute('aria-expanded', String(!isVisible)); userProfile?.classList.toggle('open', !isVisible); } });
