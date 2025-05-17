@@ -1853,7 +1853,7 @@ function displayChatMessage(messageData) {
             <img src="${userAvatarSrc}" alt="${displayName}" class="chat-message-avatar" style="border-color: ${userColor};">
             <div class="chat-message-content">
                 <span class="chat-message-user" style="color: ${userColor};">${displayName}</span>
-                <p class="chat-message-text"></p> {/* Text will be set via textContent */}
+                <p class="chat-message-text"></p> 
             </div>
         `;
         const textElement = messageElement.querySelector('.chat-message-text');
