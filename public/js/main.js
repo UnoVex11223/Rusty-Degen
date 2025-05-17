@@ -395,6 +395,7 @@ async function checkLoginStatus() {
     } finally {
         updateUserUI();
         updateChatUI();
+        updateDepositButtonState();
         if (socket && socket.connected) {
             console.log("Requesting initial round data after checkLoginStatus.");
             socket.emit('requestRoundData');
@@ -1765,7 +1766,41 @@ function populateProfileModal() {
 }
 
 
-async function handleProfileSave() { /* ... unchanged ... */ }
+async function handleProfileSave() {
+    const modalElements = DOMElements.profileModal;
+    if (!modalElements || !modalElements.modal || !modalElements.tradeUrlInput) return;
+
+    const tradeUrl = modalElements.tradeUrlInput.value.trim();
+
+    modalElements.saveBtn.disabled = true;
+    modalElements.saveBtn.textContent = 'Saving...';
+
+    try {
+        const response = await fetch('/api/user/tradeurl', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tradeUrl })
+        });
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.error || `Failed to save profile (${response.status})`);
+        }
+
+        if (currentUser) {
+            currentUser.tradeUrl = result.tradeUrl;
+        }
+        showNotification('Profile saved successfully.', 'success');
+        hideModal(modalElements.modal);
+        updateUserUI();
+        updateDepositButtonState();
+    } catch (error) {
+        console.error('Error saving profile:', error);
+        showNotification(`Profile save failed: ${error.message}`, 'error');
+    } finally {
+        modalElements.saveBtn.disabled = false;
+        modalElements.saveBtn.textContent = 'Save Changes';
+    }
+}
 
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM fully loaded and parsed.");
