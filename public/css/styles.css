@@ -500,11 +500,8 @@ code { /* General code tag styling */
 
 .jackpot-and-chat-container {
     display: flex;
-    /* Centering the group of jackpot + chat IF their combined width is less than parent.
-       Since parent is .container (max-width 1200px, margin auto), this effectively centers them on page.
-    */
     justify-content: center;
-    align-items: stretch; /* Make jackpot and chat containers same height */
+    align-items: flex-start; /* Changed from stretch to allow chat fixed height */
     gap: 20px;
 }
 
@@ -515,14 +512,9 @@ code { /* General code tag styling */
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border-color);
     position: relative;
-    /* Define a width for the jackpot section to help with centering its content.
-       This width should be appropriate for its three header items.
-       Example: (170px * 3 items) + (gap * 2) ~ 510px + 60px = 570px.
-       Let's use a slightly more generous width for better appearance.
-    */
-    width: 680px; /* Adjusted width */
-    max-width: calc(100% - 270px - 20px); /* Ensure it doesn't overflow if chat exists, 250px chat + 20px gap */
-    flex-shrink: 0; /* Prevent it from shrinking if chat needs more space (though chat has fixed width) */
+    width: 680px;
+    max-width: calc(100% - 300px); /* Max width considering chat width + gap */
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
 }
@@ -534,9 +526,9 @@ code { /* General code tag styling */
 
 .jackpot-header {
     display: flex;
-    justify-content: center; /* This will center the three items if they don't fill the width */
+    justify-content: center;
     align-items: center;
-    gap: 30px; /* This gap is between the 3 items */
+    gap: 30px;
     padding: 25px 20px;
     background: linear-gradient(135deg, var(--background-medium), var(--background-light));
     border-bottom: 1px solid var(--border-color);
@@ -561,12 +553,9 @@ code { /* General code tag styling */
 }
 
 .jackpot-timer, .jackpot-value, .jackpot-stats {
-    min-width: 170px; /* Original min-width */
-    /* flex: 1 1 170px; /* Let them share space equally if they grow */
-    /* For more precise centering of timer, ensure these sections are balanced */
-    flex-basis: 0; /* Allow them to grow from 0 based on flex-grow */
-    flex-grow: 1;  /* Distribute space equally */
-    /* max-width: 220px; /* Optional: prevent items from becoming too wide */
+    min-width: 170px;
+    flex-basis: 0;
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -1252,15 +1241,17 @@ code { /* General code tag styling */
  CHAT STYLES - REVISED
  =========================*/
 .chat-container {
-    width: 280px; /* Further Reduced size as requested */
-    flex-shrink: 0;
+    width: 280px;
+    flex-shrink: 0; /* Prevent chat from shrinking if jackpot section is wide */
     background-color: var(--background-light);
     border-radius: 12px;
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-lg);
     display: flex;
     flex-direction: column;
-    padding: 0;
+    padding: 0; /* Remove padding from container itself */
+    height: 600px; /* MODIFIED: Fixed height for the entire chat container */
+    max-height: 70vh; /* Optional: prevent it from being too tall on very large screens */
 }
 
 .chat-header {
@@ -1270,8 +1261,8 @@ code { /* General code tag styling */
     padding: 10px 15px;
     background: var(--background-medium);
     border-bottom: 1px solid var(--border-color);
-    border-radius: 12px 12px 0 0;
-    flex-shrink: 0;
+    border-radius: 12px 12px 0 0; /* Rounded top corners */
+    flex-shrink: 0; /* Prevent header from shrinking */
 }
 
 .chat-header h3 {
@@ -1292,15 +1283,16 @@ code { /* General code tag styling */
 }
 
 .chat-messages-container {
-    flex-grow: 1;
+    flex-grow: 1; /* Takes up remaining space within the fixed height of .chat-container */
     padding: 15px;
-    overflow-y: auto;
+    overflow-y: auto; /* Enables scrolling for messages */
     display: flex;
-    flex-direction: column-reverse;
+    flex-direction: column-reverse; /* New messages at bottom, scroll up for old */
     gap: 12px;
     background-color: var(--background-dark);
-    min-height: 200px; /* Ensure a minimum height for message area even if chat container is short */
+    /* min-height is removed as height is now fixed by parent */
 }
+
 
 .chat-messages-container::-webkit-scrollbar {
     width: 6px;
@@ -1322,8 +1314,8 @@ code { /* General code tag styling */
     border-radius: 6px;
     background-color: var(--background-light);
     border: 1px solid var(--border-color);
-    max-width: 95%;
-    word-wrap: break-word;
+    max-width: 95%; /* Prevent messages from taking full width */
+    word-wrap: break-word; /* Ensure long words break */
     box-shadow: var(--shadow-sm);
 }
 .chat-message.system-message {
@@ -1344,19 +1336,20 @@ code { /* General code tag styling */
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
-    border: 2px solid transparent;
+    border: 2px solid transparent; /* Base border, color applied by JS */
 }
 
 .chat-message-content {
     display: flex;
     flex-direction: column;
-    min-width: 0;
+    min-width: 0; /* Allow text to wrap properly */
 }
 
 .chat-message-user {
     font-size: 0.9rem;
     font-weight: 700;
     margin-bottom: 4px;
+    /* Color applied by JS */
 }
 
 .chat-message-text {
@@ -1364,7 +1357,7 @@ code { /* General code tag styling */
     line-height: 1.5;
     color: var(--text-primary);
     margin: 0;
-    white-space: pre-wrap;
+    white-space: pre-wrap; /* Preserve whitespace and newlines from input */
 }
 
 .chat-input-area {
@@ -1373,8 +1366,8 @@ code { /* General code tag styling */
     border-top: 1px solid var(--border-color);
     background-color: var(--background-medium);
     gap: 10px;
-    border-radius: 0 0 12px 12px;
-    flex-shrink: 0;
+    border-radius: 0 0 12px 12px; /* Rounded bottom corners */
+    flex-shrink: 0; /* Prevent input area from shrinking */
 }
 
 #chatMessageInput {
@@ -1402,9 +1395,48 @@ code { /* General code tag styling */
     font-size: 0.9rem;
 }
 
+/* Ensure jackpot section doesn't overlap chat at smaller viewport widths before flex-wrap kicks in effectively */
+@media (max-width: 980px) { /* Adjust breakpoint as needed */
+    .jackpot-and-chat-container {
+        flex-direction: column;
+        align-items: center; /* Center items when stacked */
+    }
+    .jackpot-section {
+        width: 100%; /* Full width when stacked */
+        max-width: 680px; /* Or your preferred max width */
+        margin-bottom: 20px; /* Space between jackpot and chat when stacked */
+    }
+    .chat-container {
+        width: 100%; /* Full width when stacked */
+        max-width: 600px; /* Or your preferred max width for chat */
+        height: 500px; /* Adjust height if needed for stacked view */
+        max-height: 60vh;
+    }
+    .main-header .container {
+        flex-direction: column;
+        gap: 5px;
+    }
+    .header-left, .header-center, .header-right {
+        width: 100%;
+        justify-content: center;
+        gap: 5px;
+    }
+    .primary-nav ul, .secondary-nav ul {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+}
+
 @media (min-width: 1200px) {
     .jackpot-and-chat-container {
         position: relative;
-        left: 150px;   /* ⬅️ change this number to match the blue-line distance */
+        /* Example: if jackpot is 680px and chat is 280px, total ~960px.
+           If container is 1200px, (1200 - 960)/2 = 120px.
+           So left: 120px would center it. This might need dynamic adjustment
+           or a simpler flex centering approach on a parent if possible.
+           The current `justify-content: center` on jackpot-and-chat-container should handle this.
+        */
+        /* left: 150px; */ /* This hardcoded value might not be ideal for responsiveness */
     }
 }
