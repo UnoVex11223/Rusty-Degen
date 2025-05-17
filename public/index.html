@@ -152,7 +152,7 @@
                     <div class="spinner"></div>
                     <p>Loading your winning history...</p>
                 </div>
-                <div class="table-container" id="winningHistoryTableContainer">
+                <div class="table-container" id="winningHistoryTableContainer" style="display: none;">
                     <table class="history-table winning-history-table">
                         <thead>
                             <tr>
@@ -165,8 +165,8 @@
                         <tbody id="winningHistoryTableBody">
                             </tbody>
                     </table>
-                    <p id="noWinningsMessage" class="empty-history-message" style="display: none;">You have no winnings yet.</p>
                 </div>
+                <p id="noWinningsMessage" class="empty-history-message" style="display: none;">You have no winnings yet.</p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="winningHistoryModalCloseFooterBtn">Close</button>
@@ -330,7 +330,7 @@
                     <h1>About Rusty Degen</h1>
                     <div class="content-section">
                         <div class="content-section-body">
-                            <p>Hello! I'm a degenerate Rust player with over 7,000 hours in the game. I have been playing this dogshit game since 2018 and have spent countless hours on the grind. </p>
+                            <p>Hello! I'm a degenerate Rust player with over 7,000 hours in the game. I have been playing this dogshit game since 2018 and have poured countless hours into the game. </p>
                             <p>As a recent computer science student, I wanted to combine my two passions: programming and Rust. Rusty Degen is the result of this combination - a solo project developed from the ground up. </p>
                             <p>Unlike many gambling platforms that are run by large teams with significant backing, Rusty Degen is entirely developed, maintained, and operated by me.</p>
                             <p>Please remember this is a project under development. Play responsibly and understand the risks involved.</p>
@@ -577,7 +577,6 @@
                     const item = title.closest('.faq-item');
                     const body = item.querySelector('.content-section-body');
                     if (item && body) {
-                         // Close other items
                         document.querySelectorAll('#faq-page .faq-item.active').forEach(openItem => {
                             if (openItem !== item) {
                                 openItem.classList.remove('active');
@@ -585,25 +584,21 @@
                                 if (openBody) openBody.style.display = 'none';
                             }
                         });
-                         // Toggle current item
                         item.classList.toggle('active');
                         body.style.display = item.classList.contains('active') ? 'block' : 'none';
                     }
                 });
             });
 
-            // Footer/Modal TOS Links
              const setupLink = (linkId, pageElementId) => {
                  const link = document.getElementById(linkId);
                  const page = document.getElementById(pageElementId);
-                  // Check if showPage is globally available (it should be from main.js)
                  if (link && page && typeof window.showPage === 'function') {
                       link.addEventListener('click', (e) => {
                            e.preventDefault();
                            window.showPage(page);
-                           // If it's the modal link, also close the modal
                            const modal = link.closest('.modal');
-                           if (modal && typeof window.hideModal === 'function') {
+                           if (modal && typeof window.hideModal === 'function') { // Use hideModal from main.js
                                 window.hideModal(modal);
                            }
                       });
