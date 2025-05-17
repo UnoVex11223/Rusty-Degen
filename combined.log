@@ -1,0 +1,320 @@
+{"level":"info","message":"Logger initialized.","service":"rusty-degen-app","timestamp":"2025-04-29T23:59:05.966Z"}
+{"level":"info","message":"Attempting Steam login for bot: bobbyschlobby1...","service":"rusty-degen-app","timestamp":"2025-04-29T23:59:06.012Z"}
+{"level":"info","message":"Performing initial price cache refresh...","service":"rusty-degen-app","timestamp":"2025-04-29T23:59:06.259Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-04-29T23:59:06.260Z"}
+{"level":"info","message":"Successfully connected to MongoDB.","service":"rusty-degen-app","timestamp":"2025-04-29T23:59:06.944Z"}
+{"level":"info","message":"Steam bot bobbyschlobby1 logged in successfully (SteamID: 76561199846031417). Attempting to set cookies for TradeOfferManager...","service":"rusty-degen-app","timestamp":"2025-04-29T23:59:08.260Z"}
+{"level":"info","message":"TradeOfferManager cookies set successfully.","service":"rusty-degen-app","timestamp":"2025-04-29T23:59:08.539Z"}
+{"level":"info","message":"Steam Bot is ready.","service":"rusty-degen-app","timestamp":"2025-04-29T23:59:08.540Z"}
+{"level":"info","message":"Found existing active round 1 on startup.","service":"rusty-degen-app","timestamp":"2025-04-29T23:59:08.588Z"}
+{"level":"info","message":"Refreshed price cache with 5121 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-04-29T23:59:26.854Z"}
+{"level":"info","message":"Scheduled price cache refresh every 10 minutes.","service":"rusty-degen-app","timestamp":"2025-04-29T23:59:26.855Z"}
+{"level":"info","message":"Server listening on port 3000","service":"rusty-degen-app","timestamp":"2025-04-29T23:59:26.863Z"}
+{"level":"info","message":"Site URL configured as: http://localhost:3000","service":"rusty-degen-app","timestamp":"2025-04-29T23:59:26.864Z"}
+{"level":"info","message":"Steam Bot is ready.","service":"rusty-degen-app","timestamp":"2025-04-29T23:59:26.864Z"}
+{"level":"info","message":"Logger initialized.","service":"rusty-degen-app","timestamp":"2025-04-30T00:02:39.901Z"}
+{"level":"info","message":"Attempting Steam login for bot: bobbyschlobby1...","service":"rusty-degen-app","timestamp":"2025-04-30T00:02:39.947Z"}
+{"level":"info","message":"Performing initial price cache refresh...","service":"rusty-degen-app","timestamp":"2025-04-30T00:02:40.199Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-04-30T00:02:40.200Z"}
+{"level":"info","message":"Successfully connected to MongoDB.","service":"rusty-degen-app","timestamp":"2025-04-30T00:02:41.004Z"}
+{"level":"info","message":"Steam bot bobbyschlobby1 logged in successfully (SteamID: 76561199846031417). Attempting to set cookies for TradeOfferManager...","service":"rusty-degen-app","timestamp":"2025-04-30T00:02:41.734Z"}
+{"level":"info","message":"TradeOfferManager cookies set successfully.","service":"rusty-degen-app","timestamp":"2025-04-30T00:02:41.993Z"}
+{"level":"info","message":"Steam Bot is ready.","service":"rusty-degen-app","timestamp":"2025-04-30T00:02:41.994Z"}
+{"level":"info","message":"Found existing active round 1 on startup.","service":"rusty-degen-app","timestamp":"2025-04-30T00:02:42.041Z"}
+{"level":"info","message":"Refreshed price cache with 5121 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-04-30T00:03:04.629Z"}
+{"level":"info","message":"Scheduled price cache refresh every 10 minutes.","service":"rusty-degen-app","timestamp":"2025-04-30T00:03:04.632Z"}
+{"level":"info","message":"Server listening on port 3000","service":"rusty-degen-app","timestamp":"2025-04-30T00:03:04.639Z"}
+{"level":"info","message":"Site URL configured as: http://localhost:3000","service":"rusty-degen-app","timestamp":"2025-04-30T00:03:04.640Z"}
+{"level":"info","message":"Steam Bot is ready.","service":"rusty-degen-app","timestamp":"2025-04-30T00:03:04.640Z"}
+{"ip":"::1","level":"warn","message":"Invalid CSRF token detected","method":"POST","service":"rusty-degen-app","timestamp":"2025-04-30T00:04:35.435Z","url":"/api/deposit"}
+{"ip":"::1","level":"warn","message":"Invalid CSRF token detected","method":"POST","service":"rusty-degen-app","timestamp":"2025-04-30T00:04:37.174Z","url":"/api/deposit"}
+{"level":"info","message":"Logger initialized.","service":"rusty-degen-app","timestamp":"2025-04-30T02:53:57.930Z"}
+{"level":"info","message":"Attempting Steam login for bot: bobbyschlobby1...","service":"rusty-degen-app","timestamp":"2025-04-30T02:53:57.987Z"}
+{"level":"info","message":"Performing initial price cache refresh...","service":"rusty-degen-app","timestamp":"2025-04-30T02:53:58.274Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-04-30T02:53:58.275Z"}
+{"level":"info","message":"Successfully connected to MongoDB.","service":"rusty-degen-app","timestamp":"2025-04-30T02:53:59.041Z"}
+{"level":"info","message":"Steam bot bobbyschlobby1 logged in successfully (SteamID: 76561199846031417). Attempting to set cookies for TradeOfferManager...","service":"rusty-degen-app","timestamp":"2025-04-30T02:53:59.928Z"}
+{"level":"info","message":"TradeOfferManager cookies set successfully.","service":"rusty-degen-app","timestamp":"2025-04-30T02:54:00.253Z"}
+{"level":"info","message":"Steam Bot is ready.","service":"rusty-degen-app","timestamp":"2025-04-30T02:54:00.255Z"}
+{"level":"info","message":"Found existing active round 1 on startup.","service":"rusty-degen-app","timestamp":"2025-04-30T02:54:00.319Z"}
+{"level":"info","message":"Refreshed price cache with 5121 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-04-30T02:54:18.373Z"}
+{"level":"info","message":"Scheduled price cache refresh every 10 minutes.","service":"rusty-degen-app","timestamp":"2025-04-30T02:54:18.374Z"}
+{"level":"info","message":"Server listening on port 3000","service":"rusty-degen-app","timestamp":"2025-04-30T02:54:18.388Z"}
+{"level":"info","message":"Site URL configured as: http://localhost:3000","service":"rusty-degen-app","timestamp":"2025-04-30T02:54:18.388Z"}
+{"level":"info","message":"Steam Bot is ready.","service":"rusty-degen-app","timestamp":"2025-04-30T02:54:18.389Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-04-30T03:04:25.211Z"}
+{"level":"info","message":"Refreshed price cache with 5121 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-04-30T03:04:51.732Z"}
+{"ip":"::1","level":"warn","message":"Invalid CSRF token detected","method":"POST","service":"rusty-degen-app","timestamp":"2025-04-30T03:08:01.675Z","url":"/api/user/tradeurl"}
+{"ip":"::1","level":"warn","message":"Invalid CSRF token detected","method":"POST","service":"rusty-degen-app","timestamp":"2025-04-30T03:08:05.687Z","url":"/api/user/tradeurl"}
+{"ip":"::1","level":"warn","message":"Invalid CSRF token detected","method":"POST","service":"rusty-degen-app","timestamp":"2025-04-30T03:08:29.486Z","url":"/api/deposit"}
+{"ip":"::1","level":"warn","message":"Invalid CSRF token detected","method":"POST","service":"rusty-degen-app","timestamp":"2025-04-30T03:08:30.551Z","url":"/api/deposit"}
+{"ip":"::1","level":"warn","message":"Invalid CSRF token detected","method":"POST","service":"rusty-degen-app","timestamp":"2025-04-30T03:08:36.112Z","url":"/logout"}
+{"ip":"::1","level":"warn","message":"Invalid CSRF token detected","method":"POST","service":"rusty-degen-app","timestamp":"2025-04-30T03:08:43.439Z","url":"/logout"}
+{"level":"info","message":"Logger initialized.","service":"rusty-degen-app","timestamp":"2025-04-30T20:43:21.724Z"}
+{"level":"info","message":"Attempting Steam login for bot: bobbyschlobby1...","service":"rusty-degen-app","timestamp":"2025-04-30T20:43:21.800Z"}
+{"level":"info","message":"Performing initial price cache refresh...","service":"rusty-degen-app","timestamp":"2025-04-30T20:43:22.362Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-04-30T20:43:22.363Z"}
+{"level":"info","message":"Successfully connected to MongoDB.","service":"rusty-degen-app","timestamp":"2025-04-30T20:43:23.007Z"}
+{"level":"info","message":"Steam bot bobbyschlobby1 logged in successfully (SteamID: 76561199846031417). Attempting to set cookies for TradeOfferManager...","service":"rusty-degen-app","timestamp":"2025-04-30T20:43:23.757Z"}
+{"level":"info","message":"TradeOfferManager cookies set successfully.","service":"rusty-degen-app","timestamp":"2025-04-30T20:43:24.117Z"}
+{"level":"info","message":"Steam Bot is ready.","service":"rusty-degen-app","timestamp":"2025-04-30T20:43:24.118Z"}
+{"level":"info","message":"Found existing active round 1 on startup.","service":"rusty-degen-app","timestamp":"2025-04-30T20:43:24.177Z"}
+{"level":"info","message":"Refreshed price cache with 5121 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-04-30T20:43:42.967Z"}
+{"level":"info","message":"Scheduled price cache refresh every 10 minutes.","service":"rusty-degen-app","timestamp":"2025-04-30T20:43:42.968Z"}
+{"level":"info","message":"Server listening on port 3000","service":"rusty-degen-app","timestamp":"2025-04-30T20:43:42.974Z"}
+{"level":"info","message":"Site URL configured as: http://localhost:3000","service":"rusty-degen-app","timestamp":"2025-04-30T20:43:42.975Z"}
+{"level":"info","message":"Steam Bot is ready.","service":"rusty-degen-app","timestamp":"2025-04-30T20:43:42.975Z"}
+{"ip":"::1","level":"warn","message":"Invalid CSRF token detected","method":"POST","service":"rusty-degen-app","timestamp":"2025-04-30T20:46:35.715Z","url":"/logout"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-04-30T20:53:53.788Z"}
+{"level":"info","message":"Refreshed price cache with 5121 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-04-30T20:54:15.670Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-04-30T21:04:07.795Z"}
+{"level":"info","message":"Refreshed price cache with 5121 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-04-30T21:04:33.674Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-04-30T21:14:21.049Z"}
+{"level":"info","message":"Refreshed price cache with 5121 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-04-30T21:14:43.658Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-04-30T21:24:32.638Z"}
+{"level":"info","message":"Refreshed price cache with 5121 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-04-30T21:24:53.713Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-04-30T21:34:44.019Z"}
+{"level":"info","message":"Refreshed price cache with 5121 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-04-30T21:35:06.534Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-04-30T21:44:58.488Z"}
+{"level":"info","message":"Refreshed price cache with 5121 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-04-30T21:45:24.650Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-04-30T21:55:11.834Z"}
+{"level":"info","message":"Refreshed price cache with 5121 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-04-30T21:55:34.572Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-04-30T22:05:27.085Z"}
+{"level":"info","message":"Refreshed price cache with 5121 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-04-30T22:05:48.522Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-04-30T22:15:40.752Z"}
+{"errorCode":"ECONNABORTED","errorMessage":"timeout of 30000ms exceeded","level":"error","message":"Failed to fetch prices from https://rust.scmm.app/api/item/prices?currency=USD.","service":"rusty-degen-app","timestamp":"2025-04-30T22:16:11.676Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-04-30T22:25:58.322Z"}
+{"errorCode":"ECONNABORTED","errorMessage":"timeout of 30000ms exceeded","level":"error","message":"Failed to fetch prices from https://rust.scmm.app/api/item/prices?currency=USD.","service":"rusty-degen-app","timestamp":"2025-04-30T22:26:29.200Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-04-30T22:36:14.108Z"}
+{"errorCode":"ECONNABORTED","errorMessage":"timeout of 30000ms exceeded","level":"error","message":"Failed to fetch prices from https://rust.scmm.app/api/item/prices?currency=USD.","service":"rusty-degen-app","timestamp":"2025-04-30T22:36:44.993Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-04-30T22:46:30.306Z"}
+{"errorCode":"ECONNABORTED","errorMessage":"timeout of 30000ms exceeded","level":"error","message":"Failed to fetch prices from https://rust.scmm.app/api/item/prices?currency=USD.","service":"rusty-degen-app","timestamp":"2025-04-30T23:26:56.681Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-04-30T23:56:22.647Z"}
+{"level":"info","message":"Logger initialized.","service":"rusty-degen-app","timestamp":"2025-05-01T17:20:50.664Z"}
+{"level":"info","message":"Attempting Steam login for bot: bobbyschlobby1...","service":"rusty-degen-app","timestamp":"2025-05-01T17:20:50.715Z"}
+{"level":"info","message":"Performing initial price cache refresh...","service":"rusty-degen-app","timestamp":"2025-05-01T17:20:50.878Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-01T17:20:50.879Z"}
+{"level":"info","message":"Successfully connected to MongoDB.","service":"rusty-degen-app","timestamp":"2025-05-01T17:20:51.572Z"}
+{"level":"info","message":"Steam bot bobbyschlobby1 logged in successfully (SteamID: 76561199846031417). Attempting to set cookies for TradeOfferManager...","service":"rusty-degen-app","timestamp":"2025-05-01T17:20:52.722Z"}
+{"level":"info","message":"TradeOfferManager cookies set successfully.","service":"rusty-degen-app","timestamp":"2025-05-01T17:20:53.046Z"}
+{"level":"info","message":"Steam Bot is ready.","service":"rusty-degen-app","timestamp":"2025-05-01T17:20:53.047Z"}
+{"level":"info","message":"Found existing active round 1 on startup.","service":"rusty-degen-app","timestamp":"2025-05-01T17:20:53.099Z"}
+{"level":"info","message":"Refreshed price cache with 5137 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-01T17:21:14.053Z"}
+{"level":"info","message":"Scheduled price cache refresh every 10 minutes.","service":"rusty-degen-app","timestamp":"2025-05-01T17:21:14.053Z"}
+{"level":"info","message":"Server listening on port 3000","service":"rusty-degen-app","timestamp":"2025-05-01T17:21:14.059Z"}
+{"level":"info","message":"Site URL configured as: http://localhost:3000","service":"rusty-degen-app","timestamp":"2025-05-01T17:21:14.059Z"}
+{"level":"info","message":"Steam Bot is ready.","service":"rusty-degen-app","timestamp":"2025-05-01T17:21:14.059Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-01T17:31:14.054Z"}
+{"level":"info","message":"Refreshed price cache with 5137 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-01T17:31:35.771Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-01T17:41:14.056Z"}
+{"errorCode":"ECONNABORTED","errorMessage":"timeout of 30000ms exceeded","level":"error","message":"Failed to fetch prices from https://rust.scmm.app/api/item/prices?currency=USD.","service":"rusty-degen-app","timestamp":"2025-05-01T17:41:44.074Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-01T17:59:15.249Z"}
+{"level":"info","message":"Refreshed price cache with 5137 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-01T17:59:33.013Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-01T18:43:55.695Z"}
+{"level":"info","message":"Refreshed price cache with 5137 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-01T18:44:13.519Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-01T18:53:55.700Z"}
+{"level":"info","message":"Refreshed price cache with 5137 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-01T18:54:14.936Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-01T19:22:01.303Z"}
+{"level":"info","message":"Refreshed price cache with 5137 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-01T19:22:20.130Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-01T19:32:01.304Z"}
+{"level":"info","message":"Refreshed price cache with 5137 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-01T19:32:19.732Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-01T19:42:01.311Z"}
+{"level":"info","message":"Refreshed price cache with 5137 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-01T19:42:19.203Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-01T19:52:01.318Z"}
+{"level":"info","message":"Refreshed price cache with 5137 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-01T19:52:20.297Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-01T20:02:01.322Z"}
+{"level":"info","message":"Refreshed price cache with 5137 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-01T20:02:23.663Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-01T20:12:01.325Z"}
+{"level":"info","message":"Refreshed price cache with 5137 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-01T20:12:19.807Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-01T20:22:01.330Z"}
+{"level":"info","message":"Refreshed price cache with 5137 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-01T20:22:20.885Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-02T04:03:01.795Z"}
+{"level":"info","message":"Logger initialized.","service":"rusty-degen-app","timestamp":"2025-05-03T01:46:08.489Z"}
+{"level":"info","message":"Attempting Steam login for bot: bobbyschlobby1...","service":"rusty-degen-app","timestamp":"2025-05-03T01:46:08.550Z"}
+{"level":"info","message":"Performing initial price cache refresh...","service":"rusty-degen-app","timestamp":"2025-05-03T01:46:08.804Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-03T01:46:08.805Z"}
+{"level":"info","message":"Successfully connected to MongoDB.","service":"rusty-degen-app","timestamp":"2025-05-03T01:46:09.543Z"}
+{"level":"info","message":"Steam bot bobbyschlobby1 logged in successfully (SteamID: 76561199846031417). Attempting to set cookies for TradeOfferManager...","service":"rusty-degen-app","timestamp":"2025-05-03T01:46:10.310Z"}
+{"level":"info","message":"TradeOfferManager cookies set successfully.","service":"rusty-degen-app","timestamp":"2025-05-03T01:46:10.587Z"}
+{"level":"info","message":"Steam Bot is ready.","service":"rusty-degen-app","timestamp":"2025-05-03T01:46:10.588Z"}
+{"level":"info","message":"Found existing active round 1 on startup.","service":"rusty-degen-app","timestamp":"2025-05-03T01:46:10.641Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-03T01:46:28.392Z"}
+{"level":"info","message":"Scheduled price cache refresh every 10 minutes.","service":"rusty-degen-app","timestamp":"2025-05-03T01:46:28.393Z"}
+{"level":"info","message":"Server listening on port 3000","service":"rusty-degen-app","timestamp":"2025-05-03T01:46:28.399Z"}
+{"level":"info","message":"Site URL configured as: http://localhost:3000","service":"rusty-degen-app","timestamp":"2025-05-03T01:46:28.399Z"}
+{"level":"info","message":"Steam Bot is ready.","service":"rusty-degen-app","timestamp":"2025-05-03T01:46:28.399Z"}
+{"ip":"::1","level":"warn","message":"Invalid CSRF token detected","method":"POST","service":"rusty-degen-app","timestamp":"2025-05-03T01:48:56.860Z","url":"/logout"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-03T01:56:28.399Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-03T01:56:47.170Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-03T02:06:28.399Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-03T02:06:48.108Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-03T02:16:28.405Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-03T02:16:47.954Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-03T02:26:28.407Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-03T02:26:50.153Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-03T02:36:28.411Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-03T02:36:47.211Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-03T02:46:28.412Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-03T02:46:51.280Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-03T02:56:28.413Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-03T02:56:47.400Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-03T03:06:28.413Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-03T03:06:46.949Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-03T03:16:28.413Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-03T03:16:47.870Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-03T03:26:28.414Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-03T03:26:46.988Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-03T03:36:28.416Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-03T03:36:47.398Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-03T03:46:28.420Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-03T03:46:47.286Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-03T03:56:28.421Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-03T03:56:47.956Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-03T04:06:28.423Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-03T04:06:49.764Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-03T04:16:28.427Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-03T04:16:51.569Z"}
+{"level":"info","message":"Logger initialized.","service":"rusty-degen-app","timestamp":"2025-05-06T17:56:03.068Z"}
+{"level":"warn","message":"Bot features are NOT explicitly enabled (ENABLE_BOT_FEATURES is not 'true'). Trading features will be disabled.","service":"rusty-degen-app","timestamp":"2025-05-06T17:56:03.071Z"}
+{"level":"info","message":"Steam Bot is not configured (isBotConfigured=false). Trading features disabled.","service":"rusty-degen-app","timestamp":"2025-05-06T17:56:03.121Z"}
+{"level":"info","message":"Performing initial price cache refresh...","service":"rusty-degen-app","timestamp":"2025-05-06T17:56:03.124Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T17:56:03.124Z"}
+{"level":"info","message":"Successfully connected to MongoDB.","service":"rusty-degen-app","timestamp":"2025-05-06T17:56:03.956Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T17:56:25.341Z"}
+{"level":"info","message":"Scheduled price cache refresh every 10 minutes.","service":"rusty-degen-app","timestamp":"2025-05-06T17:56:25.342Z"}
+{"level":"info","message":"Server listening on port 3000","service":"rusty-degen-app","timestamp":"2025-05-06T17:56:25.346Z"}
+{"level":"info","message":"Site URL configured as: http://localhost:3000","service":"rusty-degen-app","timestamp":"2025-05-06T17:56:25.347Z"}
+{"level":"info","message":"Bot features are NOT enabled (ENABLE_BOT_FEATURES is not 'true'). Trading features disabled.","service":"rusty-degen-app","timestamp":"2025-05-06T17:56:25.347Z"}
+{"level":"info","message":"Bot features not enabled, skipping initial round check.","service":"rusty-degen-app","timestamp":"2025-05-06T17:56:25.347Z"}
+{"level":"info","message":"Restored round 1 (status: active) from DB on client socket request.","service":"rusty-degen-app","timestamp":"2025-05-06T17:56:27.812Z"}
+{"level":"warn","message":"Inventory fetch failed for joemama698243: Bot service is not configured.","service":"rusty-degen-app","timestamp":"2025-05-06T17:56:59.984Z"}
+{"ip":"::1","level":"warn","message":"Invalid CSRF token detected","method":"POST","service":"rusty-degen-app","timestamp":"2025-05-06T17:57:13.001Z","url":"/api/user/tradeurl","userId":"68027867bddbca2835b6ba3f"}
+{"ip":"::1","level":"warn","message":"Invalid CSRF token detected","method":"POST","service":"rusty-degen-app","timestamp":"2025-05-06T17:57:16.924Z","url":"/logout","userId":"68027867bddbca2835b6ba3f"}
+{"level":"warn","message":"Inventory fetch failed for joemama698243: Bot service is not configured.","service":"rusty-degen-app","timestamp":"2025-05-06T17:57:22.729Z"}
+{"level":"warn","message":"Inventory fetch failed for joemama698243: Bot service is not configured.","service":"rusty-degen-app","timestamp":"2025-05-06T17:58:03.471Z"}
+{"level":"warn","message":"Inventory fetch failed for joemama698243: Bot service is not configured.","service":"rusty-degen-app","timestamp":"2025-05-06T17:58:09.937Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T18:06:25.344Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T18:06:48.538Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T18:32:48.168Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T18:33:11.266Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T18:42:48.173Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T18:43:11.430Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T18:52:48.205Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T18:53:10.324Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T19:02:48.216Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T19:03:11.261Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T19:12:48.224Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T19:13:10.053Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T19:22:48.225Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T19:23:13.746Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T19:32:48.226Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T19:33:09.938Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T19:42:48.229Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T19:43:10.473Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T19:52:48.229Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T19:53:12.230Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T20:26:46.764Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T20:27:11.420Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T20:36:46.765Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T20:37:09.245Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T20:46:46.772Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T20:47:08.801Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T20:56:46.785Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T20:57:09.265Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T21:06:46.793Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T21:07:10.442Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T21:16:46.801Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T21:17:08.408Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T21:26:46.806Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T21:27:08.711Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T21:36:46.812Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T21:37:12.856Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T21:46:46.816Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T21:47:11.375Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T21:56:46.821Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T21:57:08.837Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T22:06:46.851Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T22:07:09.991Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T22:16:46.855Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T22:17:09.608Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T22:26:46.856Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T22:27:08.463Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T22:36:46.863Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T22:37:09.279Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T22:46:46.865Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T22:47:11.529Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T22:56:46.869Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T22:57:10.023Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T23:06:46.869Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T23:07:17.373Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T23:16:46.870Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T23:17:09.779Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T23:26:46.871Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T23:27:09.344Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T23:36:46.874Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T23:37:08.781Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T23:46:46.874Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T23:47:10.481Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-06T23:56:46.876Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-06T23:57:11.817Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-07T00:06:46.875Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-07T00:07:09.625Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-07T00:16:46.890Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-07T00:17:09.315Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-07T00:26:46.891Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-07T00:27:09.964Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-07T00:36:46.895Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-07T00:37:10.654Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-07T00:46:46.897Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-07T00:47:13.824Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-07T00:56:46.899Z"}
+{"level":"info","message":"Refreshed price cache with 5144 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-07T00:57:09.217Z"}
+{"level":"info","message":"Logger initialized.","service":"rusty-degen-app","timestamp":"2025-05-13T19:48:23.466Z"}
+{"level":"warn","message":"Bot features are NOT explicitly enabled (ENABLE_BOT_FEATURES is not 'true'). Trading features will be disabled.","service":"rusty-degen-app","timestamp":"2025-05-13T19:48:23.473Z"}
+{"level":"info","message":"Steam Bot is not configured (isBotConfigured=false). Trading features disabled.","service":"rusty-degen-app","timestamp":"2025-05-13T19:48:23.591Z"}
+{"level":"info","message":"Performing initial price cache refresh...","service":"rusty-degen-app","timestamp":"2025-05-13T19:48:23.596Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-13T19:48:23.597Z"}
+{"level":"info","message":"Successfully connected to MongoDB.","service":"rusty-degen-app","timestamp":"2025-05-13T19:48:24.544Z"}
+{"level":"info","message":"Refreshed price cache with 5152 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-13T19:48:47.212Z"}
+{"level":"info","message":"Scheduled price cache refresh every 10 minutes.","service":"rusty-degen-app","timestamp":"2025-05-13T19:48:47.213Z"}
+{"level":"info","message":"Server listening on port 3000","service":"rusty-degen-app","timestamp":"2025-05-13T19:48:47.227Z"}
+{"level":"info","message":"Site URL configured as: http://localhost:3000","service":"rusty-degen-app","timestamp":"2025-05-13T19:48:47.228Z"}
+{"level":"info","message":"Bot features are NOT enabled (ENABLE_BOT_FEATURES is not 'true'). Trading features disabled.","service":"rusty-degen-app","timestamp":"2025-05-13T19:48:47.229Z"}
+{"level":"info","message":"Bot features not enabled, skipping initial round check.","service":"rusty-degen-app","timestamp":"2025-05-13T19:48:47.230Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-13T19:58:47.219Z"}
+{"level":"info","message":"Refreshed price cache with 5152 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-13T19:59:09.649Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-13T20:36:07.949Z"}
+{"level":"info","message":"Refreshed price cache with 5152 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-13T20:36:31.583Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-13T20:46:07.954Z"}
+{"level":"info","message":"Refreshed price cache with 5152 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-13T20:46:31.939Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-13T21:58:26.980Z"}
+{"errorCode":"ECONNABORTED","errorMessage":"timeout of 30000ms exceeded","level":"error","message":"Failed to fetch prices from https://rust.scmm.app/api/item/prices?currency=USD.","service":"rusty-degen-app","timestamp":"2025-05-13T22:00:44.117Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-13T22:34:14.476Z"}
+{"level":"info","message":"Refreshed price cache with 5152 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-13T22:34:38.830Z"}
+{"level":"info","message":"Logger initialized.","service":"rusty-degen-app","timestamp":"2025-05-15T00:59:06.640Z"}
+{"level":"warn","message":"Bot features are NOT explicitly enabled (ENABLE_BOT_FEATURES is not 'true'). Trading features will be disabled.","service":"rusty-degen-app","timestamp":"2025-05-15T00:59:06.645Z"}
+{"level":"info","message":"Steam Bot is not configured (isBotConfigured=false). Trading features disabled.","service":"rusty-degen-app","timestamp":"2025-05-15T00:59:06.711Z"}
+{"level":"info","message":"Performing initial price cache refresh...","service":"rusty-degen-app","timestamp":"2025-05-15T00:59:06.714Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-15T00:59:06.715Z"}
+{"level":"info","message":"Successfully connected to MongoDB.","service":"rusty-degen-app","timestamp":"2025-05-15T00:59:08.198Z"}
+{"level":"info","message":"Refreshed price cache with 5152 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-15T00:59:33.796Z"}
+{"level":"info","message":"Scheduled price cache refresh every 10 minutes.","service":"rusty-degen-app","timestamp":"2025-05-15T00:59:33.798Z"}
+{"level":"info","message":"Server listening on port 3000","service":"rusty-degen-app","timestamp":"2025-05-15T00:59:33.812Z"}
+{"level":"info","message":"Site URL configured as: http://localhost:3000","service":"rusty-degen-app","timestamp":"2025-05-15T00:59:33.813Z"}
+{"level":"info","message":"Bot features are NOT enabled (ENABLE_BOT_FEATURES is not 'true'). Trading features disabled.","service":"rusty-degen-app","timestamp":"2025-05-15T00:59:33.814Z"}
+{"level":"info","message":"Bot features not enabled, skipping initial round check.","service":"rusty-degen-app","timestamp":"2025-05-15T00:59:33.815Z"}
+{"level":"info","message":"Restored round 1 (status: active) from DB on client socket request.","service":"rusty-degen-app","timestamp":"2025-05-15T01:02:46.841Z"}
+{"level":"info","message":"Logger initialized.","service":"rusty-degen-app","timestamp":"2025-05-15T01:05:46.487Z"}
+{"level":"info","message":"Attempting Steam login for bot: bobbyschlobby1...","service":"rusty-degen-app","timestamp":"2025-05-15T01:05:46.538Z"}
+{"level":"info","message":"Performing initial price cache refresh...","service":"rusty-degen-app","timestamp":"2025-05-15T01:05:46.824Z"}
+{"level":"info","message":"Attempting to refresh price cache from rust.scmm.app...","service":"rusty-degen-app","timestamp":"2025-05-15T01:05:46.825Z"}
+{"level":"info","message":"Successfully connected to MongoDB.","service":"rusty-degen-app","timestamp":"2025-05-15T01:05:47.669Z"}
+{"level":"info","message":"Steam bot bobbyschlobby1 logged in successfully (SteamID: 76561199846031417). Attempting to set cookies for TradeOfferManager...","service":"rusty-degen-app","timestamp":"2025-05-15T01:05:48.170Z"}
+{"level":"info","message":"TradeOfferManager cookies set successfully.","service":"rusty-degen-app","timestamp":"2025-05-15T01:05:48.483Z"}
+{"level":"info","message":"Steam Bot is ready.","service":"rusty-degen-app","timestamp":"2025-05-15T01:05:48.485Z"}
+{"level":"info","message":"Found existing active round 1 on startup.","service":"rusty-degen-app","timestamp":"2025-05-15T01:05:48.556Z"}
+{"level":"info","message":"Refreshed price cache with 5152 items from rust.scmm.app.","service":"rusty-degen-app","timestamp":"2025-05-15T01:06:11.848Z"}
+{"level":"info","message":"Scheduled price cache refresh every 10 minutes.","service":"rusty-degen-app","timestamp":"2025-05-15T01:06:11.850Z"}
+{"level":"info","message":"Server listening on port 3000","service":"rusty-degen-app","timestamp":"2025-05-15T01:06:11.867Z"}
+{"level":"info","message":"Site URL configured as: http://localhost:3000","service":"rusty-degen-app","timestamp":"2025-05-15T01:06:11.867Z"}
+{"level":"info","message":"Steam Bot is ready.","service":"rusty-degen-app","timestamp":"2025-05-15T01:06:11.868Z"}
