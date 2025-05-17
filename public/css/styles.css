@@ -1467,11 +1467,9 @@ code { /* General code tag styling */
 
 }
 
-/* Adjust layout for very wide screens to prevent excessive stretching */
-@media (min-width: 1600px) {
+@media (min-width: 1200px) {
     .jackpot-and-chat-container {
-         /* Consider max-width for the combined container if needed, or adjust jackpot/chat widths */
-         /* Example: Keep jackpot section from getting too wide if desired */
-         /* .jackpot-section { max-width: 800px; } */
+        position: relative;
+        left: 150px;  
     }
 }
