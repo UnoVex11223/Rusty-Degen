@@ -1431,12 +1431,6 @@ code { /* General code tag styling */
 @media (min-width: 1200px) {
     .jackpot-and-chat-container {
         position: relative;
-        /* Example: if jackpot is 680px and chat is 280px, total ~960px.
-           If container is 1200px, (1200 - 960)/2 = 120px.
-           So left: 120px would center it. This might need dynamic adjustment
-           or a simpler flex centering approach on a parent if possible.
-           The current `justify-content: center` on jackpot-and-chat-container should handle this.
-        */
-        /* left: 150px; */ /* This hardcoded value might not be ideal for responsiveness */
+        left: 150px;   
     }
 }
