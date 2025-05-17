@@ -291,25 +291,28 @@ code { /* General code tag styling */
 /* --- End Pending Offer Indicator --- */
 
 
-/* --- Dropdown Menu --- */
+/* --- Dropdown Menu (New Simplified Structure) --- */
 .dropdown-menu {
     display: none; /* JS toggles this to 'block' */
     position: absolute;
-    top: calc(100% + 10px); /* Position below the user-profile-container */
+    top: calc(100% + 10px); /* Position below the user-profile */
+    left: 50%; /* Start from center of profile container */
+    transform: translateX(-50%); /* Center the dropdown */
+    right: 0; /* Default to align right edge of dropdown with right edge of container */
+    left: auto; /* Override previous left */
+    transform: none; /* Reset transform */
     z-index: 1000;
     background-color: var(--background-dark);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     box-shadow: var(--shadow-lg);
-    min-width: 200px;
+    min-width: 200px; /* Or adjust to content */
     overflow: hidden;
 }
 
 .user-profile-container .dropdown-menu {
-    /* MODIFIED: Align dropdown left edge with its container's left edge */
-    left: 0;
-    right: auto; /* Ensure right is not conflicting */
-    transform: none; /* Remove any previous transforms that might center it */
+    left: 0; /* Align dropdown's left to container's left */
+    right: auto; /* Override the right:0 */
 }
 
 
@@ -871,9 +874,6 @@ code { /* General code tag styling */
 .age-verification .modal-content { max-width: 500px; }
 #depositModal .modal-content { max-width: 900px; }
 #tradeUrlModal .modal-content { max-width: 600px; }
-/* NEW: Winning History Modal Size */
-.winning-history-modal .modal-content { max-width: 800px; }
-
 
 @keyframes modalIn {
     from { opacity: 0; transform: scale(0.9) translateY(-20px); }
@@ -1063,119 +1063,6 @@ code { /* General code tag styling */
 .profile-pending-offer-status a, .profile-pending-link { color: var(--secondary-light) !important; font-weight: bold; text-decoration: underline !important; }
 .profile-pending-offer-status a:hover, .profile-pending-link:hover { color: var(--secondary-color) !important; opacity: 0.9; }
 .profile-pending-offer-status i { margin-right: 5px; }
-
-
-/* --- NEW: Winning History Modal Styles --- */
-.winning-history-modal .modal-content { max-width: 800px; }
-.winning-history-modal-body { padding: 0; /* Remove padding for full-width table container */ }
-.winning-history-table-container {
-    max-height: 60vh; /* Limit height to allow scrolling */
-    overflow-y: auto;
-    padding: 20px; /* Add padding inside the scrollable container */
-}
-.winning-history-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9rem;
-}
-.winning-history-table th,
-.winning-history-table td {
-    padding: 10px 12px;
-    text-align: left;
-    border-bottom: 1px solid var(--border-color);
-    vertical-align: middle;
-}
-.winning-history-table th {
-    background-color: var(--background-light);
-    color: var(--primary-light);
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 0.5px;
-    position: sticky; /* Make header sticky */
-    top: 0;
-    z-index: 1;
-}
-.winning-history-table tbody tr:hover {
-    background-color: rgba(255, 255, 255, 0.03);
-}
-.winning-history-table td .game-id-cell {
-    font-family: var(--font-mono);
-    font-size: 0.85em;
-    color: var(--text-secondary);
-    max-width: 120px; /* Limit width and allow wrap/ellipsis */
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: inline-block; /* For ellipsis to work */
-    vertical-align: middle;
-}
-.winning-history-table td .amount-won-cell {
-    font-weight: bold;
-    color: var(--primary-color);
-    font-family: var(--font-mono);
-}
-.winning-history-table td .trade-offer-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.85em;
-    text-decoration: none;
-    transition: background-color 0.2s ease, color 0.2s ease;
-}
-.winning-history-table td .trade-offer-link.status-accepted {
-    background-color: rgba(var(--success-color-rgb, 76, 175, 80), 0.15);
-    color: var(--success-color);
-    border: 1px solid var(--success-color);
-}
-.winning-history-table td .trade-offer-link.status-accepted:hover {
-    background-color: rgba(var(--success-color-rgb, 76, 175, 80), 0.3);
-}
-.winning-history-table td .trade-offer-link.status-pending,
-.winning-history-table td .trade-offer-link.status-sent {
-    background-color: rgba(var(--info-color-rgb, 33, 150, 243), 0.15);
-    color: var(--info-color);
-    border: 1px solid var(--info-color);
-}
-.winning-history-table td .trade-offer-link.status-pending:hover,
-.winning-history-table td .trade-offer-link.status-sent:hover {
-    background-color: rgba(var(--info-color-rgb, 33, 150, 243), 0.3);
-}
-.winning-history-table td .trade-offer-link.status-declined,
-.winning-history-table td .trade-offer-link.status-expired,
-.winning-history-table td .trade-offer-link.status-canceled,
-.winning-history-table td .trade-offer-link.status-error {
-    background-color: rgba(var(--error-color-rgb, 244, 67, 54), 0.15);
-    color: var(--error-color);
-    border: 1px solid var(--error-color);
-}
-.winning-history-table td .trade-offer-link.status-declined:hover,
-.winning-history-table td .trade-offer-link.status-expired:hover,
-.winning-history-table td .trade-offer-link.status-canceled:hover,
-.winning-history-table td .trade-offer-link.status-error:hover {
-    background-color: rgba(var(--error-color-rgb, 244, 67, 54), 0.3);
-}
-.winning-history-table td .trade-offer-link.status-unknown,
-.winning-history-table td .no-trade-offer {
-    color: var(--text-secondary);
-    font-style: italic;
-}
-.winning-history-table td .trade-offer-link i {
-    font-size: 0.9em;
-}
-#noWinningsMessage {
-    color: var(--text-secondary);
-    font-style: italic;
-}
-
-/* Define RGB versions of status colors for RGBA usage if needed */
-:root {
-    --success-color-rgb: 76, 175, 80;
-    --info-color-rgb: 33, 150, 243;
-    --error-color-rgb: 244, 67, 54;
-}
 
 
 /*=========================
@@ -1544,6 +1431,6 @@ code { /* General code tag styling */
 @media (min-width: 1200px) {
     .jackpot-and-chat-container {
         position: relative;
-        left: 150px;
+        left: 150px;   
     }
 }
