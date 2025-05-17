@@ -298,20 +298,9 @@ code { /* General code tag styling */
     top: calc(100% + 10px); /* Position below the user-profile */
     left: 50%; /* Start from center of profile container */
     transform: translateX(-50%); /* Center the dropdown */
-    /* If profile container is far right, this might push dropdown off-screen.
-       Alternative: left: auto; right: 0; if always aligning to the right edge of profile container */
-    /* For aligning with the avatar, more complex calc might be needed if profile width is variable.
-       A simpler approach is to ensure user-profile-container is not excessively wide. */
-    /* Let's try aligning to the left of user-profile-container, then shifting a bit if avatar is on left */
-    /* left: 0; /* Aligns to the left edge of user-profile-container */
-    /* transform: translateX(0); /* Reset transform if using left:0 */
-
-    /* Updated Alignment: Align to the start of the profile trigger.
-       Assuming user-profile-container is the reference. */
     right: 0; /* Default to align right edge of dropdown with right edge of container */
     left: auto; /* Override previous left */
     transform: none; /* Reset transform */
-
     z-index: 1000;
     background-color: var(--background-dark);
     border: 1px solid var(--border-color);
@@ -321,10 +310,7 @@ code { /* General code tag styling */
     overflow: hidden;
 }
 
-/* If the avatar is on the left and you want the dropdown to roughly start there: */
 .user-profile-container .dropdown-menu {
-    /* This assumes .user-profile is the clickable trigger within .user-profile-container */
-    /* To align with the start of the .user-profile element: */
     left: 0; /* Align dropdown's left to container's left */
     right: auto; /* Override the right:0 */
 }
@@ -509,13 +495,13 @@ code { /* General code tag styling */
 
 /* Jackpot Page Layout */
 #home-page {
-    /* Takes full width by default if .container is its parent */
+    /* Container for jackpot and chat */
 }
 
 .jackpot-and-chat-container {
     display: flex;
-    gap: 20px; /* Space between jackpot section and chat */
-    align-items: flex-start; /* Align items to the top */
+    gap: 20px;
+    align-items: flex-start;
 }
 
 .jackpot-section {
@@ -525,8 +511,9 @@ code { /* General code tag styling */
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border-color);
     position: relative;
-    flex: 3; /* Takes up more space */
-    min-width: 0; /* Prevents overflow issues with flex items */
+    flex-grow: 1; /* Allows jackpot section to take up available space */
+    /* Remove min-width if it causes issues, or set it to a meaningful value */
+    /* min-width: 0; /* This was for flex item context, might not be needed if not shrinking */
 }
 
 
@@ -1233,31 +1220,33 @@ code { /* General code tag styling */
 }
 
 /*=========================
- CHAT STYLES
+ CHAT STYLES - REVISED
  =========================*/
 .chat-container {
-    flex: 1; /* Takes up remaining space, or a fixed proportion */
-    min-width: 280px; /* Minimum width for the chat */
-    max-width: 350px; /* Maximum width for the chat */
-    background-color: var(--background-medium);
-    border-radius: 12px;
+    width: 320px; /* Fixed width for the chat box */
+    flex-shrink: 0; /* Prevent chat box from shrinking */
+    background-color: var(--background-light); /* Distinct background for the chat box */
+    border-radius: 8px; /* More box-like appearance */
     border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-md); /* Consistent shadow */
     display: flex;
     flex-direction: column;
-    height: auto; /* Adjust as needed, or make it fit content */
-    max-height: 700px; /* Example max height, matches jackpot section approx */
-    overflow: hidden; /* Important for maintaining layout */
+    /* Max height can be set if you want to limit its vertical growth,
+       otherwise, it will be content height or constrained by jackpot-and-chat-container alignment.
+       Let's set a max-height similar to what jackpot section might use effectively */
+    max-height: 650px; /* Example max-height */
+    padding: 0; /* Remove padding from container itself, apply to children */
 }
 
 .chat-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 12px 15px;
-    background: linear-gradient(135deg, var(--background-medium), var(--background-light));
+    padding: 10px 15px; /* Adjusted padding */
+    background: var(--background-medium); /* Slightly different header background */
     border-bottom: 1px solid var(--border-color);
-    border-radius: 12px 12px 0 0;
+    border-radius: 8px 8px 0 0; /* Match container's top radius */
+    flex-shrink: 0;
 }
 
 .chat-header h3 {
@@ -1279,15 +1268,14 @@ code { /* General code tag styling */
 
 .chat-messages-container {
     flex-grow: 1;
-    padding: 10px 15px;
+    padding: 15px; /* Add padding here for message content spacing */
     overflow-y: auto;
     display: flex;
-    flex-direction: column-reverse; /* Newest messages at the bottom, scrolls to bottom */
-    gap: 10px;
-    background-color: var(--background-dark); /* Slightly darker for message area */
+    flex-direction: column-reverse;
+    gap: 12px; /* Increased gap between messages */
+    background-color: var(--background-dark);
 }
 
-/* Custom scrollbar for chat messages (if not using global) */
 .chat-messages-container::-webkit-scrollbar {
     width: 6px;
 }
@@ -1300,21 +1288,22 @@ code { /* General code tag styling */
     border-radius: 3px;
 }
 
-
 .chat-message {
     display: flex;
-    align-items: flex-start; /* Align avatar with top of message content */
+    align-items: flex-start;
     gap: 10px;
-    padding: 8px;
+    padding: 10px; /* Slightly more padding for messages */
     border-radius: 6px;
-    background-color: var(--background-light); /* Individual message background */
+    background-color: var(--background-light);
     border: 1px solid var(--border-color);
-    max-width: 95%; /* Prevent messages from taking full width if short */
-    word-wrap: break-word; /* Ensure long words break */
+    max-width: 95%;
+    word-wrap: break-word;
+    box-shadow: var(--shadow-sm); /* Subtle shadow for messages */
 }
 .chat-message.system-message {
     background-color: transparent;
     border: none;
+    box-shadow: none;
     color: var(--text-secondary);
     font-style: italic;
     font-size: 0.85rem;
@@ -1323,44 +1312,43 @@ code { /* General code tag styling */
     max-width: 100%;
 }
 
-
 .chat-message-avatar {
-    width: 30px;
-    height: 30px;
+    width: 32px; /* Slightly larger avatar */
+    height: 32px;
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
-    border: 2px solid transparent; /* Border color set by JS based on user */
+    border: 2px solid transparent;
 }
 
 .chat-message-content {
     display: flex;
     flex-direction: column;
-    min-width: 0; /* For text wrapping */
+    min-width: 0;
 }
 
 .chat-message-user {
     font-size: 0.9rem;
     font-weight: 700;
-    margin-bottom: 3px;
-    /* Color set by JS */
+    margin-bottom: 4px; /* Adjusted margin */
 }
 
 .chat-message-text {
     font-size: 0.9rem;
     line-height: 1.5;
     color: var(--text-primary);
-    margin: 0; /* Reset paragraph margin */
-    white-space: pre-wrap; /* Preserve line breaks and spaces */
+    margin: 0;
+    white-space: pre-wrap;
 }
-
 
 .chat-input-area {
     display: flex;
-    padding: 10px 15px;
+    padding: 12px 15px; /* Adjusted padding */
     border-top: 1px solid var(--border-color);
-    background-color: var(--background-light);
+    background-color: var(--background-medium); /* Match header */
     gap: 10px;
+    border-radius: 0 0 8px 8px; /* Match container's bottom radius */
+    flex-shrink: 0;
 }
 
 #chatMessageInput {
@@ -1386,5 +1374,4 @@ code { /* General code tag styling */
 #chatSendMessageBtn {
     padding: 10px 15px;
     font-size: 0.9rem;
-    /* Uses .btn and .btn-primary styles */
 }
