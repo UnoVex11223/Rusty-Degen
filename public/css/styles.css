@@ -309,7 +309,7 @@ code { /* General code tag styling */
     /* MODIFIED: Align dropdown left edge with its container's left edge */
     left: 0;
     right: auto; /* Ensure right is not conflicting */
-    transform: none; /* Remove any previous transforms */
+    transform: none; /* Remove any previous transforms that might center it */
 }
 
 
