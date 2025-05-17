@@ -1052,6 +1052,11 @@ app.post('/api/deposit', depositLimiter, ensureAuthenticated,
         const user = req.user;
         const requestedAssetIds = req.body.assetIds;
 
+        // Basic duplicate check to prevent double-submission of the same asset
+        if (new Set(requestedAssetIds).size !== requestedAssetIds.length) {
+            return res.status(400).json({ error: 'Duplicate asset IDs detected in deposit request.' });
+        }
+
         if (!isBotReady) return res.status(503).json({ error: "Deposit service temporarily unavailable (Bot offline)." });
         if (!user.tradeUrl) return res.status(400).json({ error: 'Please set your Steam Trade URL in your profile before depositing.' });
 
