@@ -291,30 +291,25 @@ code { /* General code tag styling */
 /* --- End Pending Offer Indicator --- */
 
 
-/* --- Dropdown Menu (New Simplified Structure) --- */
+/* --- Dropdown Menu --- */
 .dropdown-menu {
     display: none; /* JS toggles this to 'block' */
     position: absolute;
-    top: calc(100% + 10px); /* Position below the user-profile */
-    left: 50%; /* Start from center of profile container */
-    transform: translateX(-50%); /* Center the dropdown */
-    right: 0; /* Default to align right edge of dropdown with right edge of container */
-    left: auto; /* Override previous left */
-    transform: none; /* Reset transform */
+    top: calc(100% + 10px); /* Position below the user-profile-container */
     z-index: 1000;
     background-color: var(--background-dark);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     box-shadow: var(--shadow-lg);
-    min-width: 200px; /* Or adjust to content */
+    min-width: 200px;
     overflow: hidden;
 }
 
 .user-profile-container .dropdown-menu {
-    /* Adjusted to better align with the profile trigger */
-    left: auto;
-    right: 0; /* Align to the right of the profile trigger */
-    transform: none;
+    /* MODIFIED: Align dropdown left edge with its container's left edge */
+    left: 0;
+    right: auto; /* Ensure right is not conflicting */
+    transform: none; /* Remove any previous transforms */
 }
 
 
@@ -1071,6 +1066,7 @@ code { /* General code tag styling */
 
 
 /* --- NEW: Winning History Modal Styles --- */
+.winning-history-modal .modal-content { max-width: 800px; }
 .winning-history-modal-body { padding: 0; /* Remove padding for full-width table container */ }
 .winning-history-table-container {
     max-height: 60vh; /* Limit height to allow scrolling */
@@ -1548,6 +1544,6 @@ code { /* General code tag styling */
 @media (min-width: 1200px) {
     .jackpot-and-chat-container {
         position: relative;
-        left: 150px;   
+        left: 150px;
     }
 }
