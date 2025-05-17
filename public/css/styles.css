@@ -1405,6 +1405,6 @@ code { /* General code tag styling */
 @media (min-width: 1200px) {
     .jackpot-and-chat-container {
         position: relative;
-        left: 95px;   /* ⬅️ change this number to match the blue-line distance */
+        left: 200px;   /* ⬅️ change this number to match the blue-line distance */
     }
 }
