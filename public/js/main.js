@@ -1,10 +1,10 @@
-// main.js - Rust Jackpot Frontend Logic
+// main.js - Rust Jackpot Frontend Logic (Part 1 of 2)
 // Modifications:
-// - Winning History now fetches from a (placeholder) API.
-// - Selected items in deposit modal now persist using localStorage.
-// - Chat messages persist in localStorage and are limited to 15.
-// - Profile dropdown alignment considered.
-// - Tax and multiple deposit logic reviewed (primarily backend, but frontend interaction considered).
+// - Added Winning History modal elements to DOMElements.
+// - Added event listener setup for Winning History.
+// - Added functions to handle showing/fetching/populating Winning History.
+// - Changed CONFIG.MAX_CHAT_MESSAGES to 15.
+// - Integrated handling for 'initialChatMessages' from backend.
 
 // Ensure Socket.IO client library is loaded before this script
 
@@ -28,10 +28,8 @@ const CONFIG = {
     BOUNCE_DAMPING: 0.35,
     BOUNCE_FREQUENCY: 3.5,
     LANDING_POSITION_VARIATION: 0.60,
-    MAX_CHAT_MESSAGES: 15, // User request: Only 15 messages should be in the chat at once
-    CHAT_SEND_COOLDOWN_MS: 2000, // Frontend visual cooldown for chat send button
-    CHAT_LOCAL_STORAGE_KEY: 'rustyDegenChatHistory', // For chat persistence
-    DEPOSIT_SELECTION_STORAGE_KEY: 'rustyDegenDepositSelection', // For deposit selection persistence
+    MAX_CHAT_MESSAGES: 15, // MODIFIED: User requested 15 messages
+    CHAT_SEND_COOLDOWN_MS: 2000,
 };
 
 const COLOR_PALETTE = [
@@ -62,7 +60,7 @@ const DOMElements = {
         userName: document.getElementById('userName'),
         userDropdownMenu: document.getElementById('userDropdownMenu'),
         profileDropdownButton: document.getElementById('profileDropdownButton'),
-        winningHistoryDropdownButton: document.getElementById('winningHistoryDropdownButton'), // ADDED
+        winningHistoryDropdownButton: document.getElementById('winningHistoryDropdownButton'), // NEW
         logoutButton: document.getElementById('logoutButton'),
         pendingOfferIndicator: document.getElementById('pending-offer-indicator'),
     },
@@ -71,19 +69,19 @@ const DOMElements = {
         avatar: document.getElementById('profileModalAvatar'),
         name: document.getElementById('profileModalName'),
         deposited: document.getElementById('profileModalDeposited'),
-        won: document.getElementById('profileModalWon'), // Added for total won
+        won: document.getElementById('profileModalWon'),
         tradeUrlInput: document.getElementById('profileModalTradeUrl'),
         saveBtn: document.getElementById('profileModalSaveBtn'),
         closeBtn: document.getElementById('profileModalCloseBtn'),
         cancelBtn: document.getElementById('profileModalCancelBtn'),
         pendingOfferStatus: document.getElementById('profile-pending-offer-status'),
     },
-    winningHistoryModal: { // ADDED
+    // NEW: Winning History Modal Elements
+    winningHistoryModal: {
         modal: document.getElementById('winningHistoryModal'),
-        closeBtnHeader: document.getElementById('closeWinningHistoryModal'),
+        closeBtnHeader: document.getElementById('winningHistoryModalCloseBtn'),
         closeBtnFooter: document.getElementById('winningHistoryModalCloseFooterBtn'),
         loadingIndicator: document.getElementById('winning-history-loading'),
-        tableContainer: document.getElementById('winningHistoryTableContainer'),
         tableBody: document.getElementById('winningHistoryTableBody'),
         noWinningsMessage: document.getElementById('noWinningsMessage'),
     },
@@ -149,8 +147,8 @@ const DOMElements = {
 
 let currentUser = null;
 let currentRound = null;
-let selectedItemsList = []; // Holds full item objects for current selection
-let userInventory = []; // Holds full item objects of user's inventory
+let selectedItemsList = [];
+let userInventory = [];
 let isSpinning = false;
 let timerActive = false;
 let roundTimer = null;
@@ -161,44 +159,6 @@ let spinStartTime = 0;
 let currentDepositOfferURL = null;
 let onlineUserCount = 0;
 let isChatSendOnCooldown = false;
-let chatMessages = []; // Array to hold current chat messages for localStorage & display logic
-
-// --- LocalStorage Helper for Deposit Selection ---
-function saveSelectedDepositItems() {
-    if (!currentUser) return; // Only save if a user is logged in
-    // Store only assetIds to keep localStorage light and avoid stale data issues.
-    const assetIdsToSave = selectedItemsList.map(item => item.assetId);
-    try {
-        localStorage.setItem(`${CONFIG.DEPOSIT_SELECTION_STORAGE_KEY}_${currentUser.steamId}`, JSON.stringify(assetIdsToSave));
-    } catch (e) {
-        console.warn("Could not save deposit selection to localStorage:", e);
-    }
-}
-
-function loadSelectedDepositItemsFromStorage() { // Renamed to clarify it loads IDs
-    if (!currentUser) return [];
-    try {
-        const storedAssetIds = localStorage.getItem(`${CONFIG.DEPOSIT_SELECTION_STORAGE_KEY}_${currentUser.steamId}`);
-        if (storedAssetIds) {
-            const parsedAssetIds = JSON.parse(storedAssetIds);
-            return Array.isArray(parsedAssetIds) ? parsedAssetIds : [];
-        }
-    } catch (e) {
-        console.warn("Could not load deposit selection from localStorage:", e);
-    }
-    return []; // Return empty array if nothing stored or error
-}
-
-function clearSelectedDepositItemsStorage() {
-    if (!currentUser) return;
-    try {
-        localStorage.removeItem(`${CONFIG.DEPOSIT_SELECTION_STORAGE_KEY}_${currentUser.steamId}`);
-    } catch (e) {
-        console.warn("Could not clear deposit selection from localStorage:", e);
-    }
-}
-// --- End LocalStorage Helper ---
-
 
 function showModal(modalElement) {
     if (modalElement) modalElement.style.display = 'flex';
@@ -206,9 +166,17 @@ function showModal(modalElement) {
 
 function hideModal(modalElement) {
     if (modalElement) modalElement.style.display = 'none';
-    // No specific reset needed here for depositModal as loadUserInventory handles it
+    if (modalElement === DOMElements.deposit.depositModal) {
+        resetDepositModalUI();
+    }
+    // NEW: Also clear winning history content if that modal is closed
+    if (modalElement === DOMElements.winningHistoryModal.modal) {
+        if (DOMElements.winningHistoryModal.tableBody) DOMElements.winningHistoryModal.tableBody.innerHTML = '';
+        if (DOMElements.winningHistoryModal.noWinningsMessage) DOMElements.winningHistoryModal.noWinningsMessage.style.display = 'none';
+        if (DOMElements.winningHistoryModal.loadingIndicator) DOMElements.winningHistoryModal.loadingIndicator.style.display = 'none';
+    }
 }
-window.hideModal = hideModal; // Make globally accessible
+window.hideModal = hideModal; // Make hideModal globally accessible for HTML onclick events
 
 function showPage(pageElement) {
     Object.values(DOMElements.pages).forEach(page => {
@@ -246,8 +214,8 @@ function showNotification(message, type = 'info', duration = 4000) {
     }
     const bar = DOMElements.notificationBar;
     if (notificationTimeout) clearTimeout(notificationTimeout);
-    bar.innerHTML = message; // Be cautious if message can contain HTML; sanitize if needed
-    bar.className = 'notification-bar'; // Reset classes
+    bar.innerHTML = message;
+    bar.className = 'notification-bar';
     bar.classList.add(type);
     bar.classList.add('show');
     notificationTimeout = setTimeout(() => {
@@ -313,15 +281,19 @@ function darkenColor(hex, percent) {
 async function handleLogout() {
     console.log("Attempting logout...");
     try {
-        const response = await fetch('/logout', { method: 'POST' });
+        const response = await fetch('/logout', {
+            method: 'POST',
+        });
         if (!response.ok) {
              const result = await response.json().catch(() => ({ error: 'Logout request failed.' }));
             throw new Error(result.error || `Logout request failed with status ${response.status}.`);
         }
         const result = await response.json();
-         if (!result.success) throw new Error(result.error || 'Logout unsuccessful according to server.');
+         if (!result.success) {
+             throw new Error(result.error || 'Logout unsuccessful according to server.');
+         }
+        console.log('Logout successful.');
         currentUser = null;
-        clearSelectedDepositItemsStorage(); // Clear persistent deposit selection on logout
         updateUserUI();
         updateDepositButtonState();
         updateChatUI();
@@ -339,59 +311,65 @@ async function handleLogout() {
     }
 }
 
-function resetDepositModalUI(isOpeningModal = false) {
+function resetDepositModalUI() {
     const { depositButton, acceptDepositOfferBtn, depositStatusText } = DOMElements.deposit;
     if (depositButton) {
-        depositButton.disabled = selectedItemsList.length === 0 || !!currentDepositOfferURL || depositButton.textContent === 'Requesting...';
+        depositButton.disabled = selectedItemsList.length === 0;
         depositButton.style.display = 'inline-block';
-        if (depositButton.textContent !== 'Requesting...') { // Don't overwrite if mid-request
-            depositButton.textContent = 'Request Deposit Offer';
-        }
+        depositButton.textContent = 'Request Deposit Offer';
     }
     if (acceptDepositOfferBtn) {
-        acceptDepositOfferBtn.style.display = 'none'; // Hide by default
+        acceptDepositOfferBtn.style.display = 'none';
         acceptDepositOfferBtn.removeAttribute('data-offer-url');
     }
     if (depositStatusText) {
         depositStatusText.textContent = '';
         depositStatusText.className = 'deposit-status-text';
     }
-    if (!isOpeningModal) { // Only reset currentDepositOfferURL if not just opening
-        currentDepositOfferURL = null;
-    }
-    updateTotalValue(); // Ensure total value is always updated
+    currentDepositOfferURL = null;
 }
-
 
 function updateDepositButtonState() {
     const button = DOMElements.deposit.showDepositModalButton;
     if (!button) return;
+
     let disabled = false;
     let title = 'Deposit Rust skins into the pot';
+
     if (!currentUser) {
-        disabled = true; title = 'Log in to deposit';
+        disabled = true;
+        title = 'Log in to deposit';
     } else if (currentUser.pendingDepositOfferId) {
-         disabled = true; title = 'Accept or cancel your pending deposit offer first (check profile)';
+         disabled = true;
+         title = 'Accept or cancel your pending deposit offer first (check profile)';
     } else if (!currentUser.tradeUrl) {
-         disabled = true; title = 'Set your Steam Trade URL in your profile to deposit';
+         disabled = true;
+         title = 'Set your Steam Trade URL in your profile to deposit';
     } else if (isSpinning) {
-        disabled = true; title = 'Deposits closed during winner selection';
+        disabled = true;
+        title = 'Deposits closed during winner selection';
     } else if (!currentRound || currentRound.status !== 'active') {
-        disabled = true; title = 'Deposits are currently closed';
+        disabled = true;
+        title = 'Deposits are currently closed';
         if (currentRound) {
             switch (currentRound.status) {
                 case 'rolling': title = 'Deposits closed during winner selection'; break;
-                case 'completed': case 'error': title = 'Deposits closed (Round ended)'; break;
+                case 'completed':
+                case 'error': title = 'Deposits closed (Round ended)'; break;
                 case 'pending': title = 'Deposits closed (Waiting for round)'; break;
             }
         }
     } else if (currentRound.participants && currentRound.participants.length >= CONFIG.MAX_PARTICIPANTS_DISPLAY) {
-        disabled = true; title = `Participant limit (${CONFIG.MAX_PARTICIPANTS_DISPLAY}) reached`;
+        disabled = true;
+        title = `Participant limit (${CONFIG.MAX_PARTICIPANTS_DISPLAY}) reached`;
     } else if (currentRound.items && currentRound.items.length >= CONFIG.MAX_ITEMS_PER_POT_FRONTEND) {
-        disabled = true; title = `Pot item limit (${CONFIG.MAX_ITEMS_PER_POT_FRONTEND}) reached`;
+        disabled = true;
+        title = `Pot item limit (${CONFIG.MAX_ITEMS_PER_POT_FRONTEND}) reached`;
     } else if (timerActive && currentRound.timeLeft !== undefined && currentRound.timeLeft <= 0) {
-        disabled = true; title = 'Deposits closed (Round ending)';
+        disabled = true;
+        title = 'Deposits closed (Round ending)';
     }
+
     button.disabled = disabled;
     button.title = title;
     button.classList.toggle('deposit-disabled', disabled);
@@ -401,8 +379,11 @@ async function checkLoginStatus() {
     try {
         const response = await fetch('/api/user');
         if (!response.ok) {
-            if (response.status === 401 || response.status === 403) currentUser = null;
-            else throw new Error(`Server error fetching user: ${response.status}`);
+            if (response.status === 401 || response.status === 403) {
+                currentUser = null;
+            } else {
+                throw new Error(`Server error fetching user: ${response.status}`);
+            }
         } else {
             currentUser = await response.json();
             console.log('User logged in:', currentUser?.username);
@@ -417,25 +398,20 @@ async function checkLoginStatus() {
         updateUserUI();
         updateDepositButtonState();
         updateChatUI();
-        loadChatHistory(); // Load chat history
-        // If a user is logged in, `loadSelectedDepositItemsFromStorage` will be called within `loadUserInventory`
-        // to correctly reconcile persisted selections with the actual inventory.
-        if (!currentUser) {
-            selectedItemsList = []; // Clear selection if no user
-            clearSelectedDepositItemsStorage(); // Also clear from storage if no user session.
-        }
     }
 }
 
 function updateUserUI() {
     const { loginButton, userProfile, userAvatar, userName, userDropdownMenu, pendingOfferIndicator } = DOMElements.user;
     if (!loginButton || !userProfile) return;
+
     if (currentUser) {
         if (userAvatar) userAvatar.src = currentUser.avatar || '/img/default-avatar.png';
         if (userName) userName.textContent = currentUser.username || 'User';
         loginButton.style.display = 'none';
         userProfile.style.display = 'flex';
         userProfile.setAttribute('aria-disabled', 'false');
+
         if (pendingOfferIndicator) {
             const hasPending = !!currentUser.pendingDepositOfferId;
             pendingOfferIndicator.style.display = hasPending ? 'inline-block' : 'none';
@@ -457,83 +433,71 @@ function updateUserUI() {
 async function loadUserInventory() {
     const { inventoryItemsContainer, selectedItemsContainer, inventoryLoadingIndicator, totalValueDisplay } = DOMElements.deposit;
     if (!inventoryItemsContainer || !selectedItemsContainer || !inventoryLoadingIndicator || !totalValueDisplay) {
-        console.error("Inventory DOM elements missing."); return;
+        console.error("Inventory DOM elements missing.");
+        return;
     }
+
+    resetDepositModalUI();
+    selectedItemsList = [];
+    selectedItemsContainer.innerHTML = '';
+    updateTotalValue();
 
     inventoryLoadingIndicator.style.display = 'flex';
     inventoryItemsContainer.innerHTML = '';
-    selectedItemsContainer.innerHTML = ''; // Clear visual selected items on each load
 
     try {
         const response = await fetch('/api/inventory');
         if (!response.ok) {
             let errorMsg = 'Inventory load failed.';
-            try { const errorData = await response.json(); errorMsg = errorData.error || `Inventory load failed (${response.status})`; } catch (e) { /*Ignore*/ }
+            try {
+                const errorData = await response.json();
+                errorMsg = errorData.error || `Inventory load failed (${response.status})`;
+            } catch (e) { /* Ignore */ }
             if (response.status === 401 || response.status === 403) errorMsg = 'Please log in first.';
             throw new Error(errorMsg);
         }
-        userInventory = await response.json(); // Fresh inventory
+        userInventory = await response.json();
         inventoryLoadingIndicator.style.display = 'none';
-        if (!Array.isArray(userInventory)) throw new Error('Invalid inventory data received.');
 
-        // Reconcile selectedItemsList with fresh inventory and persisted asset IDs
-        const persistedAssetIds = loadSelectedDepositItemsFromStorage(); // Get IDs from localStorage
-        const newSelectedItemsList = [];
-        if (persistedAssetIds.length > 0 && userInventory.length > 0) {
-            userInventory.forEach(invItem => {
-                // If an item from fetched inventory was in the persisted selection and we haven't hit the limit
-                if (persistedAssetIds.includes(invItem.assetId) && newSelectedItemsList.length < CONFIG.MAX_ITEMS_PER_DEPOSIT) {
-                    newSelectedItemsList.push(invItem); // Add the full item object
-                }
-            });
-        }
-        selectedItemsList = newSelectedItemsList; // This is now our active selection
-        saveSelectedDepositItems(); // Save the reconciled (and possibly trimmed) list of asset IDs
+        if (!Array.isArray(userInventory)) throw new Error('Invalid inventory data received.');
 
         if (userInventory.length === 0) {
             inventoryItemsContainer.innerHTML = '<p class="empty-inventory-message">Inventory empty or unavailable. Ensure it\'s public on Steam.</p>';
-        } else {
-            displayInventoryItems(); // This will visually mark items as selected based on the updated selectedItemsList
+            return;
         }
-        // Re-populate the "Selected Items" visual section based on the reconciled selectedItemsList
-        selectedItemsList.forEach(item => addSelectedItemElement(item));
-        updateTotalValue();
-        resetDepositModalUI(true); // True because modal is opening/refreshing
-
+        displayInventoryItems();
     } catch (error) {
         inventoryLoadingIndicator.style.display = 'none';
         inventoryItemsContainer.innerHTML = `<p class="error-message">Error loading inventory: ${error.message}</p>`;
         console.error('Error loading inventory:', error);
-        selectedItemsList = []; // Clear selection on error
-        saveSelectedDepositItems(); // Persist empty selection
-        updateTotalValue();
-        resetDepositModalUI(true);
     }
 }
-
 
 function displayInventoryItems() {
     const container = DOMElements.deposit.inventoryItemsContainer;
     if (!container) return;
-    container.innerHTML = ''; // Clear before re-rendering
+    container.innerHTML = '';
 
     userInventory.forEach(item => {
         if (!item || typeof item.price !== 'number' || isNaN(item.price) || !item.assetId || !item.image) {
-            console.warn("Skipping invalid inventory item:", item); return;
+            console.warn("Skipping invalid inventory item:", item);
+            return;
         }
+
         const itemElement = document.createElement('div');
         itemElement.className = 'inventory-item';
         itemElement.dataset.assetId = item.assetId;
         itemElement.dataset.image = item.image;
         itemElement.dataset.price = item.price.toFixed(2);
         itemElement.title = `$${item.price.toFixed(2)}`;
+
         itemElement.innerHTML = `
             <img src="${item.image}" alt="Skin Image" loading="lazy"
                  onerror="this.onerror=null; this.src='/img/default-item.png';">
             <div class="item-details">
                 <div class="item-value">$${item.price.toFixed(2)}</div>
             </div>`;
-        // Check if this item is in the current selectedItemsList by assetId
+
         if (selectedItemsList.some(selected => selected.assetId === item.assetId)) {
             itemElement.classList.add('selected');
         }
@@ -542,20 +506,23 @@ function displayInventoryItems() {
     });
 }
 
+
 function toggleItemSelection(element, item) {
     if (typeof item.price !== 'number' || isNaN(item.price)) {
         console.error("Attempted to select item with invalid price:", item);
         showNotification('Selection Error: Cannot select item with invalid price.', 'error');
         return;
     }
+
     const assetId = item.assetId;
     const index = selectedItemsList.findIndex(i => i.assetId === assetId);
+
     if (index === -1) {
         if (selectedItemsList.length >= CONFIG.MAX_ITEMS_PER_DEPOSIT) {
             showNotification(`Selection Limit: You can select a maximum of ${CONFIG.MAX_ITEMS_PER_DEPOSIT} items per deposit.`, 'info');
             return;
         }
-        selectedItemsList.push(item); // Add the full item object
+        selectedItemsList.push(item);
         element.classList.add('selected');
         addSelectedItemElement(item);
     } else {
@@ -563,7 +530,6 @@ function toggleItemSelection(element, item) {
         element.classList.remove('selected');
         removeSelectedItemElement(assetId);
     }
-    saveSelectedDepositItems(); // Save selection to localStorage
     updateTotalValue();
     resetDepositModalUI();
 }
@@ -572,32 +538,38 @@ function addSelectedItemElement(item) {
     const container = DOMElements.deposit.selectedItemsContainer;
     if (!container) return;
     if (typeof item.price !== 'number' || isNaN(item.price)) {
-        console.error("Cannot add selected item element, invalid price:", item); return;
+        console.error("Cannot add selected item element, invalid price:", item);
+        return;
     }
+
     const selectedElement = document.createElement('div');
     selectedElement.className = 'selected-item-display';
     selectedElement.dataset.assetId = item.assetId;
     selectedElement.title = `$${item.price.toFixed(2)}`;
+
     selectedElement.innerHTML = `
         <img src="${item.image}" alt="Selected Skin Image" loading="lazy"
              onerror="this.onerror=null; this.src='/img/default-item.png';">
         <div class="item-value">$${item.price.toFixed(2)}</div>
         <button class="remove-item-btn" title="Remove Item" data-asset-id="${item.assetId}" aria-label="Remove Item">&times;</button>
         `;
+
     selectedElement.querySelector('.remove-item-btn')?.addEventListener('click', (e) => {
         e.stopPropagation();
         const assetIdToRemove = e.target.dataset.assetId;
         if (assetIdToRemove) {
-            removeSelectedItem(assetIdToRemove); // This will update selectedItemsList and save to localStorage
+            removeSelectedItem(assetIdToRemove);
             updateTotalValue();
             resetDepositModalUI();
         }
     });
+
     selectedElement.addEventListener('click', () => {
-        removeSelectedItem(item.assetId); // This will update selectedItemsList and save to localStorage
+        removeSelectedItem(item.assetId);
         updateTotalValue();
         resetDepositModalUI();
     });
+
     container.appendChild(selectedElement);
 }
 
@@ -612,7 +584,6 @@ function removeSelectedItem(assetId) {
     const inventoryElement = DOMElements.deposit.inventoryItemsContainer?.querySelector(`.inventory-item[data-asset-id="${assetId}"]`);
     if (inventoryElement) inventoryElement.classList.remove('selected');
     removeSelectedItemElement(assetId);
-    saveSelectedDepositItems(); // Save change to localStorage
 }
 
 function updateTotalValue() {
@@ -625,6 +596,8 @@ function updateTotalValue() {
     totalValueDisplay.textContent = `$${total.toFixed(2)}`;
 }
 
+
+// main.js - Rust Jackpot Frontend Logic (Part 2 of 2)
 
 async function requestDepositOffer() {
     const { depositButton, acceptDepositOfferBtn, depositStatusText } = DOMElements.deposit;
@@ -652,7 +625,6 @@ async function requestDepositOffer() {
         return;
     }
 
-
     depositButton.disabled = true;
     depositButton.textContent = 'Requesting...';
     acceptDepositOfferBtn.style.display = 'none';
@@ -662,7 +634,8 @@ async function requestDepositOffer() {
 
     try {
         const assetIds = selectedItemsList.map(item => item.assetId);
-        response = await fetch('/api/deposit', { // This was the original endpoint
+        console.log("Requesting deposit offer for assetIds:", assetIds);
+        response = await fetch('/api/deposit', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ assetIds }),
@@ -671,7 +644,7 @@ async function requestDepositOffer() {
 
         if (!response.ok) {
             if (response.status === 409 && result.offerURL && result.offerId) {
-                // User already has a pending offer logic
+                console.warn("User already has a pending offer:", result.offerId);
                 depositStatusText.textContent = `You already have a pending offer! Click 'Accept on Steam' to view it.`;
                 depositStatusText.className = 'deposit-status-text warning';
                 currentDepositOfferURL = result.offerURL;
@@ -686,7 +659,7 @@ async function requestDepositOffer() {
         } else if (!result.success || !result.offerURL || !result.offerId) {
             throw new Error(result.error || 'Backend did not return a valid offer URL and ID.');
         } else {
-            // Success
+            console.log("Deposit offer created:", result.offerId);
             depositStatusText.textContent = "Offer created! Click 'Accept on Steam' below to complete.";
             depositStatusText.className = 'deposit-status-text success';
             currentDepositOfferURL = result.offerURL;
@@ -694,24 +667,16 @@ async function requestDepositOffer() {
             acceptDepositOfferBtn.style.display = 'inline-block';
             acceptDepositOfferBtn.disabled = false;
             if(currentUser) { currentUser.pendingDepositOfferId = result.offerId; updateUserUI(); updateDepositButtonState(); }
-            clearSelectedDepositItemsStorage(); // Clear persisted selection on successful offer request
-            selectedItemsList = []; // Also clear in-memory list
-            // No need to call DOMElements.deposit.selectedItemsContainer.innerHTML = ''; here,
-            // loadUserInventory on next modal open will handle reflecting the cleared selection.
         }
     } catch (error) {
         console.error('Error requesting deposit offer:', error);
         depositStatusText.textContent = `Error: ${error.message}`;
         depositStatusText.className = 'deposit-status-text error';
-        // For most errors, we DON'T want to clear selectedItemsList or its storage,
-        // so the user can retry without re-selecting.
-        // Only reset the button state if it's not a 409 (already handled)
         if (!(response && response.status === 409)) {
-            depositButton.disabled = selectedItemsList.length === 0; // Re-enable based on selection
-            depositButton.textContent = 'Request Deposit Offer';
+            resetDepositModalUI();
         }
-        // If error was something other than 409, and we locally thought there was a pending offer, clear it
         if (currentUser && currentUser.pendingDepositOfferId && !(response && response.status === 409)) {
+            console.log("Clearing potentially stale pending offer ID due to error.");
             currentUser.pendingDepositOfferId = null; updateUserUI(); updateDepositButtonState();
         }
     }
@@ -749,10 +714,8 @@ function updateTimerUI(timeLeft) {
     } else if (!currentRound) {
         displayValue = "--";
     }
-
     timerValue.textContent = displayValue;
     updateTimerCircle(timeToShow, CONFIG.ROUND_DURATION);
-
     if (timerActive && timeToShow <= 10 && timeToShow > 0) {
         timerValue.classList.add('urgent-pulse');
         timerValue.classList.remove('timer-pulse');
@@ -783,69 +746,52 @@ function updateAllParticipantPercentages() {
     if (!currentRound || !currentRound.participants || currentRound.participants.length === 0) return;
     const container = DOMElements.jackpot.participantsContainer;
     if (!container) return;
-
     const depositBlocks = container.querySelectorAll('.player-deposit-container');
     const currentTotalPotValue = Math.max(0.01, currentRound.totalValue || 0.01);
-
     depositBlocks.forEach(block => {
         const userId = block.dataset.userId;
         if (!userId) return;
-        // Find the participant's total data for the current round
         const participantData = currentRound.participants.find(p => p.user?._id === userId || p.user?.id === userId);
         if (!participantData) return;
-
-        const cumulativeValue = participantData.itemsValue || 0; // This is their total value in the pot
+        const cumulativeValue = participantData.itemsValue || 0;
         const percentage = ((cumulativeValue / currentTotalPotValue) * 100).toFixed(1);
         const valueElement = block.querySelector('.player-deposit-value');
-
         if (valueElement) {
             const userColor = getUserColor(userId);
-            // The text content for the value part of the block might still show individual deposit value,
-            // but the percentage shown should be based on their total contribution.
-            // The title attribute clarifies their total.
-            const blockSpecificValueText = valueElement.textContent.split('|')[0].trim(); // Keep the originally displayed value for this block
-            valueElement.textContent = `${blockSpecificValueText} | ${percentage}%`;
-            valueElement.title = `Total Deposited: $${cumulativeValue.toFixed(2)} | Chance: ${percentage}%`;
-            valueElement.style.color = userColor; // Color remains based on user
+            valueElement.textContent = `$${cumulativeValue.toFixed(2)} | ${percentage}%`;
+            valueElement.title = `Deposited: $${cumulativeValue.toFixed(2)} | Chance: ${percentage}%`;
+            valueElement.style.color = userColor;
         }
     });
 }
-
 
 function displayLatestDeposit(data) {
     const container = DOMElements.jackpot.participantsContainer;
     const emptyMsg = DOMElements.jackpot.emptyPotMessage;
     if (!container) return;
-
     const userId = data.userId || data.user?._id;
     if (!userId || typeof data.itemsValue !== 'number' || isNaN(data.itemsValue)) {
         console.error("Invalid data passed to displayLatestDeposit:", data);
         return;
     }
-
     const depositSfx = DOMElements.audio.depositSound;
     if (depositSfx) {
         depositSfx.volume = 0.6;
         depositSfx.currentTime = 0;
         depositSfx.play().catch(e => console.error("Error playing deposit sound:", e));
     }
-
     const username = data.username || data.user?.username || 'Unknown User';
     const avatar = data.avatar || data.user?.avatar || '/img/default-avatar.png';
-    const valueOfThisDeposit = data.itemsValue; // Value of items in *this specific deposit*
-    const itemsInThisDeposit = data.depositedItems || [];
+    const value = data.itemsValue;
+    const items = data.depositedItems || [];
     const userColor = getUserColor(userId);
-
-    // Get participant's *total cumulative* value in the round for percentage calculation
-    const participantDataForPercentage = currentRound?.participants?.find(p => (p.user?._id === userId || p.user?.id === userId));
-    const cumulativeValueForPercentage = participantDataForPercentage ? participantDataForPercentage.itemsValue : valueOfThisDeposit;
+    const participantData = currentRound?.participants?.find(p => (p.user?._id === userId || p.user?.id === userId));
+    const cumulativeValue = participantData ? participantData.itemsValue : value;
     const currentTotalPotValue = Math.max(0.01, currentRound?.totalValue || 0.01);
-    const percentage = ((cumulativeValueForPercentage / currentTotalPotValue) * 100).toFixed(1);
-
+    const percentage = ((cumulativeValue / currentTotalPotValue) * 100).toFixed(1);
     const depositContainer = document.createElement('div');
     depositContainer.dataset.userId = userId;
     depositContainer.className = 'player-deposit-container player-deposit-new';
-
     const depositHeader = document.createElement('div');
     depositHeader.className = 'player-deposit-header';
     depositHeader.innerHTML = `
@@ -853,18 +799,15 @@ function displayLatestDeposit(data) {
              onerror="this.onerror=null; this.src='/img/default-avatar.png';" style="border-color: ${userColor};">
         <div class="player-info">
             <div class="player-name" title="${username}">${username}</div>
-            <div class="player-deposit-value" style="color: ${userColor}" title="Total Deposited: $${cumulativeValueForPercentage.toFixed(2)} | Chance: ${percentage}%">
-                $${valueOfThisDeposit.toFixed(2)} | ${percentage}% 
+            <div class="player-deposit-value" style="color: ${userColor}" title="Deposited: $${cumulativeValue.toFixed(2)} | Chance: ${percentage}%">
+                $${cumulativeValue.toFixed(2)} | ${percentage}%
             </div>
         </div>`;
-        // Display valueOfThisDeposit in the main text, but full chance based on total contribution.
-
     const itemsGrid = document.createElement('div');
     itemsGrid.className = 'player-items-grid';
-
-    if (itemsInThisDeposit.length > 0) {
-        itemsInThisDeposit.sort((a, b) => (b.price || 0) - (a.price || 0));
-        const displayItems = itemsInThisDeposit.slice(0, CONFIG.MAX_ITEMS_PER_DEPOSIT);
+    if (items.length > 0) {
+        items.sort((a, b) => (b.price || 0) - (a.price || 0));
+        const displayItems = items.slice(0, CONFIG.MAX_ITEMS_PER_DEPOSIT);
         displayItems.forEach(item => {
             if (!item || typeof item.price !== 'number' || isNaN(item.price) || !item.image) {
                 console.warn("Skipping invalid item in deposit display:", item);
@@ -882,18 +825,16 @@ function displayLatestDeposit(data) {
                 </div>`;
             itemsGrid.appendChild(itemElement);
         });
-        if (itemsInThisDeposit.length > CONFIG.MAX_ITEMS_PER_DEPOSIT) {
+        if (items.length > CONFIG.MAX_ITEMS_PER_DEPOSIT) {
             const moreItems = document.createElement('div');
             moreItems.className = 'player-deposit-item-more';
             moreItems.style.color = userColor;
-            moreItems.textContent = `+${itemsInThisDeposit.length - CONFIG.MAX_ITEMS_PER_DEPOSIT} more`;
+            moreItems.textContent = `+${items.length - CONFIG.MAX_ITEMS_PER_DEPOSIT} more`;
             itemsGrid.appendChild(moreItems);
         }
     }
-
     depositContainer.appendChild(depositHeader);
     depositContainer.appendChild(itemsGrid);
-
     if (container.firstChild) {
         container.insertBefore(depositContainer, container.firstChild);
     } else {
@@ -903,7 +844,6 @@ function displayLatestDeposit(data) {
     setTimeout(() => {
         depositContainer.classList.remove('player-deposit-new');
     }, 500);
-
     const currentDepositBlocks = container.querySelectorAll('.player-deposit-container');
     if (currentDepositBlocks.length > CONFIG.MAX_DISPLAY_DEPOSITS) {
         const blocksToRemove = currentDepositBlocks.length - CONFIG.MAX_DISPLAY_DEPOSITS;
@@ -922,54 +862,48 @@ function displayLatestDeposit(data) {
     }
 }
 
-
 function handleNewDeposit(data) {
-    // This function now primarily updates currentRound and calls display functions
     if (!data || !data.roundId || !data.userId || typeof data.itemsValue !== 'number' || isNaN(data.itemsValue) || data.totalValue === undefined || data.tickets === undefined) {
-        console.error("Invalid participant update data received:", data); return;
+        console.error("Invalid participant update data received:", data);
+        return;
     }
     if (!data.depositedItems) data.depositedItems = [];
-
     if (!currentRound) {
-        // This case should ideally be handled by server sending full 'roundData' on connect or if client is out of sync.
         currentRound = { roundId: data.roundId, status: 'active', timeLeft: CONFIG.ROUND_DURATION, totalValue: 0, participants: [], items: [] };
         console.warn("Handling deposit for non-existent local round. Initializing round with received data.");
     } else if (currentRound.roundId !== data.roundId) {
-        console.warn(`Deposit received for wrong round (${data.roundId}). Current is ${currentRound.roundId}. Ignoring.`); return;
+        console.warn(`Deposit received for wrong round (${data.roundId}). Current is ${currentRound.roundId}. Ignoring.`);
+        return;
     }
-
     if (!currentRound.participants) currentRound.participants = [];
     if (!currentRound.items) currentRound.items = [];
-
-    // Clear pending offer flag for the user who just deposited, if it matches
     if (currentUser && currentUser.pendingDepositOfferId && (currentUser._id === data.userId || currentUser.id === data.userId)) {
        console.log(`Deposit processed for user ${currentUser.username}, clearing local pending offer flag.`);
-       currentUser.pendingDepositOfferId = null; // Clear the flag
-       updateUserUI(); // Update header indicator
-       updateDepositButtonState(); // Re-enable deposit button if applicable
+       currentUser.pendingDepositOfferId = null;
+       updateUserUI();
+       updateDepositButtonState();
        if (DOMElements.deposit.depositModal?.style.display === 'flex') {
-           resetDepositModalUI(); // Reset its state (e.g., hide "Accept on Steam" button)
+           resetDepositModalUI();
+           selectedItemsList = [];
+           if(DOMElements.deposit.selectedItemsContainer) DOMElements.deposit.selectedItemsContainer.innerHTML = '';
+           updateTotalValue();
        }
     }
-
-    // Update or add participant in currentRound.participants
     let participantIndex = currentRound.participants.findIndex(p => p.user?._id === data.userId || p.user?.id === data.userId);
-
-    if (participantIndex !== -1) { // Existing participant
-        // The backend should send the new *total* itemsValue and tickets for the user in the round.
-        // data.itemsValue from 'participantUpdated' should be the new total for the user.
-        currentRound.participants[participantIndex].itemsValue = data.participantTotalValueInRound || (currentRound.participants[participantIndex].itemsValue + data.itemsValue); // Prefer explicit total from backend
-        currentRound.participants[participantIndex].tickets = data.tickets; // This should be the new total tickets
-    } else { // New participant
+    if (participantIndex !== -1) {
+        currentRound.participants[participantIndex] = {
+            ...currentRound.participants[participantIndex],
+            itemsValue: (currentRound.participants[participantIndex].itemsValue || 0) + data.itemsValue,
+            tickets: data.tickets
+        };
+    } else {
         currentRound.participants.push({
             user: { _id: data.userId, id: data.userId, username: data.username || 'Unknown User', avatar: data.avatar || '/img/default-avatar.png' },
-            itemsValue: data.itemsValue, // Initial total value for new participant
+            itemsValue: data.itemsValue,
             tickets: data.tickets
         });
     }
-
-    currentRound.totalValue = data.totalValue; // Update total pot value from server based on this deposit
-    // Add items from this specific deposit to the round's master item list (for roulette etc.)
+    currentRound.totalValue = data.totalValue;
     data.depositedItems.forEach(item => {
         if (item && typeof item.price === 'number' && !isNaN(item.price)) {
             currentRound.items.push({ ...item, owner: data.userId });
@@ -977,13 +911,10 @@ function handleNewDeposit(data) {
             console.warn("Skipping invalid item while adding to round master list:", item);
         }
     });
-
-    updateRoundUI(); // Update overall pot value and participant count display
-    displayLatestDeposit(data); // Display this specific deposit event
-    updateAllParticipantPercentages(); // Recalculate for all displayed participants based on updated currentRound
-    updateDepositButtonState(); // Re-evaluate if deposit button should be enabled/disabled
-
-    // Start client-side timer if it's the first participant and timer isn't active
+    updateRoundUI();
+    displayLatestDeposit(data);
+    updateAllParticipantPercentages();
+    updateDepositButtonState();
     if (currentRound.status === 'active' && currentRound.participants.length === 1 && !timerActive) {
         console.log("First participant joined. Starting client timer visually.");
         timerActive = true;
@@ -991,67 +922,813 @@ function handleNewDeposit(data) {
     }
 }
 
-
-// --- Remaining functions (updateParticipantsUI, startClientTimer, roulette, provably fair, etc.)
-// These functions would largely remain the same as in the provided "original" file,
-// as they handle UI updates based on the `currentRound` state which is now correctly managed.
-// For brevity, I'll skip re-pasting them unless specific changes were requested for them.
-// Assume they are correctly implemented as before.
-
-// ... (updateParticipantsUI, startClientTimer, createRouletteItems, handleWinnerAnnouncement, etc. are here) ...
-// ... (provablyFair functions, loadPastRounds, createPagination, etc. are here) ...
-
-// --- Chat Functions (Modified for Persistence) ---
-function saveChatHistory() {
-    try {
-        // Store only the last CONFIG.MAX_CHAT_MESSAGES
-        const messagesToStore = chatMessages.slice(0, CONFIG.MAX_CHAT_MESSAGES);
-        localStorage.setItem(CONFIG.CHAT_LOCAL_STORAGE_KEY, JSON.stringify(messagesToStore));
-    } catch (e) {
-        console.warn("Could not save chat history to localStorage (possibly full or disabled):", e);
+function updateParticipantsUI() {
+    const { participantCount } = DOMElements.jackpot;
+    const emptyMsg = DOMElements.jackpot.emptyPotMessage;
+    const container = DOMElements.jackpot.participantsContainer;
+    if (!participantCount || !emptyMsg || !container) {
+        console.error("Participants count/empty message/container elements missing for UI update.");
+        return;
     }
-}
-
-function loadChatHistory() {
-    const { messagesContainer } = DOMElements.chat;
-    if (!messagesContainer) return;
-    try {
-        const storedHistory = localStorage.getItem(CONFIG.CHAT_LOCAL_STORAGE_KEY);
-        if (storedHistory) {
-            chatMessages = JSON.parse(storedHistory);
-            if (!Array.isArray(chatMessages)) chatMessages = [];
-            // Ensure it doesn't exceed max on load (though saveChatHistory should handle this)
-            if (chatMessages.length > CONFIG.MAX_CHAT_MESSAGES) {
-                chatMessages = chatMessages.slice(0, CONFIG.MAX_CHAT_MESSAGES);
-            }
-        } else {
-            chatMessages = [];
+    const participantNum = currentRound?.participants?.length || 0;
+    participantCount.textContent = `${participantNum}/${CONFIG.MAX_PARTICIPANTS_DISPLAY}`;
+    const hasDepositBlocks = container.querySelector('.player-deposit-container') !== null;
+    if (!hasDepositBlocks && participantNum === 0) {
+        emptyMsg.style.display = 'block';
+        if (!container.contains(emptyMsg)) {
+            container.appendChild(emptyMsg);
         }
-    } catch (e) {
-        console.warn("Could not load chat history from localStorage:", e);
-        chatMessages = [];
+    } else {
+        emptyMsg.style.display = 'none';
     }
-    messagesContainer.innerHTML = ''; // Clear current messages
-    // Display messages from history (oldest first visually, so iterate normally and prepend)
-    chatMessages.slice().reverse().forEach(msgData => displayChatMessage(msgData, true));
+}
+
+function startClientTimer(initialTime = CONFIG.ROUND_DURATION) {
+    const timerDisplay = DOMElements.jackpot.timerValue;
+    if (!timerDisplay) return;
+    if (roundTimer) clearInterval(roundTimer);
+    let timeLeft = Math.max(0, initialTime);
+    console.log(`Starting/Syncing client timer from ${timeLeft}s`);
+    timerActive = true;
+    updateTimerUI(timeLeft);
+    updateDepositButtonState();
+    roundTimer = setInterval(() => {
+        if (!timerActive) {
+            clearInterval(roundTimer); roundTimer = null;
+            console.log("Client timer interval stopped (timerActive is false).");
+            return;
+        }
+        timeLeft--;
+        if (currentRound) currentRound.timeLeft = timeLeft;
+        updateTimerUI(timeLeft);
+        updateDepositButtonState();
+        if (timeLeft <= 0) {
+            clearInterval(roundTimer); roundTimer = null; timerActive = false;
+            console.log("Client timer reached zero.");
+            if (timerDisplay) timerDisplay.textContent = "0";
+            updateDepositButtonState();
+        }
+    }, 1000);
+}
+
+function createRouletteItems() {
+    const track = DOMElements.roulette.rouletteTrack;
+    const container = DOMElements.roulette.inlineRouletteContainer;
+    if (!track || !container) {
+        console.error("Roulette track or inline roulette element missing.");
+        return;
+    }
+    track.innerHTML = '';
+    track.style.transition = 'none';
+    track.style.transform = 'translateX(0)';
+    if (!currentRound || !currentRound.participants || currentRound.participants.length === 0) {
+        console.error('No participants data available to create roulette items.');
+        track.innerHTML = '<div class="roulette-message">Waiting for participants...</div>';
+        return;
+    }
+    let ticketPool = [];
+    const totalTicketsInRound = currentRound.participants.reduce((sum, p) => sum + (p.tickets || 0), 0);
+    const targetVisualBlocks = 150;
+    if (totalTicketsInRound <= 0) {
+        console.warn("Total tickets in round is zero. Building roulette based on value percentage.");
+        const totalValueNonZero = Math.max(0.01, currentRound.totalValue || 0.01);
+        currentRound.participants.forEach(p => {
+            const visualBlocks = Math.max(3, Math.ceil(((p.itemsValue || 0) / totalValueNonZero) * targetVisualBlocks));
+            for (let i = 0; i < visualBlocks; i++) ticketPool.push(p);
+        });
+    } else {
+        currentRound.participants.forEach(p => {
+            const tickets = p.tickets || 0;
+            const visualBlocksForUser = Math.max(3, Math.ceil((tickets / totalTicketsInRound) * targetVisualBlocks));
+            for (let i = 0; i < visualBlocksForUser; i++) ticketPool.push(p);
+        });
+    }
+    if (ticketPool.length === 0) {
+        console.error("Ticket pool calculation resulted in zero items for roulette.");
+        track.innerHTML = '<div class="roulette-message">Error building roulette items.</div>';
+        return;
+    }
+    ticketPool = shuffleArray([...ticketPool]);
+    const rouletteInnerContainer = container.querySelector('.roulette-container');
+    const containerWidth = rouletteInnerContainer?.offsetWidth || container.offsetWidth || 1000;
+    const itemWidthWithMargin = 60 + 10;
+    const itemsInView = Math.ceil(containerWidth / itemWidthWithMargin);
+    const itemsForSpinBuffer = 400;
+    const totalItemsNeededForAnimation = itemsForSpinBuffer + (itemsInView * 2);
+    const itemsToCreate = Math.max(totalItemsNeededForAnimation, 500);
+    console.log(`Targeting ${itemsToCreate} roulette items for smooth animation.`);
+    const fragment = document.createDocumentFragment();
+    for (let i = 0; i < itemsToCreate; i++) {
+        const participant = ticketPool[i % ticketPool.length];
+        if (!participant || !participant.user) {
+            console.warn(`Skipping roulette item creation at index ${i} due to invalid participant data.`);
+            continue;
+        }
+        const userId = participant.user._id || participant.user.id;
+        const userColor = getUserColor(userId);
+        const avatar = participant.user.avatar || '/img/default-avatar.png';
+        const itemElement = document.createElement('div');
+        itemElement.className = 'roulette-item';
+        itemElement.dataset.userId = userId;
+        itemElement.style.borderColor = userColor;
+        itemElement.innerHTML = `
+            <img class="roulette-avatar" src="${avatar}" alt="Participant Avatar" loading="lazy"
+                 onerror="this.onerror=null; this.src='/img/default-avatar.png';" >`;
+        fragment.appendChild(itemElement);
+    }
+    track.appendChild(fragment);
+    console.log(`Created ${track.children.length} items for roulette animation.`);
+}
+
+function handleWinnerAnnouncement(data) {
+    if (isSpinning) {
+        console.warn("Received winner announcement but animation is already spinning.");
+        return;
+    }
+    if (!currentRound || !currentRound.participants || currentRound.participants.length === 0) {
+        console.error("Missing participant data for winner announcement. Requesting fresh data.");
+        socket.emit('requestRoundData');
+        setTimeout(() => {
+            if (currentRound?.participants?.length > 0) {
+                console.log("Retrying winner announcement after receiving data.");
+                handleWinnerAnnouncement(data);
+            } else {
+                console.error("Still no participant data after requesting. Cannot start spin.");
+                resetToJackpotView();
+            }
+        }, 1500);
+        return;
+    }
+    const winnerDetails = data.winner || currentRound?.winner;
+    const winnerId = winnerDetails?.id || winnerDetails?._id;
+    if (!winnerId) {
+        console.error("Invalid winner data received in announcement:", data);
+        resetToJackpotView();
+        return;
+    }
+    console.log(`Winner announced: ${winnerDetails.username}. Preparing roulette...`);
+    if (timerActive) {
+        timerActive = false; clearInterval(roundTimer); roundTimer = null;
+        console.log("Stopped client timer due to winner announcement.");
+    }
+    switchToRouletteView();
+    setTimeout(() => {
+        startRouletteAnimation({ winner: winnerDetails });
+    }, 500);
+}
+
+function switchToRouletteView() {
+    const header = DOMElements.jackpot.jackpotHeader;
+    const rouletteContainer = DOMElements.roulette.inlineRouletteContainer;
+    if (!header || !rouletteContainer) {
+        console.error("Missing roulette UI elements for view switch.");
+        return;
+    }
+    const valueDisplay = header.querySelector('.jackpot-value');
+    const timerDisplay = header.querySelector('.jackpot-timer');
+    const statsDisplay = header.querySelector('.jackpot-stats');
+    [valueDisplay, timerDisplay, statsDisplay].forEach(el => {
+        if (el) {
+            el.style.transition = 'opacity 0.5s ease';
+            el.style.opacity = '0';
+            setTimeout(() => { el.style.display = 'none'; }, 500);
+        }
+    });
+    header.classList.add('roulette-mode');
+    rouletteContainer.style.display = 'flex';
+    rouletteContainer.style.opacity = '0';
+    rouletteContainer.style.transform = 'translateY(20px)';
+    setTimeout(() => {
+        rouletteContainer.style.transition = 'opacity 0.7s ease, transform 0.7s ease';
+        rouletteContainer.style.opacity = '1';
+        rouletteContainer.style.transform = 'translateY(0)';
+    }, 600);
+    if (DOMElements.roulette.returnToJackpotButton) {
+        DOMElements.roulette.returnToJackpotButton.style.display = 'none';
+    }
+}
+
+function startRouletteAnimation(winnerData) {
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId); animationFrameId = null;
+        console.log("Cancelled previous animation frame.");
+    }
+    const winnerId = winnerData?.winner?.id || winnerData?.winner?._id;
+    if (!winnerId) {
+        console.error("Invalid winner data passed to startRouletteAnimation.");
+        resetToJackpotView(); return;
+    }
+    isSpinning = true; updateDepositButtonState(); spinStartTime = 0;
+    if (DOMElements.roulette.winnerInfoBox) DOMElements.roulette.winnerInfoBox.style.display = 'none';
+    clearConfetti();
+    createRouletteItems();
+    const winnerParticipantData = findWinnerFromData(winnerData);
+    if (!winnerParticipantData) {
+        console.error('Could not find full winner details in startRouletteAnimation.');
+        isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
+    }
+    console.log('Starting animation for Winner:', winnerParticipantData.user.username);
+    const sound = DOMElements.audio.spinSound;
+    if (sound) {
+        sound.volume = 0.7; sound.currentTime = 0; sound.playbackRate = 1.0;
+        sound.play().catch(e => console.error('Error playing spin sound:', e));
+    } else {
+        console.warn("Spin sound element not found.");
+    }
+    setTimeout(() => {
+        const track = DOMElements.roulette.rouletteTrack;
+        const items = track?.querySelectorAll('.roulette-item');
+        if (!track || !items || items.length === 0) {
+            console.error('Cannot spin, no items rendered on track.');
+            isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
+        }
+        const minIndexPercent = 0.65, maxIndexPercent = 0.85;
+        const minIndex = Math.floor(items.length * minIndexPercent);
+        const maxIndex = Math.floor(items.length * maxIndexPercent);
+        let winnerItemsIndices = [];
+        for (let i = minIndex; i <= maxIndex; i++) {
+            if (items[i]?.dataset?.userId === winnerId) winnerItemsIndices.push(i);
+        }
+        if (winnerItemsIndices.length === 0) {
+            console.warn(`No winner items found in preferred range [${minIndex}-${maxIndex}]. Expanding search.`);
+            for (let i = 0; i < items.length; i++) {
+                 if (items[i]?.dataset?.userId === winnerId) winnerItemsIndices.push(i);
+            }
+        }
+        let winningElement, targetIndex;
+        if (winnerItemsIndices.length === 0) {
+            console.error(`No items found matching winner ID ${winnerId}. Using fallback index.`);
+            targetIndex = Math.max(0, Math.min(items.length - 1, Math.floor(items.length * 0.75)));
+            winningElement = items[targetIndex];
+             if (!winningElement) {
+                 console.error('Fallback winning element is invalid!');
+                 isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
+             }
+        } else {
+            targetIndex = winnerItemsIndices[Math.floor(Math.random() * winnerItemsIndices.length)];
+            winningElement = items[targetIndex];
+             if (!winningElement) {
+                 console.error(`Selected winning element at index ${targetIndex} is invalid!`);
+                 isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
+             }
+        }
+        console.log(`Selected winning element at index ${targetIndex} of ${items.length} total items for user ${winnerParticipantData.user.username}`);
+        handleRouletteSpinAnimation(winningElement, winnerParticipantData);
+    }, 100);
+}
+
+function handleRouletteSpinAnimation(winningElement, winner) {
+    const track = DOMElements.roulette.rouletteTrack;
+    const container = DOMElements.roulette.inlineRouletteContainer?.querySelector('.roulette-container');
+    if (!winningElement || !track || !container) {
+        console.error("Missing elements for roulette animation loop.");
+        isSpinning = false; updateDepositButtonState(); resetToJackpotView(); return;
+    }
+    const containerWidth = container.offsetWidth;
+    const itemWidth = winningElement.offsetWidth || 60;
+    const itemOffsetLeft = winningElement.offsetLeft;
+    const centerOffset = (containerWidth / 2) - (itemWidth / 2);
+    const perfectCenterScrollPosition = -(itemOffsetLeft - centerOffset);
+    const initialVariation = (Math.random() * 2 - 1) * (itemWidth * CONFIG.LANDING_POSITION_VARIATION);
+    const maxAllowedAbsVariation = itemWidth * 0.49;
+    let finalVariation;
+    if (Math.abs(initialVariation) <= maxAllowedAbsVariation) {
+        finalVariation = initialVariation;
+    } else {
+        finalVariation = Math.sign(initialVariation) * maxAllowedAbsVariation;
+    }
+    const targetScrollPosition = perfectCenterScrollPosition + finalVariation;
+    const finalTargetPosition = targetScrollPosition;
+    const startPosition = parseFloat(track.style.transform?.match(/translateX\(([-.\d]+)px\)/)?.[1] || '0');
+    const duration = CONFIG.SPIN_DURATION_SECONDS * 1000;
+    const bounceDuration = CONFIG.BOUNCE_ENABLED ? 1200 : 0;
+    const totalAnimationTime = duration + bounceDuration;
+    const totalDistance = finalTargetPosition - startPosition;
+    const overshootAmount = totalDistance * CONFIG.BOUNCE_OVERSHOOT_FACTOR;
+    let startTime = performance.now(); spinStartTime = startTime;
+    track.style.transition = 'none';
+    function animateRoulette(timestamp) {
+        if (!isSpinning) {
+            console.log("Animation loop stopped: isSpinning false.");
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            animationFrameId = null; return;
+        }
+        const elapsed = timestamp - startTime;
+        let currentPosition, animationFinished = false;
+        if (elapsed <= duration) {
+            const animationPhaseProgress = elapsed / duration;
+            const easedProgress = easeOutAnimation(animationPhaseProgress);
+            currentPosition = startPosition + totalDistance * easedProgress;
+        } else if (CONFIG.BOUNCE_ENABLED && elapsed <= totalAnimationTime) {
+            const bouncePhaseProgress = (elapsed - duration) / bounceDuration;
+            const bounceDisplacementFactor = calculateBounce(bouncePhaseProgress);
+            currentPosition = finalTargetPosition - (overshootAmount * bounceDisplacementFactor);
+        } else {
+            currentPosition = finalTargetPosition; animationFinished = true;
+        }
+        track.style.transform = `translateX(${currentPosition}px)`;
+        if (!animationFinished) {
+            animationFrameId = requestAnimationFrame(animateRoulette);
+        } else {
+            console.log("Animation finished naturally in loop.");
+            animationFrameId = null;
+            finalizeSpin(winningElement, winner);
+        }
+    }
+    if (animationFrameId) cancelAnimationFrame(animationFrameId);
+    animationFrameId = requestAnimationFrame(animateRoulette);
+}
+
+function finalizeSpin(winningElement, winner) {
+    if ((!isSpinning && winningElement?.classList.contains('winner-highlight')) || !winningElement || !winner?.user) {
+        console.log("FinalizeSpin called, but seems already finalized or data invalid.");
+        if (isSpinning) { isSpinning = false; updateDepositButtonState(); resetToJackpotView(); }
+        return;
+    }
+    console.log("Finalizing spin: Applying highlight to winner element.");
+    const winnerId = winner.user.id || winner.user._id;
+    const userColor = getUserColor(winnerId);
+    winningElement.classList.add('winner-highlight');
+    const styleId = 'winner-pulse-style';
+    document.getElementById(styleId)?.remove();
+    const style = document.createElement('style');
+    style.id = styleId;
+    style.textContent = `
+        .winner-highlight {
+            z-index: 5; border-width: 3px; border-color: ${userColor};
+            animation: winnerPulse 1.5s infinite; --winner-color: ${userColor};
+            transform: scale(1.05);
+        }
+        @keyframes winnerPulse {
+            0%, 100% { box-shadow: 0 0 15px var(--winner-color); transform: scale(1.05); }
+            50% { box-shadow: 0 0 25px var(--winner-color), 0 0 10px var(--winner-color); transform: scale(1.1); }
+        }`;
+    document.head.appendChild(style);
+    setTimeout(() => {
+        handleSpinEnd(winningElement, winner);
+    }, 300);
+}
+
+function handleSpinEnd(winningElement, winner) {
+    if (!winningElement || !winner?.user) {
+        console.error("handleSpinEnd called with invalid data/element.");
+        if (!isSpinning) return;
+        isSpinning = false; updateDepositButtonState(); resetToJackpotView();
+        return;
+    }
+    if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
+    console.log("Handling spin end: Displaying winner info and confetti.");
+    const { winnerInfoBox, winnerAvatar, winnerName, winnerDeposit, winnerChance } = DOMElements.roulette;
+    if (winnerInfoBox && winnerAvatar && winnerName && winnerDeposit && winnerChance) {
+        const winnerId = winner.user.id || winner.user._id;
+        const userColor = getUserColor(winnerId);
+        winnerAvatar.src = winner.user.avatar || '/img/default-avatar.png';
+        winnerAvatar.alt = winner.user.username || 'Winner';
+        winnerAvatar.style.borderColor = userColor;
+        winnerAvatar.style.boxShadow = `0 0 15px ${userColor}`;
+        winnerName.textContent = winner.user.username || 'Winner';
+        winnerName.style.color = userColor;
+        const depositValueStr = `$${(winner.value || 0).toFixed(2)}`;
+        const chanceValueStr = `${(winner.percentage || 0).toFixed(2)}%`;
+        winnerDeposit.textContent = '';
+        winnerChance.textContent = '';
+        winnerInfoBox.style.display = 'flex';
+        winnerInfoBox.style.opacity = '0';
+        winnerInfoBox.style.animation = 'fadeIn 0.5s ease forwards';
+        setTimeout(() => {
+            let depositIndex = 0; let chanceIndex = 0; const typeDelay = 35;
+            if (window.typeDepositInterval) clearInterval(window.typeDepositInterval);
+            if (window.typeChanceInterval) clearInterval(window.typeChanceInterval);
+            window.typeDepositInterval = setInterval(() => {
+                if (depositIndex < depositValueStr.length) {
+                    winnerDeposit.textContent += depositValueStr[depositIndex]; depositIndex++;
+                } else {
+                    clearInterval(window.typeDepositInterval); window.typeDepositInterval = null;
+                    window.typeChanceInterval = setInterval(() => {
+                        if (chanceIndex < chanceValueStr.length) {
+                            winnerChance.textContent += chanceValueStr[chanceIndex]; chanceIndex++;
+                        } else {
+                            clearInterval(window.typeChanceInterval); window.typeChanceInterval = null;
+                            setTimeout(() => { launchConfetti(userColor); }, 200);
+                            isSpinning = false; updateDepositButtonState();
+                            console.log("isSpinning set to false after winner display/confetti.");
+                            setTimeout(resetToJackpotView, CONFIG.WINNER_DISPLAY_DURATION);
+                        }
+                    }, typeDelay);
+                }
+            }, typeDelay);
+        }, 500);
+    } else {
+        console.error("Winner info display elements missing. Cannot display winner details.");
+        isSpinning = false; updateDepositButtonState(); resetToJackpotView();
+    }
+}
+
+function launchConfetti(mainColor = '#00e676') {
+    const container = DOMElements.roulette.confettiContainer;
+    if (!container) return;
+    clearConfetti();
+    const baseColor = mainColor;
+    const complementaryColor = getComplementaryColor(baseColor);
+    const lighterColor = lightenColor(baseColor, 30);
+    const darkerColor = darkenColor(baseColor, 30);
+    const colors = [baseColor, lighterColor, darkerColor, complementaryColor, '#ffffff', lightenColor(complementaryColor, 20)];
+    for (let i = 0; i < CONFIG.CONFETTI_COUNT; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti-piece';
+        confetti.style.left = `${Math.random() * 100}%`;
+        const animDuration = 2 + Math.random() * 3;
+        const animDelay = Math.random() * 1.5;
+        confetti.style.setProperty('--duration', `${animDuration}s`);
+        confetti.style.setProperty('--delay', `${animDelay}s`);
+        confetti.style.setProperty('--color', colors[Math.floor(Math.random() * colors.length)]);
+        const size = Math.random() * 8 + 4;
+        confetti.style.width = `${size}px`; confetti.style.height = `${size}px`;
+        const rotationStart = Math.random() * 360;
+        const rotationEnd = rotationStart + (Math.random() - 0.5) * 720;
+        const fallX = (Math.random() - 0.5) * 100;
+        confetti.style.setProperty('--fall-x', `${fallX}px`);
+        confetti.style.setProperty('--rotation-start', `${rotationStart}deg`);
+        confetti.style.setProperty('--rotation-end', `${rotationEnd}deg`);
+        if (Math.random() < 0.5) confetti.style.borderRadius = '50%';
+        container.appendChild(confetti);
+    }
+}
+
+function clearConfetti() {
+    if (DOMElements.roulette.confettiContainer) DOMElements.roulette.confettiContainer.innerHTML = '';
+    document.getElementById('winner-pulse-style')?.remove();
+    document.querySelectorAll('.roulette-item.winner-highlight').forEach(el => {
+        el.classList.remove('winner-highlight');
+        el.style.transform = '';
+        if (el.dataset?.userId) el.style.borderColor = getUserColor(el.dataset.userId);
+        else el.style.borderColor = 'transparent';
+    });
+}
+
+function resetToJackpotView() {
+    console.log("Resetting to jackpot view...");
+    if (animationFrameId) cancelAnimationFrame(animationFrameId); animationFrameId = null;
+    if (window.soundFadeInInterval) clearInterval(window.soundFadeInInterval); window.soundFadeInInterval = null;
+    if (window.soundFadeOutInterval) clearInterval(window.soundFadeOutInterval); window.soundFadeOutInterval = null;
+    if (window.typeDepositInterval) clearInterval(window.typeDepositInterval); window.typeDepositInterval = null;
+    if (window.typeChanceInterval) clearInterval(window.typeChanceInterval); window.typeChanceInterval = null;
+    if (roundTimer) clearInterval(roundTimer); roundTimer = null;
+    timerActive = false; isSpinning = false; spinStartTime = 0;
+    const header = DOMElements.jackpot.jackpotHeader;
+    const rouletteContainer = DOMElements.roulette.inlineRouletteContainer;
+    const winnerInfoBox = DOMElements.roulette.winnerInfoBox;
+    const track = DOMElements.roulette.rouletteTrack;
+    if (!header || !rouletteContainer || !winnerInfoBox || !track) {
+        console.error("Missing elements for resetToJackpotView. Cannot fully reset UI."); return;
+    }
+    const sound = DOMElements.audio.spinSound;
+    if (sound) { sound.pause(); sound.currentTime = 0; sound.volume = 1.0; sound.playbackRate = 1.0; }
+    rouletteContainer.style.transition = 'opacity 0.5s ease';
+    rouletteContainer.style.opacity = '0';
+    if (winnerInfoBox.style.display !== 'none') {
+        winnerInfoBox.style.transition = 'opacity 0.3s ease';
+        winnerInfoBox.style.opacity = '0';
+    }
+    clearConfetti();
+    setTimeout(() => {
+        header.classList.remove('roulette-mode');
+        track.style.transition = 'none'; track.style.transform = 'translateX(0)'; track.innerHTML = '';
+        rouletteContainer.style.display = 'none';
+        winnerInfoBox.style.display = 'none'; winnerInfoBox.style.opacity = ''; winnerInfoBox.style.animation = '';
+        const valueDisplay = header.querySelector('.jackpot-value');
+        const timerDisplay = header.querySelector('.jackpot-timer');
+        const statsDisplay = header.querySelector('.jackpot-stats');
+        [valueDisplay, timerDisplay, statsDisplay].forEach((el, index) => {
+            if (el) {
+                const computedStyle = window.getComputedStyle(el);
+                el.style.display = computedStyle.display !== 'none' ? computedStyle.display : 'flex';
+                el.style.opacity = '0';
+                setTimeout(() => {
+                    el.style.transition = 'opacity 0.5s ease';
+                    el.style.opacity = '1';
+                }, 50 + index * 50);
+            }
+        });
+        initiateNewRoundVisualReset();
+        updateDepositButtonState();
+        if (socket?.connected) {
+            console.log("Requesting fresh round data after reset to jackpot view.");
+            socket.emit('requestRoundData');
+        } else {
+            console.warn("Socket not connected, skipping requestRoundData after reset.");
+        }
+    }, 500);
+}
+
+function initiateNewRoundVisualReset() {
+    console.log("Initiating visual reset for new round display (or after a round ends).");
+    updateTimerUI(CONFIG.ROUND_DURATION);
+    if (DOMElements.jackpot.timerValue) DOMElements.jackpot.timerValue.classList.remove('urgent-pulse', 'timer-pulse');
+    if (roundTimer) clearInterval(roundTimer); roundTimer = null; timerActive = false;
+    const container = DOMElements.jackpot.participantsContainer;
+    const emptyMsg = DOMElements.jackpot.emptyPotMessage;
+    if (container && emptyMsg) {
+        container.innerHTML = '';
+        if (!container.contains(emptyMsg)) container.appendChild(emptyMsg);
+        emptyMsg.style.display = 'block';
+    }
+    if (DOMElements.jackpot.potValue) DOMElements.jackpot.potValue.textContent = "$0.00";
+    if (DOMElements.jackpot.participantCount) DOMElements.jackpot.participantCount.textContent = `0/${CONFIG.MAX_PARTICIPANTS_DISPLAY}`;
+    userColorMap.clear();
+    updateDepositButtonState();
+}
+
+function findWinnerFromData(winnerData) {
+    const winnerId = winnerData?.winner?.id || winnerData?.winner?._id;
+    if (!winnerId) {
+        console.error("Missing winner ID in findWinnerFromData:", winnerData);
+        return null;
+    }
+    if (!currentRound || !currentRound.participants) {
+        console.warn("Missing currentRound/participants data for findWinnerFromData. Using provided winner data as is.");
+        if (winnerData.winner) return { user: { ...winnerData.winner }, percentage: 0, value: 0 };
+        return null;
+    }
+    const winnerParticipant = currentRound.participants.find(p => p.user?._id === winnerId || p.user?.id === winnerId);
+    if (!winnerParticipant) {
+        console.warn(`Winner ID ${winnerId} not found in local participants. Using provided winner data.`);
+        if (winnerData.winner) return { user: { ...winnerData.winner }, percentage: 0, value: 0 };
+        return null;
+    }
+    const totalValue = Math.max(0.01, currentRound.totalValue || 0.01);
+    const participantValue = winnerParticipant.itemsValue || 0;
+    const percentage = (participantValue / totalValue) * 100;
+    return {
+        user: { ...(winnerParticipant.user) },
+        percentage: percentage || 0,
+        value: participantValue
+    };
+}
+
+async function verifyRound() {
+    const { roundIdInput, serverSeedInput, clientSeedInput, verificationResultDisplay } = DOMElements.provablyFair;
+    if (!roundIdInput || !serverSeedInput || !clientSeedInput || !verificationResultDisplay) {
+        console.error("Verify form elements missing."); return;
+    }
+    const roundId = roundIdInput.value.trim(), serverSeed = serverSeedInput.value.trim(), clientSeed = clientSeedInput.value.trim();
+    const resultEl = verificationResultDisplay;
+    let validationError = null;
+    if (!roundId || !serverSeed || !clientSeed) validationError = 'Please fill in all fields (Round ID, Server Seed, Client Seed).';
+    else if (serverSeed.length !== 64 || !/^[a-f0-9]{64}$/i.test(serverSeed)) validationError = 'Invalid Server Seed format (should be 64 hexadecimal characters).';
+    else if (clientSeed.length === 0) validationError = 'Client Seed cannot be empty.';
+    if (validationError) {
+        resultEl.style.display = 'block'; resultEl.className = 'verification-result error';
+        resultEl.innerHTML = `<p>${validationError}</p>`; return;
+    }
+    try {
+        resultEl.style.display = 'block'; resultEl.className = 'verification-result loading';
+        resultEl.innerHTML = '<p>Verifying...</p>';
+        const response = await fetch('/api/verify', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ roundId, serverSeed, clientSeed })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || `Verification failed (${response.status})`);
+        resultEl.className = `verification-result ${result.verified ? 'success' : 'error'}`;
+        let html = `<h4>Result (Round #${result.roundId || roundId})</h4>`;
+        if (result.verified) {
+            html += `<p style="color: var(--success-color); font-weight: bold;">✅ Verified Fair.</p>`;
+            if (result.serverSeedHash) html += `<p><strong>Server Seed Hash (Used):</strong> <code class="seed-value">${result.serverSeedHash}</code></p>`;
+            if (result.serverSeed) html += `<p><strong>Server Seed (Provided):</strong> <code class="seed-value">${result.serverSeed}</code></p>`;
+            if (result.clientSeed) html += `<p><strong>Client Seed (Provided):</strong> <code class="seed-value">${result.clientSeed}</code></p>`;
+            if (result.combinedString) html += `<p><strong>Combined String (Server-Client):</strong> <code class="seed-value wrap-anywhere">${result.combinedString}</code></p>`;
+            if (result.finalHash) html += `<p><strong>Resulting SHA256 Hash:</strong> <code class="seed-value">${result.finalHash}</code></p>`;
+            if (result.winningTicket !== undefined) html += `<p><strong>Winning Ticket Number:</strong> ${result.winningTicket} (out of ${result.totalTickets || 'N/A'} total tickets)</p>`;
+            if (result.winnerUsername) html += `<p><strong>Verified Winner:</strong> ${result.winnerUsername}</p>`;
+            if (result.totalValue !== undefined) html += `<p><strong>Final Pot Value (After Tax):</strong> $${result.totalValue.toFixed(2)}</p>`;
+        } else {
+            html += `<p style="color: var(--error-color); font-weight: bold;">❌ Verification Failed.</p>`;
+            html += `<p><strong>Reason:</strong> ${result.reason || 'Mismatch detected.'}</p>`;
+            if (result.serverSeedHash) html += `<p><strong>Expected Server Seed Hash:</strong> <code class="seed-value">${result.serverSeedHash}</code></p>`;
+            if (result.calculatedHash) html += `<p><strong>Calculated Hash from Provided Seed:</strong> <code class="seed-value">${result.calculatedHash}</code></p>`;
+            if (result.serverSeed) html += `<p><strong>Expected Server Seed:</strong> <code class="seed-value">${result.serverSeed}</code></p>`;
+            if (result.clientSeed) html += `<p><strong>Expected Client Seed:</strong> <code class="seed-value">${result.clientSeed}</code></p>`;
+            if (result.calculatedWinningTicket !== undefined) html += `<p><strong>Calculated Ticket from Inputs:</strong> ${result.calculatedWinningTicket}</p>`;
+            if (result.actualWinningTicket !== undefined) html += `<p><strong>Actual Recorded Ticket:</strong> ${result.actualWinningTicket}</p>`;
+            if (result.totalTickets !== undefined) html += `<p><strong>Total Tickets in Round:</strong> ${result.totalTickets}</p>`;
+        }
+        resultEl.innerHTML = html;
+    } catch (error) {
+        resultEl.style.display = 'block'; resultEl.className = 'verification-result error';
+        resultEl.innerHTML = `<p>Verification Error: ${error.message}</p>`;
+        console.error('Error verifying round:', error);
+    }
+}
+
+async function loadPastRounds(page = 1) {
+    const tableBody = DOMElements.provablyFair.roundsTableBody;
+    const paginationContainer = DOMElements.provablyFair.roundsPagination;
+    if (!tableBody || !paginationContainer) {
+        console.warn("Rounds history table/pagination elements missing."); return;
+    }
+    try {
+        tableBody.innerHTML = '<tr><td colspan="5" class="loading-message">Loading round history...</td></tr>';
+        paginationContainer.innerHTML = '';
+        const response = await fetch(`/api/rounds?page=${page}&limit=10`);
+        if (!response.ok) throw new Error(`Failed to load round history (${response.status})`);
+        const data = await response.json();
+        if (!data || !Array.isArray(data.rounds) || typeof data.currentPage !== 'number' || typeof data.totalPages !== 'number') {
+            throw new Error('Invalid rounds data received from server.');
+        }
+        tableBody.innerHTML = '';
+        if (data.rounds.length === 0) {
+            const message = (page === 1) ? 'No past rounds found.' : 'No rounds found on this page.';
+            tableBody.innerHTML = `<tr><td colspan="5" class="no-rounds-message">${message}</td></tr>`;
+        } else {
+            data.rounds.forEach(round => {
+                const row = document.createElement('tr');
+                row.dataset.roundId = round.roundId;
+                let date = 'N/A';
+                const timeToFormat = round.completedTime || round.endTime;
+                if (timeToFormat) {
+                    try {
+                        const d = new Date(timeToFormat);
+                        if (!isNaN(d.getTime())) date = d.toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
+                    } catch (e) { console.error("Date formatting error:", e); }
+                }
+                const serverSeedStr = (round.serverSeed || '').replace(/'/g, "\\'");
+                const clientSeedStr = (round.clientSeed || '').replace(/'/g, "\\'");
+                const roundIdStr = round.roundId || 'N/A';
+                const winnerUsername = round.winner?.username || (round.status === 'error' ? 'ERROR' : 'N/A');
+                const potValueStr = (round.totalValue !== undefined) ? `$${round.totalValue.toFixed(2)}` : '$0.00';
+                row.innerHTML = `
+                    <td>#${roundIdStr}</td>
+                    <td>${date}</td>
+                    <td>${potValueStr}</td>
+                    <td class="${round.winner ? 'winner-cell' : ''}">${winnerUsername}</td>
+                    <td>
+                        <button class="btn btn-secondary btn-small btn-verify"
+                                onclick="window.populateVerificationFields('${roundIdStr}', '${serverSeedStr}', '${clientSeedStr}')"
+                                ${!round.serverSeed ? 'disabled title="Seed not revealed yet"' : ''}>
+                            Verify
+                        </button>
+                    </td>`;
+                tableBody.appendChild(row);
+            });
+        }
+        createPagination(data.currentPage, data.totalPages);
+    } catch (error) {
+        tableBody.innerHTML = `<tr><td colspan="5" class="error-message">Error loading rounds: ${error.message}</td></tr>`;
+        console.error('Error loading past rounds:', error);
+    }
+}
+window.populateVerificationFields = function(roundId, serverSeed, clientSeed) {
+    const { roundIdInput, serverSeedInput, clientSeedInput, verificationSection } = DOMElements.provablyFair;
+    if (roundIdInput) roundIdInput.value = roundId || '';
+    if (serverSeedInput) serverSeedInput.value = serverSeed || '';
+    if (clientSeedInput) clientSeedInput.value = clientSeed || '';
+    if (verificationSection) verificationSection.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    if (!serverSeed && roundId && roundId !== 'N/A') showNotification(`Info: Server Seed for Round #${roundId} is revealed after the round ends.`, 'info');
+};
+
+function createPagination(currentPage, totalPages) {
+    const container = DOMElements.provablyFair.roundsPagination;
+    if (!container) return; container.innerHTML = '';
+    if (totalPages <= 1) return;
+    const maxPagesToShow = 5;
+    const createButton = (text, page, isActive = false, isDisabled = false, isEllipsis = false) => {
+        if (isEllipsis) {
+            const span = document.createElement('span');
+            span.className = 'page-ellipsis'; span.textContent = '...'; return span;
+        }
+        const button = document.createElement('button');
+        button.className = `page-button ${isActive ? 'active' : ''}`;
+        button.textContent = text; button.disabled = isDisabled;
+        if (!isDisabled && typeof page === 'number') button.addEventListener('click', (e) => { e.preventDefault(); loadPastRounds(page); });
+        return button;
+    };
+    container.appendChild(createButton('« Prev', currentPage - 1, false, currentPage <= 1));
+    if (totalPages <= maxPagesToShow) {
+        for (let i = 1; i <= totalPages; i++) container.appendChild(createButton(i, i, i === currentPage));
+    } else {
+        let pages = []; pages.push(1);
+        const rangePadding = Math.floor((maxPagesToShow - 3) / 2);
+        let rangeStart = Math.max(2, currentPage - rangePadding);
+        let rangeEnd = Math.min(totalPages - 1, currentPage + rangePadding);
+        const rangeLength = rangeEnd - rangeStart + 1;
+        const needed = (maxPagesToShow - 3);
+        if (rangeLength < needed) {
+             if (currentPage - rangeStart < rangeEnd - currentPage) rangeEnd = Math.min(totalPages - 1, rangeStart + needed -1);
+             else rangeStart = Math.max(2, rangeEnd - needed + 1);
+        }
+        if (rangeStart > 2) pages.push('...');
+        for (let i = rangeStart; i <= rangeEnd; i++) pages.push(i);
+        if (rangeEnd < totalPages - 1) pages.push('...');
+        pages.push(totalPages);
+        pages.forEach(page => {
+            if (page === '...') container.appendChild(createButton('...', null, false, true, true));
+            else container.appendChild(createButton(page, page, page === currentPage));
+        });
+    }
+    container.appendChild(createButton('Next »', currentPage + 1, false, currentPage >= totalPages));
+}
+
+// --- NEW: Winning History Functions ---
+async function showWinningHistory() {
+    const modalElements = DOMElements.winningHistoryModal;
+    if (!modalElements.modal || !currentUser) {
+        showNotification("Please log in to view your winning history.", "info");
+        return;
+    }
+    showModal(modalElements.modal);
+    modalElements.loadingIndicator.style.display = 'flex';
+    modalElements.tableBody.innerHTML = '';
+    modalElements.noWinningsMessage.style.display = 'none';
+
+    try {
+        const response = await fetch('/api/user/winning-history');
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Failed to load winning history.' }));
+            throw new Error(errorData.error || `Error ${response.status}`);
+        }
+        const winnings = await response.json();
+        populateWinningHistoryTable(winnings);
+    } catch (error) {
+        console.error("Error fetching winning history:", error);
+        showNotification(`Error: ${error.message}`, 'error');
+        modalElements.tableBody.innerHTML = `<tr><td colspan="4" class="error-message" style="text-align:center;">${error.message}</td></tr>`;
+    } finally {
+        modalElements.loadingIndicator.style.display = 'none';
+    }
+}
+
+function populateWinningHistoryTable(winnings) {
+    const { tableBody, noWinningsMessage } = DOMElements.winningHistoryModal;
+    tableBody.innerHTML = ''; // Clear previous
+
+    if (!winnings || winnings.length === 0) {
+        noWinningsMessage.style.display = 'block';
+        return;
+    }
+    noWinningsMessage.style.display = 'none';
+
+    winnings.forEach(win => {
+        const row = tableBody.insertRow();
+        const gameIdCell = row.insertCell();
+        const amountCell = row.insertCell();
+        const dateCell = row.insertCell();
+        const tradeCell = row.insertCell();
+
+        gameIdCell.innerHTML = `<span class="game-id-cell" title="${win.gameId || 'N/A'}">#${win.roundDisplayId || 'N/A'}</span>`;
+        amountCell.innerHTML = `<span class="amount-won-cell">$${(win.amountWon || 0).toFixed(2)}</span>`;
+        dateCell.textContent = win.timestamp ? new Date(win.timestamp).toLocaleDateString() : 'N/A';
+
+        if (win.tradeOfferURL && win.tradeOfferId) {
+            const link = document.createElement('a');
+            link.href = win.tradeOfferURL;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.className = `trade-offer-link status-${win.tradeOfferStatus || 'unknown'}`;
+            link.innerHTML = `<i class="fas fa-external-link-alt"></i> #${win.tradeOfferId.slice(0, 8)}... (${win.tradeOfferStatus || 'unknown'})`;
+            tradeCell.appendChild(link);
+        } else if (win.tradeOfferId) { // Has ID but no URL (e.g. error before URL generation)
+            tradeCell.innerHTML = `<span class="no-trade-offer">#${win.tradeOfferId.slice(0,8)}... (${win.tradeOfferStatus || 'error'})</span>`;
+        } else {
+            tradeCell.innerHTML = `<span class="no-trade-offer">${win.tradeOfferStatus || 'N/A'}</span>`;
+        }
+    });
 }
 
 
-function displayChatMessage(messageData, isFromHistory = false) {
+function updateChatUI() {
+    const { messageInput, sendMessageBtn, onlineUsers } = DOMElements.chat;
+    if (currentUser) {
+        if (messageInput) {
+            messageInput.disabled = false;
+            messageInput.placeholder = 'Type your message...';
+        }
+        if (sendMessageBtn) sendMessageBtn.disabled = isChatSendOnCooldown;
+    } else {
+        if (messageInput) {
+            messageInput.disabled = true;
+            messageInput.placeholder = 'Sign in to chat';
+        }
+        if (sendMessageBtn) sendMessageBtn.disabled = true;
+    }
+    if (onlineUsers) onlineUsers.textContent = onlineUserCount;
+}
+
+function displayChatMessage(messageData, isInitialLoad = false) {
     const { messagesContainer } = DOMElements.chat;
     if (!messagesContainer) return;
 
-    const { type = 'user', username, avatar, message, userId, userSteamId } = messageData;
+    const { type = 'user', username, avatar, message, userId, userSteamId, timestamp } = messageData;
 
     const messageElement = document.createElement('div');
     messageElement.classList.add('chat-message');
     if (userId) messageElement.dataset.userId = userId;
     if (userSteamId) messageElement.dataset.userSteamId = userSteamId;
 
+
     if (type === 'system') {
         messageElement.classList.add('system-message');
         messageElement.textContent = message;
-        if (isFromHistory) messageElement.style.animation = 'none';
     } else {
         const userAvatarSrc = avatar || '/img/default-avatar.png';
         const displayName = username || 'Anonymous';
@@ -1065,28 +1742,33 @@ function displayChatMessage(messageData, isFromHistory = false) {
             </div>
         `;
         const textElement = messageElement.querySelector('.chat-message-text');
-        if (textElement) textElement.textContent = message; // Use textContent to prevent XSS
-        if (isFromHistory) messageElement.style.animation = 'none'; // No animation for history items
+        if (textElement) textElement.textContent = message;
     }
 
-    // Add new message to the top (due to flex-direction: column-reverse)
-    messagesContainer.insertBefore(messageElement, messagesContainer.firstChild);
+    if (isInitialLoad) { // For initial messages, append to bottom
+        messagesContainer.appendChild(messageElement);
+    } else { // For new messages, insert at top (due to column-reverse)
+        messagesContainer.insertBefore(messageElement, messagesContainer.firstChild);
+    }
 
-    // Manage message array for localStorage and limit display
-    if (!isFromHistory) { // Only add to array if it's a new message
-        chatMessages.unshift(messageData); // Add to the beginning
-        // Trim chatMessages array if it exceeds the max length
-        while (chatMessages.length > CONFIG.MAX_CHAT_MESSAGES) {
-            chatMessages.pop(); // Remove the oldest message from the array
+
+    // Limit number of messages displayed only for new messages, not initial load batch
+    if (!isInitialLoad) {
+        while (messagesContainer.children.length > CONFIG.MAX_CHAT_MESSAGES) {
+            messagesContainer.removeChild(messagesContainer.lastChild);
         }
-        saveChatHistory(); // Save updated history
     }
 
-    // Trim visual display in the DOM
-    while (messagesContainer.children.length > CONFIG.MAX_CHAT_MESSAGES) {
-        messagesContainer.removeChild(messagesContainer.lastChild); // Remove oldest from DOM
+    // Scroll to bottom for new messages if user is already near the bottom
+    // For initial load, this will happen after all messages are added.
+    if (!isInitialLoad && messagesContainer.scrollTop >= messagesContainer.scrollHeight - messagesContainer.clientHeight - 100) {
+         messagesContainer.scrollTop = messagesContainer.scrollHeight; // Auto-scroll
+    } else if (isInitialLoad && messagesContainer.children.length >= CONFIG.MAX_CHAT_MESSAGES) {
+        // For initial load, scroll to bottom after all messages added.
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
 }
+
 
 function handleSendMessage() {
     const { messageInput, sendMessageBtn } = DOMElements.chat;
@@ -1113,7 +1795,7 @@ function handleSendMessage() {
                 }
             }, 1000);
         }
-        setTimeout(() => { // Fallback to re-enable button
+        setTimeout(() => {
             isChatSendOnCooldown = false;
             if(currentUser && sendMessageBtn && !sendMessageBtn.textContent.startsWith("Wait")) {
                  sendMessageBtn.disabled = false;
@@ -1141,127 +1823,6 @@ function updateChatOnlineUsers(count) {
     }
 }
 
-function updateChatUI() {
-    const { messageInput, sendMessageBtn, onlineUsers } = DOMElements.chat;
-    if (currentUser) {
-        if (messageInput) {
-            messageInput.disabled = false;
-            messageInput.placeholder = 'Type your message...';
-        }
-        if (sendMessageBtn) sendMessageBtn.disabled = isChatSendOnCooldown;
-    } else {
-        if (messageInput) {
-            messageInput.disabled = true;
-            messageInput.placeholder = 'Sign in to chat';
-        }
-        if (sendMessageBtn) sendMessageBtn.disabled = true;
-    }
-    if (onlineUsers) onlineUsers.textContent = onlineUserCount;
-}
-
-// --- Winning History Functions (Modified) ---
-async function loadWinningHistory() {
-    const modalElements = DOMElements.winningHistoryModal;
-    if (!currentUser) {
-        showNotification("Please log in to view your winning history.", "info");
-        return;
-    }
-    showModal(modalElements.modal);
-    modalElements.loadingIndicator.style.display = 'flex';
-    modalElements.tableContainer.style.display = 'none';
-    modalElements.noWinningsMessage.style.display = 'none';
-    modalElements.tableBody.innerHTML = '';
-
-    try {
-        const response = await fetch('/api/user/winning-history');
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({ error: `Failed to load winning history (${response.status})` }));
-            throw new Error(errorData.error || `Failed to load winning history (${response.status})`);
-        }
-        const history = await response.json();
-
-        modalElements.loadingIndicator.style.display = 'none';
-        if (!history || history.length === 0) {
-            modalElements.noWinningsMessage.style.display = 'block';
-            modalElements.tableContainer.style.display = 'none';
-        } else {
-            modalElements.noWinningsMessage.style.display = 'none';
-            modalElements.tableContainer.style.display = 'block';
-            history.forEach(win => populateWinningHistoryRow(win));
-        }
-    } catch (error) {
-        console.error("Error loading winning history:", error);
-        modalElements.loadingIndicator.style.display = 'none';
-        modalElements.tableContainer.style.display = 'block';
-        modalElements.tableBody.innerHTML = `<tr><td colspan="4" class="error-message">Error: ${error.message}</td></tr>`;
-        modalElements.noWinningsMessage.style.display = 'none';
-    }
-}
-
-function populateWinningHistoryRow(win) {
-    const tableBody = DOMElements.winningHistoryModal.tableBody;
-    const row = tableBody.insertRow();
-
-    row.insertCell().textContent = win.gameId || 'N/A';
-    row.insertCell().textContent = win.dateWon ? new Date(win.dateWon).toLocaleString() : 'N/A';
-    row.insertCell().textContent = `$${(win.amountWon || 0).toFixed(2)}`;
-
-    const statusCell = row.insertCell();
-    statusCell.style.textAlign = 'center';
-
-    let tradeLinkHTML = '';
-    const offerId = win.tradeOfferId;
-    // Prefer constructing web link if possible, fallback to steam:// protocol if that's what's stored directly
-    const steamOfferWebLink = offerId ? `https://steamcommunity.com/tradeoffer/${offerId}/` : null;
-    const directTradeLink = win.tradeLink; // This might be a steam:// link or a web link
-
-    switch (win.tradeStatus) {
-        case 'accepted':
-        case 'accepted_escrow':
-            tradeLinkHTML = `<span class="trade-status accepted"><i class="fas fa-check-circle"></i> Accepted</span>`;
-            if (win.tradeStatus === 'accepted_escrow') tradeLinkHTML += ` <small>(Escrow)</small>`;
-            break;
-        case 'pending_send': // Bot is preparing to send
-            tradeLinkHTML = `<span class="trade-status pending"><i class="fas fa-spinner fa-spin"></i> Sending...</span>`;
-            break;
-        case 'sent': // Offer sent, awaiting user action
-        case 'pending_confirmation': // Bot sent, but needs internal confirmation (less common for user view)
-            if (steamOfferWebLink) {
-                tradeLinkHTML = `<a href="${steamOfferWebLink}" class="trade-link pending" target="_blank" rel="noopener noreferrer" title="View offer #${offerId} on Steam">Offer Sent <i class="fas fa-external-link-alt"></i></a>`;
-            } else if (directTradeLink) { // Fallback if only steam:// link is available
-                tradeLinkHTML = `<a href="${directTradeLink}" class="trade-link pending" target="_blank" rel="noopener noreferrer" title="Open offer #${offerId}">Offer Sent <i class="fas fa-external-link-alt"></i></a>`;
-            } else {
-                tradeLinkHTML = `<span class="trade-status pending">Offer Sent (Check Steam)</span>`;
-            }
-            break;
-        case 'declined':
-            tradeLinkHTML = `<span class="trade-status failed">Offer Declined</span>`;
-            break;
-        case 'cancelled':
-        case 'canceled':
-            tradeLinkHTML = `<span class="trade-status failed">Offer Cancelled</span>`;
-            break;
-        case 'expired':
-            tradeLinkHTML = `<span class="trade-status failed">Offer Expired</span>`;
-            break;
-        case 'error':
-        case 'error_bot_offline':
-        case 'error_no_tradelink':
-        case 'error_no_items':
-        case 'error_creating_offer':
-        case 'failed_steam_error':
-        case 'failed_invalid_tradelink':
-        case 'failed_inventory_issue':
-             tradeLinkHTML = `<span class="trade-status failed" title="${win.tradeStatus || 'Error processing trade'}">Error Processing</span>`;
-            break;
-        default:
-            tradeLinkHTML = `<span class="trade-status">${win.tradeStatus ? win.tradeStatus.charAt(0).toUpperCase() + win.tradeStatus.slice(1) : 'Unknown'}</span>`;
-    }
-    statusCell.innerHTML = tradeLinkHTML;
-}
-// --- End Winning History Functions ---
-
-
 function setupSocketConnection() {
     socket.on('connect', () => {
         console.log('Socket connected:', socket.id);
@@ -1279,179 +1840,43 @@ function setupSocketConnection() {
         showNotification('Connection Error. Please refresh.', 'error', 10000);
         updateDepositButtonState();
     });
-    socket.on('roundCreated', (data) => {
-        console.log('New round created:', data); currentRound = data;
-        resetToJackpotView();
-        updateRoundUI();
-        updateDepositButtonState();
-    });
-    socket.on('participantUpdated', (data) => { // This event should provide the updated total value for the participant and the pot
-        console.log('Participant updated:', data);
-        if (currentRound && currentRound.roundId === data.roundId) {
-            // The backend should ideally send the *full updated participant object* or enough data
-            // for the frontend to correctly update its `currentRound.participants` array.
-            // For now, we assume `handleNewDeposit` can correctly process `data`.
-            handleNewDeposit(data);
-        } else if (!currentRound && data.roundId) {
-            console.warn("Participant update for unknown round. Requesting full round data.");
-            socket.emit('requestRoundData');
-        }
-    });
-    socket.on('roundRolling', (data) => {
-        console.log('Round rolling event received:', data);
-        if (currentRound && currentRound.roundId === data.roundId) {
-            timerActive = false; if (roundTimer) { clearInterval(roundTimer); roundTimer = null; }
-            if (DOMElements.jackpot.timerValue) DOMElements.jackpot.timerValue.textContent = "Rolling";
-            if (DOMElements.jackpot.timerForeground) updateTimerCircle(0, CONFIG.ROUND_DURATION);
-            currentRound.status = 'rolling';
-            updateDepositButtonState();
-        }
-    });
-    socket.on('roundWinner', (data) => {
-        console.log('Round winner received:', data);
-        if (currentRound && currentRound.roundId === data.roundId) {
-            if (!currentRound.winner) currentRound.winner = data.winner;
-            currentRound.status = 'rolling';
-            handleWinnerAnnouncement(data);
-        } else console.warn("Received winner for mismatched round ID. Current:", currentRound?.roundId, "Received:", data.roundId);
-    });
-    socket.on('roundCompleted', (data) => {
-        console.log('Round completed event received:', data);
-        if (currentRound && currentRound.roundId === data.roundId) {
-            currentRound.status = 'completed';
-            if(data.serverSeed) currentRound.serverSeed = data.serverSeed;
-            if(data.clientSeed) currentRound.clientSeed = data.clientSeed;
-            // Could also update totalPotValueForWinner if it's sent here.
-        }
-        updateDepositButtonState();
-    });
-    socket.on('roundError', (data) => {
-        console.error('Round Error event received:', data);
-        if (currentRound && currentRound.roundId === data.roundId) {
-            currentRound.status = 'error';
-            showNotification(`Round Error: ${data.error || 'Unknown error.'}`, 'error');
-            updateDepositButtonState();
-            resetToJackpotView();
-        }
-    });
-    socket.on('roundData', (data) => { // For initial sync or manual request
+
+    socket.on('roundCreated', (data) => { console.log('New round created:', data); currentRound = data; resetToJackpotView(); updateRoundUI(); updateDepositButtonState(); });
+    socket.on('participantUpdated', (data) => { console.log('Participant updated:', data); if (currentRound && currentRound.roundId === data.roundId) handleNewDeposit(data); else if (!currentRound && data.roundId) { console.warn("Participant update for unknown round. Requesting full round data."); socket.emit('requestRoundData'); } });
+    socket.on('roundRolling', (data) => { console.log('Round rolling event received:', data); if (currentRound && currentRound.roundId === data.roundId) { timerActive = false; if (roundTimer) { clearInterval(roundTimer); roundTimer = null; } if (DOMElements.jackpot.timerValue) DOMElements.jackpot.timerValue.textContent = "Rolling"; if (DOMElements.jackpot.timerForeground) updateTimerCircle(0, CONFIG.ROUND_DURATION); currentRound.status = 'rolling'; updateDepositButtonState(); } });
+    socket.on('roundWinner', (data) => { console.log('Round winner received:', data); if (currentRound && currentRound.roundId === data.roundId) { if (!currentRound.winner) currentRound.winner = data.winner; currentRound.status = 'rolling'; handleWinnerAnnouncement(data); } else console.warn("Received winner for mismatched round ID. Current:", currentRound?.roundId, "Received:", data.roundId); });
+    socket.on('roundCompleted', (data) => { console.log('Round completed event received:', data); if (currentRound && currentRound.roundId === data.roundId) { currentRound.status = 'completed'; if(data.serverSeed) currentRound.serverSeed = data.serverSeed; if(data.clientSeed) currentRound.clientSeed = data.clientSeed; } updateDepositButtonState(); });
+    socket.on('roundError', (data) => { console.error('Round Error event received:', data); if (currentRound && currentRound.roundId === data.roundId) { currentRound.status = 'error'; showNotification(`Round Error: ${data.error || 'Unknown error.'}`, 'error'); updateDepositButtonState(); resetToJackpotView(); } });
+    socket.on('roundData', (data) => {
         console.log('Received initial/updated round data:', data);
-        if (!data || typeof data !== 'object') {
-            console.error("Invalid round data received from server.");
-            showNotification('Error syncing with server.', 'error');
-             initiateNewRoundVisualReset(); return;
-        }
-        currentRound = data; // Overwrite local currentRound with comprehensive data from server
-        updateRoundUI();
-        updateDepositButtonState();
-
-        // Re-render all participant deposits based on the full round data
+        if (!data || typeof data !== 'object') { console.error("Invalid round data received from server."); showNotification('Error syncing with server.', 'error'); initiateNewRoundVisualReset(); return; }
+        currentRound = data; updateRoundUI(); updateDepositButtonState();
+        if (currentRound.status === 'rolling' || currentRound.status === 'completed') { if (!isSpinning && currentRound.winner) { console.log("Connected mid-round/post-completion with winner known, triggering animation/display."); handleWinnerAnnouncement(currentRound); } else if (!isSpinning) { console.log("Connected after round ended or is rolling without winner. Resetting view or waiting for winner."); resetToJackpotView(); }
+        } else if (currentRound.status === 'active') { if (currentRound.participants?.length > 0 && currentRound.timeLeft > 0 && !timerActive) { console.log(`Received active round data. Starting/syncing timer from ${currentRound.timeLeft}s.`); timerActive = true; startClientTimer(currentRound.timeLeft); } else if (currentRound.timeLeft <= 0 && timerActive) { console.log("Server data indicates time up, stopping client timer."); timerActive = false; if (roundTimer) clearInterval(roundTimer); roundTimer = null; updateTimerUI(0); updateDepositButtonState(); } else if (currentRound.participants?.length === 0 && timerActive) { console.log("Server data indicates no participants, stopping client timer."); timerActive = false; if (roundTimer) clearInterval(roundTimer); roundTimer = null; updateTimerUI(CONFIG.ROUND_DURATION); updateDepositButtonState(); } else if (!timerActive) { updateTimerUI(currentRound.timeLeft); }
+        } else if (currentRound.status === 'pending') { console.log("Received pending round state. Resetting visuals."); initiateNewRoundVisualReset(); if(DOMElements.jackpot.timerValue) DOMElements.jackpot.timerValue.textContent = "Waiting"; updateDepositButtonState();
+        } else if (!currentRound.status) { console.warn("Received round data with no status. Resetting visuals."); initiateNewRoundVisualReset(); }
         const container = DOMElements.jackpot.participantsContainer;
-        if (container) {
-            container.innerHTML = ''; // Clear previous blocks
-            if (currentRound.participants && currentRound.participants.length > 0) {
-                if (DOMElements.jackpot.emptyPotMessage) DOMElements.jackpot.emptyPotMessage.style.display = 'none';
-                // Create a map of items by their owner for easier lookup
-                const itemsByOwner = new Map();
-                if (currentRound.items) {
-                    currentRound.items.forEach(item => {
-                        const ownerId = item.owner?.toString() || item.owner; // Handle ObjectId or string
-                        if (!itemsByOwner.has(ownerId)) itemsByOwner.set(ownerId, []);
-                        itemsByOwner.get(ownerId).push(item);
-                    });
-                }
+        if(container && data.participants?.length > 0) {
+            console.log("Rendering existing deposits from full round data."); container.innerHTML = ''; if (DOMElements.jackpot.emptyPotMessage) DOMElements.jackpot.emptyPotMessage.style.display = 'none';
+            const validParticipants = data.participants.filter(p => p.user && (p.user._id || p.user.id));
+            const sortedParticipants = [...validParticipants].sort((a,b) => (b.itemsValue || 0) - (a.itemsValue || 0));
+            sortedParticipants.forEach(p => { const participantItems = data.items?.filter(item => item.owner === (p.user._id || p.user.id)) || []; displayLatestDeposit({ userId: p.user._id || p.user.id, username: p.user.username, avatar: p.user.avatar, itemsValue: p.itemsValue, depositedItems: participantItems }); const element = container.querySelector(`.player-deposit-container[data-user-id="${p.user._id || p.user.id}"]`); if (element) element.classList.remove('player-deposit-new'); });
+             updateAllParticipantPercentages();
+        } else if (container && (!data.participants || data.participants.length === 0)) { initiateNewRoundVisualReset(); }
+    });
+    socket.on('tradeOfferSent', (data) => { console.log('Trade offer sent event received:', data); if (currentUser && data.userId === (currentUser._id || currentUser.id) && data.offerURL) { showNotification(`Trade Offer Sent: <a href="${data.offerURL}" target="_blank" rel="noopener noreferrer" class="notification-link">Click here to accept your winnings on Steam!</a> (#${data.offerId})`, 'success', 10000); } else if (currentUser && data.userId === (currentUser._id || currentUser.id)) { showNotification(`Trade Offer Sent: Check Steam for your winnings! (#${data.offerId})`, 'success', 8000); } });
+    socket.on('notification', (data) => { console.log('Notification event received:', data); if (!data.userId || (currentUser && data.userId === (currentUser._id || currentUser.id))) { showNotification(data.message || 'Received notification from server.', data.type || 'info', data.duration || 4000); } });
 
-                currentRound.participants.forEach(p => {
-                    if (p.user && (p.user._id || p.user.id)) {
-                        const participantUserId = p.user._id || p.user.id;
-                        // We need to simulate the `depositedItems` for displayLatestDeposit.
-                        // This is tricky as `roundData` items aren't tied to specific *deposit events*
-                        // but to the user's total contribution.
-                        // For simplicity here, we'll just pass an empty array or a subset if available
-                        // The main purpose is to show the participant block.
-                        // A more complex solution would store each deposit event's items.
-                        const itemsForThisDisplay = itemsByOwner.get(participantUserId.toString()) || [];
-
-                        displayLatestDeposit({
-                            roundId: currentRound.roundId,
-                            userId: participantUserId,
-                            username: p.user.username,
-                            avatar: p.user.avatar,
-                            itemsValue: p.itemsValue, // This is their total value
-                            tickets: p.tickets,
-                            totalValue: currentRound.totalValue, // Overall pot total
-                            depositedItems: itemsForThisDisplay.slice(0,5) // Show some items, not necessarily just from one deposit event
-                        });
-                        // Remove animation from re-rendered blocks
-                        const element = container.querySelector(`.player-deposit-container[data-user-id="${participantUserId}"]`);
-                        if (element) element.classList.remove('player-deposit-new');
-                    }
-                });
-                updateAllParticipantPercentages();
-            } else {
-                if (DOMElements.jackpot.emptyPotMessage) DOMElements.jackpot.emptyPotMessage.style.display = 'block';
-            }
-        }
-
-
-        if (currentRound.status === 'rolling' || currentRound.status === 'completed') {
-             if (!isSpinning && currentRound.winner) {
-                 console.log("Connected mid-round/post-completion with winner known, triggering animation/display.");
-                 handleWinnerAnnouncement(currentRound);
-             } else if (!isSpinning) {
-                  console.log("Connected after round ended or is rolling without winner. Resetting view or waiting for winner.");
-                  resetToJackpotView();
-             }
-        } else if (currentRound.status === 'active') {
-             if (currentRound.participants?.length > 0 && currentRound.timeLeft > 0 && !timerActive) {
-                 console.log(`Received active round data. Starting/syncing timer from ${currentRound.timeLeft}s.`);
-                 timerActive = true; startClientTimer(currentRound.timeLeft);
-             } else if (currentRound.timeLeft <= 0 && timerActive) {
-                 console.log("Server data indicates time up, stopping client timer.");
-                 timerActive = false; if (roundTimer) clearInterval(roundTimer); roundTimer = null;
-                 updateTimerUI(0); updateDepositButtonState();
-             } else if (currentRound.participants?.length === 0 && timerActive) {
-                  console.log("Server data indicates no participants, stopping client timer.");
-                  timerActive = false; if (roundTimer) clearInterval(roundTimer); roundTimer = null;
-                  updateTimerUI(CONFIG.ROUND_DURATION); updateDepositButtonState();
-             } else if (!timerActive) { // If timer wasn't active, just update display based on server time
-                 updateTimerUI(currentRound.timeLeft);
-             }
-        } else if (currentRound.status === 'pending') {
-            console.log("Received pending round state. Resetting visuals.");
-            initiateNewRoundVisualReset();
-            if(DOMElements.jackpot.timerValue) DOMElements.jackpot.timerValue.textContent = "Waiting";
-            updateDepositButtonState();
-        } else if (!currentRound.status) { // Unspecified status
-             console.warn("Received round data with no status. Resetting visuals.");
-             initiateNewRoundVisualReset();
+    socket.on('chatMessage', (data) => { displayChatMessage(data); });
+    socket.on('initialChatMessages', (messages) => { // Handle initial batch of messages
+        const container = DOMElements.chat.messagesContainer;
+        if (container) container.innerHTML = ''; // Clear before adding initial
+        messages.forEach(msg => displayChatMessage(msg, true)); // Pass true for isInitialLoad
+        if (container && messages.length > 0) { // Scroll to bottom after all initial messages added
+            container.scrollTop = container.scrollHeight;
         }
     });
-
-    socket.on('tradeOfferSent', (data) => {
-         console.log('Trade offer sent event received:', data);
-         if (currentUser && data.userId === (currentUser._id || currentUser.id) && data.offerURL) {
-              showNotification(`Trade Offer Sent: <a href="${data.offerURL}" target="_blank" rel="noopener noreferrer" class="notification-link">Click here to accept your winnings on Steam!</a> (#${data.offerId})`, 'success', 10000);
-         } else if (currentUser && data.userId === (currentUser._id || currentUser.id)) {
-              showNotification(`Trade Offer Sent: Check Steam for your winnings! (#${data.offerId})`, 'success', 8000);
-         }
-         // Potentially refresh winning history if modal is open
-         if (DOMElements.winningHistoryModal.modal.style.display === 'flex') {
-            loadWinningHistory();
-        }
-    });
-    socket.on('notification', (data) => {
-        console.log('Notification event received:', data);
-        if (!data.userId || (currentUser && data.userId === (currentUser._id || currentUser.id))) {
-            showNotification(data.message || 'Received notification from server.', data.type || 'info', data.duration || 4000);
-        }
-    });
-    socket.on('chatMessage', (data) => {
-        displayChatMessage(data);
-    });
-    socket.on('updateUserCount', (count) => {
-        updateChatOnlineUsers(count);
-    });
+    socket.on('updateUserCount', (count) => { updateChatOnlineUsers(count); });
 }
 
 function setupEventListeners() {
@@ -1460,46 +1885,20 @@ function setupEventListeners() {
     DOMElements.nav.tosLink?.addEventListener('click', (e) => { e.preventDefault(); showPage(DOMElements.pages.tosPage); });
     DOMElements.nav.faqLink?.addEventListener('click', (e) => { e.preventDefault(); showPage(DOMElements.pages.faqPage); });
     DOMElements.nav.fairLink?.addEventListener('click', (e) => { e.preventDefault(); showPage(DOMElements.pages.fairPage); });
-    DOMElements.user.loginButton?.addEventListener('click', () => {
-        if (localStorage.getItem('ageVerified') === 'true') {
-            window.location.href = '/auth/steam';
-        } else {
-            const { checkbox: ageCheckbox, agreeButton: ageAgreeButton } = DOMElements.ageVerification;
-            if(ageCheckbox) ageCheckbox.checked = false;
-            if(ageAgreeButton) ageAgreeButton.disabled = true;
-            showModal(DOMElements.ageVerification.modal);
-        }
-    });
-    const { userProfile, userDropdownMenu, logoutButton, profileDropdownButton, winningHistoryDropdownButton } = DOMElements.user;
-    userProfile?.addEventListener('click', (e) => {
-        e.stopPropagation();
-        if (userDropdownMenu) {
-            const isVisible = userDropdownMenu.style.display === 'block';
-            userDropdownMenu.style.display = isVisible ? 'none' : 'block';
-            userProfile?.setAttribute('aria-expanded', String(!isVisible));
-            userProfile?.classList.toggle('open', !isVisible);
-        }
-    });
+    DOMElements.user.loginButton?.addEventListener('click', () => { if (localStorage.getItem('ageVerified') === 'true') { console.log("Age already verified, proceeding to Steam login."); window.location.href = '/auth/steam'; } else { console.log("Age not verified, showing verification modal."); const { checkbox: ageCheckbox, agreeButton: ageAgreeButton } = DOMElements.ageVerification; if(ageCheckbox) ageCheckbox.checked = false; if(ageAgreeButton) ageAgreeButton.disabled = true; showModal(DOMElements.ageVerification.modal); } });
+    const { userProfile, userDropdownMenu, logoutButton, profileDropdownButton, winningHistoryDropdownButton } = DOMElements.user; // Added winningHistoryDropdownButton
+    userProfile?.addEventListener('click', (e) => { e.stopPropagation(); if (userDropdownMenu) { const isVisible = userDropdownMenu.style.display === 'block'; userDropdownMenu.style.display = isVisible ? 'none' : 'block'; userProfile?.setAttribute('aria-expanded', String(!isVisible)); userProfile?.classList.toggle('open', !isVisible); } });
     userProfile?.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.target.click(); }});
     logoutButton?.addEventListener('click', (e) => { e.stopPropagation(); handleLogout(); });
     logoutButton?.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleLogout(); }});
-    profileDropdownButton?.addEventListener('click', (e) => {
-        e.preventDefault(); e.stopPropagation();
-        const menu = DOMElements.user.userDropdownMenu;
-        const modal = DOMElements.profileModal.modal;
-        if (currentUser && modal) {
-            populateProfileModal(); showModal(modal);
-        } else if (!currentUser) showNotification("Please log in to view your profile.", "info");
-        else console.error("Profile modal element not found.");
-        if (menu) menu.style.display = 'none';
-        userProfile?.setAttribute('aria-expanded', 'false');
-        userProfile?.classList.remove('open');
-    });
+    profileDropdownButton?.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); const menu = DOMElements.user.userDropdownMenu; const modal = DOMElements.profileModal.modal; if (currentUser && modal) { populateProfileModal(); showModal(modal); } else if (!currentUser) showNotification("Please log in to view your profile.", "info"); else console.error("Profile modal element not found."); if (menu) menu.style.display = 'none'; userProfile?.setAttribute('aria-expanded', 'false'); userProfile?.classList.remove('open'); });
+
+    // NEW: Winning History Dropdown Listener
     winningHistoryDropdownButton?.addEventListener('click', (e) => {
         e.preventDefault(); e.stopPropagation();
         const menu = DOMElements.user.userDropdownMenu;
         if (currentUser) {
-            loadWinningHistory();
+            showWinningHistory();
         } else {
             showNotification("Please log in to view your winning history.", "info");
         }
@@ -1507,81 +1906,22 @@ function setupEventListeners() {
         userProfile?.setAttribute('aria-expanded', 'false');
         userProfile?.classList.remove('open');
     });
-    DOMElements.profileModal.saveBtn?.addEventListener('click', handleProfileSave);
-    DOMElements.profileModal.closeBtn?.addEventListener('click', () => hideModal(DOMElements.profileModal.modal));
-    DOMElements.profileModal.cancelBtn?.addEventListener('click', () => hideModal(DOMElements.profileModal.modal));
     DOMElements.winningHistoryModal.closeBtnHeader?.addEventListener('click', () => hideModal(DOMElements.winningHistoryModal.modal));
     DOMElements.winningHistoryModal.closeBtnFooter?.addEventListener('click', () => hideModal(DOMElements.winningHistoryModal.modal));
 
-    DOMElements.deposit.showDepositModalButton?.addEventListener('click', () => {
-        const button = DOMElements.deposit.showDepositModalButton;
-        if (button.disabled) {
-            showNotification(button.title || 'Deposits are currently closed.', 'info'); return;
-        }
-        if (!currentUser) {
-            showNotification('Login Required: Please log in first.', 'error'); return;
-        }
-         if (!currentUser.tradeUrl) {
-             showNotification('Trade URL Required: Please open your profile (click your avatar) and set your Steam Trade URL before depositing.', 'error', 6000);
-             if (DOMElements.profileModal.modal) {
-                 populateProfileModal(); showModal(DOMElements.profileModal.modal);
-             }
-             return;
-         }
-        showModal(DOMElements.deposit.depositModal); loadUserInventory();
-    });
+
+    DOMElements.profileModal.saveBtn?.addEventListener('click', handleProfileSave);
+    DOMElements.profileModal.closeBtn?.addEventListener('click', () => hideModal(DOMElements.profileModal.modal));
+    DOMElements.profileModal.cancelBtn?.addEventListener('click', () => hideModal(DOMElements.profileModal.modal));
+    DOMElements.deposit.showDepositModalButton?.addEventListener('click', () => { const button = DOMElements.deposit.showDepositModalButton; if (button.disabled) { showNotification(button.title || 'Deposits are currently closed.', 'info'); return; } if (!currentUser) { showNotification('Login Required: Please log in first.', 'error'); return; } if (!currentUser.tradeUrl) { console.log("Trade URL missing for user. Prompting user to set it in profile."); showNotification('Trade URL Required: Please open your profile (click your avatar) and set your Steam Trade URL before depositing.', 'error', 6000); if (DOMElements.profileModal.modal) { populateProfileModal(); showModal(DOMElements.profileModal.modal); } return; } showModal(DOMElements.deposit.depositModal); loadUserInventory(); });
     DOMElements.deposit.closeDepositModalButton?.addEventListener('click', () => hideModal(DOMElements.deposit.depositModal));
     DOMElements.deposit.depositButton?.addEventListener('click', requestDepositOffer);
-    DOMElements.deposit.acceptDepositOfferBtn?.addEventListener('click', () => {
-         if (currentDepositOfferURL) {
-             window.open(currentDepositOfferURL, '_blank', 'noopener,noreferrer');
-             const { depositStatusText } = DOMElements.deposit;
-             if(depositStatusText) depositStatusText.textContent = "Check Steam tab for the offer...";
-         } else {
-             showNotification("Error: Could not find the trade offer URL.", "error");
-         }
-    });
+    DOMElements.deposit.acceptDepositOfferBtn?.addEventListener('click', () => { if (currentDepositOfferURL) { console.log("Opening Steam trade offer:", currentDepositOfferURL); window.open(currentDepositOfferURL, '_blank', 'noopener,noreferrer'); const { depositStatusText } = DOMElements.deposit; if(depositStatusText) depositStatusText.textContent = "Check Steam tab for the offer..."; } else { console.error("No deposit offer URL found for accept button."); showNotification("Error: Could not find the trade offer URL.", "error"); } });
     const { modal: ageModal, checkbox: ageCheckbox, agreeButton: ageAgreeButton } = DOMElements.ageVerification;
-    if (ageModal && ageCheckbox && ageAgreeButton) {
-        ageCheckbox.addEventListener('change', () => { ageAgreeButton.disabled = !ageCheckbox.checked; });
-        ageAgreeButton.addEventListener('click', () => {
-            if (ageCheckbox.checked) {
-                localStorage.setItem('ageVerified', 'true'); hideModal(ageModal);
-                window.location.href = '/auth/steam';
-            }
-        });
-        ageAgreeButton.disabled = !ageCheckbox.checked;
-    }
+    if (ageModal && ageCheckbox && ageAgreeButton) { ageCheckbox.addEventListener('change', () => { ageAgreeButton.disabled = !ageCheckbox.checked; }); ageAgreeButton.addEventListener('click', () => { if (ageCheckbox.checked) { localStorage.setItem('ageVerified', 'true'); hideModal(ageModal); console.log("Age verification agreed. Proceeding to Steam login."); window.location.href = '/auth/steam'; } }); ageAgreeButton.disabled = !ageCheckbox.checked; }
     DOMElements.provablyFair.verifyButton?.addEventListener('click', verifyRound);
-    window.addEventListener('click', (e) => {
-        const profileModal = DOMElements.profileModal.modal;
-        const winningHistoryModal = DOMElements.winningHistoryModal.modal;
-        if (userDropdownMenu && userProfile && userDropdownMenu.style.display === 'block' &&
-            !userProfile.contains(e.target) && !userDropdownMenu.contains(e.target)) {
-            userDropdownMenu.style.display = 'none';
-            userProfile.setAttribute('aria-expanded', 'false');
-            userProfile.classList.remove('open');
-        }
-        if (e.target === DOMElements.deposit.depositModal) hideModal(DOMElements.deposit.depositModal);
-        if (e.target === profileModal) hideModal(profileModal);
-        if (e.target === winningHistoryModal) hideModal(winningHistoryModal);
-    });
-    document.addEventListener('keydown', function(event) {
-        const profileModal = DOMElements.profileModal.modal;
-        const depositModal = DOMElements.deposit.depositModal;
-        const winningHistoryModal = DOMElements.winningHistoryModal.modal;
-        if (event.key === 'Escape') {
-             if (profileModal?.style.display === 'flex') hideModal(profileModal);
-             else if (depositModal?.style.display === 'flex') hideModal(depositModal);
-             else if (winningHistoryModal?.style.display === 'flex') hideModal(winningHistoryModal);
-             else if (userDropdownMenu && userDropdownMenu.style.display === 'block') {
-                 userDropdownMenu.style.display = 'none';
-                 userProfile?.setAttribute('aria-expanded', 'false');
-                 userProfile?.classList.remove('open');
-                 userProfile?.focus();
-             }
-        }
-    });
+    window.addEventListener('click', (e) => { const profileModal = DOMElements.profileModal.modal; const whModal = DOMElements.winningHistoryModal.modal; if (userDropdownMenu && userProfile && userDropdownMenu.style.display === 'block' && !userProfile.contains(e.target) && !userDropdownMenu.contains(e.target)) { userDropdownMenu.style.display = 'none'; userProfile.setAttribute('aria-expanded', 'false'); userProfile.classList.remove('open'); } if (e.target === DOMElements.deposit.depositModal) hideModal(DOMElements.deposit.depositModal); if (e.target === profileModal) hideModal(profileModal); if (e.target === whModal) hideModal(whModal); /* NEW: Close WH modal on backdrop click */ });
+    document.addEventListener('keydown', function(event) { const profileModal = DOMElements.profileModal.modal; const depositModal = DOMElements.deposit.depositModal; const whModal = DOMElements.winningHistoryModal.modal; if (event.key === 'Escape') { if (whModal?.style.display === 'flex') hideModal(whModal); else if (profileModal?.style.display === 'flex') hideModal(profileModal); else if (depositModal?.style.display === 'flex') hideModal(depositModal); else if (userDropdownMenu && userDropdownMenu.style.display === 'block') { userDropdownMenu.style.display = 'none'; userProfile?.setAttribute('aria-expanded', 'false'); userProfile?.classList.remove('open'); userProfile?.focus(); } } });
     setupChatEventListeners();
 }
 
@@ -1608,14 +1948,10 @@ function populateProfileModal() {
 
 async function handleProfileSave() {
     const { tradeUrlInput, saveBtn } = DOMElements.profileModal;
-    if (!tradeUrlInput || !saveBtn || !currentUser) {
-         showNotification("Not logged in or profile elements missing.", "error"); return;
-    }
+    if (!tradeUrlInput || !saveBtn || !currentUser) { showNotification("Not logged in or profile elements missing.", "error"); return; }
     const newTradeUrl = tradeUrlInput.value.trim();
     const urlPattern = /^https?:\/\/steamcommunity\.com\/tradeoffer\/new\/\?partner=\d+&token=[a-zA-Z0-9_-]+$/i;
-    if (newTradeUrl && !urlPattern.test(newTradeUrl)) {
-        showNotification('Invalid Steam Trade URL format. Please check or leave empty to clear.', 'error', 6000); return;
-    }
+    if (newTradeUrl && !urlPattern.test(newTradeUrl)) { showNotification('Invalid Steam Trade URL format. Please check or leave empty to clear.', 'error', 6000); return; }
     saveBtn.disabled = true; saveBtn.textContent = 'Saving...';
     try {
         const response = await fetch('/api/user/tradeurl', {
@@ -1636,11 +1972,10 @@ async function handleProfileSave() {
     }
 }
 
-
 document.addEventListener('DOMContentLoaded', () => {
     console.log("DOM fully loaded and parsed.");
     const ageVerified = localStorage.getItem('ageVerified') === 'true';
-    checkLoginStatus(); // This also calls loadChatHistory and initializes selectedItemsList (if user exists)
+    checkLoginStatus();
     setupEventListeners();
     setupSocketConnection();
     showPage(DOMElements.pages.homePage);
@@ -1651,7 +1986,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(ageAgreeButton) ageAgreeButton.disabled = true;
         showModal(DOMElements.ageVerification.modal);
     }
-    // updateChatUI() is called within checkLoginStatus
+    updateChatUI();
 });
 
-console.log("main.js updated with Winning History API call, deposit selection persistence, and chat enhancements.");
+console.log("main.js updated: Winning History frontend logic added, MAX_CHAT_MESSAGES set to 15.");
