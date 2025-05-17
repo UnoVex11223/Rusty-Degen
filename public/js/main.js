@@ -1,14 +1,3 @@
-// main.js - Rust Jackpot Frontend Logic
-// Modifications:
-// - Removed test functions (testRouletteAnimation, testDeposit) and associated UI.
-// - Updated profile modal to display total deposited/won.
-// - Removed display of skin names, showing only image and price.
-// - Retained profile dropdown and modal logic from previous updates.
-// - ADDED: Frontend chat functionality, integrated with socket.io.
-// - REMOVED: "Details" button from Provably Fair round history.
-// - ADDED: Frontend visual cooldown for chat send button.
-// - ADDED: Winning History modal functionality.
-// - ADDED: Chat persistence using localStorage and message limit.
 
 // Ensure Socket.IO client library is loaded before this script
 
