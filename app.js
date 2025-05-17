@@ -489,6 +489,7 @@ function startRoundTimer(useRemainingTime = false) {
     }, 1000);
 }
 // ... (endRound and sendWinningTradeOffer functions are substantial, ensure they are complete)
+
 // app.js (Corrected and Complete with Chat Logic) - Part 2 of 2
 
 async function endRound() {
