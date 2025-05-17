@@ -170,9 +170,16 @@ let currentDepositOfferURL = null; // For deposit modal
 let onlineUserCount = 0;
 let isChatSendOnCooldown = false;
 let currentClaimingRecordId = null; // For accept winnings modal
+let winningsModalQueue = []; // Queue for multiple win modals
+let acceptWinningsModalVisible = false;
 
 function showModal(modalElement) {
-    if (modalElement) modalElement.style.display = 'flex';
+    if (modalElement) {
+        modalElement.style.display = 'flex';
+        if (modalElement === DOMElements.acceptWinningsModal.modal) {
+            acceptWinningsModalVisible = true;
+        }
+    }
 }
 
 function hideModal(modalElement) {
@@ -187,6 +194,11 @@ function hideModal(modalElement) {
     }
     if (modalElement === DOMElements.acceptWinningsModal.modal) {
         resetAcceptWinningsModal();
+        acceptWinningsModalVisible = false;
+        if (winningsModalQueue.length > 0) {
+            const nextWin = winningsModalQueue.shift();
+            populateAndShowAcceptWinningsModal(nextWin);
+        }
     }
 }
 window.hideModal = hideModal; // Make accessible to inline HTML event handlers if any
@@ -1422,6 +1434,10 @@ function populateAndShowAcceptWinningsModal(data) { // data from 'youWonRoundDet
         console.error("Accept Winnings Modal or current user not found.");
         return;
     }
+    if (acceptWinningsModalVisible) {
+        winningsModalQueue.push(data);
+        return;
+    }
     resetAcceptWinningsModal(); // Reset before populating
 
     currentClaimingRecordId = data.winningRecordId;
@@ -1633,10 +1649,19 @@ function setupSocketConnection() {
 
     // NEW: Listen for specific winner details to claim
     socket.on('youWonRoundDetails', (data) => { // data: { winningRecordId, roundId, amountWon, itemsWon }
-        if (currentUser && (currentUser._id === data.winnerIdFromBackend || currentRound?.winner?.id === currentUser._id)) { // Ensure it's for the current user
-             // Backend should ideally include winnerId in this payload if it's targeted.
-             // For now, we assume if this event is received, the client is the winner.
+        if (currentUser && (currentUser._id === data.winnerIdFromBackend || currentRound?.winner?.id === currentUser._id)) {
             console.log("Received 'youWonRoundDetails', populating claim modal:", data);
+            currentUser.unclaimedWinnings = currentUser.unclaimedWinnings || [];
+            if (!currentUser.unclaimedWinnings.find(w => w.winningRecordId === data.winningRecordId)) {
+                currentUser.unclaimedWinnings.push({
+                    winningRecordId: data.winningRecordId,
+                    roundDisplayId: data.roundId,
+                    amountWon: data.amountWon,
+                    itemsWon: data.itemsWon,
+                    timestamp: Date.now()
+                });
+                populateUnclaimedWinningsInProfile(currentUser.unclaimedWinnings);
+            }
             populateAndShowAcceptWinningsModal(data);
         }
     });
@@ -1653,7 +1678,44 @@ function setupSocketConnection() {
 
     socket.on('roundCompleted', (data) => { /* ... unchanged ... */ });
     socket.on('roundError', (data) => { /* ... unchanged ... */ });
-    socket.on('tradeOfferSent', (data) => { /* ... unchanged, ensure it handles winnings offers properly ... */ });
+    socket.on('tradeOfferSent', (data) => {
+        console.log('tradeOfferSent event:', data);
+        if (!currentUser || (data.userId && data.userId !== currentUser._id && data.userId !== currentUser.id)) {
+            return;
+        }
+
+        const modalElements = DOMElements.acceptWinningsModal;
+        if (!modalElements.modal) return;
+
+        // Remove from unclaimed winnings list if present
+        if (currentUser.unclaimedWinnings) {
+            currentUser.unclaimedWinnings = currentUser.unclaimedWinnings.filter(uw => uw.winningRecordId !== data.winningRecordId);
+            populateUnclaimedWinningsInProfile(currentUser.unclaimedWinnings);
+        }
+
+        const sameRecord = currentClaimingRecordId && data.winningRecordId === currentClaimingRecordId;
+
+        if (!acceptWinningsModalVisible || !sameRecord) {
+            resetAcceptWinningsModal();
+            currentClaimingRecordId = data.winningRecordId;
+            modalElements.statusText.textContent = 'Trade offer sent! Check Steam to accept.';
+            modalElements.statusText.className = 'accept-winnings-status-text success';
+            modalElements.acceptButton.style.display = 'none';
+            if (data.offerURL) {
+                modalElements.viewTradeOfferLink.href = data.offerURL;
+                modalElements.tradeOfferLinkContainer.style.display = 'block';
+            }
+            showModal(modalElements.modal);
+        } else {
+            modalElements.statusText.textContent = 'Trade offer sent! Check Steam to accept.';
+            modalElements.statusText.className = 'accept-winnings-status-text success';
+            modalElements.acceptButton.style.display = 'none';
+            if (data.offerURL) {
+                modalElements.viewTradeOfferLink.href = data.offerURL;
+                modalElements.tradeOfferLinkContainer.style.display = 'block';
+            }
+        }
+    });
     socket.on('notification', (data) => { /* ... unchanged ... */ });
     socket.on('chatMessage', (data) => { /* ... unchanged ... */ });
     socket.on('initialChatMessages', (messages) => { /* ... unchanged ... */ });
