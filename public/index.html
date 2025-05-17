@@ -27,7 +27,7 @@
                     <li>You are at least 18 years old</li>
                     <li>You are legally allowed to trade skins from your country</li>
                     <li>You understand and accept the risks associated with skin gambling</li>
-                    <li>You have read and agree to our <a href="#" id="tos-link-modal" target="_blank">Terms of Service</a></li>
+                    <li>You have read and agree to our <a href="#" id="tos-link-modal" onclick="event.preventDefault(); window.showPage(document.getElementById('tos-page')); document.getElementById('ageVerificationModal').style.display='none';" target="_blank">Terms of Service</a></li>
                 </ul>
                 <div class="checkbox-container">
                     <input type="checkbox" id="agreeCheckbox">
@@ -207,7 +207,7 @@
         <div class="container">
 
             <section id="home-page">
-                <div class="jackpot-and-chat-container"> 
+                <div class="jackpot-and-chat-container">
                     <div class="jackpot-section">
                         <div class="jackpot-header" id="jackpotHeader">
                             <div class="jackpot-value">
@@ -251,7 +251,9 @@
                                     </div>
                                     <div class="confetti-container" id="confettiContainer"></div>
                                 </div>
-                                <audio id="spinSound" src="/audio/spin-sound.mp3" preload="auto"></audio> <audio id="depositSound" src="/audio/deposit-join.mp3" preload="auto"></audio> <button class="btn btn-primary return-btn" id="returnToJackpot" style="display: none;">Return</button>
+                                <audio id="spinSound" src="spin-sound.mp3" preload="auto"></audio>
+                                <audio id="depositSound" src="deposit-join.mp3" preload="auto"></audio>
+                                <button class="btn btn-primary return-btn" id="returnToJackpot" style="display: none;">Return</button>
                             </div>
                         </div>
 
@@ -269,7 +271,7 @@
                         </div>
                     </div>
 
-                    <div class="chat-container"> 
+                    <div class="chat-container">
                         <div class="chat-header">
                             <h3>Player Chat</h3>
                             <div class="chat-online-status">
@@ -305,78 +307,104 @@
             <section id="tos-page" style="display: none;">
                  <div class="content-card">
                      <h1>Terms of Service</h1>
-                     <p><small>Last Updated: May 15, 2025</small></p> <div class="content-section">
-                         <h3 class="content-section-title">1. Acceptance of Terms</h3>
+                     <p><small>Last Updated: May 17, 2025</small></p> <div class="content-section">
+                         <h3 class="content-section-title">1. Agreement to Terms</h3>
                          <div class="content-section-body">
-                             <p>Welcome to Rusty Degen (referred to as "the Service" or "Website"). These Terms of Service ("Terms") outline the rules and regulations for using our platform. By accessing or utilizing any part of the Service, you signify your binding agreement to these Terms. If you disagree with any portion of these Terms, you are prohibited from using the Service.</p>
-                             <p>Your use of the Website, participation in games, and any communication with Rusty Degen are all governed by these Terms.</p>
+                             <p>When you access or utilize RustyDegen's platform, you confirm that you've reviewed, comprehended, and consent to abide by these Service Terms. Should you disagree with any portion of these conditions, you are required to discontinue use of our platform immediately.</p>
                          </div>
                      </div>
+
                      <div class="content-section">
-                         <h3 class="content-section-title">2. Eligibility and User Obligations</h3>
+                         <h3 class="content-section-title">2. Age Verification</h3>
                          <div class="content-section-body">
-                             <p>To use Rusty Degen, you confirm that:</p>
+                             <p>To participate on RustyDegen, you must have reached 18 years of age or the applicable legal majority in your region, whichever is greater. Your continued use constitutes a declaration that you satisfy these age criteria. We maintain the authority to demand age verification documentation at our discretion.</p>
+                         </div>
+                     </div>
+
+                     <div class="content-section">
+                         <h3 class="content-section-title">3. Account Protection</h3>
+                         <div class="content-section-body">
+                             <p>You bear full responsibility for safeguarding your login credentials and for every action performed through your account. You commit to promptly alerting us regarding any unauthorized account access or potential security vulnerabilities.</p>
+                         </div>
+                     </div>
+
+                     <div class="content-section">
+                         <h3 class="content-section-title">4. Restricted Conduct</h3>
+                         <div class="content-section-body">
+                             <p>While using RustyDegen, you explicitly agree to refrain from the following prohibited behaviors:</p>
                              <ul>
-                                 <li>You are 18 years of age or older.</li>
-                                 <li>You have the legal right and capacity to agree to these Terms and are responsible for your conduct.</li>
-                                 <li>Your use of the Service complies with the laws and regulations of your location.</li>
-                                 <li>You own the Steam account you use to log in and the items you deposit.</li>
-                                 <li>You understand that virtual items have no real money value on this platform.</li>
+                                 <li>Creating or operating multiple user profiles</li>
+                                 <li>Taking advantage of system vulnerabilities or technical issues</li>
+                                 <li>Participating in deceptive practices or fraudulent activities</li>
+                                 <li>Engaging in abusive behavior toward other community members</li>
+                                 <li>Attempting to influence or predetermine game results</li>
+                                 <li>Employing VPN services or proxy servers to bypass system limitations</li>
+                                 <li>Conducting financial misconduct or illicit monetary transactions</li>
                              </ul>
-                             <p>It is your sole responsibility to ensure your activities on Rusty Degen are lawful in your jurisdiction. You access the Service at your own risk.</p>
                          </div>
                      </div>
+
                      <div class="content-section">
-                         <h3 class="content-section-title">3. Service Availability and Liability</h3>
+                         <h3 class="content-section-title">5. Digital Asset Ownership</h3>
                          <div class="content-section-body">
-                             <p>Rusty Degen provides its Service on an "as-is" and "as-available" basis without any warranties, express or implied. We do not guarantee that the Service will be uninterrupted, timely, secure, or free from errors.</p>
-                             <p>Rusty Degen, its owner, and affiliates will not be liable for any damages (direct, indirect, incidental, special, consequential, or exemplary) resulting from your use or inability to use the Service. This includes losses from gameplay, technical failures, data loss, Steam API issues, trade delays/errors, or other intangible losses.</p>
-                             <p>We reserve the right to modify, suspend, or discontinue the Service, or any part thereof (including specific game rounds or user accounts), at our discretion, without notice or liability.</p>
+                             <p>All digital items utilized on RustyDegen continue to be the intellectual property of their original creators and gaming companies. Our platform makes no ownership claims to any digital assets deposited by users. You acknowledge that these digital items possess no tangible monetary worth and cannot be converted to actual currency via our services.</p>
                          </div>
                      </div>
-                      <div class="content-section">
-                         <h3 class="content-section-title">4. Gameplay, Winnings, and Site Fees</h3>
-                         <div class="content-section-body">
-                             <p>Winning chances vary based on game rules and deposited value, as determined by our Provably Fair system where applicable.</p>
-                             <p>Winners must claim items via the designated Steam trade offer system. Ensure your Steam Trade URL is accurate on our Website and that your Steam inventory settings allow incoming offers (set to public).</p>
-                             <p>Winning trade offers should be accepted promptly. Offers not accepted within a reasonable timeframe (e.g., 12-24 hours, subject to change) of being sent may be cancelled, potentially resulting in forfeiture of winnings. If you encounter issues receiving winnings, contact support promptly.</p>
-                             <p>A commission (typically 5-10%, see FAQ for current rate) is applied to each jackpot round's total value to support site maintenance, development, and operational costs. This fee is deducted from the item pool before the winner receives the remaining items.</p>
-                         </div>
-                     </div>
-                      <div class="content-section">
-                          <h3 class="content-section-title">5. User Accounts and Conduct</h3>
-                          <div class="content-section-body">
-                              <p>You are responsible for maintaining the confidentiality of your Steam account login information. You are responsible for all activities that occur under your account.</p>
-                              <p>You agree not to use the Service for any unlawful purpose or in any way that could damage, disable, overburden, or impair the Service.</p>
-                              <p>Prohibited activities include, but are not limited to: using scripts or bots to interact with the site (except as explicitly allowed), attempting to exploit vulnerabilities, impersonating others, engaging in harassment, or disrupting the experience of other users.</p>
-                              <p>Violation of these terms may result in temporary or permanent suspension of your account without notice.</p>
-                         </div>
-                     </div>
+
                      <div class="content-section">
-                         <h3 class="content-section-title">6. Technical Issues and Support Claims</h3>
+                         <h3 class="content-section-title">6. Item Transactions</h3>
                          <div class="content-section-body">
-                              <p>If you believe a loss occurred due to a verifiable error within Rusty Degen's systems (e.g., software bug, server issue), you must report it to our support channel (specified elsewhere, e.g., Discord) promptly, ideally within 12 hours of the event.</p>
-                              <p>Claims require detailed information (round ID, time, issue description, relevant screenshots/proof). Rusty Degen will investigate reasonable claims but retains sole discretion in determining the resolution, which may or may not include compensation.</p>
-                              <p>We are not responsible for issues arising from Steam network problems, user-side errors, or delays in accepting trade offers.</p>
+                             <p>When depositing items on RustyDegen, you affirm that you legitimately possess these assets and acquired them through authorized channels. We retain the right to decline any transaction we believe involves misappropriated or illegitimately obtained items.</p>
                          </div>
                      </div>
+
                      <div class="content-section">
-                         <h3 class="content-section-title">7. Intellectual Property</h3>
-                          <div class="content-section-body">
-                              <p>All materials on this Website, including design, code, text, graphics, and logos, are owned by or licensed to Rusty Degen and protected by intellectual property laws.</p>
-                              <p>Unauthorized copying, distribution, or modification of any Website content is forbidden without explicit written permission.</p>
+                         <h3 class="content-section-title">7. Platform Fees</h3>
+                         <div class="content-section-body">
+                             <p>RustyDegen applies a service fee on each jackpot to sustain operational functions. The present fee structure is 10% of the total jackpot value. We maintain the right to adjust this percentage with reasonable notification to our user community.</p>
                          </div>
                      </div>
+
                      <div class="content-section">
-                         <h3 class="content-section-title">8. Amendments to Terms</h3>
+                         <h3 class="content-section-title">8. Transparent Randomization</h3>
                          <div class="content-section-body">
-                             <p>Rusty Degen may revise these Terms at any time. Updated Terms become effective upon posting on the Website. Continuing to use the Service after changes means you accept the revised Terms. It is your responsibility to review the Terms periodically.</p>
+                             <p>RustyDegen employs a verifiably fair mechanism to select winners for each game session. You understand that outcomes are completely randomized and your winning probability correlates directly with the proportion of value your deposited items represent within the total jackpot.</p>
                          </div>
                      </div>
-                      <div class="content-section">
-                         <h3 class="content-section-title">9. Governing Law</h3>
+
+                     <div class="content-section">
+                         <h3 class="content-section-title">9. Platform Reliability</h3>
                          <div class="content-section-body">
-                             <p>These Terms shall be governed by and construed in accordance with the laws of [Your Jurisdiction - e.g., Florida, USA], without regard to its conflict of law provisions.</p>
+                             <p>While we endeavor to provide continuous service availability, we cannot guarantee uninterrupted access at all times. We accept no responsibility for any losses resulting from service disruptions, technical delays, or system failures.</p>
+                         </div>
+                     </div>
+
+                     <div class="content-section">
+                         <h3 class="content-section-title">10. Account Suspension</h3>
+                         <div class="content-section-body">
+                             <p>We maintain the authority to restrict or terminate your RustyDegen access at any point, without advance notification or incurring liability, for any justifiable cause, including but not limited to violations of these Service Terms.</p>
+                         </div>
+                     </div>
+
+                     <div class="content-section">
+                         <h3 class="content-section-title">11. Terms Modification</h3>
+                         <div class="content-section-body">
+                             <p>We may revise these Service Terms periodically. The most recent version will always be accessible on our platform. Continuing to use RustyDegen following any modifications signifies your acceptance of the updated terms.</p>
+                         </div>
+                     </div>
+
+                     <div class="content-section">
+                         <h3 class="content-section-title">12. Liability Constraints</h3>
+                         <div class="content-section-body">
+                             <p>RustyDegen and its management team cannot be held accountable for any immediate, consequential, incidental, particular, resulting, or exemplary damages arising from your utilization of or inability to access our services.</p>
+                         </div>
+                     </div>
+
+                     <div class="content-section">
+                         <h3 class="content-section-title">13. Legal Framework</h3>
+                         <div class="content-section-body">
+                             <p>These Service Terms shall be interpreted and enforced according to the legal statutes of the jurisdiction where RustyDegen conducts its operations, disregarding any principles regarding conflicts of laws.</p>
+                             <p>[Please replace "[Your Jurisdiction - e.g., Florida, USA]" with the actual jurisdiction in the original TOS on the server, or ensure this placeholder is updated if this HTML is used directly.]</p>
                          </div>
                      </div>
                  </div>
