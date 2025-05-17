@@ -145,28 +145,28 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Your Winning History</h2>
-                <button class="close-btn" id="closeWinningHistoryModal" aria-label="Close winning history modal">&times;</button>
+                <button class="close-btn" id="winningHistoryModalCloseBtn" aria-label="Close winning history modal">&times;</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body winning-history-modal-body">
                 <div id="winning-history-loading" class="loading-indicator" style="display: none;">
                     <div class="spinner"></div>
-                    <p>Loading your winning history...</p>
+                    <p>Loading your winnings...</p>
                 </div>
-                <div class="table-container" id="winningHistoryTableContainer" style="display: none;">
-                    <table class="history-table winning-history-table">
+                <div class="winning-history-table-container">
+                    <table class="winning-history-table">
                         <thead>
                             <tr>
                                 <th>Game ID</th>
-                                <th>Date Won</th>
                                 <th>Amount Won</th>
-                                <th>Trade Status/Link</th>
+                                <th>Date</th>
+                                <th>Trade Offer</th>
                             </tr>
                         </thead>
                         <tbody id="winningHistoryTableBody">
                             </tbody>
                     </table>
                 </div>
-                <p id="noWinningsMessage" class="empty-history-message" style="display: none;">You have no winnings yet.</p>
+                <p id="noWinningsMessage" style="display: none; text-align: center; padding: 20px;">You have no recorded winnings yet.</p>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" id="winningHistoryModalCloseFooterBtn">Close</button>
@@ -418,8 +418,8 @@
                              <p>RustyDegen and its management team cannot be held accountable for any immediate, consequential, incidental, particular, resulting, or exemplary damages arising from your utilization of or inability to access our services.</p>
                          </div>
                      </div>
-                 </div>
-            </section>
+                </div> </section>
+
 
             <section id="faq-page" style="display: none;">
                  <div class="content-card">
@@ -478,8 +478,7 @@
                              <p>If you encounter any issues (e.g., problems with deposits, withdrawals, site errors), please reach out to us through our official support channel [Link to your Discord/Support System Here - Placeholder]. Please provide as much detail as possible, including your Steam profile link, the relevant Round ID (if applicable), approximate time of the issue, and a clear description of the problem.</p>
                          </div>
                      </div>
-                 </div>
-            </section>
+                 </div> </section>
 
             <section id="fair-page" style="display: none;">
                  <div class="content-card">
@@ -550,14 +549,13 @@
                                  </div>
                          </div>
                      </div>
-                 </div>
-            </section>
+                 </div> </section>
 
         </div> </main>
 
     <footer class="main-footer">
         <div class="container">
-            <p> &copy;2025 Rusty Degen. All rights reserved. Rusty Degen is not affiliated with Valve Corporation, Facepunch Studios, Rust or any other trademarks. Gambling can be addictive. Play responsibly. 18+</p>
+            <p>&copy; <span id="currentYearFooter">2025</span> Rusty Degen. All rights reserved. Rusty Degen is not affiliated with Valve Corporation, Facepunch Studios, Rust or any other trademarks. Gambling can be addictive. Play responsibly. 18+</p>
             <p>
                  <a href="#" id="tos-link-footer">Terms of Service</a> |
                  <a href="#" id="fair-link-footer">Provably Fair</a> |
@@ -571,12 +569,28 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Update footer year dynamically
+            const currentYear = new Date().getFullYear();
+            const yearSpan = document.getElementById('currentYearFooter');
+            if (yearSpan) yearSpan.textContent = currentYear;
+            
+            // Update TOS last updated year (if different)
+            const tosDateElement = document.querySelector('#tos-page p small');
+            if (tosDateElement) {
+                const currentTosText = tosDateElement.textContent; // "Last Updated: May 17, 2025"
+                if (!currentTosText.includes(currentYear.toString())) {
+                     tosDateElement.textContent = `Last Updated: May 17, ${currentYear}`; // Example, adjust date as needed
+                }
+            }
+
+
             const faqItems = document.querySelectorAll('#faq-page .faq-item .content-section-title');
             faqItems.forEach(title => {
                 title.addEventListener('click', () => {
                     const item = title.closest('.faq-item');
                     const body = item.querySelector('.content-section-body');
                     if (item && body) {
+                         // Close other items
                         document.querySelectorAll('#faq-page .faq-item.active').forEach(openItem => {
                             if (openItem !== item) {
                                 openItem.classList.remove('active');
@@ -584,12 +598,14 @@
                                 if (openBody) openBody.style.display = 'none';
                             }
                         });
+                         // Toggle current item
                         item.classList.toggle('active');
                         body.style.display = item.classList.contains('active') ? 'block' : 'none';
                     }
                 });
             });
 
+            // Footer/Modal TOS Links
              const setupLink = (linkId, pageElementId) => {
                  const link = document.getElementById(linkId);
                  const page = document.getElementById(pageElementId);
@@ -598,7 +614,7 @@
                            e.preventDefault();
                            window.showPage(page);
                            const modal = link.closest('.modal');
-                           if (modal && typeof window.hideModal === 'function') { // Use hideModal from main.js
+                           if (modal && typeof window.hideModal === 'function') { // Added hideModal check
                                 window.hideModal(modal);
                            }
                       });
