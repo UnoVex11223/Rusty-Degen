@@ -37,12 +37,6 @@
      --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
      --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.4);
-
-    /* RGB versions for RGBA usage */
-    --success-color-rgb: 76, 175, 80;
-    --info-color-rgb: 33, 150, 243;
-    --error-color-rgb: 244, 67, 54;
-    --warning-color-rgb: 255, 193, 7;
 }
 
 * {
@@ -52,25 +46,25 @@
 }
 
 body {
-    font-family: var(--font-primary);
+    font-family: var(--font-primary); /* Using Rajdhani as base */
     background-color: var(--background-dark);
     color: var(--text-primary);
     line-height: 1.6;
-    overflow-x: hidden;
+    overflow-x: hidden; /* Prevent horizontal scrollbars */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
 .container {
     width: 100%;
-    max-width: 1200px;
-    margin: 0 auto;
+    max-width: 1200px; /* Standard max width - This centers the overall content */
+    margin: 0 auto;    /* This centers the overall content */
     padding: 0 15px;
 }
 
 /* Typography */
 h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-secondary);
+    font-family: var(--font-secondary); /* Titillium for headings */
     font-weight: 700;
     margin-bottom: 1rem;
     color: var(--text-primary);
@@ -79,7 +73,7 @@ h1, h2, h3, h4, h5, h6 {
 
 h1 { font-size: 2.5rem; }
 h2 { font-size: 2rem; }
-h3 { font-size: 1.5rem; }
+h3 { font-size: 1.5rem; } /* Default h3 size */
 
 a {
     text-decoration: none;
@@ -95,7 +89,7 @@ p {
     color: var(--text-secondary);
 }
 
-code {
+code { /* General code tag styling */
     background-color: var(--background-dark);
     padding: 3px 6px;
     border-radius: 4px;
@@ -109,16 +103,20 @@ code {
 /*=========================
  UTILITIES & HELPERS
  =========================*/
+
+/* Visually hidden label */
 .sr-only {
     position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
     overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
 }
 
-/* Custom Scrollbars */
+/* Custom Scrollbars (Optional but nice) */
+/* Firefox */
 * {
     scrollbar-width: thin;
     scrollbar-color: var(--primary-color) var(--background-dark);
 }
+/* Webkit (Chrome, Safari, Edge) */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: var(--background-dark); border-radius: 4px; }
 ::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 4px; border: 2px solid var(--background-dark); }
@@ -148,13 +146,17 @@ code {
     overflow-wrap: break-word;
 }
 .notification-bar.show { top: 0; /* Slide into view */ }
-.notification-bar.success { background-color: rgba(var(--success-color-rgb), 0.95); border-color: var(--success-color); color: #ffffff; }
-.notification-bar.error { background-color: rgba(var(--error-color-rgb), 0.95); border-color: var(--error-color); color: #ffffff; }
-.notification-bar.info { background-color: rgba(var(--info-color-rgb), 0.95); border-color: var(--info-color); color: #ffffff; }
-.notification-bar.warning { background-color: rgba(var(--warning-color-rgb), 0.95); border-color: var(--warning-color); color: var(--background-dark); }
+
+/* Style types */
+.notification-bar.success { background-color: rgba(76, 175, 80, 0.95); border-color: var(--success-color); color: #ffffff; }
+.notification-bar.error { background-color: rgba(244, 67, 54, 0.95); border-color: var(--error-color); color: #ffffff; }
+.notification-bar.info { background-color: rgba(33, 150, 243, 0.95); border-color: var(--info-color); color: #ffffff; }
+.notification-bar.warning { background-color: rgba(255, 193, 7, 0.95); border-color: var(--warning-color); color: var(--background-dark); } /* Updated warning */
+
+/* Allow links within notifications */
 .notification-bar a,
-.notification-link {
-    color: inherit !important;
+.notification-link { /* Added class for flexibility */
+    color: inherit !important; /* Inherit color from parent */
     font-weight: bold;
     text-decoration: underline !important;
     cursor: pointer;
@@ -169,6 +171,7 @@ code {
 /*=========================
  HEADER & NAVIGATION
  =========================*/
+
 .main-header {
     background-color: var(--background-medium);
     padding: 10px 0;
@@ -178,6 +181,7 @@ code {
     top: 0;
     z-index: 100;
 }
+
 .header-container {
     display: flex;
     align-items: center;
@@ -185,13 +189,16 @@ code {
     flex-wrap: wrap;
     gap: 15px;
 }
+
 .header-left, .header-center, .header-right {
     display: flex;
     align-items: center;
 }
+
 .header-left { gap: 20px; flex: 1; min-width: 0; justify-content: flex-start; }
 .header-center { flex-grow: 2; justify-content: center; min-width: 0; text-align: center; }
-.header-right { gap: 10px; flex: 1; min-width: 0; justify-content: flex-end; }
+.header-right { gap: 10px; flex: 1; min-width: 0; justify-content: flex-end; } /* Reduced gap */
+
 .logo h1 {
     font-family: var(--font-mono);
     font-size: 1.8rem;
@@ -203,10 +210,14 @@ code {
     white-space: nowrap;
 }
 .logo span { color: var(--primary-color); }
+
+/* Navigation Lists */
 .primary-nav ul, .secondary-nav ul, .main-nav ul {
     list-style: none; display: flex; padding: 0; margin: 0; gap: 15px;
 }
 .main-nav ul { justify-content: center; width: 100%; }
+
+/* General Nav Link Styles */
 .primary-nav a, .secondary-nav a, .main-nav a {
     font-weight: 600; font-size: 1rem; font-family: var(--font-primary);
     padding: 8px 10px; border-radius: 4px; transition: var(--transition-medium);
@@ -220,6 +231,8 @@ code {
 .primary-nav a:hover::after, .secondary-nav a:hover::after, .main-nav a:hover::after,
 .primary-nav a.active::after, .secondary-nav a.active::after, .main-nav a.active::after { width: 80%; }
 .primary-nav a.active, .secondary-nav a.active, .main-nav a.active { color: var(--primary-color); }
+
+/* Jackpot Tab Specific Styles */
 .jackpot-tab {
     font-size: 1.6rem; padding: 10px 15px; color: var(--jackpot-tab-color);
     text-shadow: 0 0 10px var(--jackpot-tab-color), 0 0 15px var(--jackpot-tab-color);
@@ -227,14 +240,20 @@ code {
 }
 .jackpot-tab::after { background-color: var(--jackpot-tab-color); box-shadow: 0 0 8px var(--jackpot-tab-color); height: 3px; }
 .jackpot-tab:hover { color: var(--jackpot-tab-color); text-shadow: 0 0 15px var(--jackpot-tab-color), 0 0 20px var(--jackpot-tab-color); }
+
+/* User Controls */
 .user-controls { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
-.user-profile-container { position: relative; display: flex; align-items: center; gap: 8px; }
+
+.user-profile-container { position: relative; display: flex; align-items: center; gap: 8px; /* Added for indicator positioning */ }
+
+/* --- User Profile Trigger (Simplified) --- */
 .user-profile {
-    display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px; border-radius: 4px;
+    display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px; /* Add small padding */ border-radius: 4px;
      transition: background-color var(--transition-fast);
 }
-.user-profile:hover { background-color: rgba(255, 255, 255, 0.05); }
-.user-profile:focus { outline: none; box-shadow: 0 0 0 2px var(--primary-light); }
+.user-profile:hover { background-color: rgba(255, 255, 255, 0.05); } /* Subtle hover */
+.user-profile:focus { outline: none; box-shadow: 0 0 0 2px var(--primary-light); } /* Focus style */
+
 .user-avatar-container { position: relative; display: flex; flex-shrink: 0; }
 .user-avatar {
     width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary-color);
@@ -245,44 +264,65 @@ code {
     border-radius: 50%; border: 2px solid var(--background-medium);
 }
 .user-status.online { background-color: var(--success-color); }
-.user-status.offline { background-color: #9e9e9e; }
+.user-status.offline { background-color: #9e9e9e; } /* Grey for offline */
+
 .user-name {
     font-family: var(--font-secondary); font-weight: 600; font-size: 0.95rem;
     color: var(--text-primary); white-space: nowrap; overflow: hidden;
-    text-overflow: ellipsis; transition: color var(--transition-fast); max-width: 150px;
+    text-overflow: ellipsis; transition: color var(--transition-fast); max-width: 150px; /* Limit name width */
 }
 .user-profile:hover .user-name { color: var(--primary-light); }
+
+/* --- Pending Offer Indicator (Header) --- */
 .pending-offer-indicator {
-    display: inline-block;
-    color: var(--warning-color);
+    display: inline-block; /* Initially hidden by JS */
+    color: var(--warning-color); /* Use warning color */
     font-size: 1.1rem;
-    cursor: help;
+    cursor: help; /* Indicate tooltip */
     animation: pulseWarning 1.5s infinite ease-in-out;
-    vertical-align: middle;
+    vertical-align: middle; /* Align with text/avatar */
     line-height: 1;
 }
+
 @keyframes pulseWarning {
     0%, 100% { transform: scale(1); opacity: 1; }
     50% { transform: scale(1.15); opacity: 0.7; }
 }
+/* --- End Pending Offer Indicator --- */
+
+
+/* --- Dropdown Menu (New Simplified Structure) --- */
 .dropdown-menu {
-    display: none;
+    display: none; /* JS toggles this to 'block' */
     position: absolute;
-    top: calc(100% + 10px);
+    top: calc(100% + 10px); /* Position below the user-profile */
+    left: 50%; /* Start from center of profile container */
+    transform: translateX(-50%); /* Center the dropdown */
+    /* Align right edge of dropdown with right edge of profile trigger for typical desktop view */
+    right: 0;
+    left: auto; /* Override previous left */
+    transform: none; /* Reset transform if aligning right */
     z-index: 1000;
     background-color: var(--background-dark);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     box-shadow: var(--shadow-lg);
-    min-width: 200px;
+    min-width: 220px; /* Adjusted for longer text like "Winning History" */
     overflow: hidden;
 }
+
 .user-profile-container .dropdown-menu {
-    left: 0;
-    right: auto;
-    transform: none;
+    /* If profile container is small, aligning left of container to left of dropdown is better */
+    /* Example: For left-aligned profile button */
+    /* left: 0; right: auto; transform: none; */
+
+    /* For right-aligned profile (current setup), align dropdown's right to container's right */
+     left: auto; right: 0; transform: none;
 }
+
+
 .dropdown-actions { padding: 8px 0; }
+
 .dropdown-item {
     display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: none;
     border: none; width: 100%; text-align: left; color: var(--text-secondary);
@@ -292,22 +332,24 @@ code {
 .dropdown-item:hover { background-color: var(--background-light); color: var(--primary-color); }
 .dropdown-item .icon { width: 18px; text-align: center; color: var(--text-accent); flex-shrink: 0; }
 .dropdown-item:hover .icon { color: var(--primary-color); }
+
+/* Logout button specific styling */
 #logoutButton {
     border-top: 1px solid var(--border-color); margin-top: 5px;
     color: var(--error-color) !important;
 }
 #logoutButton .icon { color: var(--error-color) !important; }
-#logoutButton:hover { background-color: rgba(var(--error-color-rgb), 0.1) !important; color: var(--error-color) !important; }
+#logoutButton:hover { background-color: rgba(244, 67, 54, 0.1) !important; color: var(--error-color) !important; }
 #logoutButton:hover .icon { color: var(--error-color) !important; }
 
 /*=========================
  BUTTONS
  =========================*/
 .btn {
-    display: inline-flex;
+    display: inline-flex; /* Use flex for easy icon alignment */
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 8px; /* Space between icon and text */
     padding: 10px 20px;
     border: none;
     border-radius: 4px;
@@ -335,24 +377,30 @@ code {
     box-shadow: none !important;
     opacity: 0.6;
 }
-.btn i {
-     font-size: 1em;
-     line-height: 1;
+.btn i { /* Style for icons within buttons */
+     font-size: 1em; /* Match text size */
+     line-height: 1; /* Prevent extra spacing */
 }
+
+/* Login Button */
 #loginButton {
-    padding: 8px 15px;
+    padding: 8px 15px; /* Slightly adjusted */
     font-size: 0.9rem;
-    background-color: var(--success-color);
+    background-color: var(--success-color); /* Steam green */
     color: white;
     box-shadow: var(--shadow-sm);
 }
 #loginButton:hover:not(:disabled) { background-color: #45a049; transform: translateY(-1px); box-shadow: var(--shadow-md); }
-#loginButton i { margin-right: 6px; }
+#loginButton i { margin-right: 6px; /* Keep margin for steam icon */ }
+
+/* Primary Button */
 .btn-primary {
     background-color: var(--primary-color);
     color: var(--background-dark);
 }
 .btn-primary:hover:not(:disabled) { background-color: var(--primary-dark); }
+
+/* Deposit Button (Main Trigger & Inside Modal Request) */
 .btn-deposit {
     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
     color: var(--background-dark);
@@ -363,20 +411,23 @@ code {
     position: relative;
     overflow: hidden;
 }
-.btn-deposit:before {
+.btn-deposit:before { /* Shine effect */
     content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
     transition: left var(--transition-slow) ease;
 }
 .btn-deposit:hover:not(:disabled):before { left: 100%; }
-.btn-deposit.deposit-disabled {
+.btn-deposit.deposit-disabled { /* Specific style for disabled state */
      background: var(--background-light);
      opacity: 0.6;
      cursor: not-allowed;
      box-shadow: none;
      color: var(--text-secondary);
 }
-.btn-deposit.deposit-disabled:before { display: none; }
+.btn-deposit.deposit-disabled:before { display: none; } /* Hide shine */
+
+
+/* Secondary Button */
 .btn-secondary {
     background-color: var(--background-light);
     color: var(--text-primary);
@@ -390,34 +441,42 @@ code {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
 }
+
+/* Small Button Variant */
 .btn-small {
      padding: 5px 10px;
      font-size: 0.8rem;
 }
-.btn-details { margin-right: 5px; margin-bottom: 5px; vertical-align: middle; }
-.btn-verify {
+
+/* Specific Buttons from History/Verify */
+.btn-details { /* Inherits .btn, .btn-secondary, .btn-small */ margin-right: 5px; margin-bottom: 5px; vertical-align: middle; }
+.btn-verify { /* Inherits .btn, .btn-secondary, .btn-small */
     margin-right: 5px; margin-bottom: 5px; vertical-align: middle;
     background-color: var(--secondary-color);
     color: var(--background-dark); border-color: var(--secondary-color);
 }
 .btn-verify:hover:not(:disabled) { background-color: var(--secondary-dark); border-color: var(--secondary-dark); }
-.btn-success {
+
+/* Success Button (for Accept on Steam) */
+.btn-success { /* Inherits .btn */
      background-color: var(--success-color);
      color: white;
      border-color: var(--success-color);
 }
 .btn-success:hover:not(:disabled) {
-     background-color: #45a049;
+     background-color: #45a049; /* Darker green */
      border-color: #45a049;
-     box-shadow: 0 5px 15px rgba(var(--success-color-rgb), 0.4);
+     box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
 }
 
 /*=========================
  MAIN CONTENT & SECTIONS
  =========================*/
+
 .main-content {
     padding: 30px 0;
 }
+
 .content-card {
     max-width: 900px;
     margin: 30px auto;
@@ -428,6 +487,7 @@ code {
     overflow: hidden;
     padding: 30px;
 }
+
 .content-card h1 {
     color: var(--primary-color);
     font-size: 2.2rem;
@@ -437,13 +497,19 @@ code {
     padding-bottom: 15px;
     text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
 }
-#home-page { }
+
+/* Jackpot Page Layout */
+#home-page {
+    /* The .container parent of #home-page handles overall centering */
+}
+
 .jackpot-and-chat-container {
     display: flex;
     justify-content: center;
-    align-items: flex-start;
+    align-items: flex-start; /* Changed from stretch to allow chat fixed height */
     gap: 20px;
 }
+
 .jackpot-section {
     background-color: var(--background-medium);
     border-radius: 12px;
@@ -452,15 +518,17 @@ code {
     border: 1px solid var(--border-color);
     position: relative;
     width: 680px;
-    max-width: calc(100% - 300px);
+    max-width: calc(100% - 300px); /* Max width considering chat width + gap */
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
 }
 
+
 /*=========================
  JACKPOT HEADER & TIMER
  =========================*/
+
 .jackpot-header {
     display: flex;
     justify-content: center;
@@ -479,6 +547,7 @@ code {
     flex-wrap: wrap;
     flex-shrink: 0;
 }
+
 .jackpot-header.roulette-mode {
     background: linear-gradient(135deg, var(--background-dark), var(--background-medium));
     height: 140px;
@@ -487,6 +556,7 @@ code {
     padding-top: 0;
     padding-bottom: 0;
 }
+
 .jackpot-timer, .jackpot-value, .jackpot-stats {
     min-width: 170px;
     flex-basis: 0;
@@ -498,6 +568,8 @@ code {
     text-align: center;
     padding: 15px 5px;
 }
+
+
 .jackpot-value h2 {
     font-size: 4.2rem; font-weight: 700; color: var(--primary-color); margin: 0;
     font-family: var(--font-mono);
@@ -508,6 +580,7 @@ code {
     0%, 100% { text-shadow: 0 0 8px rgba(0, 230, 118, 0.4); }
     50% { text-shadow: 0 0 20px var(--primary-color), 0 0 10px var(--primary-light); }
 }
+
 .timer-circle {
     position: relative; width: 130px; height: 130px; display: flex;
     justify-content: center; align-items: center; margin: 0 auto 10px auto;
@@ -528,14 +601,16 @@ code {
 .urgent-pulse {
     animation: urgentPulse 0.6s infinite ease-in-out;
     color: var(--error-color) !important;
-    text-shadow: 0 0 5px rgba(var(--error-color-rgb), 0.5);
+    text-shadow: 0 0 5px rgba(244, 67, 54, 0.5);
 }
 @keyframes timerPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
 @keyframes urgentPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.08); } }
+
 .stat-value {
     font-size: 3.8rem; font-weight: 700; color: var(--text-primary);
     display: block; line-height: 1.1; margin-top: 10px;
 }
+
 .value-label, .timer-label, .stat-label {
     margin-top: 10px;
     font-size: 0.9rem;
@@ -548,6 +623,7 @@ code {
 /*=========================
  ROULETTE ANIMATION
  =========================*/
+
 .inline-roulette {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
     background: transparent; z-index: 10; overflow: hidden;
@@ -560,50 +636,58 @@ code {
     position: relative; width: 90%;
     max-width: 1000px;
     height: 90px; overflow: hidden;
-    background-color: rgba(var(--background-dark-rgb, 13, 17, 23), 0.7); border-radius: 8px;
+    background-color: rgba(13, 17, 23, 0.7); border-radius: 8px;
     border: 1px solid var(--border-color);
     box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6); backdrop-filter: blur(2px);
 }
 .roulette-track {
     display: flex; position: absolute; left: 0; top: 0; height: 100%;
-    padding-left: calc(50% - 45px); /* Half of item width approx */
-    padding-right: calc(50% - 45px);
+    padding-left: calc(50% - 45px); /* Half of item width */
+    padding-right: calc(50% - 45px); /* Half of item width */
     will-change: transform; transition: none;
 }
+
 .roulette-item {
-    flex: 0 0 auto; /* Prevent shrinking/growing */
-    width: 90px; /* Fixed width for items */
-    height: 80px; /* Fixed height */
-    margin: 5px; /* Spacing between items */
+    flex: 0 0 auto;
+    width: 90px; /* Item width */
+    height: 80px; /* Item height */
+    margin: 5px; /* Margin around item */
     background: rgba(30, 35, 40, 0.8);
     border-radius: 6px;
     box-shadow: var(--shadow-md);
     overflow: hidden;
     transition: transform var(--transition-medium), box-shadow var(--transition-medium);
-    border: 2px solid transparent; /* Base border, colorized for winner */
+    border: 2px solid transparent;
     position: relative;
-    backface-visibility: hidden; /* May improve performance */
+    backface-visibility: hidden; /* Improve rendering performance */
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0; /* Remove padding if avatar fills it */
+    padding: 0; /* Remove padding if image is main content */
 }
+
 .roulette-item:hover {
     transform: translateY(-5px) scale(1.05);
     box-shadow: var(--shadow-lg);
     z-index: 1; /* Bring to front on hover */
 }
+
 .roulette-avatar {
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Cover the area, might crop */
+    object-fit: cover;
     transition: transform var(--transition-medium);
-    border: none; /* Reset border if any */
-    border-radius: 0; /* Match parent if needed, or keep square */
+    border: none; /* Remove border from avatar if item has one */
+    border-radius: 0; /* Remove border-radius if item handles it */
 }
+
 .roulette-item:hover .roulette-avatar { transform: scale(1.1); }
-/* .roulette-item.winner-highlight is applied via JS in finalizeSpin */
+
+.roulette-item.winner-highlight {
+    /* Styles applied via JS in finalizeSpin */
+}
+
 .roulette-ticker {
     position: absolute; top: 0; left: 50%; transform: translateX(-50%);
     width: 4px; height: 100%; z-index: 15; pointer-events: none;
@@ -620,12 +704,13 @@ code {
 }
 .roulette-ticker::before { top: -6px; border-bottom: 8px solid rgba(0, 230, 118, 0.8); }
 .roulette-ticker::after { bottom: -6px; border-top: 8px solid rgba(0, 230, 118, 0.8); }
+
 .winner-info {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: radial-gradient(circle, rgba(20, 25, 30, 0.95), rgba(var(--background-dark-rgb,13,17,23), 0.98));
+    background: radial-gradient(circle, rgba(20, 25, 30, 0.95), rgba(13, 17, 23, 0.98));
     padding: 10px; display: flex; flex-direction: column; justify-content: center;
     align-items: center; text-align: center; box-sizing: border-box;
-    z-index: 20; opacity: 0; display: none; /* Initially hidden */
+    z-index: 20; opacity: 0; display: none; /* Initially hidden, controlled by JS */
     backdrop-filter: blur(3px);
 }
 @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
@@ -637,10 +722,12 @@ code {
 .winner-details span { color: var(--primary-light); font-weight: bold; }
 .congrats { font-size: 1.2rem !important; color: var(--primary-color); font-weight: 700; margin-top: 5px !important; text-transform: uppercase; letter-spacing: 2px; animation: colorPulse 3s infinite; text-shadow: 0 0 8px currentColor; }
 @keyframes colorPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-.return-btn { display: none !important; } /* As per HTML, this seems unused */
+
+.return-btn { display: none !important; /* If not used, can be removed from HTML too */ }
+
 .confetti-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 18; }
 .confetti-piece {
-    position: absolute; width: 8px; height: 8px; background-color: var(--color); /* JS sets --color */
+    position: absolute; width: 8px; height: 8px; background-color: var(--color);
     top: -20px; opacity: 0.9; animation: confettiFall var(--duration, 3s) linear var(--delay, 0s) forwards;
     transform-origin: center center;
 }
@@ -650,8 +737,9 @@ code {
 }
 
 /*=========================
- DEPOSIT & POT ITEMS (itemsContainer)
+ DEPOSIT & PARTICIPANT ITEMS
  =========================*/
+
 .deposit-button-container {
     padding: 25px;
     background-color: var(--background-medium);
@@ -662,13 +750,15 @@ code {
     flex-direction: column;
     align-items: center;
     gap: 15px;
-    flex-shrink: 0;
+    flex-shrink: 0; /* Prevent shrinking */
 }
+
 #showDepositModal {
     width: 280px;
     padding: 14px 30px;
     max-width: none;
 }
+
 #showDepositModal.deposit-disabled {
      background: var(--background-light);
      opacity: 0.6;
@@ -677,6 +767,8 @@ code {
      color: var(--text-secondary);
 }
 #showDepositModal.deposit-disabled:before { display: none; }
+
+
 .current-items-section {
     padding: 25px;
     z-index: 5;
@@ -684,9 +776,9 @@ code {
     background-color: var(--background-medium);
     border-radius: 0 0 12px 12px;
     border-top: 1px solid var(--border-color);
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
+    flex-grow: 1; /* Allow this section to grow and fill space in .jackpot-section */
+    display: flex; /* Added */
+    flex-direction: column; /* Added */
 }
 .section-title {
     font-size: 1.2rem;
@@ -698,42 +790,44 @@ code {
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 12px;
     text-align: center;
-    flex-shrink: 0;
+    flex-shrink: 0; /* Prevent shrinking */
 }
 .empty-pot-message {
     text-align: center; padding: 40px 20px; color: var(--text-secondary); font-size: 1.1rem;
     background-color: var(--background-light); border-radius: 8px;
     border: 1px dashed var(--border-color); display: block; margin: 15px 0;
-    flex-grow: 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    flex-grow: 1; /* Allow to take space if items-container is empty */
+    display: flex; /* Center content */
+    align-items: center; /* Center content */
+    justify-content: center; /* Center content */
 }
-.items-container { /* This is DOMElements.jackpot.depositsContainer */
+
+.items-container {
     display: flex;
-    flex-direction: column; /* New deposits added to top, this stacks them */
+    flex-direction: column;
     gap: 15px;
     padding: 10px;
     min-height: 100px;
-    flex-grow: 1;
-    overflow-y: auto;
+    flex-grow: 1; /* Allow items container to grow */
+    overflow-y: auto; /* Add scroll if items overflow */
 }
+
 .player-deposit-container {
     background: linear-gradient(to bottom, var(--background-light), var(--background-medium));
     border-radius: 8px; padding: 15px; border: 1px solid var(--border-color);
     box-shadow: var(--shadow-md); width: 100%;
     transition: transform var(--transition-medium), box-shadow var(--transition-medium);
-    flex-shrink: 0;
+    flex-shrink: 0; /* Prevent individual deposits from shrinking weirdly */
 }
 .player-deposit-container:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
-.player-deposit-header { display: flex; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(var(--border-color-rgb, 48,54,61), 0.5); }
+.player-deposit-header { display: flex; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(48, 54, 61, 0.5); }
 .player-avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 12px; border: 2px solid var(--primary-color); object-fit: cover; flex-shrink: 0; }
 .player-info { flex: 1; min-width: 0; }
 .player-name { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .player-deposit-value {
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--text-secondary); /* JS will set specific color */
+    color: var(--text-secondary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -741,30 +835,31 @@ code {
 }
 .player-items-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: flex-start; }
 .player-deposit-item {
-    width: 80px; height: 100px; background: rgba(var(--background-dark-rgb,22,27,34), 0.7); border-radius: 5px;
+    width: 80px; height: 100px; background: rgba(22, 27, 34, 0.7); border-radius: 5px;
     overflow: hidden; box-shadow: var(--shadow-sm); transition: transform var(--transition-fast);
     border: 1px solid var(--border-color); flex: 0 0 auto; display: flex; flex-direction: column;
-    border-left-width: 3px; border-left-style: solid; /* Color applied by JS */
+    border-left-width: 3px; border-left-style: solid;
 }
 .player-deposit-item:hover { transform: translateY(-3px); box-shadow: var(--shadow-md), 0 0 8px rgba(0, 230, 118, 0.2); }
-.player-deposit-item-image { width: 100%; height: 60px; object-fit: contain; background-color: var(--background-medium); border-bottom: 1px solid rgba(var(--border-color-rgb,48,54,61), 0.5); display: block; }
+.player-deposit-item-image { width: 100%; height: 60px; object-fit: contain; background-color: var(--background-medium); border-bottom: 1px solid rgba(48, 54, 61, 0.5); display: block; }
 .player-deposit-item-info { padding: 4px; height: 40px; display: flex; flex-direction: column; justify-content: center; flex-grow: 1; }
 .player-deposit-item-name { font-size: 0.65rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); margin-bottom: 2px; }
-.player-deposit-item-value { font-size: 0.7rem; font-weight: 700; /* Color applied by JS */ }
-.player-deposit-item-more { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; padding: 5px; margin-top: 5px; /* Color applied by JS */ }
+.player-deposit-item-value { font-size: 0.7rem; font-weight: 700; }
+.player-deposit-item-more { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; padding: 5px; margin-top: 5px; }
 @keyframes newDepositPulse {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
 }
 .player-deposit-new { animation: newDepositPulse 0.5s ease-out forwards; }
 
 /*=========================
  MODALS
  =========================*/
+
 .modal {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background-color: rgba(0, 0, 0, 0.85);
-    display: none; /* JS toggles to flex */
+    display: none; /* Controlled by JS */
     justify-content: center; align-items: center; z-index: 1000; padding: 20px;
     backdrop-filter: blur(5px);
 }
@@ -772,25 +867,26 @@ code {
     background-color: var(--background-medium);
     border-radius: 12px;
     width: 100%;
-    max-width: 700px; /* Default max-width */
+    max-width: 700px; /* Default max width */
     max-height: 90vh;
     display: flex;
     flex-direction: column;
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border-color);
     animation: modalIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    overflow: hidden; /* Important for children with overflow:auto */
+    overflow: hidden; /* Let modal-body handle scroll */
 }
 .age-verification .modal-content { max-width: 500px; }
 #depositModal .modal-content { max-width: 900px; }
 #tradeUrlModal .modal-content { max-width: 600px; }
-.winning-history-modal .modal-content { max-width: 800px; }
-.accept-winnings-modal .modal-content { max-width: 650px; }
+.winning-history-modal .modal-content { max-width: 800px; } /* For Winning History */
+
 
 @keyframes modalIn {
     from { opacity: 0; transform: scale(0.9) translateY(-20px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
 }
+
 .modal-header {
     padding: 15px 25px;
     border-bottom: 1px solid var(--border-color);
@@ -812,11 +908,13 @@ code {
     line-height: 1; cursor: pointer; transition: var(--transition-medium); padding: 5px;
 }
 .close-btn:hover { color: var(--primary-color); transform: rotate(90deg); }
+
 .modal-body { padding: 25px; overflow-y: auto; flex-grow: 1; line-height: 1.7; }
 .modal-body p { margin-bottom: 15px; color: var(--text-secondary); }
 .modal-body p:last-child { margin-bottom: 0; }
 .modal-body ul { list-style: disc; margin: 15px 0 15px 25px; padding-left: 15px; }
 .modal-body li { margin-bottom: 8px; color: var(--text-secondary); }
+
 .modal-footer {
     padding: 15px 25px;
     border-top: 1px solid var(--border-color);
@@ -828,6 +926,8 @@ code {
     align-items: center;
     gap: 10px;
 }
+
+/* Form Elements */
 .form-group { margin-bottom: 20px; }
 .form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary); font-family: var(--font-primary); }
 .form-group input[type="text"], .form-group input[type="url"], .form-group input[type="number"], .form-group input[type="password"], .form-group input[type="email"], .form-group textarea {
@@ -839,7 +939,7 @@ code {
 }
 .form-group input:focus, .form-group textarea:focus {
     border-color: var(--primary-color); outline: none;
-    box-shadow: 0 0 0 3px rgba(var(--primary-color-rgb, 0,230,118), 0.2);
+    box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.2);
 }
 .checkbox-container { display: flex; align-items: center; margin: 15px 0; }
 .checkbox-container input[type="checkbox"] { margin-right: 10px; width: 18px; height: 18px; accent-color: var(--primary-color); cursor: pointer; flex-shrink: 0; }
@@ -847,6 +947,8 @@ code {
 .help-text { font-size: 0.9rem; color: var(--text-secondary); margin-top: 10px; }
 .help-text a { color: var(--primary-light); text-decoration: underline; }
 .help-text a:hover { color: var(--primary-color); }
+
+/* Inventory Modal Styles */
 .inventory-container { margin-bottom: 20px; }
 .inventory-container h3 {
     font-size: 1rem; color: var(--text-secondary); margin-bottom: 10px;
@@ -864,12 +966,14 @@ code {
     transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
     border: 2px solid transparent; display: flex; flex-direction: column;
 }
-.inventory-item:hover { transform: translateY(-3px); border-color: rgba(var(--primary-color-rgb,0,230,118), 0.3); }
-.inventory-item.selected { border-color: var(--primary-color); box-shadow: 0 0 15px rgba(var(--primary-color-rgb,0,230,118), 0.4); transform: scale(1.03); }
+.inventory-item:hover { transform: translateY(-3px); border-color: rgba(0, 230, 118, 0.3); }
+.inventory-item.selected { border-color: var(--primary-color); box-shadow: 0 0 15px rgba(0, 230, 118, 0.4); transform: scale(1.03); }
 .inventory-item img { width: 100%; height: 80px; object-fit: contain; background-color: var(--background-dark); display: block; border-bottom: 1px solid var(--border-color); }
 .item-details { padding: 8px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; min-height: 50px; }
 .item-name { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; line-height: 1.2; }
 .inventory-item .item-value { font-size: 0.85rem; font-weight: 700; color: var(--primary-color); text-align: right; margin-top: auto; }
+
+/* Selected Items (Deposit Modal) */
 .selected-items { margin-top: 20px; }
 .selected-items h3 { font-size: 1rem; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
 .selected-items-container {
@@ -902,17 +1006,20 @@ code {
     border: 1px solid var(--border-color); margin-top: 10px; font-weight: 600; font-size: 1.1rem;
 }
 .total-value span:last-child { color: var(--primary-color); font-family: var(--font-mono); }
+
+/* Loading indicator */
 .loading-indicator {
     display: none; flex-direction: column; align-items: center; justify-content: center;
     padding: 30px; background-color: transparent; border-radius: 8px;
-    margin: 20px 0; color: var(--text-secondary); grid-column: 1 / -1;
+    margin: 20px 0; color: var(--text-secondary); grid-column: 1 / -1; /* For use in grid layouts */
 }
 .spinner {
-    width: 40px; height: 40px; border: 4px solid rgba(var(--primary-color-rgb,0,230,118), 0.3);
+    width: 40px; height: 40px; border: 4px solid rgba(0, 230, 118, 0.3);
     border-radius: 50%; border-top-color: var(--primary-color);
     animation: spin 1s linear infinite; margin-bottom: 15px;
 }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
 
 /* --- Profile Modal Styles --- */
 #profileModal .modal-content { max-width: 480px; }
@@ -920,6 +1027,7 @@ code {
 .profile-modal-user-info { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 25px; text-align: center; }
 .profile-modal-avatar { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--primary-color); object-fit: cover; }
 .profile-modal-name { font-family: var(--font-primary); font-size: 1.5em; font-weight: 600; color: var(--text-primary); margin-top: 5px; }
+
 .profile-modal-stats {
     text-align: center;
     margin-bottom: 30px;
@@ -927,11 +1035,13 @@ code {
     background-color: var(--background-light);
     border-radius: 5px;
     border: 1px solid var(--border-color);
-    display: flex;
-    justify-content: space-around;
-    gap: 10px;
+    display: flex; /* Added for side-by-side items */
+    justify-content: space-around; /* Distribute items */
+    gap: 10px; /* Space between items */
 }
-.profile-modal-stat-item { flex: 1; }
+.profile-modal-stat-item {
+    flex: 1; /* Allow items to grow and share space */
+}
 .profile-modal-stat-label {
     display: block; font-size: 0.9em; color: var(--text-secondary);
     margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;
@@ -940,14 +1050,17 @@ code {
     font-family: var(--font-mono); font-size: 1.6em; font-weight: 700;
     color: var(--secondary-light);
 }
+
 .profile-modal-trade-url { margin-bottom: 15px; }
 #profileModalTradeUrl { font-family: var(--font-mono); font-size: 0.95em; }
 .profile-modal-help-text { margin-top: 10px; font-size: 0.8em; }
 .profile-modal-footer { justify-content: space-between; background-color: var(--background-light); padding: 15px 25px; border-top: 1px solid var(--border-color); border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+
+/* --- Profile Modal Pending Offer Status --- */
 .profile-pending-offer-status {
     margin-bottom: 20px;
     padding: 12px 15px;
-    background-color: rgba(var(--warning-color-rgb), 0.1);
+    background-color: rgba(255, 193, 7, 0.1);
     border: 1px solid var(--warning-color);
     border-radius: 4px;
     text-align: center;
@@ -958,255 +1071,12 @@ code {
 .profile-pending-offer-status a:hover, .profile-pending-link:hover { color: var(--secondary-color) !important; opacity: 0.9; }
 .profile-pending-offer-status i { margin-right: 5px; }
 
-/* --- NEW: Unclaimed Winnings Section in Profile Modal --- */
-.profile-unclaimed-winnings {
-    margin-bottom: 20px;
-    padding: 15px;
-    background-color: rgba(var(--warning-color-rgb), 0.05);
-    border: 1px solid var(--warning-color);
-    border-radius: 6px;
-}
-.profile-unclaimed-winnings h4 {
-    font-size: 1.1rem;
-    color: var(--warning-color);
-    margin-top: 0;
-    margin-bottom: 10px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid rgba(var(--warning-color-rgb), 0.3);
-}
-#profileUnclaimedWinningsList .unclaimed-win-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border-color);
-    font-size: 0.9rem;
-}
-#profileUnclaimedWinningsList .unclaimed-win-item:last-child {
-    border-bottom: none;
-}
-#profileUnclaimedWinningsList .unclaimed-win-item p {
-    margin: 0;
-    color: var(--text-secondary);
-}
-#profileUnclaimedWinningsList .unclaimed-win-item p small {
-    display: block;
-    font-size: 0.8em;
-    color: var(--text-secondary);
-    opacity: 0.7;
-}
-#profileUnclaimedWinningsList .unclaimed-win-item .claim-from-profile-btn {
-    padding: 6px 12px;
-    font-size: 0.85rem;
-    background-color: var(--secondary-color);
-    color: var(--background-dark);
-}
-#profileUnclaimedWinningsList .unclaimed-win-item .claim-from-profile-btn:hover {
-    background-color: var(--secondary-dark);
-}
-#profileUnclaimedWinningsList .unclaimed-win-item .claim-from-profile-btn i {
-    margin-left: 5px;
-}
-
-/* --- Winning History Modal Styles --- */
-.winning-history-modal-body { padding: 0; }
-.winning-history-table-container {
-    max-height: 60vh;
-    overflow-y: auto;
-    padding: 20px;
-}
-.winning-history-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.9rem;
-}
-.winning-history-table th,
-.winning-history-table td {
-    padding: 10px 12px;
-    text-align: left;
-    border-bottom: 1px solid var(--border-color);
-    vertical-align: middle;
-}
-.winning-history-table th {
-    background-color: var(--background-light);
-    color: var(--primary-light);
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 0.8rem;
-    letter-spacing: 0.5px;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-}
-.winning-history-table tbody tr:hover {
-    background-color: rgba(255, 255, 255, 0.03);
-}
-.winning-history-table td .game-id-cell {
-    font-family: var(--font-mono);
-    font-size: 0.85em;
-    color: var(--text-secondary);
-    max-width: 120px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    display: inline-block;
-    vertical-align: middle;
-}
-.winning-history-table td .amount-won-cell {
-    font-weight: bold;
-    color: var(--primary-color);
-    font-family: var(--font-mono);
-}
-.winning-history-table td .trade-offer-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.85em;
-    text-decoration: none;
-    transition: background-color 0.2s ease, color 0.2s ease;
-}
-.winning-history-table td .trade-offer-link.status-accepted,
-.winning-history-table td .trade-offer-link.status-accepted_by_user {
-    background-color: rgba(var(--success-color-rgb), 0.15);
-    color: var(--success-color);
-    border: 1px solid var(--success-color);
-}
-.winning-history-table td .trade-offer-link.status-accepted:hover,
-.winning-history-table td .trade-offer-link.status-accepted_by_user:hover {
-    background-color: rgba(var(--success-color-rgb), 0.3);
-}
-.winning-history-table td .trade-offer-link.status-pending,
-.winning-history-table td .trade-offer-link.status-sent,
-.winning-history-table td .trade-offer-link.status-offer_sent,
-.winning-history-table td .trade-offer-link.status-claim_initiated,
-.winning-history-table td .trade-offer-link.status-sending_offer {
-    background-color: rgba(var(--info-color-rgb), 0.15);
-    color: var(--info-color);
-    border: 1px solid var(--info-color);
-}
-.winning-history-table td .trade-offer-link.status-pending:hover,
-.winning-history-table td .trade-offer-link.status-sent:hover,
-.winning-history-table td .trade-offer-link.status-offer_sent:hover,
-.winning-history-table td .trade-offer-link.status-claim_initiated:hover,
-.winning-history-table td .trade-offer-link.status-sending_offer:hover {
-    background-color: rgba(var(--info-color-rgb), 0.3);
-}
-.winning-history-table td .trade-offer-link.status-declined,
-.winning-history-table td .trade-offer-link.status-expired,
-.winning-history-table td .trade-offer-link.status-canceled,
-.winning-history-table td .trade-offer-link.status-error,
-.winning-history-table td .trade-offer-link.status-claim_error,
-.winning-history-table td .trade-offer-link.status-declined_by_user,
-.winning-history-table td .trade-offer-link.status-offer_expired,
-.winning-history-table td .trade-offer-link.status-offer_canceled {
-    background-color: rgba(var(--error-color-rgb), 0.15);
-    color: var(--error-color);
-    border: 1px solid var(--error-color);
-}
-.winning-history-table td .trade-offer-link.status-declined:hover,
-.winning-history-table td .trade-offer-link.status-expired:hover,
-.winning-history-table td .trade-offer-link.status-canceled:hover,
-.winning-history-table td .trade-offer-link.status-error:hover,
-.winning-history-table td .trade-offer-link.status-claim_error:hover,
-.winning-history-table td .trade-offer-link.status-declined_by_user:hover,
-.winning-history-table td .trade-offer-link.status-offer_expired:hover,
-.winning-history-table td .trade-offer-link.status-offer_canceled:hover {
-    background-color: rgba(var(--error-color-rgb), 0.3);
-}
-.winning-history-table td .trade-offer-link.status-unknown,
-.winning-history-table td .trade-offer-link.status-unclaimed,
-.winning-history-table td .trade-offer-link.status-unknown_offer_state,
-.winning-history-table td .no-trade-offer {
-    color: var(--text-secondary);
-    font-style: italic;
-}
-.winning-history-table td .trade-offer-link i {
-    font-size: 0.9em;
-}
-#noWinningsMessage {
-    color: var(--text-secondary);
-    font-style: italic;
-}
-
-/* --- NEW: Accept Winnings Modal Specific Styles --- */
-.accept-winnings-modal .modal-body p {
-    font-size: 1.05rem;
-    margin-bottom: 10px;
-}
-.accept-winnings-modal .modal-body p:first-of-type {
-    margin-bottom: 20px;
-    font-weight: 500;
-}
-.items-won-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 10px;
-    max-height: 250px;
-    overflow-y: auto;
-    background-color: var(--background-dark);
-    padding: 10px;
-    border-radius: 6px;
-    border: 1px solid var(--border-color);
-    margin-bottom: 20px;
-}
-.won-item {
-    background-color: var(--background-medium);
-    border-radius: 4px;
-    overflow: hidden;
-    border: 1px solid var(--border-color);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 8px;
-    text-align: center;
-}
-.won-item img {
-    width: 70px;
-    height: 70px;
-    object-fit: contain;
-    margin-bottom: 5px;
-}
-.won-item-details {
-    font-size: 0.8rem;
-}
-.won-item-name {
-    display: block;
-    color: var(--text-primary);
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 90px;
-    margin-bottom: 2px;
-}
-.won-item-price {
-    color: var(--primary-light);
-    font-weight: 600;
-}
-.accept-winnings-status-text {
-    margin-top: 15px;
-    font-size: 0.95em;
-    text-align: center;
-    padding: 8px;
-    border-radius: 4px;
-}
-.accept-winnings-status-text.info { color: var(--info-color); background-color: rgba(var(--info-color-rgb), 0.1); border: 1px solid var(--info-color);}
-.accept-winnings-status-text.success { color: var(--success-color); background-color: rgba(var(--success-color-rgb), 0.1); border: 1px solid var(--success-color);}
-.accept-winnings-status-text.error { color: var(--error-color); background-color: rgba(var(--error-color-rgb), 0.1); border: 1px solid var(--error-color);}
-#acceptWinningsButton {
-    font-size: 1.1rem;
-    padding: 12px 25px;
-}
-#viewWinningsTradeOfferLink.btn-success i {
-    margin-left: 8px;
-}
 
 /*=========================
  STATIC PAGES (FAQ, FAIR, ABOUT, TOS)
  =========================*/
-.content-section { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(var(--border-color-rgb, 48,54,61), 0.5); line-height: 1.7; }
+
+.content-section { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(48, 54, 61, 0.5); line-height: 1.7; }
 .content-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
 .content-section-title { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); margin-bottom: 15px; padding-left: 12px; border-left: 3px solid var(--primary-color); }
 .content-section-body { padding: 0 15px; }
@@ -1218,62 +1088,105 @@ code {
 .content-section-body a { color: var(--primary-light); text-decoration: underline; }
 .content-section-body a:hover { color: var(--primary-color); }
 .content-section-body code { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; }
+
+/* About Page */
 #about-page .content-section-body p { text-align: justify; padding: 0 5px; }
 #about-page .content-section-title { color: var(--primary-light); }
-#tos-page .content-section { background-color: rgba(var(--background-dark-rgb,22,27,34), 0.4); border-radius: 8px; padding: 20px; margin-bottom: 25px; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
+
+/* TOS Page */
+#tos-page .content-section { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 20px; margin-bottom: 25px; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
 #tos-page .content-section:last-child { border-bottom: 1px solid var(--border-color); }
 #tos-page .content-section-title { margin-top: 0; border-left: 3px solid var(--secondary-color); }
 #tos-page ul { margin-left: 20px; margin-bottom: 15px; list-style-type: disc; }
 #tos-page ul li { margin-bottom: 10px; color: var(--text-secondary); }
-#faq-page .content-section { background-color: rgba(var(--background-dark-rgb,22,27,34), 0.4); border-radius: 8px; padding: 20px; margin-bottom: 20px; transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
+
+/* FAQ Page */
+#faq-page .content-section { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 20px; margin-bottom: 20px; transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
 #faq-page .content-section:last-child { border-bottom: 1px solid var(--border-color); }
 #faq-page .content-section:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
 #faq-page .content-section-title { color: var(--secondary-color); cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-left: none; padding-left: 0; }
 #faq-page .content-section-title::after { content: '+'; font-size: 1.5rem; color: var(--primary-color); transition: transform 0.3s ease; }
 #faq-page .content-section.active .content-section-title::after { content: '-'; transform: rotate(180deg); }
+
+/* Provably Fair Page */
 #fair-page .content-card { padding-bottom: 40px; }
-#fair-page #provably-fair-verification { background-color: rgba(var(--background-dark-rgb,22,27,34), 0.4); border-radius: 8px; padding: 25px; margin-top: 30px; border: 1px solid var(--border-color); }
+#fair-page #provably-fair-verification { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 25px; margin-top: 30px; border: 1px solid var(--border-color); }
 #fair-page .verify-form {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr; /* Default two columns for seed inputs */
     gap: 20px;
     background-color: transparent; padding: 0; border: none; margin: 0 0 25px 0;
 }
+/* Make Round ID form group span full width */
 #fair-page .verify-form .form-group-full-width {
-    grid-column: 1 / -1;
+    grid-column: 1 / -1; /* Span across all columns */
 }
+
 #fair-page .form-group { margin-bottom: 0; }
 #fair-page .verify-form button { grid-column: 1 / -1; }
 #fair-page .verification-result { margin-top: 20px; padding: 15px; border-radius: 6px; background-color: var(--background-light); border: 1px solid var(--border-color); }
-#fair-page .history-table { width: 100%; border-collapse: collapse; margin-top: 25px; background-color: rgba(var(--background-dark-rgb,22,27,34), 0.4); }
+#fair-page .history-table { width: 100%; border-collapse: collapse; margin-top: 25px; background-color: rgba(22, 27, 34, 0.4); }
 #fair-page .history-table th, #fair-page .history-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
 #fair-page .history-table th { background-color: var(--background-light); color: var(--primary-color); font-weight: 600; }
 #fair-page .history-table tr:hover { background-color: var(--background-light); }
+
+/* Provably Fair Verification Form & Result - Base styles */
 .verify-form { background-color: var(--background-light); padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--border-color); }
 .verification-result { margin-top: 15px; padding: 15px; border-radius: 4px; background-color: var(--background-light); display: none; border: 1px solid var(--border-color); line-height: 1.5; }
 .verification-result.loading { background-color: var(--background-medium); border-color: var(--secondary-light); color: var(--text-primary); }
-.verification-result.success { background-color: rgba(var(--success-color-rgb), 0.1); border-color: var(--success-color); color: var(--text-primary); }
-.verification-result.error { background-color: rgba(var(--error-color-rgb), 0.1); border-color: var(--error-color); color: var(--text-primary); }
+.verification-result.success { background-color: rgba(0, 230, 118, 0.1); border-color: var(--success-color); color: var(--text-primary); }
+.verification-result.error { background-color: rgba(244, 67, 54, 0.1); border-color: var(--error-color); color: var(--text-primary); }
 .verification-result h4 { margin-top: 0; margin-bottom: 15px; color: var(--primary-color); }
 .verification-result p { margin-bottom: 8px; word-wrap: break-word; }
 .verification-result strong { color: var(--text-accent); }
 .verification-result code.seed-value { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; display: inline-block; }
 .verification-result code.wrap-anywhere { word-break: break-all; }
+
+/* Round History Table - Base styles (used for both Provably Fair and Winning History) */
 .table-container { overflow-x: auto; margin-bottom: 20px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 8px; }
 .history-table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 0.9rem; }
 .history-table th, .history-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; vertical-align: middle; }
 .history-table tr:last-child td { border-bottom: none; }
 .history-table th { background-color: var(--background-medium); color: var(--primary-color); font-weight: 600; text-transform: uppercase; font-size: 0.85rem; position: sticky; top: 0; z-index: 1; }
-.history-table .loading-message, .history-table .no-rounds-message, .history-table .error-message { text-align: center; color: var(--text-secondary); padding: 20px; font-style: italic; white-space: normal; }
-.history-table .error-message { color: var(--error-color); font-style: normal; }
+.history-table .loading-message, .history-table .no-rounds-message, .history-table .error-message, .empty-history-message {
+    text-align: center; color: var(--text-secondary); padding: 20px; font-style: italic; white-space: normal;
+}
+.history-table .error-message, .empty-history-message.error { color: var(--error-color); font-style: normal; } /* Error style for empty message too */
 .history-table tbody tr:hover { background-color: rgba(255, 255, 255, 0.05); }
-.history-table td:last-child { white-space: normal; text-align: right; }
+.history-table td:last-child { white-space: normal; text-align: right; } /* Allow wrap and align right for action buttons */
+
+/* Winning History Table Specifics */
+.winning-history-table td { white-space: normal; } /* Allow wrapping for longer statuses */
+.winning-history-table td:nth-child(3) { font-weight: bold; color: var(--primary-light); } /* Amount Won */
+.winning-history-table td:nth-child(4) { text-align: center; } /* Trade Status/Link centered */
+
+.trade-link {
+    color: var(--secondary-light); text-decoration: underline; display: inline-flex; align-items: center; gap: 5px;
+    transition: color var(--transition-fast);
+}
+.trade-link:hover { color: var(--secondary-color); }
+.trade-link.pending i { color: var(--warning-color); }
+
+.trade-status {
+    font-weight: 600; padding: 3px 8px; border-radius: 4px; font-size: 0.85em;
+    display: inline-flex; align-items: center; gap: 5px;
+}
+.trade-status.accepted { color: var(--success-color); background-color: rgba(76, 175, 80, 0.15); border: 1px solid rgba(76, 175, 80, 0.3); }
+.trade-status.failed { color: var(--error-color); background-color: rgba(244, 67, 54, 0.15); border: 1px solid rgba(244, 67, 54, 0.3); }
+.trade-status.pending { color: var(--warning-color); background-color: rgba(255, 193, 7, 0.15); border: 1px solid rgba(255, 193, 7, 0.3); }
+.trade-status i { font-size: 0.9em; }
+
+
+/* Pagination */
 .pagination-container { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
 .page-button { padding: 6px 10px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary); cursor: pointer; transition: var(--transition-fast); font-size: 0.9rem; }
 .page-button:hover:not(:disabled) { background-color: var(--primary-dark); color: var(--background-dark); border-color: var(--primary-dark); }
 .page-button.active { background-color: var(--primary-color); color: var(--background-dark); border-color: var(--primary-color); cursor: default; }
 .page-button:disabled { opacity: 0.5; cursor: not-allowed; }
 .page-ellipsis { color: var(--text-secondary); padding: 6px 0; margin: 0 2px; }
+
+
+/* --- ADDED: Deposit Modal Footer Enhancements --- */
 #acceptDepositOfferBtn {
     background-color: var(--success-color);
     color: white;
@@ -1284,16 +1197,19 @@ code {
     align-items: center;
     justify-content: center;
 }
+
 #acceptDepositOfferBtn:hover:not(:disabled) {
     background-color: #45a049;
     border-color: #45a049;
-    box-shadow: 0 5px 15px rgba(var(--success-color-rgb), 0.4);
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
     transform: translateY(-2px);
 }
+
 #acceptDepositOfferBtn i {
     margin-left: 8px;
     font-size: 0.9em;
 }
+
 .deposit-status-text {
     flex-grow: 1;
     text-align: left;
@@ -1305,10 +1221,31 @@ code {
     display: flex;
     align-items: center;
 }
+
 .deposit-status-text.info { color: var(--info-color); }
 .deposit-status-text.success { color: var(--success-color); }
 .deposit-status-text.warning { color: var(--warning-color); }
 .deposit-status-text.error { color: var(--error-color); }
+
+
+/* --- ADDED: Pending Offer Indicators --- */
+.pending-offer-indicator {
+    display: inline-block;
+    color: var(--warning-color);
+    font-size: 1.1rem;
+    cursor: help;
+    animation: pulseWarning 1.5s infinite ease-in-out;
+    vertical-align: middle;
+    line-height: 1;
+}
+
+/* Defined earlier, ensure it's not duplicated:
+@keyframes pulseWarning {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: 0.7; }
+} */
+
+/* --- ADDED: Footer --- */
 .main-footer {
     background-color: var(--background-dark);
     color: var(--text-secondary);
@@ -1318,6 +1255,7 @@ code {
     font-size: 0.85rem;
     border-top: 1px solid var(--border-color);
 }
+
 .main-footer p {
     margin-bottom: 8px;
     line-height: 1.5;
@@ -1336,17 +1274,18 @@ code {
  =========================*/
 .chat-container {
     width: 280px;
-    flex-shrink: 0;
+    flex-shrink: 0; /* Prevent chat from shrinking if jackpot section is wide */
     background-color: var(--background-light);
     border-radius: 12px;
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-lg);
     display: flex;
     flex-direction: column;
-    padding: 0;
-    height: 600px;
-    max-height: 70vh;
+    padding: 0; /* Remove padding from container itself */
+    height: 600px; /* MODIFIED: Fixed height for the entire chat container */
+    max-height: 70vh; /* Optional: prevent it from being too tall on very large screens */
 }
+
 .chat-header {
     display: flex;
     justify-content: space-between;
@@ -1354,32 +1293,39 @@ code {
     padding: 10px 15px;
     background: var(--background-medium);
     border-bottom: 1px solid var(--border-color);
-    border-radius: 12px 12px 0 0;
-    flex-shrink: 0;
+    border-radius: 12px 12px 0 0; /* Rounded top corners */
+    flex-shrink: 0; /* Prevent header from shrinking */
 }
+
 .chat-header h3 {
     margin: 0;
     font-size: 1.1rem;
     color: var(--primary-color);
     font-weight: 600;
 }
+
 .chat-online-status {
     font-size: 0.85rem;
     color: var(--text-secondary);
 }
+
 #chatOnlineUsers {
     font-weight: bold;
     color: var(--primary-light);
 }
+
 .chat-messages-container {
-    flex-grow: 1;
+    flex-grow: 1; /* Takes up remaining space within the fixed height of .chat-container */
     padding: 15px;
-    overflow-y: auto;
+    overflow-y: auto; /* Enables scrolling for messages */
     display: flex;
-    flex-direction: column-reverse;
+    flex-direction: column-reverse; /* New messages at bottom, scroll up for old */
     gap: 12px;
     background-color: var(--background-dark);
+    /* min-height is removed as height is now fixed by parent */
 }
+
+
 .chat-messages-container::-webkit-scrollbar {
     width: 6px;
 }
@@ -1391,6 +1337,7 @@ code {
     background-color: var(--primary-dark);
     border-radius: 3px;
 }
+
 .chat-message {
     display: flex;
     align-items: flex-start;
@@ -1399,10 +1346,16 @@ code {
     border-radius: 6px;
     background-color: var(--background-light);
     border: 1px solid var(--border-color);
-    max-width: 95%;
-    word-wrap: break-word;
+    max-width: 95%; /* Prevent messages from taking full width */
+    word-wrap: break-word; /* Ensure long words break */
     box-shadow: var(--shadow-sm);
+    animation: chatMessageFadeIn 0.3s ease-out; /* Added for new messages */
 }
+@keyframes chatMessageFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
 .chat-message.system-message {
     background-color: transparent;
     border: none;
@@ -1413,41 +1366,49 @@ code {
     text-align: center;
     padding: 5px 0;
     max-width: 100%;
+    animation: none; /* No fade-in for system messages if preferred */
 }
+
 .chat-message-avatar {
     width: 32px;
     height: 32px;
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
-    border: 2px solid transparent;
+    border: 2px solid transparent; /* Base border, color applied by JS */
 }
+
 .chat-message-content {
     display: flex;
     flex-direction: column;
-    min-width: 0;
+    min-width: 0; /* Allow text to wrap properly */
 }
+
 .chat-message-user {
     font-size: 0.9rem;
     font-weight: 700;
     margin-bottom: 4px;
+    /* Color applied by JS */
 }
+
 .chat-message-text {
     font-size: 0.9rem;
     line-height: 1.5;
     color: var(--text-primary);
     margin: 0;
-    white-space: pre-wrap;
+    white-space: pre-wrap; /* Preserve whitespace and newlines from input */
 }
+
 .chat-input-area {
     display: flex;
     padding: 12px 15px;
     border-top: 1px solid var(--border-color);
     background-color: var(--background-medium);
     gap: 10px;
-    border-radius: 0 0 12px 12px;
-    flex-shrink: 0;
+    border-radius: 0 0 12px 12px; /* Rounded bottom corners */
+    flex-shrink: 0; /* Prevent input area from shrinking */
 }
+
 #chatMessageInput {
     flex-grow: 1;
     padding: 10px 12px;
@@ -1461,32 +1422,33 @@ code {
 #chatMessageInput:focus {
     border-color: var(--primary-color);
     outline: none;
-    box-shadow: 0 0 0 2px rgba(var(--primary-color-rgb), 0.15);
+    box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.15);
 }
 #chatMessageInput::placeholder {
     color: var(--text-secondary);
     opacity: 0.7;
 }
+
 #chatSendMessageBtn {
     padding: 10px 15px;
     font-size: 0.9rem;
 }
 
-/* Responsive adjustments */
-@media (max-width: 980px) {
+/* Ensure jackpot section doesn't overlap chat at smaller viewport widths before flex-wrap kicks in effectively */
+@media (max-width: 980px) { /* Adjust breakpoint as needed */
     .jackpot-and-chat-container {
         flex-direction: column;
-        align-items: center;
+        align-items: center; /* Center items when stacked */
     }
     .jackpot-section {
-        width: 100%;
-        max-width: 680px;
-        margin-bottom: 20px;
+        width: 100%; /* Full width when stacked */
+        max-width: 680px; /* Or your preferred max width */
+        margin-bottom: 20px; /* Space between jackpot and chat when stacked */
     }
     .chat-container {
-        width: 100%;
-        max-width: 600px;
-        height: 500px;
+        width: 100%; /* Full width when stacked */
+        max-width: 600px; /* Or your preferred max width for chat */
+        height: 500px; /* Adjust height if needed for stacked view */
         max-height: 60vh;
     }
     .main-header .container {
@@ -1502,11 +1464,12 @@ code {
         flex-wrap: wrap;
         justify-content: center;
     }
+
 }
 
 @media (min-width: 1200px) {
     .jackpot-and-chat-container {
         position: relative;
-        left: 150px;   
+        left: 150px;  
     }
 }
