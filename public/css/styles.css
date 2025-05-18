@@ -295,13 +295,7 @@ code { /* General code tag styling */
 .dropdown-menu {
     display: none; /* JS toggles this to 'block' */
     position: absolute;
-    top: calc(100% + 10px); /* Position below the user-profile */
-    left: 50%; /* Start from center of profile container */
-    transform: translateX(-50%); /* Center the dropdown */
-    /* Align right edge of dropdown with right edge of profile trigger for typical desktop view */
-    right: 0;
-    left: auto; /* Override previous left */
-    transform: none; /* Reset transform if aligning right */
+    top: calc(100% + 4px); /* Position directly below the user-profile */
     z-index: 1000;
     background-color: var(--background-dark);
     border: 1px solid var(--border-color);
@@ -312,12 +306,12 @@ code { /* General code tag styling */
 }
 
 .user-profile-container .dropdown-menu {
-    /* If profile container is small, aligning left of container to left of dropdown is better */
-    /* Example: For left-aligned profile button */
-    /* left: 0; right: auto; transform: none; */
+    /* If profile container is small, align dropdown's left edge with the container */
+    /* left: 0; right: auto; */
 
     /* For right-aligned profile (current setup), align dropdown's right to container's right */
-     left: auto; right: 0; transform: none;
+    left: auto;
+    right: 0;
 }
 
 
