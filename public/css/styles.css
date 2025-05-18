@@ -295,7 +295,13 @@ code { /* General code tag styling */
 .dropdown-menu {
     display: none; /* JS toggles this to 'block' */
     position: absolute;
-    top: calc(100% + 4px); /* Position directly below the user-profile */
+    top: calc(100% + 10px); /* Position below the user-profile */
+    left: 50%; /* Start from center of profile container */
+    transform: translateX(-50%); /* Center the dropdown */
+    /* Align right edge of dropdown with right edge of profile trigger for typical desktop view */
+    right: 0;
+    left: auto; /* Override previous left */
+    transform: none; /* Reset transform if aligning right */
     z-index: 1000;
     background-color: var(--background-dark);
     border: 1px solid var(--border-color);
@@ -306,12 +312,12 @@ code { /* General code tag styling */
 }
 
 .user-profile-container .dropdown-menu {
-    /* If profile container is small, align dropdown's left edge with the container */
-    /* left: 0; right: auto; */
+    /* If profile container is small, aligning left of container to left of dropdown is better */
+    /* Example: For left-aligned profile button */
+    /* left: 0; right: auto; transform: none; */
 
     /* For right-aligned profile (current setup), align dropdown's right to container's right */
-    left: auto;
-    right: 0;
+     left: auto; right: 0; transform: none;
 }
 
 
@@ -500,7 +506,7 @@ code { /* General code tag styling */
 .jackpot-and-chat-container {
     display: flex;
     justify-content: center;
-    align-items: stretch; /* Stretch children so they share the same height */
+    align-items: flex-start; /* Changed from stretch to allow chat fixed height */
     gap: 20px;
 }
 
@@ -516,8 +522,6 @@ code { /* General code tag styling */
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    align-self: stretch;
-    height: auto;
 }
 
 
@@ -875,8 +879,7 @@ code { /* General code tag styling */
 .age-verification .modal-content { max-width: 500px; }
 #depositModal .modal-content { max-width: 900px; }
 #tradeUrlModal .modal-content { max-width: 600px; }
-.winning-history-modal .modal-content { max-width: 800px; }
-.accept-winnings-modal .modal-content { max-width: 550px; } /* New: Accept Winnings Modal Size */
+.winning-history-modal .modal-content { max-width: 800px; } /* For Winning History */
 
 
 @keyframes modalIn {
@@ -1100,6 +1103,7 @@ code { /* General code tag styling */
 /* FAQ Page */
 #faq-page .content-section { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 20px; margin-bottom: 20px; transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
 #faq-page .content-section:last-child { border-bottom: 1px solid var(--border-color); }
+#faq-page .content-section:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
 #faq-page .content-section-title { color: var(--secondary-color); cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-left: none; padding-left: 0; }
 #faq-page .content-section-title::after { content: '+'; font-size: 1.5rem; color: var(--primary-color); transition: transform 0.3s ease; }
 #faq-page .content-section.active .content-section-title::after { content: '-'; transform: rotate(180deg); }
@@ -1162,18 +1166,15 @@ code { /* General code tag styling */
 }
 .trade-link:hover { color: var(--secondary-color); }
 .trade-link.pending i { color: var(--warning-color); }
-.trade-link i { font-size: 0.9em; } /* Icon size for trade links */
 
 .trade-status {
-    font-weight: 600; padding: 4px 10px; border-radius: 12px; /* More pill-like */
-    font-size: 0.8em; display: inline-flex; align-items: center; gap: 6px;
-    text-transform: uppercase; letter-spacing: 0.5px;
+    font-weight: 600; padding: 3px 8px; border-radius: 4px; font-size: 0.85em;
+    display: inline-flex; align-items: center; gap: 5px;
 }
-.trade-status.accepted { color: #ffffff; background-color: var(--success-color); border: 1px solid var(--success-color); box-shadow: 0 0 8px rgba(76, 175, 80, 0.3); }
-.trade-status.failed, .trade-status.declined, .trade-status.canceled, .trade-status.expired { color: #ffffff; background-color: var(--error-color); border: 1px solid var(--error-color); box-shadow: 0 0 8px rgba(244, 67, 54, 0.3); }
-.trade-status.sent, .trade-status.escrow, .trade-status.pendingconfirmation, .trade-status.unknown { color: var(--background-dark); background-color: var(--warning-color); border: 1px solid var(--warning-color); box-shadow: 0 0 8px rgba(255, 193, 7, 0.3); }
-.trade-status.info { color: var(--text-primary); background-color: var(--info-color); border: 1px solid var(--info-color); box-shadow: 0 0 8px rgba(33, 150, 243, 0.3); }
-.trade-status i { font-size: 1em; /* Slightly larger icon within status */ }
+.trade-status.accepted { color: var(--success-color); background-color: rgba(76, 175, 80, 0.15); border: 1px solid rgba(76, 175, 80, 0.3); }
+.trade-status.failed { color: var(--error-color); background-color: rgba(244, 67, 54, 0.15); border: 1px solid rgba(244, 67, 54, 0.3); }
+.trade-status.pending { color: var(--warning-color); background-color: rgba(255, 193, 7, 0.15); border: 1px solid rgba(255, 193, 7, 0.3); }
+.trade-status i { font-size: 0.9em; }
 
 
 /* Pagination */
@@ -1186,7 +1187,7 @@ code { /* General code tag styling */
 
 
 /* --- ADDED: Deposit Modal Footer Enhancements --- */
-#acceptDepositOfferBtn { /* Also used for Accept Winnings button */
+#acceptDepositOfferBtn {
     background-color: var(--success-color);
     color: white;
     border: 1px solid var(--success-color);
@@ -1197,21 +1198,19 @@ code { /* General code tag styling */
     justify-content: center;
 }
 
-#acceptDepositOfferBtn:hover:not(:disabled),
-#acceptWinningsOnSteamBtn:hover:not(:disabled) { /* Apply hover to both */
+#acceptDepositOfferBtn:hover:not(:disabled) {
     background-color: #45a049;
     border-color: #45a049;
     box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
     transform: translateY(-2px);
 }
 
-#acceptDepositOfferBtn i,
-#acceptWinningsOnSteamBtn i { /* Apply icon style to both */
+#acceptDepositOfferBtn i {
     margin-left: 8px;
     font-size: 0.9em;
 }
 
-.deposit-status-text { /* Reused for acceptWinningsStatusText */
+.deposit-status-text {
     flex-grow: 1;
     text-align: left;
     padding: 0 10px;
@@ -1283,8 +1282,8 @@ code { /* General code tag styling */
     display: flex;
     flex-direction: column;
     padding: 0; /* Remove padding from container itself */
-    align-self: stretch;
-    height: auto;
+    height: 600px; /* MODIFIED: Fixed height for the entire chat container */
+    max-height: 70vh; /* Optional: prevent it from being too tall on very large screens */
 }
 
 .chat-header {
@@ -1316,14 +1315,14 @@ code { /* General code tag styling */
 }
 
 .chat-messages-container {
-    flex-grow: 1; /* Fills available space inside the chat container */
+    flex-grow: 1; /* Takes up remaining space within the fixed height of .chat-container */
     padding: 15px;
     overflow-y: auto; /* Enables scrolling for messages */
     display: flex;
     flex-direction: column-reverse; /* New messages at bottom, scroll up for old */
     gap: 12px;
     background-color: var(--background-dark);
-    /* Height is determined by the chat container */
+    /* min-height is removed as height is now fixed by parent */
 }
 
 
@@ -1449,7 +1448,8 @@ code { /* General code tag styling */
     .chat-container {
         width: 100%; /* Full width when stacked */
         max-width: 600px; /* Or your preferred max width for chat */
-        height: auto;
+        height: 500px; /* Adjust height if needed for stacked view */
+        max-height: 60vh;
     }
     .main-header .container {
         flex-direction: column;
