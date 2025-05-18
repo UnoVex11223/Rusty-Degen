@@ -141,6 +141,26 @@
         </div>
     </div>
 
+    <div class="modal accept-winnings-modal" id="acceptWinningsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Winnings Sent!</h2>
+                <button class="close-btn" id="closeAcceptWinningsModal" aria-label="Close accept winnings modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Congratulations! A Steam trade offer for your winnings has been sent to your account.</p>
+                <p>Please click the button below to open the trade offer on Steam and accept your items.</p>
+                <p id="acceptWinningsOfferId" style="font-size: 0.9em; color: var(--text-secondary); text-align: center;"></p>
+            </div>
+            <div class="modal-footer">
+                <span id="acceptWinningsStatusText" class="deposit-status-text" style="flex-grow: 1; text-align: left; color: var(--text-secondary); font-size: 0.9em;"></span>
+                <button class="btn btn-secondary" id="acceptWinningsModalCloseFooterBtn">Close</button>
+                <button class="btn btn-success" id="acceptWinningsOnSteamBtn" title="Opens the Steam trade offer in a new tab">
+                    Accept on Steam <i class="fas fa-external-link-alt"></i>
+                </button>
+            </div>
+        </div>
+    </div>
     <div class="modal winning-history-modal" id="winningHistoryModal">
         <div class="modal-content">
             <div class="modal-header">
