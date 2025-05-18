@@ -19,15 +19,15 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h2>Age Verification</h2>
-            </div>
+                </div>
             <div class="modal-body">
                 <p>You must be at least 18 years old to use this site.</p>
                 <p>By clicking "Agree" you confirm that:</p>
                 <ul>
-                    <li>You are at least 18 years old.</li>
-                    <li>You are legally allowed to trade skins from your country.</li>
-                    <li>You understand and accept the risks associated with skin gambling.</li>
-                    <li>You have read and agree to our <a href="#" id="tos-link-modal" onclick="event.preventDefault(); window.showPage(document.getElementById('tos-page')); window.hideModal(document.getElementById('ageVerificationModal'));">Terms of Service</a>.</li>
+                    <li>You are at least 18 years old</li>
+                    <li>You are legally allowed to trade skins from your country</li>
+                    <li>You understand and accept the risks associated with skin gambling</li>
+                    <li>You have read and agree to our <a href="#" id="tos-link-modal" onclick="event.preventDefault(); window.showPage(document.getElementById('tos-page')); document.getElementById('ageVerificationModal').style.display='none';" target="_blank">Terms of Service</a></li>
                 </ul>
                 <div class="checkbox-container">
                     <input type="checkbox" id="agreeCheckbox">
@@ -67,7 +67,7 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <span id="depositStatusText" class="deposit-status-text"></span>
+                <span id="depositStatusText" class="deposit-status-text" style="flex-grow: 1; text-align: left; color: var(--text-secondary); font-size: 0.9em;"></span>
                 <button class="btn btn-primary" id="depositButton" disabled>Request Deposit Offer</button>
                 <button class="btn btn-success" id="acceptDepositOfferBtn" style="display: none;" title="Opens the Steam trade offer in a new tab">
                      Accept on Steam <i class="fas fa-external-link-alt"></i>
@@ -76,18 +76,25 @@
         </div>
     </div>
 
-    <div class="modal" id="tradeUrlModal" style="display:none;"> <div class="modal-content">
+    <div class="modal" id="tradeUrlModal">
+        <div class="modal-content">
             <div class="modal-header">
                 <h2>Set Your Trade URL</h2>
                 <button class="close-btn" id="closeTradeUrlModal" aria-label="Close trade URL modal">&times;</button>
             </div>
             <div class="modal-body">
-                <p>Enter your Steam Trade URL for deposits and winnings:</p>
-                <input type="url" id="modalTradeUrlInput" placeholder="https://steamcommunity.com/tradeoffer/new/?partner=...">
-                <p class="help-text">Find your URL in <a href="https://steamcommunity.com/my/tradeoffers/privacy" target="_blank">Steam Trade Privacy Settings</a>.</p>
+                <p>Please enter your Steam Trade URL to complete deposits and receive winnings:</p>
+                <div class="form-group">
+                    <label for="modalTradeUrlInput">Steam Trade URL</label>
+                    <input type="url" id="modalTradeUrlInput" placeholder="https://steamcommunity.com/tradeoffer/new/?partner=...">
+                </div>
+                <p class="help-text">
+                    You can find your trade URL in your
+                    <a href="https://steamcommunity.com/my/tradeoffers/privacy" target="_blank" rel="noopener noreferrer">Steam Trade Privacy Settings</a>.
+                </p>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-primary" id="saveTradeUrl">Save</button>
+                <button class="btn btn-primary" id="saveTradeUrl">Save Trade URL</button>
             </div>
         </div>
     </div>
@@ -103,8 +110,10 @@
                     <img src="/img/default-avatar.png" alt="User Avatar" class="profile-modal-avatar" id="profileModalAvatar">
                     <span class="profile-modal-name" id="profileModalName">PlayerName</span>
                 </div>
-                <div id="profile-pending-offer-status" class="profile-pending-offer-status" style="display: none;">
-                    </div>
+
+                <div id="profile-pending-offer-status" class="profile-pending-offer-status" style="display: none; margin-bottom: 15px; padding: 10px; background-color: var(--background-light); border: 1px solid var(--secondary-dark); border-radius: 4px; text-align: center;">
+                </div>
+
                 <div class="profile-modal-stats">
                     <div class="profile-modal-stat-item">
                         <span class="profile-modal-stat-label">Total Deposited:</span>
@@ -115,11 +124,12 @@
                         <span class="profile-modal-stat-value" id="profileModalWon">$0.00</span>
                     </div>
                 </div>
+
                 <div class="form-group profile-modal-trade-url">
                     <label for="profileModalTradeUrl">Steam Trade URL</label>
                     <input type="url" id="profileModalTradeUrl" placeholder="https://steamcommunity.com/tradeoffer/new/?partner=...">
                     <p class="help-text profile-modal-help-text">
-                        Required for deposits and winnings.
+                        Required for deposits and withdrawals.
                         <a href="https://steamcommunity.com/my/tradeoffers/privacy" target="_blank" rel="noopener noreferrer">Find it here</a>.
                     </p>
                </div>
@@ -138,12 +148,12 @@
                 <button class="close-btn" id="closeAcceptWinningsModal" aria-label="Close accept winnings modal">&times;</button>
             </div>
             <div class="modal-body">
-                <p>Congratulations! A Steam trade offer for your winnings has been sent.</p>
-                <p>Click below to accept your items on Steam.</p>
+                <p>Congratulations! A Steam trade offer for your winnings has been sent to your account.</p>
+                <p>Please click the button below to open the trade offer on Steam and accept your items.</p>
                 <p id="acceptWinningsOfferId" style="font-size: 0.9em; color: var(--text-secondary); text-align: center;"></p>
             </div>
             <div class="modal-footer">
-                <span id="acceptWinningsStatusText" class="deposit-status-text"></span>
+                <span id="acceptWinningsStatusText" class="deposit-status-text" style="flex-grow: 1; text-align: left; color: var(--text-secondary); font-size: 0.9em;"></span>
                 <button class="btn btn-secondary" id="acceptWinningsModalCloseFooterBtn">Close</button>
                 <button class="btn btn-success" id="acceptWinningsOnSteamBtn" title="Opens the Steam trade offer in a new tab">
                     Accept on Steam <i class="fas fa-external-link-alt"></i>
@@ -151,7 +161,6 @@
             </div>
         </div>
     </div>
-
     <div class="modal winning-history-modal" id="winningHistoryModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -160,7 +169,8 @@
             </div>
             <div class="modal-body">
                 <div id="winning-history-loading" class="loading-indicator" style="display: none;">
-                    <div class="spinner"></div> <p>Loading history...</p>
+                    <div class="spinner"></div>
+                    <p>Loading your winning history...</p>
                 </div>
                 <div class="table-container" id="winningHistoryTableContainer">
                     <table class="history-table winning-history-table">
@@ -172,7 +182,8 @@
                                 <th>Trade Status/Link</th>
                             </tr>
                         </thead>
-                        <tbody id="winningHistoryTableBody"></tbody>
+                        <tbody id="winningHistoryTableBody">
+                            </tbody>
                     </table>
                     <p id="noWinningsMessage" class="empty-history-message" style="display: none;">You have no winnings yet.</p>
                 </div>
@@ -183,10 +194,13 @@
         </div>
     </div>
 
+
     <header class="main-header">
         <div class="container header-container">
             <div class="header-left">
-                <div class="logo"><h1>RUSTY<span>DEGEN</span></h1></div>
+                <div class="logo">
+                    <h1>RUSTY<span>DEGEN</span></h1>
+                </div>
                 <nav class="primary-nav">
                     <ul>
                         <li><a href="#" id="about-link">ABOUT</a></li>
@@ -194,356 +208,432 @@
                     </ul>
                 </nav>
             </div>
+
             <nav class="main-nav header-center">
                 <ul>
                     <li><a href="#" class="active jackpot-tab" id="home-link">JACKPOT</a></li>
-                </ul>
+                    </ul>
             </nav>
+
             <div class="header-right">
                 <nav class="secondary-nav">
                     <ul>
                         <li><a href="#" id="faq-link">FAQ</a></li>
                         <li><a href="#" id="fair-link">PROVABLY FAIR</a></li>
-                    </ul>
+                        </ul>
                 </nav>
+
                 <div class="user-controls">
                     <button class="btn btn-primary" id="loginButton" style="display: flex;">
-                        <i class="fa-brands fa-steam"></i> <span>Sign in with Steam</span>
+                        <i class="fa-brands fa-steam"></i>
+                        <span>Sign in with Steam</span>
                     </button>
+
                     <div class="user-profile-container">
                         <span id="pending-offer-indicator" class="pending-offer-indicator" style="display: none;" title="You have a pending trade offer!">
                              <i class="fas fa-exclamation-circle"></i>
                         </span>
-                        <div class="user-profile" id="userProfile" style="display: none;" role="button" tabindex="0">
+                        <div class="user-profile" id="userProfile" style="display: none;" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0">
                             <div class="user-avatar-container">
                                 <img src="/img/default-avatar.png" alt="User Avatar" class="user-avatar" id="userAvatar">
                                 <div class="user-status online" id="userStatusIndicator"></div>
                             </div>
                             <span class="user-name" id="userName">PlayerName</span>
                         </div>
+
                         <div class="dropdown-menu" id="userDropdownMenu" style="display: none;" role="menu">
-                            <button class="dropdown-item" id="profileDropdownButton" role="menuitem"><i class="fas fa-user-circle icon"></i> Profile</button>
-                            <button class="dropdown-item" id="winningHistoryDropdownButton" role="menuitem"><i class="fas fa-trophy icon"></i> Winning History</button>
-                            <button class="dropdown-item" id="logoutButton" role="menuitem"><i class="fas fa-sign-out-alt icon"></i> Sign Out</button>
+                            <div class="dropdown-actions">
+                                <button class="dropdown-item" id="profileDropdownButton" role="menuitem">
+                                    <i class="fas fa-user-circle icon"></i> Profile
+                                </button>
+                                <button class="dropdown-item" id="winningHistoryDropdownButton" role="menuitem">
+                                    <i class="fas fa-trophy icon"></i> Winning History
+                                </button>
+                                <button class="dropdown-item" id="logoutButton" role="menuitem">
+                                    <i class="fas fa-sign-out-alt icon"></i> Sign Out
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </header>
-<main class="main-content">
-    <div class="container">
 
-        <section id="home-page">
-            <div class="jackpot-and-chat-container">
-                <div class="jackpot-section">
-                    <div class="jackpot-header" id="jackpotHeader">
-                        <div class="jackpot-value">
-                            <h2 id="potValue">$0.00</h2>
-                            <span class="value-label">CURRENT POT</span>
-                        </div>
-                        <div class="jackpot-timer">
-                            <div class="timer-circle">
-                                <svg class="timer-progress" viewBox="0 0 100 100">
-                                    <circle class="timer-background" cx="50" cy="50" r="42"></circle>
-                                    <circle class="timer-foreground" cx="50" cy="50" r="42" style="stroke-dasharray: 264; stroke-dashoffset: 264;"></circle> </svg>
-                                <div class="timer-text">
-                                    <span id="timerValue">--</span> </div>
+    <main class="main-content">
+        <div class="container">
+
+            <section id="home-page">
+                <div class="jackpot-and-chat-container">
+                    <div class="jackpot-section">
+                        <div class="jackpot-header" id="jackpotHeader">
+                            <div class="jackpot-value">
+                                <h2 id="potValue">$0.00</h2>
+                                <span class="value-label">CURRENT POT</span>
                             </div>
-                            <span class="timer-label">SECONDS LEFT</span>
-                        </div>
-                        <div class="jackpot-stats">
-                            <span class="stat-value" id="participantCount">0/--</span>
-                            <span class="stat-label">PARTICIPANTS</span>
-                        </div>
-
-                        <div class="inline-roulette" id="inlineRoulette" style="display: none;"> <div class="roulette-container">
-                                <div class="roulette-track" id="rouletteTrack">
+                            <div class="jackpot-timer">
+                                <div class="timer-circle">
+                                    <svg class="timer-progress" viewBox="0 0 100 100">
+                                        <circle class="timer-background" cx="50" cy="50" r="42"></circle>
+                                        <circle class="timer-foreground" cx="50" cy="50" r="42"></circle>
+                                    </svg>
+                                    <div class="timer-text">
+                                        <span id="timerValue">--</span>
                                     </div>
-                                <div class="roulette-ticker">
-                                    <div class="ticker-line"></div>
                                 </div>
+                                <span class="timer-label">SECONDS LEFT</span>
                             </div>
-                            <div class="winner-info" id="winnerInfo" style="display: none;">
-                                <div class="winner-header">
-                                    <img src="/img/default-avatar.png" alt="Winner Avatar" class="winner-avatar" id="winnerAvatar">
-                                    <h3 id="winnerName">WINNER NAME</h3>
-                                </div>
-                                <div class="winner-details">
-                                    <p>Deposited: <span id="winnerDeposit">$0.00</span></p>
-                                    <p>Chance: <span id="winnerChance">0.00%</span></p>
-                                    <p class="congrats">Congratulations!</p>
-                                </div>
-                                <div class="confetti-container" id="confettiContainer"></div>
+                            <div class="jackpot-stats">
+                                <span class="stat-value" id="participantCount">0/--</span>
+                                <span class="stat-label">PARTICIPANTS</span>
                             </div>
-                            <audio id="spinSound" src="spin-sound.mp3" preload="auto"></audio>
-                            <audio id="depositSound" src="deposit-join.mp3" preload="auto"></audio>
+
+                            <div class="inline-roulette" id="inlineRoulette" style="display: none;">
+                                <div class="roulette-container">
+                                    <div class="roulette-track" id="rouletteTrack">
+                                        </div>
+                                    <div class="roulette-ticker">
+                                        <div class="ticker-line"></div>
+                                    </div>
+                                </div>
+                                <div class="winner-info" id="winnerInfo" style="display: none;">
+                                    <div class="winner-header">
+                                        <img src="/img/default-avatar.png" alt="Winner Avatar" class="winner-avatar" id="winnerAvatar">
+                                        <h3 id="winnerName">WINNER NAME</h3>
+                                    </div>
+                                    <div class="winner-details">
+                                        <p>Deposited: <span id="winnerDeposit">$0.00</span></p>
+                                        <p>Chance: <span id="winnerChance">0.00%</span></p>
+                                        <p class="congrats">Congratulations!</p>
+                                    </div>
+                                    <div class="confetti-container" id="confettiContainer"></div>
+                                </div>
+                                <audio id="spinSound" src="spin-sound.mp3" preload="auto"></audio>
+                                <audio id="depositSound" src="deposit-join.mp3" preload="auto"></audio>
+                                <button class="btn btn-primary return-btn" id="returnToJackpot" style="display: none;">Return</button>
+                            </div>
+                        </div>
+
+                        <div class="deposit-button-container" id="depositBtnContainer">
+                            <button class="btn btn-deposit" id="showDepositModal" title="Log in to deposit" disabled>DEPOSIT SKINS</button>
+                            </div>
+
+                        <div class="current-items-section" id="currentItems">
+                            <h3 class="section-title">CURRENT ITEMS IN POT</h3>
+                            <div class="items-container" id="itemsContainer">
+                                <div class="empty-pot-message" id="emptyPotMessage" style="display: block;">
+                                    <p>No items in the current pot. Be the first to deposit!</p>
+                                </div>
+                                </div>
+                        </div>
+                    </div>
+
+                    <div class="chat-container">
+                        <div class="chat-header">
+                            <h3>Player Chat</h3>
+                            <div class="chat-online-status">
+                                <span id="chatOnlineUsers">0</span> Online
+                            </div>
+                        </div>
+                        <div id="chatMessagesContainer" class="chat-messages-container">
+                            </div>
+                        <div class="chat-input-area">
+                            <input type="text" id="chatMessageInput" placeholder="Sign in to chat" disabled>
+                            <button id="chatSendMessageBtn" class="btn btn-primary" disabled>Send</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="about-page" style="display: none;">
+                <div class="content-card">
+                    <h1>About Rusty Degen</h1>
+                    <div class="content-section">
+                        <div class="content-section-body">
+                            <p>Hello! I'm a degenerate Rust player with over 7,000 hours in the game. I have been playing this dogshit game since 2018 and have spent countless hours on the grind.. </p>
+                            <p>As a recent computer science student, I wanted to combine my two passions: programming and Rust. Rusty Degen is the result of this combination - a solo project developed from the ground up. </p>
+                            <p>Unlike many gambling platforms that are run by large teams with significant backing, Rusty Degen is entirely developed, maintained, and operated by me.</p>
+                            <p>Please remember this is a project under development. Play responsibly and understand the risks involved.</p>
+                        </div>
+                    </div>
+                    </div>
+            </section>
+
+            <section id="tos-page" style="display: none;">
+                 <div class="content-card">
+                     <h1>Terms of Service</h1>
+                     <p><small>Last Updated: May 17, 2025</small></p> <div class="content-section">
+                         <h3 class="content-section-title">1. Agreement to Terms</h3>
+                         <div class="content-section-body">
+                             <p>When you access or utilize RustyDegen's platform, you confirm that you've reviewed, comprehended, and consent to abide by these Service Terms. Should you disagree with any portion of these conditions, you are required to discontinue use of our platform immediately.</p>
+                         </div>
+                     </div>
+
+                     <div class="content-section">
+                         <h3 class="content-section-title">2. Age Verification</h3>
+                         <div class="content-section-body">
+                             <p>To participate on RustyDegen, you must have reached 18 years of age or the applicable legal majority in your region, whichever is greater. Your continued use constitutes a declaration that you satisfy these age criteria. We maintain the authority to demand age verification documentation at our discretion.</p>
+                         </div>
+                     </div>
+
+                     <div class="content-section">
+                         <h3 class="content-section-title">3. Account Protection</h3>
+                         <div class="content-section-body">
+                             <p>You bear full responsibility for safeguarding your login credentials and for every action performed through your account. You commit to promptly alerting us regarding any unauthorized account access or potential security vulnerabilities.</p>
+                         </div>
+                     </div>
+
+                     <div class="content-section">
+                         <h3 class="content-section-title">5. Digital Asset Ownership</h3>
+                         <div class="content-section-body">
+                             <p>All digital items utilized on RustyDegen continue to be the intellectual property of their original creators and gaming companies. Our platform makes no ownership claims to any digital assets deposited by users. You acknowledge that these digital items possess no tangible monetary worth and cannot be converted to actual currency via our services.</p>
+                         </div>
+                     </div>
+
+                     <div class="content-section">
+                         <h3 class="content-section-title">6. Item Transactions</h3>
+                         <div class="content-section-body">
+                             <p>When depositing items on RustyDegen, you affirm that you legitimately possess these assets and acquired them through authorized channels. We retain the right to decline any transaction we believe involves misappropriated or illegitimately obtained items.</p>
+                         </div>
+                     </div>
+
+                     <div class="content-section">
+                         <h3 class="content-section-title">7. Platform Fees</h3>
+                         <div class="content-section-body">
+                             <p>RustyDegen applies a service fee on each jackpot to sustain operational functions. The present fee structure is 5-10% of the total jackpot value. We maintain the right to adjust this percentage with reasonable notification to our user community.</p>
+                         </div>
+                     </div>
+
+                     <div class="content-section">
+                         <h3 class="content-section-title">8. Transparent Randomization</h3>
+                         <div class="content-section-body">
+                             <p>RustyDegen employs a verifiably fair mechanism to select winners for each game session. You understand that outcomes are completely randomized and your winning probability correlates directly with the proportion of value your deposited items represent within the total jackpot.</p>
+                         </div>
+                     </div>
+
+                     <div class="content-section">
+                         <h3 class="content-section-title">9. Platform Reliability</h3>
+                         <div class="content-section-body">
+                             <p>While we endeavor to provide continuous service availability, we cannot guarantee uninterrupted access at all times. We accept no responsibility for any losses resulting from service disruptions, technical delays, or system failures.</p>
+                         </div>
+                     </div>
+
+                     <div class="content-section">
+                         <h3 class="content-section-title">10. Account Suspension</h3>
+                         <div class="content-section-body">
+                             <p>We maintain the authority to restrict or terminate your RustyDegen access at any point, without advance notification or incurring liability, for any justifiable cause, including but not limited to violations of these Service Terms.</p>
+                         </div>
+                     </div>
+
+                     <div class="content-section">
+                         <h3 class="content-section-title">11. Terms Modification</h3>
+                         <div class="content-section-body">
+                             <p>We may revise these Service Terms periodically. The most recent version will always be accessible on our platform. Continuing to use RustyDegen following any modifications signifies your acceptance of the updated terms.</p>
+                         </div>
+                     </div>
+
+                     <div class="content-section">
+                         <h3 class="content-section-title">12. Liability Constraints</h3>
+                         <div class="content-section-body">
+                             <p>RustyDegen and its management team cannot be held accountable for any immediate, consequential, incidental, particular, resulting, or exemplary damages arising from your utilization of or inability to access our services.</p>
+                         </div>
+                     </div>
+                 </div>
+            </section>
+
+            <section id="faq-page" style="display: none;">
+                 <div class="content-card">
+                     <h1>Frequently Asked Questions</h1>
+                     <div class="content-section faq-item">
+                         <h3 class="content-section-title">How does Rusty Degen work?</h3>
+                         <div class="content-section-body" style="display: none;">
+                             <p>Rusty Degen is a Rust skin jackpot site. Players deposit their Rust skins into a shared pot. Each skin adds value, and your chance to win is proportional to the value you deposit compared to the total pot value. When the round timer ends, our Provably Fair system randomly selects a winning ticket based on deposited value. The owner of that ticket wins all the items in the pot, minus a small site fee.</p>
+                         </div>
+                     </div>
+                     <div class="content-section faq-item">
+                         <h3 class="content-section-title">How do I deposit skins?</h3>
+                         <div class="content-section-body" style="display: none;">
+                             <p>1. Log in using the "Sign in with Steam" button.</p>
+                             <p>2. Ensure your Steam Trade URL is set correctly in your profile (click your avatar).</p>
+                             <p>3. Click the "Deposit Skins" button on the main jackpot page.</p>
+                             <p>4. Select the Rust items you wish to deposit from your inventory shown in the modal (up to the allowed limit per deposit).</p>
+                             <p>5. Click "Request Deposit Offer".</p>
+                             <p>6. If successful, a button "Accept on Steam" will appear. Click it to open the trade offer in a new Steam tab.</p>
+                             <p>7. Review and accept the trade offer in Steam. Your items will be added to the pot shortly after Steam confirms the trade.</p>
+                         </div>
+                     </div>
+                      <div class="content-section faq-item">
+                         <h3 class="content-section-title">Why do I need a Trade URL?</h3>
+                         <div class="content-section-body" style="display: none;">
+                             <p>Your Steam Trade URL allows our site bots to send you trade offers. It's necessary for both creating deposit offers (where the bot requests items from you) and sending you your winnings if you win a jackpot. You can find and set your Trade URL via the link in your profile modal.</p>
+                         </div>
+                     </div>
+                     <div class="content-section faq-item">
+                         <h3 class="content-section-title">How is the winner selected? Is it fair?</h3>
+                         <div class="content-section-body" style="display: none;">
+                             <p>We use a Provably Fair system. Before the round starts, we generate a secret Server Seed and show you its SHA256 hash. When the round ends, we combine the secret Server Seed with a public Client Seed (derived from round data). We hash this combination to get a final result. This result determines the winning ticket number based on the total tickets assigned (proportional to deposit value). Since the initial hash was public, and the Server Seed is revealed after the round, anyone can verify the outcome was predetermined and not tampered with. Visit the "Provably Fair" page for details and a verification tool.</p>
+                         </div>
+                     </div>
+                     <div class="content-section faq-item">
+                         <h3 class="content-section-title">How do I receive my winnings?</h3>
+                         <div class="content-section-body" style="display: none;">
+                             <p>If you win, our bot will automatically create and send a Steam trade offer containing the winning items (minus the site fee) to the Trade URL set in your profile. You will receive a notification on the site, and you'll need to accept the trade offer within Steam to receive the items into your inventory.</p>
+                         </div>
+                     </div>
+                     <div class="content-section faq-item">
+                         <h3 class="content-section-title">What is the site fee (tax/commission)?</h3>
+                         <div class="content-section-body" style="display: none;">
+                             <p>We apply a small commission (typically 5-10%) to the total value of each jackpot pot. This fee helps cover server hosting, bot maintenance, ongoing development, and Steam API costs. The exact percentage may vary slightly and is applied by removing items closest to the fee value from the pot before sending the winnings. This ensures the site can continue operating and improving.</p>
+                         </div>
+                     </div>
+                      <div class="content-section faq-item">
+                         <h3 class="content-section-title">My deposit offer expired / I declined it. What happens?</h3>
+                         <div class="content-section-body" style="display: none;">
+                             <p>If you don't accept the deposit trade offer sent by our bot within the time limit (usually around 10 minutes), or if you decline it, the offer becomes invalid. Your items remain safely in your Steam inventory, and they are not added to the jackpot pot. You would need to initiate a new deposit if you still wish to participate.</p>
+                         </div>
+                     </div>
+                     <div class="content-section faq-item">
+                         <h3 class="content-section-title">I have a problem / Need support!</h3>
+                         <div class="content-section-body" style="display: none;">
+                             <p>If you encounter any issues (e.g., problems with deposits, withdrawals, site errors), please reach out to us through our official support channel [Link to your Discord/Support System Here - Placeholder]. Please provide as much detail as possible, including your Steam profile link, the relevant Round ID (if applicable), approximate time of the issue, and a clear description of the problem.</p>
+                         </div>
+                     </div>
+                 </div>
+            </section>
+
+            <section id="fair-page" style="display: none;">
+                 <div class="content-card">
+                     <h1>Provably Fair System</h1>
+                     <div class="content-section">
+                         <h3 class="content-section-title">How Our System Works</h3>
+                         <div class="content-section-body">
+                             <p>Rusty Degen uses a provably fair system to ensure complete transparency and fairness in winner selection. Our system uses cryptographic methods (specifically SHA256 hashing) to guarantee that the results cannot be manipulated by the site operators and can be independently verified by anyone after the round concludes.</p>
+                         </div>
+                     </div>
+                     <div class="content-section">
+                         <h3 class="content-section-title">The Process</h3>
+                         <div class="content-section-body">
+                             <ol>
+                                 <li><strong>Seed Generation:</strong> Before a round begins, the server generates a long, random, secret string called the "Server Seed".</li>
+                                 <li><strong>Hashing:</strong> The server calculates the SHA256 hash of this Server Seed. This hash (e.g., <code>a1b2c3d4...</code>) is publicly displayed for the round *before* any deposits are accepted. Hashing is a one-way process; you cannot get the original Seed from the Hash, but you can later verify that a revealed Seed produces the same Hash.</li>
+                                 <li><strong>Deposits & Tickets:</strong> Players deposit items. Each $0.01 of value deposited grants the player 1 ticket (or adjusted based on settings). Tickets are assigned ranges based on deposit order and value (e.g., Player A $1.00 gets tickets 0-99, Player B $2.50 gets tickets 100-349). The total number of tickets is the sum of tickets for all deposits.</li>
+                                 <li><strong>Round End & Client Seed:</strong> When the round ends (timer reaches zero or max items), a "Client Seed" is determined. This is typically derived from public round data making it unique and non-manipulable after the round closes (e.g., Round ID, end timestamp hash).</li>
+                                 <li><strong>Combined Hashing:</strong> The server combines the secret Server Seed and the public Client Seed (usually as <code>ServerSeedClientSeed</code> or <code>ServerSeed-ClientSeed</code> - check verification logic). It then calculates the SHA256 hash of this combined string.</li>
+                                 <li><strong>Winning Ticket Calculation:</strong> A deterministic calculation is performed on the final hash to get a number between 0 and 1. This number is multiplied by the total number of tickets to determine the winning ticket position. (e.g., <code>WinningPosition = floor(ResultingNumber * TotalTickets)</code>. The winning ticket is the one at this position (0-indexed).</li>
+                                 <li><strong>Winner Selection:</strong> The player whose assigned ticket range includes the calculated Winning Ticket position wins the pot.</li>
+                                 <li><strong>Seed Reveal:</strong> After the winner is determined and announced, the original secret Server Seed for that round is revealed publicly in the round history.</li>
+                             </ol>
+                         </div>
+                     </div>
+                     <div class="content-section" id="provably-fair-verification">
+                         <h3 class="content-section-title">Verification Tool</h3>
+                         <div class="content-section-body">
+                             <p>After a round is complete and the Server Seed is revealed, you can use this tool (or any external SHA256 tool) to verify the outcome:</p>
+                             <div class="verify-form">
+                                 <div class="form-group form-group-full-width"> <label for="round-id">Round ID:</label>
+                                     <input type="number" id="round-id" placeholder="Enter round ID from history">
+                                 </div>
+                                 <div class="form-group">
+                                     <label for="server-seed">Server Seed (Revealed):</label>
+                                     <input type="text" id="server-seed" placeholder="Enter the revealed Server Seed (64 hex chars)">
+                                 </div>
+                                 <div class="form-group">
+                                     <label for="client-seed">Client Seed:</label>
+                                     <input type="text" id="client-seed" placeholder="Enter the Client Seed for the round">
+                                 </div>
+                                 <button class="btn btn-primary" id="verify-btn" style="grid-column: 1 / -1;">Verify Round</button>
+                            </div>
+                             <div id="verification-result" class="verification-result" style="display: none;">
+                                 </div>
+                         </div>
+                     </div>
+                     <div class="content-section">
+                         <h3 class="content-section-title">Round History</h3>
+                         <div class="content-section-body">
+                             <div class="table-container">
+                                 <table class="history-table">
+                                     <thead>
+                                         <tr>
+                                             <th>Round ID</th>
+                                             <th>Date Ended</th>
+                                             <th>Pot Value</th>
+                                             <th>Winner</th>
+                                             <th>Actions</th>
+                                         </tr>
+                                     </thead>
+                                     <tbody id="rounds-table-body">
+                                         <tr><td colspan="5" class="loading-message">Loading round history...</td></tr>
+                                         </tbody>
+                                 </table>
                              </div>
-                    </div>
-
-                    <div class="deposit-button-container" id="depositBtnContainer">
-                        <button class="btn btn-deposit" id="showDepositModal" title="Log in to deposit" disabled>DEPOSIT SKINS</button>
-                    </div>
-
-                    <div class="current-items-section" id="currentItems">
-                        <h3 class="section-title">CURRENT ITEMS IN POT</h3>
-                        <div class="items-container" id="itemsContainer">
-                            <div class="empty-pot-message" id="emptyPotMessage" style="display: block;">
-                                <p>No items in the current pot. Be the first to deposit!</p>
-                            </div>
-                            </div>
-                    </div>
-                </div>
-
-                <div class="chat-container">
-                    <div class="chat-header">
-                        <h3>Player Chat</h3>
-                        <div class="chat-online-status">
-                            <span id="chatOnlineUsers">0</span> Online
-                        </div>
-                    </div>
-                    <div id="chatMessagesContainer" class="chat-messages-container">
-                        </div>
-                    <div class="chat-input-area">
-                        <input type="text" id="chatMessageInput" placeholder="Sign in to chat" disabled>
-                        <button id="chatSendMessageBtn" class="btn btn-primary" disabled>Send</button>
-                    </div>
-                </div>
-            </div>
-        </section>
-    <section id="about-page" style="display: none;">
-            <div class="content-card">
-                <h1>About Rusty Degen</h1>
-                <div class="content-section">
-                    <div class="content-section-body">
-                        <p>Hello! I'm a degenerate Rust player with over 7,000 hours in the game. I have been playing this dogshit game since 2018 and have spent countless hours on the grind..</p>
-                        <p>As a recent computer science student, I wanted to combine my two passions: programming and Rust. Rusty Degen is the result of this combination - a solo project developed from the ground up.</p>
-                        <p>Unlike many gambling platforms that are run by large teams with significant backing, Rusty Degen is entirely developed, maintained, and operated by me.</p>
-                        <p>Please remember this is a project under development. Play responsibly and understand the risks involved.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <section id="tos-page" style="display: none;">
-            <div class="content-card">
-                <h1>Terms of Service</h1>
-                <p><small>Last Updated: May 18, 2025</small></p> <div class="content-section">
-                    <h3 class="content-section-title">1. Agreement to Terms</h3>
-                    <div class="content-section-body">
-                        <p>By accessing or using RustyDegen, you agree to be bound by these Terms of Service. If you disagree with any part of the terms, you may not access the service.</p>
-                    </div>
-                </div>
-                <div class="content-section">
-                    <h3 class="content-section-title">2. Age Requirement</h3>
-                    <div class="content-section-body">
-                        <p>You must be at least 18 years of age to use our services. By using RustyDegen, you represent and warrant that you meet this age requirement.</p>
-                    </div>
-                </div>
-                <div class="content-section">
-                    <h3 class="content-section-title">3. Account Security</h3>
-                    <div class="content-section-body">
-                        <p>You are responsible for safeguarding your account and for any activities or actions under your account. Notify us immediately of any unauthorized use.</p>
-                    </div>
-                </div>
-                <div class="content-section">
-                     <h3 class="content-section-title">4. Item Valuation & Deposits</h3>
-                     <div class="content-section-body">
-                         <p>Item prices are determined by third-party APIs and are subject to fluctuation. We are not responsible for discrepancies in item values. By depositing items, you confirm ownership and right to trade them.</p>
+                             <div class="pagination-container" id="rounds-pagination">
+                                 </div>
+                         </div>
                      </div>
-                </div>
-                <div class="content-section">
-                     <h3 class="content-section-title">5. Site Fee (Tax)</h3>
-                     <div class="content-section-body">
-                         <p>A fee (typically 5-10%) is taken from the pot value as a commission. This fee is subject to change. The fee is applied by retaining items from the pot.</p>
-                     </div>
-                </div>
-                <div class="content-section">
-                     <h3 class="content-section-title">6. Provably Fair System</h3>
-                     <div class="content-section-body">
-                         <p>Our games use a provably fair system. Details are available on the "Provably Fair" page. You acknowledge that game outcomes are random and determined by this system.</p>
-                     </div>
-                </div>
-                <div class="content-section">
-                     <h3 class="content-section-title">7. Prohibited Conduct</h3>
-                     <div class="content-section-body">
-                         <p>You agree not to engage in any activity that disrupts or interferes with our services, including scripting, botting, or exploiting vulnerabilities. Violation may result in account suspension.</p>
-                     </div>
-                </div>
-                <div class="content-section">
-                    <h3 class="content-section-title">8. Limitation of Liability</h3>
-                    <div class="content-section-body">
-                        <p>RustyDegen is provided "as is." We are not liable for any losses or damages arising from your use of the site. Gambling involves risk; play responsibly.</p>
-                    </div>
-                </div>
-                <div class="content-section">
-                    <h3 class="content-section-title">9. Changes to Terms</h3>
-                    <div class="content-section-body">
-                        <p>We reserve the right to modify these terms at any time. Your continued use of the site after changes constitutes acceptance of the new terms.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
+                 </div>
+            </section>
 
-        <section id="faq-page" style="display: none;">
-            <div class="content-card">
-                <h1>Frequently Asked Questions</h1>
-                <div class="content-section faq-item">
-                    <h3 class="content-section-title">How does Rusty Degen work?</h3>
-                    <div class="content-section-body" style="display: none;">
-                        <p>Players deposit Rust skins into a pot. Your chance to win is based on the value of skins you deposit relative to the total pot. A timer counts down, and once it ends, a winner is randomly selected using our provably fair system. The winner receives items from the pot, minus a site fee.</p>
-                    </div>
-                </div>
-                <div class="content-section faq-item">
-                    <h3 class="content-section-title">How do I deposit?</h3>
-                    <div class="content-section-body" style="display: none;">
-                        <p>1. Sign in with Steam. 2. Set your Trade URL in your profile. 3. Click "Deposit Skins". 4. Select items from your inventory. 5. Click "Request Deposit Offer" and accept the trade offer on Steam.</p>
-                    </div>
-                </div>
-                 <div class="content-section faq-item">
-                    <h3 class="content-section-title">Why do I need a Trade URL?</h3>
-                    <div class="content-section-body" style="display: none;">
-                        <p>Your Steam Trade URL allows our bots to send you trade offers for deposits and winnings. Find it in your Steam inventory privacy settings.</p>
-                    </div>
-                </div>
-                <div class="content-section faq-item">
-                    <h3 class="content-section-title">Is it fair? How is the winner chosen?</h3>
-                    <div class="content-section-body" style="display: none;">
-                        <p>Yes, we use a Provably Fair system. A server seed (hashed and shown before round) and a client seed (revealed after) are combined to determine a winning ticket. You can verify this calculation on our "Provably Fair" page.</p>
-                    </div>
-                </div>
-                <div class="content-section faq-item">
-                    <h3 class="content-section-title">How do I get my winnings?</h3>
-                    <div class="content-section-body" style="display: none;">
-                        <p>Our bot sends a Steam trade offer with your winnings (minus site fee) to your set Trade URL. You'll get a site notification and need to accept the offer on Steam.</p>
-                    </div>
-                </div>
-                <div class="content-section faq-item">
-                    <h3 class="content-section-title">What is the site fee/tax?</h3>
-                    <div class="content-section-body" style="display: none;">
-                        <p>A small commission (usually 5-10%) is taken from the pot to cover operational costs. This is done by retaining items from the pot.</p>
-                    </div>
-                </div>
-                 <div class="content-section faq-item">
-                    <h3 class="content-section-title">My deposit offer expired. What now?</h3>
-                    <div class="content-section-body" style="display: none;">
-                        <p>If you don't accept the deposit trade offer in time, it becomes invalid. Your items remain in your Steam inventory. You'll need to initiate a new deposit.</p>
-                    </div>
-                </div>
-                 <div class="content-section faq-item">
-                    <h3 class="content-section-title">Need help or support?</h3>
-                    <div class="content-section-body" style="display: none;">
-                        <p>Please contact us via our [Link to Discord/Support - Placeholder]. Provide details like your Steam profile, Round ID, and a description of the issue.</p>
-                    </div>
-                </div>
-            </div>
-        </section>
+        </div> </main>
 
-        <section id="fair-page" style="display: none;">
-            <div class="content-card">
-                <h1>Provably Fair System</h1>
-                <div class="content-section">
-                    <h3 class="content-section-title">How It Works</h3>
-                    <div class="content-section-body">
-                        <p>Our system uses SHA256 hashing to ensure transparent and fair winner selection, verifiable by anyone after a round.</p>
-                        <ol>
-                            <li><strong>Server Seed & Hash:</strong> Before a round, a secret Server Seed is generated. Its SHA256 hash is publicly shown.</li>
-                            <li><strong>Deposits & Tickets:</strong> Players deposit items. Tickets are assigned based on value (e.g., $0.01 = 1 ticket).</li>
-                            <li><strong>Client Seed:</strong> At round end, a Client Seed is generated (often from public round data).</li>
-                            <li><strong>Combined Hash:</strong> Server Seed + Client Seed are combined and hashed (SHA256).</li>
-                            <li><strong>Winning Ticket:</strong> The final hash determines a number, which is used with the total tickets to pick the winning ticket position.</li>
-                            <li><strong>Seed Reveal:</strong> After the round, the Server Seed is revealed, allowing verification.</li>
-                        </ol>
-                    </div>
-                </div>
-                <div class="content-section" id="provably-fair-verification">
-                    <h3 class="content-section-title">Verification Tool</h3>
-                    <div class="content-section-body">
-                        <p>Use this tool to verify a completed round once its Server Seed is revealed.</p>
-                        <div class="verify-form">
-                            <div class="form-group form-group-full-width">
-                                <label for="round-id">Round ID:</label>
-                                <input type="number" id="round-id" placeholder="Enter Round ID from history">
-                            </div>
-                            <div class="form-group">
-                                <label for="server-seed">Server Seed (Revealed):</label>
-                                <input type="text" id="server-seed" placeholder="64 hex characters">
-                            </div>
-                            <div class="form-group">
-                                <label for="client-seed">Client Seed (Revealed):</label>
-                                <input type="text" id="client-seed" placeholder="Enter revealed Client Seed">
-                            </div>
-                            <button class="btn btn-primary" id="verify-btn">Verify Round</button>
-                       </div>
-                        <div id="verification-result" class="verification-result" style="display: none;">
-                            </div>
-                    </div>
-                </div>
-                <div class="content-section">
-                    <h3 class="content-section-title">Round History</h3>
-                    <div class="content-section-body">
-                        <div class="table-container">
-                            <table class="history-table">
-                                <thead>
-                                    <tr>
-                                        <th>Round ID</th>
-                                        <th>Date Ended</th>
-                                        <th>Pot Value</th>
-                                        <th>Winner</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="rounds-table-body">
-                                    <tr><td colspan="5" class="loading-message">Loading round history...</td></tr>
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="pagination-container" id="rounds-pagination">
-                            </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+    <footer class="main-footer">
+        <div class="container">
+            <p> &copy;2025 Rusty Degen. All rights reserved. Rusty Degen is not affiliated with Valve Corporation, Facepunch Studios, Rust or any other trademarks. Gambling can be addictive. Play responsibly. 18+</p>
+            <p>
+                 <a href="#" id="tos-link-footer">Terms of Service</a> |
+                 <a href="#" id="fair-link-footer">Provably Fair</a> |
+                 <a href="[Your Support Link/Discord]" target="_blank" rel="noopener noreferrer">Support</a>
+            </p>
+        </div>
+    </footer>
 
-    </div>
-</main>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/main.js"></script>
 
-<footer class="main-footer">
-    <div class="container">
-        <p>&copy;2025 Rusty Degen. All rights reserved. Not affiliated with Valve Corp or Facepunch Studios. Gambling can be addictive. 18+</p>
-        <p>
-            <a href="#" id="tos-link-footer" onclick="event.preventDefault(); window.showPage(document.getElementById('tos-page'));">Terms of Service</a> |
-            <a href="#" id="fair-link-footer" onclick="event.preventDefault(); window.showPage(document.getElementById('fair-page'));">Provably Fair</a> |
-            <a href="[Your Support Link/Discord - Placeholder]" target="_blank" rel="noopener noreferrer">Support</a>
-        </p>
-    </div>
-</footer>
-
-<script src="/socket.io/socket.io.js"></script>
-<script src="/js/main.js"></script>
-<script>
-    // Simple FAQ accordion and static page link handler
-    document.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('#faq-page .faq-item .content-section-title').forEach(title => {
-            title.addEventListener('click', () => {
-                const item = title.closest('.faq-item');
-                const body = item.querySelector('.content-section-body');
-                if (item && body) {
-                    document.querySelectorAll('#faq-page .faq-item.active').forEach(openItem => {
-                        if (openItem !== item) {
-                            openItem.classList.remove('active');
-                            openItem.querySelector('.content-section-body').style.display = 'none';
-                        }
-                    });
-                    item.classList.toggle('active');
-                    body.style.display = item.classList.contains('active') ? 'block' : 'none';
-                }
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const faqItems = document.querySelectorAll('#faq-page .faq-item .content-section-title');
+            faqItems.forEach(title => {
+                title.addEventListener('click', () => {
+                    const item = title.closest('.faq-item');
+                    const body = item.querySelector('.content-section-body');
+                    if (item && body) {
+                         // Close other items
+                        document.querySelectorAll('#faq-page .faq-item.active').forEach(openItem => {
+                            if (openItem !== item) {
+                                openItem.classList.remove('active');
+                                const openBody = openItem.querySelector('.content-section-body');
+                                if (openBody) openBody.style.display = 'none';
+                            }
+                        });
+                         // Toggle current item
+                        item.classList.toggle('active');
+                        body.style.display = item.classList.contains('active') ? 'block' : 'none';
+                    }
+                });
             });
+
+            // Footer/Modal TOS Links
+             const setupLink = (linkId, pageElementId) => {
+                 const link = document.getElementById(linkId);
+                 const page = document.getElementById(pageElementId);
+                  // Check if showPage is globally available (it should be from main.js)
+                 if (link && page && typeof window.showPage === 'function') {
+                      link.addEventListener('click', (e) => {
+                           e.preventDefault();
+                           window.showPage(page);
+                           // If it's the modal link, also close the modal
+                           const modal = link.closest('.modal');
+                           if (modal && typeof window.hideModal === 'function') {
+                                window.hideModal(modal);
+                           }
+                      });
+                 }
+             };
+             setupLink('tos-link-modal', 'tos-page');
+             setupLink('tos-link-footer', 'tos-page');
+             setupLink('fair-link-footer', 'fair-page');
         });
-        // Note: window.showPage and window.hideModal are defined in main.js
-        // The onclick attributes for TOS/Fair links in footer and age modal are kept as they rely on these global functions.
-    });
-</script>
+    </script>
 
 </body>
 </html>
