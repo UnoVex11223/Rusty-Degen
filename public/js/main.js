@@ -1534,6 +1534,10 @@ function resetToJackpotView() {
         });
         initiateNewRoundVisualReset();
         updateDepositButtonState();
+        if (currentRound) {
+            currentRound.items = [];
+            currentRound.participants = [];
+        }
         if (socket?.connected) {
             console.log("Requesting fresh round data after reset to jackpot view.");
             socket.emit('requestRoundData');
