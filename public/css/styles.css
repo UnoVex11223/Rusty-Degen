@@ -879,7 +879,8 @@ code { /* General code tag styling */
 .age-verification .modal-content { max-width: 500px; }
 #depositModal .modal-content { max-width: 900px; }
 #tradeUrlModal .modal-content { max-width: 600px; }
-.winning-history-modal .modal-content { max-width: 800px; } /* For Winning History */
+.winning-history-modal .modal-content { max-width: 800px; }
+.accept-winnings-modal .modal-content { max-width: 550px; } /* New: Accept Winnings Modal Size */
 
 
 @keyframes modalIn {
@@ -1103,7 +1104,6 @@ code { /* General code tag styling */
 /* FAQ Page */
 #faq-page .content-section { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 20px; margin-bottom: 20px; transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
 #faq-page .content-section:last-child { border-bottom: 1px solid var(--border-color); }
-#faq-page .content-section:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
 #faq-page .content-section-title { color: var(--secondary-color); cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-left: none; padding-left: 0; }
 #faq-page .content-section-title::after { content: '+'; font-size: 1.5rem; color: var(--primary-color); transition: transform 0.3s ease; }
 #faq-page .content-section.active .content-section-title::after { content: '-'; transform: rotate(180deg); }
@@ -1166,15 +1166,18 @@ code { /* General code tag styling */
 }
 .trade-link:hover { color: var(--secondary-color); }
 .trade-link.pending i { color: var(--warning-color); }
+.trade-link i { font-size: 0.9em; } /* Icon size for trade links */
 
 .trade-status {
-    font-weight: 600; padding: 3px 8px; border-radius: 4px; font-size: 0.85em;
-    display: inline-flex; align-items: center; gap: 5px;
+    font-weight: 600; padding: 4px 10px; border-radius: 12px; /* More pill-like */
+    font-size: 0.8em; display: inline-flex; align-items: center; gap: 6px;
+    text-transform: uppercase; letter-spacing: 0.5px;
 }
-.trade-status.accepted { color: var(--success-color); background-color: rgba(76, 175, 80, 0.15); border: 1px solid rgba(76, 175, 80, 0.3); }
-.trade-status.failed { color: var(--error-color); background-color: rgba(244, 67, 54, 0.15); border: 1px solid rgba(244, 67, 54, 0.3); }
-.trade-status.pending { color: var(--warning-color); background-color: rgba(255, 193, 7, 0.15); border: 1px solid rgba(255, 193, 7, 0.3); }
-.trade-status i { font-size: 0.9em; }
+.trade-status.accepted { color: #ffffff; background-color: var(--success-color); border: 1px solid var(--success-color); box-shadow: 0 0 8px rgba(76, 175, 80, 0.3); }
+.trade-status.failed, .trade-status.declined, .trade-status.canceled, .trade-status.expired { color: #ffffff; background-color: var(--error-color); border: 1px solid var(--error-color); box-shadow: 0 0 8px rgba(244, 67, 54, 0.3); }
+.trade-status.sent, .trade-status.escrow, .trade-status.pendingconfirmation, .trade-status.unknown { color: var(--background-dark); background-color: var(--warning-color); border: 1px solid var(--warning-color); box-shadow: 0 0 8px rgba(255, 193, 7, 0.3); }
+.trade-status.info { color: var(--text-primary); background-color: var(--info-color); border: 1px solid var(--info-color); box-shadow: 0 0 8px rgba(33, 150, 243, 0.3); }
+.trade-status i { font-size: 1em; /* Slightly larger icon within status */ }
 
 
 /* Pagination */
@@ -1187,7 +1190,7 @@ code { /* General code tag styling */
 
 
 /* --- ADDED: Deposit Modal Footer Enhancements --- */
-#acceptDepositOfferBtn {
+#acceptDepositOfferBtn { /* Also used for Accept Winnings button */
     background-color: var(--success-color);
     color: white;
     border: 1px solid var(--success-color);
@@ -1198,19 +1201,21 @@ code { /* General code tag styling */
     justify-content: center;
 }
 
-#acceptDepositOfferBtn:hover:not(:disabled) {
+#acceptDepositOfferBtn:hover:not(:disabled),
+#acceptWinningsOnSteamBtn:hover:not(:disabled) { /* Apply hover to both */
     background-color: #45a049;
     border-color: #45a049;
     box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
     transform: translateY(-2px);
 }
 
-#acceptDepositOfferBtn i {
+#acceptDepositOfferBtn i,
+#acceptWinningsOnSteamBtn i { /* Apply icon style to both */
     margin-left: 8px;
     font-size: 0.9em;
 }
 
-.deposit-status-text {
+.deposit-status-text { /* Reused for acceptWinningsStatusText */
     flex-grow: 1;
     text-align: left;
     padding: 0 10px;
