@@ -1,6 +1,3 @@
-// app.js (Backend Logic - Refined)
-// Part 1 of 2
-
 // Required dependencies
 const express = require('express');
 const session = require('express-session');
