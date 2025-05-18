@@ -141,6 +141,40 @@
         </div>
     </div>
 
+    <div class="modal winning-history-modal" id="winningHistoryModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Your Winning History</h2>
+                <button class="close-btn" id="closeWinningHistoryModal" aria-label="Close winning history modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="winning-history-loading" class="loading-indicator" style="display: none;">
+                    <div class="spinner"></div>
+                    <p>Loading your winning history...</p>
+                </div>
+                <div class="table-container" id="winningHistoryTableContainer">
+                    <table class="history-table winning-history-table">
+                        <thead>
+                            <tr>
+                                <th>Game ID</th>
+                                <th>Date Won</th>
+                                <th>Amount Won</th>
+                                <th>Trade Status/Link</th>
+                            </tr>
+                        </thead>
+                        <tbody id="winningHistoryTableBody">
+                            </tbody>
+                    </table>
+                    <p id="noWinningsMessage" class="empty-history-message" style="display: none;">You have no winnings yet.</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="winningHistoryModalCloseFooterBtn">Close</button>
+            </div>
+        </div>
+    </div>
+
+
     <header class="main-header">
         <div class="container header-container">
             <div class="header-left">
@@ -191,6 +225,9 @@
                             <div class="dropdown-actions">
                                 <button class="dropdown-item" id="profileDropdownButton" role="menuitem">
                                     <i class="fas fa-user-circle icon"></i> Profile
+                                </button>
+                                <button class="dropdown-item" id="winningHistoryDropdownButton" role="menuitem">
+                                    <i class="fas fa-trophy icon"></i> Winning History
                                 </button>
                                 <button class="dropdown-item" id="logoutButton" role="menuitem">
                                     <i class="fas fa-sign-out-alt icon"></i> Sign Out
@@ -279,8 +316,7 @@
                             </div>
                         </div>
                         <div id="chatMessagesContainer" class="chat-messages-container">
-                            
-                        </div>
+                            </div>
                         <div class="chat-input-area">
                             <input type="text" id="chatMessageInput" placeholder="Sign in to chat" disabled>
                             <button id="chatSendMessageBtn" class="btn btn-primary" disabled>Send</button>
@@ -294,7 +330,7 @@
                     <h1>About Rusty Degen</h1>
                     <div class="content-section">
                         <div class="content-section-body">
-                            <p>Hello! I'm a degenerate Rust player with over 7,000 hours in the game. I have been playing this dogshit game since 2018 and have poured countless hours into the game. </p>
+                            <p>Hello! I'm a degenerate Rust player with over 7,000 hours in the game. I have been playing this dogshit game since 2018 and have spent countless hours on the grind.. </p>
                             <p>As a recent computer science student, I wanted to combine my two passions: programming and Rust. Rusty Degen is the result of this combination - a solo project developed from the ground up. </p>
                             <p>Unlike many gambling platforms that are run by large teams with significant backing, Rusty Degen is entirely developed, maintained, and operated by me.</p>
                             <p>Please remember this is a project under development. Play responsibly and understand the risks involved.</p>
@@ -382,6 +418,8 @@
                              <p>RustyDegen and its management team cannot be held accountable for any immediate, consequential, incidental, particular, resulting, or exemplary damages arising from your utilization of or inability to access our services.</p>
                          </div>
                      </div>
+                 </div>
+            </section>
 
             <section id="faq-page" style="display: none;">
                  <div class="content-card">
