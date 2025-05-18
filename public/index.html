@@ -27,7 +27,7 @@
                     <li>You are at least 18 years old</li>
                     <li>You are legally allowed to trade skins from your country</li>
                     <li>You understand and accept the risks associated with skin gambling</li>
-                    <li>You have read and agree to our <a href="#" id="tos-link-modal" onclick="event.preventDefault(); window.showPage(document.getElementById('tos-page')); window.hideModal(document.getElementById('ageVerificationModal'));" target="_blank">Terms of Service</a></li>
+                    <li>You have read and agree to our <a href="#" id="tos-link-modal" onclick="event.preventDefault(); window.showPage(document.getElementById('tos-page')); document.getElementById('ageVerificationModal').style.display='none';" target="_blank">Terms of Service</a></li>
                 </ul>
                 <div class="checkbox-container">
                     <input type="checkbox" id="agreeCheckbox">
@@ -76,32 +76,6 @@
         </div>
     </div>
 
-    <div class="modal accept-winnings-modal" id="acceptWinningsModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Congratulations, You Won!</h2>
-                <button class="close-btn" id="closeAcceptWinningsModal" aria-label="Close winnings modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <p>You have won the following items from Round #<span id="winningsRoundId">N/A</span>, with a total value of approximately $<span id="winningsTotalValue">0.00</span>:</p>
-                <div class="items-won-container" id="itemsWonContainer">
-                    </div>
-                <div id="acceptWinningsStatus" class="accept-winnings-status-text" style="margin-top: 15px;">
-                    </div>
-                 <div id="winningsTradeOfferLinkContainer" style="display:none; margin-top: 15px; text-align:center;">
-                    <p>Your trade offer is ready!</p>
-                    <a href="#" id="viewWinningsTradeOfferLink" class="btn btn-success" target="_blank" rel="noopener noreferrer">
-                        View Trade Offer on Steam <i class="fas fa-external-link-alt"></i>
-                    </a>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" id="declineWinningsButton" style="display: none;">Decline (Optional)</button> <button class="btn btn-primary" id="acceptWinningsButton">Claim Your Items!</button>
-            </div>
-        </div>
-    </div>
-
-
     <div class="modal" id="tradeUrlModal">
         <div class="modal-content">
             <div class="modal-header">
@@ -138,14 +112,7 @@
                 </div>
 
                 <div id="profile-pending-offer-status" class="profile-pending-offer-status" style="display: none; margin-bottom: 15px; padding: 10px; background-color: var(--background-light); border: 1px solid var(--secondary-dark); border-radius: 4px; text-align: center;">
-                    </div>
-                
-                <div id="profile-unclaimed-winnings-section" class="profile-unclaimed-winnings" style="display: none; margin-bottom: 20px;">
-                    <h4>Unclaimed Winnings</h4>
-                    <div id="profileUnclaimedWinningsList">
-                        </div>
                 </div>
-
 
                 <div class="profile-modal-stats">
                     <div class="profile-modal-stat-item">
@@ -173,40 +140,6 @@
             </div>
         </div>
     </div>
-
-    <div class="modal winning-history-modal" id="winningHistoryModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Your Winning History</h2>
-                <button class="close-btn" id="winningHistoryModalCloseBtn" aria-label="Close winning history modal">&times;</button>
-            </div>
-            <div class="modal-body winning-history-modal-body">
-                <div id="winning-history-loading" class="loading-indicator" style="display: none;">
-                    <div class="spinner"></div>
-                    <p>Loading your winnings...</p>
-                </div>
-                <div class="winning-history-table-container">
-                    <table class="winning-history-table">
-                        <thead>
-                            <tr>
-                                <th>Game ID</th>
-                                <th>Amount Won</th>
-                                <th>Date</th>
-                                <th>Trade Offer</th>
-                            </tr>
-                        </thead>
-                        <tbody id="winningHistoryTableBody">
-                            </tbody>
-                    </table>
-                </div>
-                <p id="noWinningsMessage" style="display: none; text-align: center; padding: 20px;">You have no recorded winnings yet.</p>
-            </div>
-            <div class="modal-footer">
-                <button class="btn btn-secondary" id="winningHistoryModalCloseFooterBtn">Close</button>
-            </div>
-        </div>
-    </div>
-
 
     <header class="main-header">
         <div class="container header-container">
@@ -237,10 +170,10 @@
                 </nav>
 
                 <div class="user-controls">
-                    <a href="/auth/steam" class="btn btn-primary" id="loginButton" style="display: flex;">
+                    <button class="btn btn-primary" id="loginButton" style="display: flex;">
                         <i class="fa-brands fa-steam"></i>
                         <span>Sign in with Steam</span>
-                    </a>
+                    </button>
 
                     <div class="user-profile-container">
                         <span id="pending-offer-indicator" class="pending-offer-indicator" style="display: none;" title="You have a pending trade offer!">
@@ -249,7 +182,8 @@
                         <div class="user-profile" id="userProfile" style="display: none;" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0">
                             <div class="user-avatar-container">
                                 <img src="/img/default-avatar.png" alt="User Avatar" class="user-avatar" id="userAvatar">
-                                <div class="user-status online" id="userStatusIndicator"></div> </div>
+                                <div class="user-status online" id="userStatusIndicator"></div>
+                            </div>
                             <span class="user-name" id="userName">PlayerName</span>
                         </div>
 
@@ -257,9 +191,6 @@
                             <div class="dropdown-actions">
                                 <button class="dropdown-item" id="profileDropdownButton" role="menuitem">
                                     <i class="fas fa-user-circle icon"></i> Profile
-                                </button>
-                                <button class="dropdown-item" id="winningHistoryDropdownButton" role="menuitem">
-                                    <i class="fas fa-trophy icon"></i> Winning History
                                 </button>
                                 <button class="dropdown-item" id="logoutButton" role="menuitem">
                                     <i class="fas fa-sign-out-alt icon"></i> Sign Out
@@ -296,8 +227,10 @@
                                 <span class="timer-label">SECONDS LEFT</span>
                             </div>
                             <div class="jackpot-stats">
-                                <span class="stat-value" id="participantCount">0/--</span> <span class="stat-label">DEPOSITORS</span>
+                                <span class="stat-value" id="participantCount">0/--</span>
+                                <span class="stat-label">PARTICIPANTS</span>
                             </div>
+
                             <div class="inline-roulette" id="inlineRoulette" style="display: none;">
                                 <div class="roulette-container">
                                     <div class="roulette-track" id="rouletteTrack">
@@ -312,7 +245,9 @@
                                         <h3 id="winnerName">WINNER NAME</h3>
                                     </div>
                                     <div class="winner-details">
-                                        <p>Deposited: <span id="winnerDeposit">$0.00</span></p> <p>Chance: <span id="winnerChance">0.00%</span></p> <p class="congrats">Congratulations!</p>
+                                        <p>Deposited: <span id="winnerDeposit">$0.00</span></p>
+                                        <p>Chance: <span id="winnerChance">0.00%</span></p>
+                                        <p class="congrats">Congratulations!</p>
                                     </div>
                                     <div class="confetti-container" id="confettiContainer"></div>
                                 </div>
@@ -327,8 +262,9 @@
                             </div>
 
                         <div class="current-items-section" id="currentItems">
-                            <h3 class="section-title">CURRENT DEPOSITS IN POT (<span id="totalPotItemsCount">0</span> Items)</h3>
-                            <div class="items-container" id="itemsContainer"> <div class="empty-pot-message" id="emptyPotMessage" style="display: block;">
+                            <h3 class="section-title">CURRENT ITEMS IN POT</h3>
+                            <div class="items-container" id="itemsContainer">
+                                <div class="empty-pot-message" id="emptyPotMessage" style="display: block;">
                                     <p>No items in the current pot. Be the first to deposit!</p>
                                 </div>
                                 </div>
@@ -343,7 +279,8 @@
                             </div>
                         </div>
                         <div id="chatMessagesContainer" class="chat-messages-container">
-                            </div>
+                            
+                        </div>
                         <div class="chat-input-area">
                             <input type="text" id="chatMessageInput" placeholder="Sign in to chat" disabled>
                             <button id="chatSendMessageBtn" class="btn btn-primary" disabled>Send</button>
@@ -353,7 +290,7 @@
             </section>
 
             <section id="about-page" style="display: none;">
-                 <div class="content-card">
+                <div class="content-card">
                     <h1>About Rusty Degen</h1>
                     <div class="content-section">
                         <div class="content-section-body">
@@ -389,6 +326,7 @@
                              <p>You bear full responsibility for safeguarding your login credentials and for every action performed through your account. You commit to promptly alerting us regarding any unauthorized account access or potential security vulnerabilities.</p>
                          </div>
                      </div>
+
                      <div class="content-section">
                          <h3 class="content-section-title">5. Digital Asset Ownership</h3>
                          <div class="content-section-body">
@@ -444,8 +382,6 @@
                              <p>RustyDegen and its management team cannot be held accountable for any immediate, consequential, incidental, particular, resulting, or exemplary damages arising from your utilization of or inability to access our services.</p>
                          </div>
                      </div>
-                </div> </section>
-
 
             <section id="faq-page" style="display: none;">
                  <div class="content-card">
@@ -483,7 +419,7 @@
                      <div class="content-section faq-item">
                          <h3 class="content-section-title">How do I receive my winnings?</h3>
                          <div class="content-section-body" style="display: none;">
-                             <p>If you win, you will see a pop-up allowing you to claim your winnings. Once you click "Claim", our bot will automatically create and send a Steam trade offer containing the winning items (minus the site fee) to the Trade URL set in your profile. You will receive a notification on the site, and you'll need to accept the trade offer within Steam to receive the items into your inventory.</p>
+                             <p>If you win, our bot will automatically create and send a Steam trade offer containing the winning items (minus the site fee) to the Trade URL set in your profile. You will receive a notification on the site, and you'll need to accept the trade offer within Steam to receive the items into your inventory.</p>
                          </div>
                      </div>
                      <div class="content-section faq-item">
@@ -504,7 +440,8 @@
                              <p>If you encounter any issues (e.g., problems with deposits, withdrawals, site errors), please reach out to us through our official support channel [Link to your Discord/Support System Here - Placeholder]. Please provide as much detail as possible, including your Steam profile link, the relevant Round ID (if applicable), approximate time of the issue, and a clear description of the problem.</p>
                          </div>
                      </div>
-                 </div> </section>
+                 </div>
+            </section>
 
             <section id="fair-page" style="display: none;">
                  <div class="content-card">
@@ -521,11 +458,11 @@
                              <ol>
                                  <li><strong>Seed Generation:</strong> Before a round begins, the server generates a long, random, secret string called the "Server Seed".</li>
                                  <li><strong>Hashing:</strong> The server calculates the SHA256 hash of this Server Seed. This hash (e.g., <code>a1b2c3d4...</code>) is publicly displayed for the round *before* any deposits are accepted. Hashing is a one-way process; you cannot get the original Seed from the Hash, but you can later verify that a revealed Seed produces the same Hash.</li>
-                                 <li><strong>Deposits & Tickets:</strong> Players deposit items. Each $0.01 of value deposited grants the player 1 ticket (or adjusted based on settings). Tickets are assigned to each individual deposit. If a user deposits multiple times, each deposit gets its own set of tickets. The total number of tickets in the round is the sum of tickets from all individual deposits.</li>
+                                 <li><strong>Deposits & Tickets:</strong> Players deposit items. Each $0.01 of value deposited grants the player 1 ticket (or adjusted based on settings). Tickets are assigned ranges based on deposit order and value (e.g., Player A $1.00 gets tickets 0-99, Player B $2.50 gets tickets 100-349). The total number of tickets is the sum of tickets for all deposits.</li>
                                  <li><strong>Round End & Client Seed:</strong> When the round ends (timer reaches zero or max items), a "Client Seed" is determined. This is typically derived from public round data making it unique and non-manipulable after the round closes (e.g., Round ID, end timestamp hash).</li>
                                  <li><strong>Combined Hashing:</strong> The server combines the secret Server Seed and the public Client Seed (usually as <code>ServerSeedClientSeed</code> or <code>ServerSeed-ClientSeed</code> - check verification logic). It then calculates the SHA256 hash of this combined string.</li>
-                                 <li><strong>Winning Ticket Calculation:</strong> A deterministic calculation is performed on the final hash to get a number. This number is used with the total number of tickets (from all deposits) to determine the winning ticket position (e.g., <code>WinningPosition = (DecimalValueFromHash % TotalTickets)</code>).</li>
-                                 <li><strong>Winner Selection:</strong> The specific deposit entry whose ticket range includes the calculated Winning Ticket position wins. The user associated with that winning deposit wins the entire pot (after tax).</li>
+                                 <li><strong>Winning Ticket Calculation:</strong> A deterministic calculation is performed on the final hash to get a number between 0 and 1. This number is multiplied by the total number of tickets to determine the winning ticket position. (e.g., <code>WinningPosition = floor(ResultingNumber * TotalTickets)</code>. The winning ticket is the one at this position (0-indexed).</li>
+                                 <li><strong>Winner Selection:</strong> The player whose assigned ticket range includes the calculated Winning Ticket position wins the pot.</li>
                                  <li><strong>Seed Reveal:</strong> After the winner is determined and announced, the original secret Server Seed for that round is revealed publicly in the round history.</li>
                              </ol>
                          </div>
@@ -575,17 +512,19 @@
                                  </div>
                          </div>
                      </div>
-                 </div> </section>
+                 </div>
+            </section>
 
         </div> </main>
 
     <footer class="main-footer">
         <div class="container">
-            <p>&copy; <span id="currentYearFooter">2025</span> Rusty Degen. All rights reserved. Rusty Degen is not affiliated with Valve Corporation, Facepunch Studios, Rust or any other trademarks. Gambling can be addictive. Play responsibly. 18+</p>
+            <p> &copy;2025 Rusty Degen. All rights reserved. Rusty Degen is not affiliated with Valve Corporation, Facepunch Studios, Rust or any other trademarks. Gambling can be addictive. Play responsibly. 18+</p>
             <p>
                  <a href="#" id="tos-link-footer">Terms of Service</a> |
                  <a href="#" id="fair-link-footer">Provably Fair</a> |
-                 <a href="[Your Support Link/Discord]" target="_blank" rel="noopener noreferrer">Support</a> </p>
+                 <a href="[Your Support Link/Discord]" target="_blank" rel="noopener noreferrer">Support</a>
+            </p>
         </div>
     </footer>
 
@@ -594,21 +533,6 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Update footer year dynamically
-            const currentYear = new Date().getFullYear();
-            const yearSpan = document.getElementById('currentYearFooter');
-            if (yearSpan) yearSpan.textContent = currentYear;
-            
-            // Update TOS last updated year (if different)
-            const tosDateElement = document.querySelector('#tos-page p small');
-            if (tosDateElement) {
-                const currentTosText = tosDateElement.textContent; // "Last Updated: May 17, 2025"
-                if (!currentTosText.includes(currentYear.toString())) {
-                     tosDateElement.textContent = `Last Updated: May 17, ${currentYear}`; // Example, adjust date as needed
-                }
-            }
-
-
             const faqItems = document.querySelectorAll('#faq-page .faq-item .content-section-title');
             faqItems.forEach(title => {
                 title.addEventListener('click', () => {
@@ -634,12 +558,14 @@
              const setupLink = (linkId, pageElementId) => {
                  const link = document.getElementById(linkId);
                  const page = document.getElementById(pageElementId);
+                  // Check if showPage is globally available (it should be from main.js)
                  if (link && page && typeof window.showPage === 'function') {
                       link.addEventListener('click', (e) => {
                            e.preventDefault();
                            window.showPage(page);
+                           // If it's the modal link, also close the modal
                            const modal = link.closest('.modal');
-                           if (modal && typeof window.hideModal === 'function') { // Added hideModal check
+                           if (modal && typeof window.hideModal === 'function') {
                                 window.hideModal(modal);
                            }
                       });
