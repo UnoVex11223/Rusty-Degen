@@ -499,8 +499,8 @@ code { /* General code tag styling */
 
 .jackpot-and-chat-container {
     display: flex;
-    justify-content: center;
-    align-items: stretch; /* Stretch children so they share the same height */
+    /* Changed from align-items: stretch to flex-start to allow independent heights */
+    align-items: flex-start;
     gap: 20px;
 }
 
@@ -511,13 +511,13 @@ code { /* General code tag styling */
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border-color);
     position: relative;
-    width: 680px;
-    max-width: calc(100% - 300px); /* Max width considering chat width + gap */
-    flex-shrink: 0;
+    width: 680px; /* Maintain a good default width */
+    max-width: calc(100% - 300px - 20px); /* Max width considering chat width (300px) + gap (20px) */
+    flex-shrink: 0; /* Prevent jackpot from shrinking too much if chat is fixed width */
     display: flex;
     flex-direction: column;
-    align-self: stretch;
-    height: auto;
+    /* align-self: stretch; Removed, height will be auto based on content */
+    height: auto; /* Let content define height */
 }
 
 
@@ -843,8 +843,8 @@ code { /* General code tag styling */
 .player-deposit-item-value { font-size: 0.7rem; font-weight: 700; }
 .player-deposit-item-more { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; padding: 5px; margin-top: 5px; }
 @keyframes newDepositPulse {
-    0% { transform: translateY(20px); opacity: 0; }
-    100% { transform: translateY(0); opacity: 1; }
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
 .player-deposit-new { animation: newDepositPulse 0.5s ease-out forwards; }
 
@@ -876,7 +876,37 @@ code { /* General code tag styling */
 #depositModal .modal-content { max-width: 900px; }
 #tradeUrlModal .modal-content { max-width: 600px; }
 .winning-history-modal .modal-content { max-width: 800px; }
-.accept-winnings-modal .modal-content { max-width: 550px; } /* New: Accept Winnings Modal Size */
+
+/* Accept Winnings Modal - Style to be a full screen takeover */
+.accept-winnings-modal {
+    /* Ensure it covers the screen if these were not default for .modal */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(13, 17, 23, 0.9); /* Darker, more opaque background */
+    z-index: 1500; /* Higher than other modals if needed */
+    padding: 0; /* Remove padding if modal-content handles it */
+}
+.accept-winnings-modal .modal-content {
+    max-width: 550px; /* Keep content width manageable */
+    /* Add specific styles if needed, but defaults from .modal-content are good */
+    text-align: center; /* Center text content within the modal */
+}
+.accept-winnings-modal .modal-body p {
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+}
+.accept-winnings-modal #acceptWinningsOfferId {
+    font-size: 1rem;
+    color: var(--primary-light);
+    margin-bottom: 25px;
+    font-family: var(--font-mono);
+}
+.accept-winnings-modal .modal-footer {
+    justify-content: center; /* Center buttons */
+}
 
 
 @keyframes modalIn {
@@ -1271,20 +1301,23 @@ code { /* General code tag styling */
 }
 
 /*=========================
- CHAT STYLES - REVISED
+ CHAT STYLES - REVISED & FIXED HEIGHT
  =========================*/
 .chat-container {
-    width: 280px;
-    flex-shrink: 0; /* Prevent chat from shrinking if jackpot section is wide */
+    width: 280px; /* Fixed width for the chat */
+    flex-shrink: 0; /* Prevent chat from shrinking */
     background-color: var(--background-light);
     border-radius: 12px;
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-lg);
     display: flex;
     flex-direction: column;
-    padding: 0; /* Remove padding from container itself */
-    align-self: stretch;
-    height: auto;
+    padding: 0;
+    /* Fixed height for the chat container */
+    /* This height should be chosen to match the initial/desired height of the jackpot window,
+       or a reasonable fixed height for chat. */
+    height: 650px; /* Example fixed height, adjust as needed */
+    max-height: 70vh; /* Optional: max height relative to viewport */
 }
 
 .chat-header {
@@ -1294,7 +1327,7 @@ code { /* General code tag styling */
     padding: 10px 15px;
     background: var(--background-medium);
     border-bottom: 1px solid var(--border-color);
-    border-radius: 12px 12px 0 0; /* Rounded top corners */
+    border-radius: 12px 12px 0 0;
     flex-shrink: 0; /* Prevent header from shrinking */
 }
 
@@ -1316,14 +1349,14 @@ code { /* General code tag styling */
 }
 
 .chat-messages-container {
-    flex-grow: 1; /* Fills available space inside the chat container */
+    flex-grow: 1; /* Allows this to take available space within the fixed height chat-container */
     padding: 15px;
     overflow-y: auto; /* Enables scrolling for messages */
     display: flex;
     flex-direction: column-reverse; /* New messages at bottom, scroll up for old */
     gap: 12px;
     background-color: var(--background-dark);
-    /* Height is determined by the chat container */
+    /* Height is implicitly determined by flex-grow within the fixed height .chat-container */
 }
 
 
@@ -1445,11 +1478,13 @@ code { /* General code tag styling */
         width: 100%; /* Full width when stacked */
         max-width: 680px; /* Or your preferred max width */
         margin-bottom: 20px; /* Space between jackpot and chat when stacked */
+        height: auto; /* Allow jackpot to define its own height */
     }
     .chat-container {
         width: 100%; /* Full width when stacked */
         max-width: 600px; /* Or your preferred max width for chat */
-        height: auto;
+        height: 500px; /* A reasonable fixed height when stacked */
+        max-height: 60vh;
     }
     .main-header .container {
         flex-direction: column;
@@ -1470,6 +1505,6 @@ code { /* General code tag styling */
 @media (min-width: 1200px) {
     .jackpot-and-chat-container {
         position: relative;
-        left: 150px;  
+        left: 150px;   /* ⬅️ change this number to match the blue-line distance */
     }
 }
