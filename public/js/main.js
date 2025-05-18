@@ -170,6 +170,7 @@ let notificationTimeout = null;
 let spinStartTime = 0;
 let currentDepositOfferURL = null;
 let currentWinningsOfferURL = null; // Added
+let pendingWinningsOffer = null; // Added for queued winnings when spinning
 let onlineUserCount = 0;
 let isChatSendOnCooldown = false;
 
@@ -351,6 +352,24 @@ function resetAcceptWinningsModalUI() { // Added
     }
     if(offerIdDisplay) offerIdDisplay.textContent = '';
     currentWinningsOfferURL = null;
+}
+
+function processPendingWinningsOffer() { // Added
+    if (!pendingWinningsOffer) return;
+    const { offerURL, offerId, status } = pendingWinningsOffer;
+    const { modal, offerIdDisplay, statusText, acceptOnSteamBtn } = DOMElements.acceptWinningsModal;
+    currentWinningsOfferURL = offerURL;
+    if (offerIdDisplay) offerIdDisplay.textContent = `Trade Offer ID: #${offerId}`;
+    if (statusText) {
+        statusText.textContent = `Status: ${status || 'Sent'}. Click below to accept.`;
+        statusText.className = 'deposit-status-text info';
+    }
+    if (acceptOnSteamBtn) {
+        acceptOnSteamBtn.disabled = false;
+        acceptOnSteamBtn.setAttribute('data-offer-url', offerURL);
+    }
+    showModal(modal);
+    pendingWinningsOffer = null;
 }
 
 
@@ -1346,7 +1365,11 @@ function handleRouletteSpinAnimation(winningElement, winner) {
 function finalizeSpin(winningElement, winner) {
     if ((!isSpinning && winningElement?.classList.contains('winner-highlight')) || !winningElement || !winner?.user) {
         console.log("FinalizeSpin called, but seems already finalized or data invalid.");
-        if (isSpinning) { isSpinning = false; updateDepositButtonState(); resetToJackpotView(); }
+        if (isSpinning) {
+            isSpinning = false; updateDepositButtonState();
+            processPendingWinningsOffer(); // Added
+            resetToJackpotView();
+        }
         return;
     }
     console.log("Finalizing spin: Applying highlight to winner element.");
@@ -1380,7 +1403,9 @@ function handleSpinEnd(winningElement, winner) {
     if (!winningElement || !winner?.user) {
         console.error("handleSpinEnd called with invalid data/element.");
         if (!isSpinning) return;
-        isSpinning = false; updateDepositButtonState(); resetToJackpotView();
+        isSpinning = false; updateDepositButtonState();
+        processPendingWinningsOffer(); // Added
+        resetToJackpotView();
         return;
     }
     if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
@@ -1422,6 +1447,7 @@ function handleSpinEnd(winningElement, winner) {
                             clearInterval(window.typeChanceInterval); window.typeChanceInterval = null;
                             setTimeout(() => { launchConfetti(userColor); }, 200);
                             isSpinning = false; updateDepositButtonState();
+                            processPendingWinningsOffer(); // Added
                             console.log("isSpinning set to false after winner display/confetti.");
                             setTimeout(resetToJackpotView, CONFIG.WINNER_DISPLAY_DURATION);
                         }
@@ -1431,7 +1457,9 @@ function handleSpinEnd(winningElement, winner) {
         }, 500);
     } else {
         console.error("Winner info display elements missing. Cannot display winner details.");
-        isSpinning = false; updateDepositButtonState(); resetToJackpotView();
+        isSpinning = false; updateDepositButtonState();
+        processPendingWinningsOffer(); // Added
+        resetToJackpotView();
     }
 }
 
@@ -2090,18 +2118,22 @@ function setupSocketConnection() {
          console.log('Trade offer sent event received:', data);
          if (currentUser && data.userId === (currentUser._id || currentUser.id) && data.offerURL) {
               if (data.type === 'winning') { // Check if it's a winning offer
-                  const { modal, offerIdDisplay, statusText, acceptOnSteamBtn } = DOMElements.acceptWinningsModal;
-                  currentWinningsOfferURL = data.offerURL;
-                  if (offerIdDisplay) offerIdDisplay.textContent = `Trade Offer ID: #${data.offerId}`;
-                  if (statusText) {
-                      statusText.textContent = `Status: ${data.status || 'Sent'}. Click below to accept.`;
-                      statusText.className = 'deposit-status-text info';
+                  if (isSpinning) {
+                      pendingWinningsOffer = { offerURL: data.offerURL, offerId: data.offerId, status: data.status };
+                  } else {
+                      const { modal, offerIdDisplay, statusText, acceptOnSteamBtn } = DOMElements.acceptWinningsModal;
+                      currentWinningsOfferURL = data.offerURL;
+                      if (offerIdDisplay) offerIdDisplay.textContent = `Trade Offer ID: #${data.offerId}`;
+                      if (statusText) {
+                          statusText.textContent = `Status: ${data.status || 'Sent'}. Click below to accept.`;
+                          statusText.className = 'deposit-status-text info';
+                      }
+                      if (acceptOnSteamBtn) {
+                          acceptOnSteamBtn.disabled = false;
+                          acceptOnSteamBtn.setAttribute('data-offer-url', data.offerURL);
+                      }
+                      showModal(modal);
                   }
-                  if (acceptOnSteamBtn) {
-                      acceptOnSteamBtn.disabled = false;
-                      acceptOnSteamBtn.setAttribute('data-offer-url', data.offerURL);
-                  }
-                  showModal(modal);
                   // Show a notification as well for users who might miss the modal
                   showNotification(`Winnings Sent! <a href="${data.offerURL}" target="_blank" rel="noopener noreferrer" class="notification-link">Accept on Steam</a> (#${data.offerId})`, 'success', 15000);
               } else { // Assume it's a deposit offer or general notification if type is not 'winning'
