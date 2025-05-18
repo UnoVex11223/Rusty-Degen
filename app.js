@@ -637,10 +637,13 @@ async function endRound() {
         // Pass the populated winner object and the final items (after tax)
         await sendWinningTradeOffer(completedRound, winnerInfo, finalItems);
 
+        io.emit('roundCompleted', { roundId: round.roundId });
+
     } catch (err) {
         console.error(`CRITICAL ERROR during endRound for round ${roundIdToEnd}:`, err);
         await Round.updateOne({ _id: roundMongoId }, { $set: { status: 'error', payoutOfferStatus: 'Failed' } }).catch(e => console.error("Error marking round as error after endRound failure:", e));
         io.emit('roundError', { roundId: roundIdToEnd, error: 'Internal server error during round finalization.' });
+        io.emit('roundCompleted', { roundId: roundIdToEnd });
     } finally {
         isRolling = false;
         console.log(`Scheduling next round creation after round ${roundIdToEnd} finalization.`);
