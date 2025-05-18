@@ -506,7 +506,7 @@ code { /* General code tag styling */
 .jackpot-and-chat-container {
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* Changed from stretch to allow chat fixed height */
+    align-items: stretch; /* Stretch children so they share the same height */
     gap: 20px;
 }
 
@@ -522,6 +522,8 @@ code { /* General code tag styling */
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
+    align-self: stretch;
+    height: auto;
 }
 
 
@@ -1287,8 +1289,8 @@ code { /* General code tag styling */
     display: flex;
     flex-direction: column;
     padding: 0; /* Remove padding from container itself */
-    height: 600px; /* MODIFIED: Fixed height for the entire chat container */
-    max-height: 70vh; /* Optional: prevent it from being too tall on very large screens */
+    align-self: stretch;
+    height: auto;
 }
 
 .chat-header {
@@ -1320,14 +1322,14 @@ code { /* General code tag styling */
 }
 
 .chat-messages-container {
-    flex-grow: 1; /* Takes up remaining space within the fixed height of .chat-container */
+    flex-grow: 1; /* Fills available space inside the chat container */
     padding: 15px;
     overflow-y: auto; /* Enables scrolling for messages */
     display: flex;
     flex-direction: column-reverse; /* New messages at bottom, scroll up for old */
     gap: 12px;
     background-color: var(--background-dark);
-    /* min-height is removed as height is now fixed by parent */
+    /* Height is determined by the chat container */
 }
 
 
@@ -1453,8 +1455,7 @@ code { /* General code tag styling */
     .chat-container {
         width: 100%; /* Full width when stacked */
         max-width: 600px; /* Or your preferred max width for chat */
-        height: 500px; /* Adjust height if needed for stacked view */
-        max-height: 60vh;
+        height: auto;
     }
     .main-header .container {
         flex-direction: column;
