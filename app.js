@@ -548,6 +548,7 @@ function startRoundTimer(useRemainingTime = false) {
         }
     }, 1000);
 }
+
 // app.js (Corrected for errors and warnings, and features) - Part 2 of 2
 
 async function endRound() {
@@ -948,7 +949,7 @@ app.post('/api/winnings/claim/:recordId', sensitiveActionLimiter, ensureAuthenti
 
 app.post('/api/user/tradeurl', sensitiveActionLimiter, ensureAuthenticated,
     [ body('tradeUrl').trim().custom((value) => {
-            if (value === '') return true;
+            if (value === '') return true; // Allow empty string to clear trade URL
             const pattern = /^https:\/\/steamcommunity\.com\/tradeoffer\/new\/\?partner=\d+&token=[a-zA-Z0-9_-]+$/;
             if (!pattern.test(value)) throw new Error('Invalid Steam Trade URL format.');
             return true;
@@ -1062,10 +1063,15 @@ if (isBotConfigured && manager) {
              return offer.decline((err) => { if (err) console.error(`Error declining unsolicited offer ${offer.id} (giving items):`, err); });
         }
         if (offer.itemsToReceive && offer.itemsToReceive.length > 0) {
-             if (!offer.message || !offer.message.includes('RustyDegen Deposit ID:')) {
+             // Check if the message indicates it's a deposit offer for this site
+             // The specific message format "RustyDegen Deposit: ${depositAttemptId} | R:${currentRound.roundId}"
+             // is set when we create the offer. We should look for a part of that pattern.
+             if (!offer.message || !offer.message.startsWith('RustyDegen Deposit:')) {
                  console.log(`Offer #${offer.id} from ${offer.partner.getSteamID64()} is an unsolicited item donation/other. Declining.`);
                   return offer.decline((err) => { if (err) console.error(`Error declining unsolicited item offer ${offer.id}:`, err); });
              }
+             // If it is a deposit offer, it will be handled by 'sentOfferChanged' when its state changes after our bot accepts it (if auto-accept is on)
+             // or when we poll and find it. For now, we just don't auto-decline our own deposit offers.
         }
     });
 
@@ -1097,12 +1103,25 @@ if (isBotConfigured && manager) {
                 }
             }
         }
-
-        const messageMatch = offer.message.match(/Deposit ID: ([a-f0-9-]+)/i);
+        
+        // Corrected Regex for deposit offer message
+        const messageMatch = offer.message.match(/RustyDegen Deposit: ([a-f0-9-]+) \| R:\d+/i);
         const depositId = messageMatch ? messageMatch[1] : null;
+
         if (depositId && pendingDeposits.has(depositId)) {
             const depositData = pendingDeposits.get(depositId);
-            if(depositData.offerId && depositData.offerId !== offer.id) return;
+            if(depositData.offerId && depositData.offerId !== offer.id && offer.id) { // if offer.id is defined and doesn't match, it might be a duplicate or error
+                console.warn(`Offer ID mismatch for deposit ${depositId}. Stored: ${depositData.offerId}, Received: ${offer.id}. Ignoring this state change for the old ID if new one is processed.`);
+                // Potentially, the offerId was updated on pendingDeposits if this is a re-confirmation or similar.
+                // For safety, only proceed if the offer.id matches what we stored, or if we haven't stored one yet.
+                if(depositData.offerId !== offer.id) return;
+            } else if (!depositData.offerId && offer.id) { // First time we get the offer.id for this pending deposit
+                depositData.offerId = offer.id; // Update the offerId in our pending map
+                // Also update the user's pendingDepositOfferId if it's still pointing to the placeholder or an old one
+                 User.updateOne({ _id: depositData.userId, pendingDepositOfferId: { $ne: offer.id } }, { pendingDepositOfferId: offer.id })
+                     .catch(e => console.error("Error updating user pendingOfferId with actual offer ID:", e));
+            }
+
 
             if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
                 pendingDeposits.delete(depositId);
@@ -1132,7 +1151,7 @@ if (isBotConfigured && manager) {
                     depositRound.items.push(...createdItemDocs.map(d => d._id)); // Add actual Item ObjectIds to round's items
                     const savedRound = await depositRound.save();
                     const populatedRoundForEmit = await Round.findById(savedRound._id).populate('depositsInRound.user', 'steamId username avatar').populate('items').lean();
-                    currentRound = populatedRoundForEmit;
+                    currentRound = populatedRoundForEmit; // Update global currentRound
                     io.emit('newDepositInRound', {
                         roundId: populatedRoundForEmit.roundId,
                         depositEntry: { ...newDepoEntry, user: { _id: userToUpdate._id, steamId: userToUpdate.steamId, username: userToUpdate.username, avatar: userToUpdate.avatar } },
@@ -1146,18 +1165,18 @@ if (isBotConfigured && manager) {
 
                  } catch (dbErr) {
                      console.error(`CRITICAL DB/UPDATE ERROR for deposit ${depositId}:`, dbErr);
-                     const userSocket = await io.in(depositData.userId.toString()).fetchSockets();
-                     if(userSocket.length > 0) userSocket[0].emit('notification', { type: 'error', message: `CRITICAL Deposit Error for offer #${offer.id}. ${dbErr.message}` });
+                     const userSocketArr = await io.in(depositData.userId.toString()).fetchSockets();
+                     if(userSocketArr.length > 0) userSocketArr[0].emit('notification', { type: 'error', message: `CRITICAL Deposit Error for offer #${offer.id}. ${dbErr.message}` });
                  }
             } else if ([TradeOfferManager.ETradeOfferState.Declined, TradeOfferManager.ETradeOfferState.Canceled, TradeOfferManager.ETradeOfferState.Expired].includes(offer.state)) {
                  pendingDeposits.delete(depositId);
                  User.updateOne({ steamId: depositData.steamId, pendingDepositOfferId: offer.id }, { pendingDepositOfferId: null }).catch(e => console.error("Error clearing user flag on deposit failure:", e));
                  const stateMsg = TradeOfferManager.ETradeOfferState[offer.state].toLowerCase().replace(/_/g, ' ');
-                 const userSocket = await io.in(depositData.userId.toString()).fetchSockets();
-                 if(userSocket.length > 0) userSocket[0].emit('notification', { type: 'error', message: `Your deposit offer (#${offer.id}) was ${stateMsg}.` });
+                 const userSocketArr = await io.in(depositData.userId.toString()).fetchSockets();
+                 if(userSocketArr.length > 0) userSocketArr[0].emit('notification', { type: 'error', message: `Your deposit offer (#${offer.id}) was ${stateMsg}.` });
             }
-        } else if (!winningRecord && !depositId) {
-            console.warn(`Offer #${offer.id} changed state (${TradeOfferManager.ETradeOfferState[offer.state]}), but not recognized.`);
+        } else if (!winningRecord && !depositId) { // If it's not a winning offer and not a recognized deposit offer
+            console.warn(`Offer #${offer.id} changed state (${TradeOfferManager.ETradeOfferState[offer.state]}), but not recognized as a winning or pending deposit offer. Message: "${offer.message}"`);
         }
     });
 }
@@ -1202,7 +1221,8 @@ function formatRoundForClient(roundDoc) {
         provableHash: round.status === 'completed' ? round.provableHash : undefined,
         taxAmount: round.taxAmount,
         uniqueDepositorsCount: uniqueDepositorsCount,
-        totalDepositsCount: (round.depositsInRound || []).length
+        totalDepositsCount: (round.depositsInRound || []).length,
+        winningDepositEntryId: round.winningDepositEntryId ? round.winningDepositEntryId.toString() : undefined
     };
 }
 
@@ -1215,16 +1235,17 @@ app.get('/api/round/current', async (req, res) => {
                  .populate('items')
                  .populate('winner', 'steamId username avatar').lean();
             if (!roundToFormat) currentRound = null;
-            else currentRound = roundToFormat;
+            else currentRound = roundToFormat; // Update global currentRound with fresh populated data
         }
-        if (!roundToFormat) {
+        if (!roundToFormat) { // If currentRound was null or became null
             roundToFormat = await Round.findOne({ status: { $in: ['active', 'rolling', 'pending'] } })
-                 .sort({ startTime: -1 })
+                 .sort({ startTime: -1 }) // Get the most recent one
                  .populate('depositsInRound.user', 'steamId username avatar tradeUrl')
                  .populate('items')
                  .populate('winner', 'steamId username avatar').lean();
-            if (roundToFormat && !currentRound) {
-                 currentRound = roundToFormat;
+            if (roundToFormat && !currentRound) { // If we found one and global currentRound is still not set
+                 currentRound = roundToFormat; // Set it globally
+                 // If it's an active round that should have a timer, ensure it's started
                  const deposits = Array.isArray(currentRound.depositsInRound) ? currentRound.depositsInRound : [];
                  const uniqueUserCount = new Set(deposits.filter(d => d.user && d.user._id).map(d => d.user._id.toString())).size;
                  if (currentRound.status === 'active' && uniqueUserCount > 0 && currentRound.endTime && new Date(currentRound.endTime) > Date.now() && !roundTimer) startRoundTimer(true);
@@ -1264,7 +1285,7 @@ app.post('/api/verify', sensitiveActionLimiter,
     [
         body('roundId').notEmpty().isInt({ min: 1 }).toInt(),
         body('serverSeed').trim().notEmpty().isHexadecimal().isLength({ min: 64, max: 64 }),
-        body('clientSeed').trim().notEmpty().isString().isLength({ min: 1, max: 128 })
+        body('clientSeed').trim().notEmpty().isString().isLength({ min: 1, max: 128 }) // Client seed can be various things
     ],
     handleValidationErrors, async (req, res) => {
     const { roundId, serverSeed, clientSeed } = req.body;
@@ -1340,19 +1361,21 @@ io.on('connection', async (socket) => {
     socket.on('requestRoundData', async () => {
         try {
             let roundToSend = null;
-             if (currentRound?._id) {
+             if (currentRound?._id) { // If global currentRound has an _id, try to use it
                  roundToSend = await Round.findById(currentRound._id)
                        .populate('depositsInRound.user', 'steamId username avatar tradeUrl')
                        .populate('items').populate('winner', 'steamId username avatar').lean();
-                 if (!roundToSend) currentRound = null; else currentRound = roundToSend;
+                 if (!roundToSend) currentRound = null; // Invalidate global if DB doesn't find it
+                 else currentRound = roundToSend; // Update global with fresh data
              }
-             if (!roundToSend) {
+             if (!roundToSend) { // If still no round (e.g. initial load or currentRound was invalid)
                  roundToSend = await Round.findOne({ status: { $in: ['active', 'rolling', 'pending'] } })
-                       .sort({ startTime: -1 })
+                       .sort({ startTime: -1 }) // Get the most recent relevant one
                        .populate('depositsInRound.user', 'steamId username avatar tradeUrl')
                        .populate('items').populate('winner', 'steamId username avatar').lean();
-                 if (roundToSend && !currentRound) {
-                      currentRound = roundToSend;
+                 if (roundToSend && !currentRound) { // If we found one and global currentRound is still not set (or was just invalidated)
+                      currentRound = roundToSend; // Set it globally
+                      // If it's an active round that should have a timer, ensure it's started
                       const deposits = Array.isArray(currentRound.depositsInRound) ? currentRound.depositsInRound : [];
                       const uniqueUserCount = new Set(deposits.filter(d => d.user && d.user._id).map(d => d.user._id.toString())).size;
                       if (currentRound.status === 'active' && uniqueUserCount > 0 && currentRound.endTime && new Date(currentRound.endTime) > Date.now() && !roundTimer) startRoundTimer(true);
@@ -1361,7 +1384,7 @@ io.on('connection', async (socket) => {
              }
             const formattedData = formatRoundForClient(roundToSend);
             if (formattedData) socket.emit('roundData', formattedData);
-            else socket.emit('noActiveRound');
+            else socket.emit('noActiveRound'); // Inform client if no suitable round found
         } catch (err) {
             console.error(`Error fetching round data for socket ${socket.id}:`, err);
             socket.emit('roundError', { error: 'Failed to load round data.' });
