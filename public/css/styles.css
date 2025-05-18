@@ -511,7 +511,7 @@ code { /* General code tag styling */
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border-color);
     position: relative;
-    width: 680px;
+    width: 720px;
     max-width: calc(100% - 300px); /* Max width considering chat width + gap */
     flex-shrink: 0;
     display: flex;
@@ -563,6 +563,12 @@ code { /* General code tag styling */
     align-items: center;
     text-align: center;
     padding: 15px 5px;
+}
+
+/* Give the pot value more breathing room for larger numbers */
+.jackpot-value {
+    min-width: 220px;
+    flex-grow: 1.5;
 }
 
 
@@ -1443,7 +1449,7 @@ code { /* General code tag styling */
     }
     .jackpot-section {
         width: 100%; /* Full width when stacked */
-        max-width: 680px; /* Or your preferred max width */
+        max-width: 720px; /* Or your preferred max width */
         margin-bottom: 20px; /* Space between jackpot and chat when stacked */
     }
     .chat-container {
