@@ -247,12 +247,10 @@
                 <div class="jackpot-and-chat-container">
                     <div class="jackpot-section">
                         <div class="jackpot-header" id="jackpotHeader">
-                            <div class="jackpot-value">
-                                <h2 id="potValue">$0.00</h2>
+                            <div class="jackpot-value"> <h2 id="potValue">$0.00</h2>
                                 <span class="value-label">CURRENT POT</span>
                             </div>
-                            <div class="jackpot-timer">
-                                <div class="timer-circle">
+                            <div class="jackpot-timer"> <div class="timer-circle">
                                     <svg class="timer-progress" viewBox="0 0 100 100">
                                         <circle class="timer-background" cx="50" cy="50" r="42"></circle>
                                         <circle class="timer-foreground" cx="50" cy="50" r="42"></circle>
@@ -263,21 +261,18 @@
                                 </div>
                                 <span class="timer-label">SECONDS LEFT</span>
                             </div>
-                            <div class="jackpot-stats">
-                                <span class="stat-value" id="participantCount">0/--</span>
+                            <div class="jackpot-stats"> <span class="stat-value" id="participantCount">0/--</span>
                                 <span class="stat-label">PARTICIPANTS</span>
                             </div>
 
-                            <div class="inline-roulette" id="inlineRoulette" style="display: none;">
-                                <div class="roulette-container">
+                            <div class="inline-roulette" id="inlineRoulette">  <div class="roulette-container">
                                     <div class="roulette-track" id="rouletteTrack">
                                         </div>
                                     <div class="roulette-ticker">
                                         <div class="ticker-line"></div>
                                     </div>
                                 </div>
-                                <div class="winner-info" id="winnerInfo" style="display: none;">
-                                    <div class="winner-header">
+                                <div class="winner-info" id="winnerInfo"> <div class="winner-header">
                                         <img src="/img/default-avatar.png" alt="Winner Avatar" class="winner-avatar" id="winnerAvatar">
                                         <h3 id="winnerName">WINNER NAME</h3>
                                     </div>
@@ -290,8 +285,7 @@
                                 </div>
                                 <audio id="spinSound" src="spin-sound.mp3" preload="auto"></audio>
                                 <audio id="depositSound" src="deposit-join.mp3" preload="auto"></audio>
-                                <button class="btn btn-primary return-btn" id="returnToJackpot" style="display: none;">Return</button>
-                            </div>
+                                </div>
                         </div>
 
                         <div class="deposit-button-container" id="depositBtnContainer">
@@ -565,6 +559,21 @@
             </p>
         </div>
     </footer>
+
+    <div class="trade-offer-popup" id="winnerTradeOfferPopup">
+        <div class="trade-offer-popup-header">
+            <h4>🏆 Winnings Sent! 🏆</h4>
+            <button class="trade-offer-popup-close" id="winnerTradeOfferPopupClose" aria-label="Close">&times;</button>
+        </div>
+        <div class="trade-offer-popup-body">
+            <p id="winnerTradeOfferPopupMessage">Your items are on their way. Please accept the trade offer on Steam.</p>
+        </div>
+        <div class="trade-offer-popup-actions">
+            <button class="btn btn-success" id="winnerTradeOfferPopupAccept">
+                Accept on Steam <i class="fas fa-external-link-alt"></i>
+            </button>
+        </div>
+    </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/main.js"></script>
