@@ -586,7 +586,6 @@
                     const item = title.closest('.faq-item');
                     const body = item.querySelector('.content-section-body');
                     if (item && body) {
-                         // Close other items
                         document.querySelectorAll('#faq-page .faq-item.active').forEach(openItem => {
                             if (openItem !== item) {
                                 openItem.classList.remove('active');
@@ -594,25 +593,21 @@
                                 if (openBody) openBody.style.display = 'none';
                             }
                         });
-                         // Toggle current item
                         item.classList.toggle('active');
                         body.style.display = item.classList.contains('active') ? 'block' : 'none';
                     }
                 });
             });
 
-            // Footer/Modal TOS Links
              const setupLink = (linkId, pageElementId) => {
                  const link = document.getElementById(linkId);
                  const page = document.getElementById(pageElementId);
-                  // Check if showPage is globally available (it should be from main.js)
                  if (link && page && typeof window.showPage === 'function') {
                       link.addEventListener('click', (e) => {
                            e.preventDefault();
                            window.showPage(page);
-                           // If it's the modal link, also close the modal
                            const modal = link.closest('.modal');
-                           if (modal && typeof window.hideModal === 'function') {
+                           if (modal && typeof window.hideModal === 'function') { // Check if hideModal is defined
                                 window.hideModal(modal);
                            }
                       });
