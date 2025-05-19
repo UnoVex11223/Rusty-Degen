@@ -2487,4 +2487,3 @@ document.addEventListener('DOMContentLoaded', () => {
     updateChatUI();
 });
 
-console.log("main.js updated with Winnings Modal and Winning History logic, and user requested fixes for issue 1 & 2.");
