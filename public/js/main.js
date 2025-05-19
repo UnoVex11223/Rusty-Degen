@@ -1147,8 +1147,6 @@ function handleWinnerAnnouncement(data) {
 
     // Ensure currentRound has the basic structure and necessary data from the event
     if (!currentRound || currentRound.roundId !== data.roundId) {
-        // Attempt to reconstruct a minimal currentRound if it's missing or for a different round.
-        // This is risky if participant/item data isn't also synced.
         console.warn(`Current round data mismatch or missing. Attempting to use data from winner event for round ${data.roundId}.`);
         currentRound = {
             roundId: data.roundId,
@@ -1156,9 +1154,14 @@ function handleWinnerAnnouncement(data) {
             winner: data.winner,
             offerURL: data.offerURL,
             payoutOfferId: data.payoutOfferId,
-            participants: currentRound?.participants || [], // Preserve if possible, otherwise expect it to be fetched
+            serverSeed: data.serverSeed,
+            clientSeed: data.clientSeed,
+            provableHash: data.provableHash,
+            winningTicket: data.winningTicket,
+            serverSeedHash: data.serverSeedHash,
+            participants: currentRound?.participants || [], // Preserve if possible
             items: currentRound?.items || [], // Preserve if possible
-            // Other fields like totalValue, serverSeedHash might be missing here but are crucial for some UI parts if not updated via roundData
+            totalValue: data.totalValue || 0
         };
     } else {
         // Update existing currentRound with fresh winner data
@@ -1166,29 +1169,83 @@ function handleWinnerAnnouncement(data) {
         currentRound.offerURL = data.offerURL;
         currentRound.payoutOfferId = data.payoutOfferId;
         currentRound.status = 'rolling'; // Ensure status is set
+        // Ensure we have the provably fair data
+        if (data.serverSeed) currentRound.serverSeed = data.serverSeed;
+        if (data.clientSeed) currentRound.clientSeed = data.clientSeed;
+        if (data.provableHash) currentRound.provableHash = data.provableHash;
+        if (data.winningTicket) currentRound.winningTicket = data.winningTicket;
+        if (data.serverSeedHash) currentRound.serverSeedHash = data.serverSeedHash;
+        if (data.totalValue) currentRound.totalValue = data.totalValue;
     }
 
-
     // CRITICAL CHECK: We need participants and items to build the roulette.
-    if (!currentRound.participants || currentRound.participants.length === 0 || !currentRound.items || currentRound.items.length === 0) {
-        console.error("Missing critical participant or item data in currentRound for winner announcement. Requesting fresh data.");
-        isWaitingForRoundDataForWinner = true; // Set flag
-        pendingWinnerData = data; // Store winner data to process after roundData arrives
-        socket.emit('requestRoundData'); // Request full round data
+    // But if we're missing data, we can try to build a fallback visualization
+    let hasEnoughData = true;
+    if (!currentRound.participants || currentRound.participants.length === 0) {
+        console.warn("Missing participant data for winner announcement. Creating minimal fallback data.");
+        hasEnoughData = false;
+        // Create minimal participant data if missing, with at least the winner
+        if (currentRound.winner) {
+            currentRound.participants = [{
+                user: currentRound.winner,
+                itemsValue: currentRound.totalValue || 1, // Use total value if available
+                tickets: 100 // Arbitrary ticket count
+            }];
+        }
+    }
+
+    if (!currentRound.items || currentRound.items.length === 0) {
+        console.warn("Missing item data for winner announcement. Creating minimal fallback data.");
+        hasEnoughData = false;
+        // If we have participants but no items, create minimal item representation
+        if (currentRound.participants && currentRound.participants.length > 0) {
+            currentRound.items = currentRound.participants.map(p => ({
+                assetId: `fallback-${p.user._id || p.user.id || Math.random().toString(36).substring(7)}`,
+                name: "Fallback Item",
+                image: p.user.avatar || "/img/default-item.png",
+                price: p.itemsValue || 1,
+                owner: p.user._id || p.user.id
+            }));
+        }
+    }
+
+    // If we still can't proceed, request data and wait
+    if (!hasEnoughData && (!currentRound.participants || currentRound.participants.length === 0 || 
+                           !currentRound.items || currentRound.items.length === 0)) {
+        console.error("Could not create sufficient fallback data. Requesting fresh round data.");
+        isWaitingForRoundDataForWinner = true;
+        pendingWinnerData = data;
+        socket.emit('requestRoundData');
 
         // Set a timeout to prevent indefinite waiting
         setTimeout(() => {
-            if (isWaitingForRoundDataForWinner) { // If still waiting after timeout
-                console.error("Timeout waiting for round data after winner announcement. Resetting.");
+            if (isWaitingForRoundDataForWinner) {
+                console.error("Timeout waiting for round data after winner announcement. Attempting to proceed with limited data.");
                 isWaitingForRoundDataForWinner = false;
                 pendingWinnerData = null;
-                resetToJackpotView();
+                
+                // Make one last attempt to visualize with whatever data we have
+                const winnerDetails = currentRound?.winner;
+                if (winnerDetails) {
+                    switchToRouletteView();
+                    setTimeout(() => {
+                        // Try to create a minimal winner visualization
+                        try {
+                            startRouletteAnimation({ winner: winnerDetails });
+                        } catch (e) {
+                            console.error("Failed to start roulette with limited data:", e);
+                            resetToJackpotView();
+                        }
+                    }, CONFIG.ROULETTE_TRANSITION_DELAY);
+                } else {
+                    resetToJackpotView();
+                }
             }
         }, CONFIG.DATA_FETCH_TIMEOUT_MS);
-        return; // Stop further processing until data arrives
+        return;
     }
 
-    const winnerDetails = currentRound.winner; // Use winner from the (updated) currentRound
+    const winnerDetails = currentRound.winner;
     const winnerId = winnerDetails?.id || winnerDetails?._id;
 
     if (!winnerId) {
@@ -1199,16 +1256,17 @@ function handleWinnerAnnouncement(data) {
 
     console.log(`Winner confirmed: ${winnerDetails.username}. Preparing direct roulette animation...`);
     if (timerActive) {
-        timerActive = false; clearInterval(roundTimer); roundTimer = null;
+        timerActive = false; 
+        clearInterval(roundTimer); 
+        roundTimer = null;
         console.log("Stopped client timer due to winner announcement.");
     }
 
     switchToRouletteView();
     setTimeout(() => {
-        startRouletteAnimation({ winner: winnerDetails }); // Pass only necessary winner details for animation
+        startRouletteAnimation({ winner: winnerDetails });
     }, CONFIG.ROULETTE_TRANSITION_DELAY);
 }
-
 
 function switchToRouletteView() {
     const header = DOMElements.jackpot.jackpotHeader;
