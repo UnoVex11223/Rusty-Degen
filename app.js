@@ -216,7 +216,7 @@ const userSchema = new mongoose.Schema({
 });
 
 const itemSchema = new mongoose.Schema({
-    assetId: { type: String, required: true, index: true }, // Note: This is assetId (camelCase)
+    assetId: { type: String, required: true, index: true },
     name: { type: String, required: true },
     image: { type: String, required: true },
     price: { type: Number, required: true, min: 0 },
@@ -513,7 +513,6 @@ function startRoundTimer(useRemainingTime = false) {
     }, 1000);
 }
 
-
 // app.js (Corrected and Complete with Chat Logic & Winning History Backend) - Part 2 of 2
 
 async function endRound() {
@@ -654,8 +653,7 @@ async function endRound() {
 }
 
 async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
-    // itemsToSend should be an array of objects, where each object is expected to have at least
-    // assetId, appid, contextid (and potentially _price, _name, _image if formatted by caller)
+    // itemsToSend should be an array of actual Item OBJECTS (not just IDs) that the winner gets (after tax)
     if (!isBotReady) {
         console.error(`PAYOUT_ERROR: Bot not ready. Round ${roundDoc.roundId}.`);
         io.emit('notification', { type: 'error', userId: winner._id.toString(), message: `Bot Error: Payout for round ${roundDoc.roundId} delayed.` });
@@ -680,20 +678,8 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
     console.log(`Attempting to send ${itemsToSend.length} items (value $${roundDoc.totalValue.toFixed(2)}) for round ${roundDoc.roundId} to ${winner.username}.`);
     try {
         const offer = manager.createOffer(winner.tradeUrl);
-        
-        // ** MODIFICATION AS PER USER REQUEST **
-        // itemsToSend are now objects formatted by the caller (/api/round/accept-winnings)
-        // Each item in itemsToSend is expected to be: { assetId: ..., appid: ..., contextid: ..., _price: ..., ... }
-        const itemsForOffer = itemsToSend.map(item => ({
-            assetid: item.assetId || item.assetid, // Use item.assetId from the object passed in itemsToSend.
-                                                  // The || item.assetid is a safeguard as requested.
-                                                  // TradeOfferManager expects 'assetid' (lowercase)
-            appid: RUST_APP_ID,                   // Using global RUST_APP_ID. Could also use item.appid if passed & desired.
-            contextid: RUST_CONTEXT_ID            // Using global RUST_CONTEXT_ID. Could also use item.contextid if passed & desired.
-        }));
-        offer.addMyItems(itemsForOffer);
-        // ** END OF MODIFICATION **
-
+        // itemsToSend are Item documents. We need their assetIds.
+        offer.addMyItems(itemsToSend.map(item => ({ assetid: item.assetId, appid: RUST_APP_ID, contextid: RUST_CONTEXT_ID })));
         offer.setMessage(`Winnings from Round #${roundDoc.roundId} on ${process.env.SITE_NAME}. Value: $${roundDoc.totalValue.toFixed(2)}`);
 
         const identitySecret = process.env.STEAM_IDENTITY_SECRET; // For auto-confirmation if set
@@ -837,8 +823,6 @@ app.get('/api/user/winning-history', ensureAuthenticated, async (req, res) => {
     }
 });
 
-// Starting Part 2 - Begins with the '/api/round/accept-winnings' route
-
 app.post('/api/round/accept-winnings', ensureAuthenticated, sensitiveActionLimiter, async (req, res) => {
     try {
         const user = req.user;
@@ -849,7 +833,7 @@ app.post('/api/round/accept-winnings', ensureAuthenticated, sensitiveActionLimit
             payoutOfferStatus: 'PendingAcceptanceByWinner'
         }).sort({ completedTime: -1 })
           .populate('winner', 'steamId username avatar tradeUrl')
-          .populate('items'); // 'items' here are the ObjectId refs of items the winner gets, populated into full Item documents
+          .populate('items'); // 'items' here are the ObjectId refs of items the winner gets
 
         if (!round) {
             return res.status(404).json({ error: 'No winnings pending your acceptance found or round already processed.' });
@@ -862,19 +846,11 @@ app.post('/api/round/accept-winnings', ensureAuthenticated, sensitiveActionLimit
             return res.status(400).json({ error: 'Please set your Steam Trade URL in your profile to accept winnings.' });
         }
 
-        // ** MODIFICATION AS PER USER REQUEST **
-        // 'round.items' are populated Item documents.
-        // The user requested to map these to a specific format before passing to sendWinningTradeOffer.
-        const itemsToWin = round.items.map(item => ({
-            assetId: item.assetId,        // item.assetId from the populated Item document (e.g., from itemSchema)
-            appid: RUST_APP_ID,           // Global constant for Rust App ID
-            contextid: RUST_CONTEXT_ID,   // Global constant for Rust Context ID
-            _price: item.price,           // Additional info, might be useful for logging or if sendWinningTradeOffer evolves
-            _name: item.name,
-            _image: item.image
-        }));
-        // ** END OF MODIFICATION **
-        
+        // 'round.items' is an array of ObjectIds. We need to pass the actual item documents to sendWinningTradeOffer.
+        // However, sendWinningTradeOffer only needs assetIds. The 'round.items' should already be the final list of items for the winner.
+        // If 'round.items' contained full Item documents (it does due to .populate('items')):
+        const itemsToWin = round.items; // These are now populated Item documents
+
         if (!itemsToWin || itemsToWin.length === 0) {
              if (round.taxAmount > 0 && round.totalValue <=0) { // totalValue is already after-tax for winner
                  console.log(`User ${user.username} accepted winnings for round ${round.roundId}, but all value was taxed.`);
@@ -882,12 +858,12 @@ app.post('/api/round/accept-winnings', ensureAuthenticated, sensitiveActionLimit
                  return res.json({ success: true, message: 'Winnings were site tax. No items to send.' });
              }
              // This case should ideally be caught earlier or handled gracefully by sendWinningTradeOffer
-             console.warn(`User ${user.username} accepted winnings for round ${round.roundId}, but no items were found in the round.items array (or itemsToWin after mapping).`);
+             console.warn(`User ${user.username} accepted winnings for round ${round.roundId}, but no items were found in the round.items array.`);
              await Round.updateOne({ _id: round._id }, { $set: { payoutOfferStatus: 'Failed', status: 'completed' } }); // Mark as completed, payout failed
              return res.status(500).json({ error: 'No items found to send for this win. Please contact support.' });
         }
 
-        // Call the sendWinningTradeOffer function with the (potentially) re-formatted itemsToWin array
+        // Call the sendWinningTradeOffer function
         // It will update round status to 'Sent', 'Failed', etc., and main status to 'completed'
         await sendWinningTradeOffer(round, round.winner, itemsToWin);
 
@@ -1256,30 +1232,24 @@ function formatRoundForClient(round) {
     })).filter(p => p.user);
 
     const itemsFormatted = (round.items || []).map(i => {
-        if (!i || typeof i.price !== 'number') { // Check if 'i' is null or price is not a number
-            // If item data is incomplete (e.g., after a specific mapping, or if it's just an ID)
-            // it might not have all properties. We must handle this gracefully.
-            // For this specific formatting function, we expect populated items or items with necessary details.
-             if(i && i.assetId && i.name && i.image) { // If essential details are there but price is missing/invalid
-                return { assetId: i.assetId, name: i.name, image: i.image, price: 0, owner: i.owner?._id || i.owner };
-             }
-            return null; 
+        if (!i || typeof i.price !== 'number') {
+            return null;
         }
         return {
             assetId: i.assetId, name: i.name, image: i.image, price: i.price || 0,
-            owner: i.owner?._id || i.owner // Handle populated vs. ID owner
+            owner: i.owner?._id || i.owner
         };
     }).filter(item => item !== null);
 
 
     let winnerDetails = null;
-    if (round.winner && round.winner.steamId) { // If winner is populated
+    if (round.winner && round.winner.steamId) {
         winnerDetails = {
             id: round.winner._id, steamId: round.winner.steamId,
             username: round.winner.username, avatar: round.winner.avatar
         };
-    } else if (round.winner) { // If winner is just an ID
-         winnerDetails = { id: round.winner.toString() }; // Convert ObjectId to string
+    } else if (round.winner) {
+         winnerDetails = { id: round.winner.toString() };
     }
 
     return {
@@ -1299,31 +1269,29 @@ app.get('/api/round/current', async (req, res) => {
     let roundToFormat = null;
     try {
         if (currentRound?._id) {
-            // Ensure currentRound has all necessary populated fields for formatRoundForClient
             roundToFormat = await Round.findById(currentRound._id)
                  .populate('participants.user', 'steamId username avatar')
-                 .populate('items') // Crucial: items must be populated for formatRoundForClient to get price, name, etc.
+                 .populate('items')
                  .populate('winner', 'steamId username avatar').lean();
-            if (!roundToFormat) currentRound = null; // Invalidate if not found
-            else currentRound = roundToFormat; // Update currentRound with fresh, populated data
+            if (!roundToFormat) currentRound = null;
+            else currentRound = roundToFormat;
         }
         
-        if (!roundToFormat) { // If currentRound was null or became null
+        if (!roundToFormat) {
             roundToFormat = await Round.findOne({ status: { $in: ['active', 'rolling', 'pending', 'completed_pending_acceptance'] } }) // Include new status
-                 .sort({ startTime: -1 }) // Get the latest relevant round
+                 .sort({ startTime: -1 })
                  .populate('participants.user', 'steamId username avatar')
-                 .populate('items') // Crucial population
+                 .populate('items')
                  .populate('winner', 'steamId username avatar').lean();
             
-            if (roundToFormat && !currentRound) { // If we found a round and currentRound was not set
+            if (roundToFormat && !currentRound) {
                  currentRound = roundToFormat;
-                 // Logic to start/resume timer if this newly found round is active
                  if (currentRound.status === 'active' && currentRound.participants?.length > 0 && currentRound.endTime && new Date(currentRound.endTime) > Date.now() && !roundTimer) startRoundTimer(true);
                  else if (currentRound.status === 'active' && currentRound.participants?.length > 0 && !currentRound.endTime && !roundTimer) startRoundTimer(false);
             }
         }
 
-        const formattedData = formatRoundForClient(roundToFormat); // roundToFormat should now be populated
+        const formattedData = formatRoundForClient(roundToFormat);
         if (formattedData) res.json(formattedData);
         else res.status(404).json({ error: 'No active or pending round found.' });
 
@@ -1342,8 +1310,6 @@ app.get('/api/rounds',
         const [rounds, totalCount] = await Promise.all([
             Round.find(queryFilter).sort('-roundId').skip(skip).limit(limit)
                  .populate('winner', 'username avatar steamId')
-                 // No need to populate 'items' for round history list, it could be too much data.
-                 // formatRoundForClient will handle if items are not fully populated for this context.
                  .select('roundId startTime endTime completedTime totalValue winner serverSeed serverSeedHash clientSeed winningTicket provableHash status taxAmount taxedItems payoutOfferId payoutOfferStatus')
                  .lean(),
             Round.countDocuments(queryFilter)
@@ -1359,99 +1325,33 @@ app.post('/api/verify', sensitiveActionLimiter,
     [
         body('roundId').notEmpty().isInt({ min: 1 }).toInt(),
         body('serverSeed').trim().notEmpty().isHexadecimal().isLength({ min: 64, max: 64 }),
-        body('clientSeed').trim().notEmpty().isString().isLength({ min: 1, max: 128 }) // Max length for client seed can be adjusted
+        body('clientSeed').trim().notEmpty().isString().isLength({ min: 1, max: 128 })
     ],
     handleValidationErrors, async (req, res) => {
     const { roundId, serverSeed, clientSeed } = req.body;
     try {
         const round = await Round.findOne({ roundId: roundId, status: {$in: ['completed', 'completed_pending_acceptance']} }) // Check both statuses
-             .populate('participants.user', 'username').populate('winner', 'username').lean(); // Populate for display
+             .populate('participants.user', 'username').populate('winner', 'username').lean();
         if (!round) return res.status(404).json({ error: `Completed round #${roundId} not found.` });
-        
-        // Verify Server Seed Hash
-        const providedServerSeedHash = crypto.createHash('sha256').update(serverSeed).digest('hex');
-        if (providedServerSeedHash !== round.serverSeedHash) {
-            return res.json({ 
-                verified: false, 
-                reason: 'Server Seed Hash mismatch.', 
-                expectedServerSeedHash: round.serverSeedHash, 
-                providedServerSeed: serverSeed, 
-                calculatedHashFromProvidedSeed: providedServerSeedHash 
-            });
+        const providedHash = crypto.createHash('sha256').update(serverSeed).digest('hex');
+        if (providedHash !== round.serverSeedHash) return res.json({ verified: false, reason: 'Server Seed Hash mismatch.', expectedHash: round.serverSeedHash, providedSeed: serverSeed, calculatedHash: providedHash });
+        if (round.serverSeed && round.clientSeed && (serverSeed !== round.serverSeed || clientSeed !== round.clientSeed)) {
+            return res.json({ verified: false, reason: 'Provided seeds do not match official round seeds.', expectedServerSeed: round.serverSeed, expectedClientSeed: round.clientSeed, providedServerSeed: serverSeed, providedClientSeed: clientSeed });
         }
-        
-        // If official seeds are present in DB, compare against them for strict verification
-        if (round.serverSeed && round.clientSeed) {
-            if (serverSeed !== round.serverSeed || clientSeed !== round.clientSeed) {
-                return res.json({ 
-                    verified: false, 
-                    reason: 'Provided seeds do not match official round seeds stored in database.', 
-                    expectedDBServerSeed: round.serverSeed, 
-                    expectedDBClientSeed: round.clientSeed,
-                    providedServerSeed: serverSeed, 
-                    providedClientSeed: clientSeed 
-                });
-            }
-        } else {
-            // If official seeds are not in DB (e.g., older round or different flow), proceed with provided seeds
-            console.warn(`Round ${roundId} does not have official server/client seeds stored in DB for direct comparison. Verifying with provided seeds.`);
-        }
-
         const combinedString = serverSeed + clientSeed;
         const calculatedProvableHash = crypto.createHash('sha256').update(combinedString).digest('hex');
-        
-        if (round.provableHash && calculatedProvableHash !== round.provableHash) {
-            return res.json({ 
-                verified: false, 
-                reason: 'Calculated Provable Hash mismatch against DB.', 
-                expectedDBProvableHash: round.provableHash, 
-                calculatedProvableHashFromProvidedSeeds: calculatedProvableHash, 
-                combinedStringUsed: combinedString 
-            });
-        }
-
+        if (round.provableHash && calculatedProvableHash !== round.provableHash) return res.json({ verified: false, reason: 'Calculated Provable Hash mismatch.', expectedProvableHash: round.provableHash, calculatedProvableHash, combinedString });
         const decimalFromHash = parseInt(calculatedProvableHash.substring(0, 8), 16);
         const totalTickets = round.participants?.reduce((sum, p) => sum + (p?.tickets || 0), 0) ?? 0;
-        
-        if (totalTickets <= 0 && round.participants?.length > 0) { // Allow verification if no participants (e.g. test round) but not if tickets are just zero
-             console.warn(`Round ${roundId} verification: Total tickets is zero, but participants exist. This might indicate an issue.`);
-             // Depending on rules, this could be a verification failure or just a note.
-        } else if (totalTickets <= 0 && round.participants?.length === 0){
-             // If no participants, winning ticket calculation is moot.
-             return res.json({
-                verified: true,
-                message: "Round had no participants. Seeds and hashes verified.",
-                roundId: round.roundId, serverSeed, serverSeedHash: round.serverSeedHash, clientSeed,
-                combinedString, finalHash: calculatedProvableHash,
-                totalTickets: 0, totalValue: round.totalValue,
-                winnerUsername: 'N/A'
-            });
-        }
-        
+        if (totalTickets <= 0) return res.json({ verified: false, reason: 'Round had zero total tickets.' });
         const calculatedWinningTicket = decimalFromHash % totalTickets;
-        
-        if (round.winningTicket !== undefined && calculatedWinningTicket !== round.winningTicket) {
-            return res.json({ 
-                verified: false, 
-                reason: 'Calculated winning ticket mismatch against DB.', 
-                calculatedTicket: calculatedWinningTicket, 
-                actualWinningTicketInDB: round.winningTicket, 
-                provableHashUsed: calculatedProvableHash, 
-                totalTickets 
-            });
-        }
-
-        // If all checks pass or are consistent
+        if (calculatedWinningTicket !== round.winningTicket) return res.json({ verified: false, reason: 'Calculated winning ticket mismatch.', calculatedTicket: calculatedWinningTicket, actualWinningTicket: round.winningTicket, provableHashUsed: calculatedProvableHash, totalTickets });
         res.json({
-            verified: true,
-            message: "Verification successful based on provided seeds and database records.",
-            roundId: round.roundId, serverSeed, serverSeedHash: round.serverSeedHash, clientSeed,
+            verified: true, roundId: round.roundId, serverSeed, serverSeedHash: round.serverSeedHash, clientSeed,
             combinedString, finalHash: calculatedProvableHash, winningTicket: calculatedWinningTicket,
-            actualWinningTicketInDB: round.winningTicket, // Include actual from DB for transparency
             totalTickets, totalValue: round.totalValue,
             winnerUsername: round.winner?.username || 'N/A'
         });
-
     } catch (err) {
         console.error(`Error verifying round ${roundId}:`, err);
         res.status(500).json({ error: 'Server error during verification.' });
@@ -1479,26 +1379,25 @@ io.on('connection', (socket) => {
              if (currentRound?._id) {
                  roundToSend = await Round.findById(currentRound._id)
                        .populate('participants.user', 'steamId username avatar')
-                       .populate('items') // Ensure items are populated
+                       .populate('items')
                        .populate('winner', 'steamId username avatar').lean();
                  if (!roundToSend) currentRound = null;
-                 else currentRound = roundToSend; // Keep currentRound as the single source of truth, freshly populated
+                 else currentRound = roundToSend;
              }
              
-             if (!roundToSend) { // If currentRound was null or became invalid
-                 roundToSend = await Round.findOne({ status: { $in: ['active', 'rolling', 'pending', 'completed_pending_acceptance'] } }) 
+             if (!roundToSend) {
+                 roundToSend = await Round.findOne({ status: { $in: ['active', 'rolling', 'pending', 'completed_pending_acceptance'] } }) // Include new status
                        .sort({ startTime: -1 })
                        .populate('participants.user', 'steamId username avatar')
-                       .populate('items') // Ensure items are populated
+                       .populate('items')
                        .populate('winner', 'steamId username avatar').lean();
-                 if (roundToSend && !currentRound) { // If found a round and currentRound wasn't set (e.g., on initial connect)
+                 if (roundToSend && !currentRound) {
                       currentRound = roundToSend;
-                      // Timer logic if applicable
                       if (currentRound.status === 'active' && currentRound.participants?.length > 0 && currentRound.endTime && new Date(currentRound.endTime) > Date.now() && !roundTimer) startRoundTimer(true);
                       else if (currentRound.status === 'active' && currentRound.participants?.length > 0 && !currentRound.endTime && !roundTimer) startRoundTimer(false);
                  }
              }
-            const formattedData = formatRoundForClient(roundToSend); // Pass the populated round
+            const formattedData = formatRoundForClient(roundToSend);
             if (formattedData) socket.emit('roundData', formattedData);
             else socket.emit('noActiveRound');
         } catch (err) {
@@ -1595,4 +1494,4 @@ app.use((err, req, res, next) => {
     res.status(status).json({ error: message });
 });
 
-console.log("app.js updated with trade offer logic fixes. Review item formatting in trade offer creation.");
+console.log("app.js updated. Review trade offer logic and event timing.");
