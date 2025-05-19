@@ -461,54 +461,13 @@ code { /* General code tag styling */
 .btn-success { /* Inherits .btn */
      background-color: var(--success-color);
      color: white;
-     border-color: var(--success-color); /* Use this for consistency */
+     border-color: var(--success-color);
 }
 .btn-success:hover:not(:disabled) {
      background-color: #45a049; /* Darker green */
      border-color: #45a049;
      box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
 }
-
-/* --- ADDED: Styling for the Winning Offer Button (acceptWinningOfferBtn) --- */
-#acceptWinningOfferBtn {
-    background-color: var(--success-color);
-    color: white;
-    border: 1px solid var(--success-color); /* Consistent with .btn-success */
-    padding: 10px 15px;
-    font-size: 1rem;
-    /* margin-top is already set inline in HTML, but can be standardized here if preferred */
-    display: inline-flex; /* from .btn */
-    align-items: center; /* from .btn */
-    justify-content: center; /* from .btn */
-    animation: pulseButton 1.5s infinite ease-in-out;
-}
-
-#acceptWinningOfferBtn:hover:not(:disabled) {
-    background-color: #45a049; /* Consistent with .btn-success:hover */
-    border-color: #45a049; /* Consistent with .btn-success:hover */
-    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4); /* Consistent */
-    transform: translateY(-2px); /* Consistent with .btn:hover */
-}
-
-#acceptWinningOfferBtn i {
-    margin-left: 8px;
-    font-size: 0.9em; /* Slightly smaller icon if needed */
-}
-
-/* Keyframe for button pulse - can be shared if other buttons need it */
-@keyframes pulseButton {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.05); box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4); }
-}
-
-#acceptWinningOfferBtn.ready { /* Optional class for when offer is ready */
-    animation: pulseButton 1s infinite ease-in-out, readyGlow 1.2s infinite alternate;
-}
-@keyframes readyGlow {
-    from { box-shadow: 0 0 5px var(--success-color), 0 0 10px var(--success-color); }
-    to { box-shadow: 0 0 15px #69f0ae, 0 0 25px #69f0ae; }
-}
-
 
 /*=========================
  MAIN CONTENT & SECTIONS
@@ -584,23 +543,19 @@ code { /* General code tag styling */
     position: relative;
     overflow: hidden;
     z-index: 5;
-    transition: height 0.5s ease, min-height 0.5s ease, background 0.3s ease; /* Keep original transition */
+    transition: height 0.5s ease, min-height 0.5s ease, background 0.3s ease;
     flex-wrap: wrap;
     flex-shrink: 0;
 }
 
-/* MODIFIED: Jackpot Header Roulette Mode Transition */
 .jackpot-header.roulette-mode {
     background: linear-gradient(135deg, var(--background-dark), var(--background-medium));
-    height: 140px; /* Or desired height for roulette view */
-    min-height: 140px; /* Match height */
-    align-items: center; /* Vertically center content if header shrinks */
-    padding-top: 0; /* Remove padding if content is centered differently */
+    height: 140px;
+    min-height: 140px;
+    align-items: center;
+    padding-top: 0;
     padding-bottom: 0;
-    /* Make transition faster and more direct */
-    transition: height 0.3s ease, min-height 0.3s ease, background 0.3s ease;
 }
-
 
 .jackpot-timer, .jackpot-value, .jackpot-stats {
     min-width: 170px;
@@ -768,7 +723,7 @@ code { /* General code tag styling */
 .congrats { font-size: 1.2rem !important; color: var(--primary-color); font-weight: 700; margin-top: 5px !important; text-transform: uppercase; letter-spacing: 2px; animation: colorPulse 3s infinite; text-shadow: 0 0 8px currentColor; }
 @keyframes colorPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 
-/* .return-btn { display: none !important; } /* If not used, can be removed from HTML too */ */
+.return-btn { display: none !important; /* If not used, can be removed from HTML too */ }
 
 .confetti-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 18; }
 .confetti-piece {
@@ -924,7 +879,8 @@ code { /* General code tag styling */
 .age-verification .modal-content { max-width: 500px; }
 #depositModal .modal-content { max-width: 900px; }
 #tradeUrlModal .modal-content { max-width: 600px; }
-.winning-history-modal .modal-content { max-width: 800px; } /* For Winning History */
+.winning-history-modal .modal-content { max-width: 800px; }
+.accept-winnings-modal .modal-content { max-width: 550px; } /* New: Accept Winnings Modal Size */
 
 
 @keyframes modalIn {
@@ -1148,7 +1104,6 @@ code { /* General code tag styling */
 /* FAQ Page */
 #faq-page .content-section { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 20px; margin-bottom: 20px; transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
 #faq-page .content-section:last-child { border-bottom: 1px solid var(--border-color); }
-#faq-page .content-section:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
 #faq-page .content-section-title { color: var(--secondary-color); cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-left: none; padding-left: 0; }
 #faq-page .content-section-title::after { content: '+'; font-size: 1.5rem; color: var(--primary-color); transition: transform 0.3s ease; }
 #faq-page .content-section.active .content-section-title::after { content: '-'; transform: rotate(180deg); }
@@ -1211,15 +1166,18 @@ code { /* General code tag styling */
 }
 .trade-link:hover { color: var(--secondary-color); }
 .trade-link.pending i { color: var(--warning-color); }
+.trade-link i { font-size: 0.9em; } /* Icon size for trade links */
 
 .trade-status {
-    font-weight: 600; padding: 3px 8px; border-radius: 4px; font-size: 0.85em;
-    display: inline-flex; align-items: center; gap: 5px;
+    font-weight: 600; padding: 4px 10px; border-radius: 12px; /* More pill-like */
+    font-size: 0.8em; display: inline-flex; align-items: center; gap: 6px;
+    text-transform: uppercase; letter-spacing: 0.5px;
 }
-.trade-status.accepted { color: var(--success-color); background-color: rgba(76, 175, 80, 0.15); border: 1px solid rgba(76, 175, 80, 0.3); }
-.trade-status.failed { color: var(--error-color); background-color: rgba(244, 67, 54, 0.15); border: 1px solid rgba(244, 67, 54, 0.3); }
-.trade-status.pending { color: var(--warning-color); background-color: rgba(255, 193, 7, 0.15); border: 1px solid rgba(255, 193, 7, 0.3); }
-.trade-status i { font-size: 0.9em; }
+.trade-status.accepted { color: #ffffff; background-color: var(--success-color); border: 1px solid var(--success-color); box-shadow: 0 0 8px rgba(76, 175, 80, 0.3); }
+.trade-status.failed, .trade-status.declined, .trade-status.canceled, .trade-status.expired { color: #ffffff; background-color: var(--error-color); border: 1px solid var(--error-color); box-shadow: 0 0 8px rgba(244, 67, 54, 0.3); }
+.trade-status.sent, .trade-status.escrow, .trade-status.pendingconfirmation, .trade-status.unknown { color: var(--background-dark); background-color: var(--warning-color); border: 1px solid var(--warning-color); box-shadow: 0 0 8px rgba(255, 193, 7, 0.3); }
+.trade-status.info { color: var(--text-primary); background-color: var(--info-color); border: 1px solid var(--info-color); box-shadow: 0 0 8px rgba(33, 150, 243, 0.3); }
+.trade-status i { font-size: 1em; /* Slightly larger icon within status */ }
 
 
 /* Pagination */
@@ -1232,30 +1190,32 @@ code { /* General code tag styling */
 
 
 /* --- ADDED: Deposit Modal Footer Enhancements --- */
-#acceptDepositOfferBtn { /* This is for the DEPOSIT modal, not the winner one */
+#acceptDepositOfferBtn { /* Also used for Accept Winnings button */
     background-color: var(--success-color);
     color: white;
     border: 1px solid var(--success-color);
-    padding: 10px 15px; /* Match other .btn-success */
-    font-size: 1rem; /* Match other .btn-success */
-    display: inline-flex; /* from .btn */
-    align-items: center; /* from .btn */
-    justify-content: center; /* from .btn */
+    padding: 10px 15px;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
-#acceptDepositOfferBtn:hover:not(:disabled) {
+#acceptDepositOfferBtn:hover:not(:disabled),
+#acceptWinningsOnSteamBtn:hover:not(:disabled) { /* Apply hover to both */
     background-color: #45a049;
     border-color: #45a049;
     box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
     transform: translateY(-2px);
 }
 
-#acceptDepositOfferBtn i {
+#acceptDepositOfferBtn i,
+#acceptWinningsOnSteamBtn i { /* Apply icon style to both */
     margin-left: 8px;
     font-size: 0.9em;
 }
 
-.deposit-status-text {
+.deposit-status-text { /* Reused for acceptWinningsStatusText */
     flex-grow: 1;
     text-align: left;
     padding: 0 10px;
@@ -1273,10 +1233,24 @@ code { /* General code tag styling */
 .deposit-status-text.error { color: var(--error-color); }
 
 
-/* --- ADDED: Pending Offer Indicators (already existed, ensure no duplication) --- */
-/* .pending-offer-indicator is defined earlier */
+/* --- ADDED: Pending Offer Indicators --- */
+.pending-offer-indicator {
+    display: inline-block;
+    color: var(--warning-color);
+    font-size: 1.1rem;
+    cursor: help;
+    animation: pulseWarning 1.5s infinite ease-in-out;
+    vertical-align: middle;
+    line-height: 1;
+}
 
-/* --- ADDED: Footer (already existed, ensure no duplication) --- */
+/* Defined earlier, ensure it's not duplicated:
+@keyframes pulseWarning {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: 0.7; }
+} */
+
+/* --- ADDED: Footer --- */
 .main-footer {
     background-color: var(--background-dark);
     color: var(--text-secondary);
@@ -1500,8 +1474,7 @@ code { /* General code tag styling */
 
 @media (min-width: 1200px) {
     .jackpot-and-chat-container {
-         Removed left positioning to allow natural centering via parent .container 
-         position: relative; 
-         right: 150px; 
+        position: relative;
+        left: 150px;  
     }
 }
