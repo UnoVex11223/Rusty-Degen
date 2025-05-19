@@ -1,20 +1,3 @@
-// main.js - Rust Jackpot Frontend Logic
-// Modifications:
-// - Added "Accept Winnings" modal functionality.
-// - Added "Winning History" modal functionality.
-// - Removed test functions (testRouletteAnimation, testDeposit) and associated UI.
-// - Updated profile modal to display total deposited/won.
-// - Removed display of skin names, showing only image and price.
-// - Retained profile dropdown and modal logic from previous updates.
-// - ADDED: Frontend chat functionality, integrated with socket.io.
-// - REMOVED: "Details" button from Provably Fair round history.
-// - ADDED: Frontend visual cooldown for chat send button.
-// - APPLIED USER REQUESTED FIXES for issue 1 and issue 2.
-// - USER REQUEST: Delay "You Won" pop-up until animation finishes.
-// - USER REQUEST: Ensure "Accept on Steam" button directs to Steam trade.
-
-// Ensure Socket.IO client library is loaded before this script
-
 // Establish Socket.IO connection
 const socket = io();
 
