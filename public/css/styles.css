@@ -296,9 +296,11 @@ code { /* General code tag styling */
     display: none; /* JS toggles this to 'block' */
     position: absolute;
     top: calc(100% + 10px); /* Position below the user-profile */
+    left: 50%; /* Start from center of profile container */
+    transform: translateX(-50%); /* Center the dropdown */
     /* Align right edge of dropdown with right edge of profile trigger for typical desktop view */
     right: 0;
-    left: auto; /* Override previous left if any */
+    left: auto; /* Override previous left */
     transform: none; /* Reset transform if aligning right */
     z-index: 1000;
     background-color: var(--background-dark);
@@ -309,9 +311,12 @@ code { /* General code tag styling */
     overflow: hidden;
 }
 
-/* Ensure user-profile-container is wide enough or adjust dropdown positioning if profile button is small */
 .user-profile-container .dropdown-menu {
-     /* For right-aligned profile (current setup), align dropdown's right to container's right */
+    /* If profile container is small, aligning left of container to left of dropdown is better */
+    /* Example: For left-aligned profile button */
+    /* left: 0; right: auto; transform: none; */
+
+    /* For right-aligned profile (current setup), align dropdown's right to container's right */
      left: auto; right: 0; transform: none;
 }
 
@@ -329,15 +334,12 @@ code { /* General code tag styling */
 .dropdown-item:hover .icon { color: var(--primary-color); }
 
 /* Logout button specific styling */
-#logoutButton { /* Applied to the button element directly */
+#logoutButton {
     border-top: 1px solid var(--border-color); margin-top: 5px;
-    color: var(--error-color) !important; /* Ensure high specificity */
-}
-#logoutButton .icon { color: var(--error-color) !important; }
-#logoutButton:hover {
-    background-color: rgba(244, 67, 54, 0.1) !important;
     color: var(--error-color) !important;
 }
+#logoutButton .icon { color: var(--error-color) !important; }
+#logoutButton:hover { background-color: rgba(244, 67, 54, 0.1) !important; color: var(--error-color) !important; }
 #logoutButton:hover .icon { color: var(--error-color) !important; }
 
 /*=========================
@@ -365,10 +367,10 @@ code { /* General code tag styling */
 }
 .btn:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 230, 118, 0.3); /* Neon green shadow for primary actions */
+    box-shadow: 0 5px 15px rgba(0, 230, 118, 0.3);
 }
 .btn:disabled {
-    background-color: var(--background-light) !important; /* Ensure important if overriding specific button styles */
+    background-color: var(--background-light) !important;
     color: var(--text-secondary) !important;
     cursor: not-allowed;
     transform: none !important;
@@ -381,37 +383,33 @@ code { /* General code tag styling */
 }
 
 /* Login Button */
-#loginButton { /* This is a .btn, specific styles apply */
-    padding: 8px 15px;
+#loginButton {
+    padding: 8px 15px; /* Slightly adjusted */
     font-size: 0.9rem;
     background-color: var(--success-color); /* Steam green */
     color: white;
     box-shadow: var(--shadow-sm);
 }
-#loginButton:hover:not(:disabled) {
-    background-color: #45a049; /* Darker Steam green */
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-md); /* Slightly more pronounced shadow on hover */
-}
+#loginButton:hover:not(:disabled) { background-color: #45a049; transform: translateY(-1px); box-shadow: var(--shadow-md); }
 #loginButton i { margin-right: 6px; /* Keep margin for steam icon */ }
 
 /* Primary Button */
 .btn-primary {
     background-color: var(--primary-color);
-    color: var(--background-dark); /* Dark text on light green button for contrast */
+    color: var(--background-dark);
 }
 .btn-primary:hover:not(:disabled) { background-color: var(--primary-dark); }
 
 /* Deposit Button (Main Trigger & Inside Modal Request) */
-.btn-deposit { /* This is #showDepositModal */
+.btn-deposit {
     background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
     color: var(--background-dark);
     font-size: 1.2rem;
     padding: 12px 30px;
     border-radius: 8px;
     box-shadow: 0 4px 20px rgba(0, 230, 118, 0.4);
-    position: relative; /* For pseudo-elements like shine */
-    overflow: hidden; /* Contain shine effect */
+    position: relative;
+    overflow: hidden;
 }
 .btn-deposit:before { /* Shine effect */
     content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
@@ -419,34 +417,29 @@ code { /* General code tag styling */
     transition: left var(--transition-slow) ease;
 }
 .btn-deposit:hover:not(:disabled):before { left: 100%; }
-
-/* Specific style for disabled state of the main deposit button */
-.btn-deposit.deposit-disabled,
-#showDepositModal:disabled { /* Target by ID if it's also disabled */
-     background: var(--background-light) !important; /* Important to override gradient */
+.btn-deposit.deposit-disabled { /* Specific style for disabled state */
+     background: var(--background-light);
      opacity: 0.6;
      cursor: not-allowed;
-     box-shadow: none !important;
-     color: var(--text-secondary) !important;
+     box-shadow: none;
+     color: var(--text-secondary);
 }
-.btn-deposit.deposit-disabled:before,
-#showDepositModal:disabled:before {
-    display: none; /* Hide shine effect when disabled */
-}
+.btn-deposit.deposit-disabled:before { display: none; } /* Hide shine */
+
 
 /* Secondary Button */
 .btn-secondary {
     background-color: var(--background-light);
     color: var(--text-primary);
     border: 1px solid var(--border-color);
-    /* border-radius: 8px; */ /* Default is 4px from .btn, uncomment if specific 8px needed */
-    font-size: 0.9rem; /* Slightly smaller for secondary actions */
+    border-radius: 8px;
+    font-size: 0.9rem;
     padding: 8px 15px;
 }
 .btn-secondary:hover:not(:disabled) {
-    background-color: var(--background-medium); /* Subtle change */
-    transform: translateY(-2px); /* Keep hover effect consistent */
-    box-shadow: var(--shadow-md); /* Standard shadow for secondary */
+    background-color: var(--background-medium);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
 }
 
 /* Small Button Variant */
@@ -456,33 +449,25 @@ code { /* General code tag styling */
 }
 
 /* Specific Buttons from History/Verify */
-.btn-details { /* This class is likely unused if details button was removed */
+.btn-details { /* Inherits .btn, .btn-secondary, .btn-small */ margin-right: 5px; margin-bottom: 5px; vertical-align: middle; }
+.btn-verify { /* Inherits .btn, .btn-secondary, .btn-small */
     margin-right: 5px; margin-bottom: 5px; vertical-align: middle;
+    background-color: var(--secondary-color);
+    color: var(--background-dark); border-color: var(--secondary-color);
 }
-.btn-verify { /* Used in Provably Fair page */
-    margin-right: 5px; margin-bottom: 5px; vertical-align: middle;
-    background-color: var(--secondary-color); /* Orange */
-    color: var(--background-dark);
-    border-color: var(--secondary-color); /* Match background */
-}
-.btn-verify:hover:not(:disabled) {
-    background-color: var(--secondary-dark);
-    border-color: var(--secondary-dark);
-    box-shadow: 0 5px 15px rgba(255, 145, 0, 0.3); /* Orange shadow */
-}
+.btn-verify:hover:not(:disabled) { background-color: var(--secondary-dark); border-color: var(--secondary-dark); }
 
-/* Success Button (e.g., for "Accept on Steam" if it were a standalone button) */
-.btn-success {
-     background-color: var(--success-color); /* Green */
+/* Success Button (for Accept on Steam) */
+.btn-success { /* Inherits .btn */
+     background-color: var(--success-color);
      color: white;
-     border-color: var(--success-color); /* Match background */
+     border-color: var(--success-color);
 }
 .btn-success:hover:not(:disabled) {
      background-color: #45a049; /* Darker green */
      border-color: #45a049;
-     box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4); /* Green shadow */
+     box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
 }
-
 
 /*=========================
  MAIN CONTENT & SECTIONS
@@ -492,14 +477,14 @@ code { /* General code tag styling */
     padding: 30px 0;
 }
 
-.content-card { /* Used for static pages like About, TOS, FAQ, Fair */
+.content-card {
     max-width: 900px;
     margin: 30px auto;
     background: linear-gradient(135deg, var(--background-medium), var(--background-light));
     border-radius: 12px;
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border-color);
-    overflow: hidden; /* Important if content might exceed padding */
+    overflow: hidden;
     padding: 30px;
 }
 
@@ -515,32 +500,30 @@ code { /* General code tag styling */
 
 /* Jackpot Page Layout */
 #home-page {
-    /* .container parent handles overall centering */
+    /* The .container parent of #home-page handles overall centering */
 }
 
 .jackpot-and-chat-container {
     display: flex;
-    /* justify-content: center; /* Center if there's extra space */
-    /* align-items: flex-start; /* Align items to the top */
+    justify-content: center;
+    align-items: flex-start; /* Changed from stretch to allow chat fixed height */
     gap: 20px;
-    /* Default: jackpot on left, chat on right */
 }
 
 .jackpot-section {
     background-color: var(--background-medium);
     border-radius: 12px;
-    overflow: hidden; /* Crucial for child elements like roulette header */
+    overflow: hidden;
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border-color);
-    position: relative; /* For absolute positioned children like roulette */
-    width: 680px; /* Fixed width for jackpot section */
-    /* max-width: calc(100% - 300px); Removed, fixed width is simpler with flexbox */
-    flex-shrink: 0; /* Prevent jackpot section from shrinking */
-    display: flex; /* Use flex to manage children layout */
-    flex-direction: column; /* Stack header, deposit button, items vertically */
+    position: relative;
+    width: 680px;
+    max-width: calc(100% - 300px); /* Max width considering chat width + gap */
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
 }
 
-/* styles.css - Part 2 of 2 */
 
 /*=========================
  JACKPOT HEADER & TIMER
@@ -548,113 +531,89 @@ code { /* General code tag styling */
 
 .jackpot-header {
     display: flex;
-    justify-content: center; /* Should be space-around or space-between for better distribution */
+    justify-content: center;
     align-items: center;
-    gap: 20px; /* Reduced gap slightly */
-    padding: 20px; /* Uniform padding */
+    gap: 30px;
+    padding: 25px 20px;
     background: linear-gradient(135deg, var(--background-medium), var(--background-light));
     border-bottom: 1px solid var(--border-color);
-    /* border-radius: 12px 12px 0 0; Removed if jackpot-section handles top radius */
+    border-radius: 12px 12px 0 0;
     box-shadow: var(--shadow-sm);
-    min-height: 160px; /* Adjusted min-height */
-    position: relative; /* For absolute positioned roulette */
-    overflow: hidden;   /* To contain elements like roulette */
-    z-index: 5;         /* Ensure it's above items section but below modals */
-    transition: height 0.4s ease, min-height 0.4s ease, background 0.3s ease, padding 0.4s ease;
-    flex-wrap: wrap;    /* Allow wrapping on smaller screens if needed */
-    flex-shrink: 0;     /* Prevent this section from shrinking */
+    min-height: 170px;
+    position: relative;
+    overflow: hidden;
+    z-index: 5;
+    transition: height 0.5s ease, min-height 0.5s ease, background 0.3s ease;
+    flex-wrap: wrap;
+    flex-shrink: 0;
 }
 
 .jackpot-header.roulette-mode {
-    /* When roulette is active, header shrinks and changes background */
-    background: linear-gradient(135deg, var(--background-dark), var(--background-medium)); /* Darker for roulette */
-    height: 120px; /* Compact height for roulette */
-    min-height: 120px;
-    padding-top: 10px; /* Reduced padding */
-    padding-bottom: 10px;
-    align-items: center; /* Ensure roulette itself is centered if header content is hidden */
+    background: linear-gradient(135deg, var(--background-dark), var(--background-medium));
+    height: 140px;
+    min-height: 140px;
+    align-items: center;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 .jackpot-timer, .jackpot-value, .jackpot-stats {
-    min-width: 160px; /* Minimum width for each block */
-    flex-basis: 0;    /* Allow flex-grow to distribute space */
+    min-width: 170px;
+    flex-basis: 0;
     flex-grow: 1;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
-    padding: 10px 5px; /* Reduced padding slightly */
-    transition: opacity 0.3s ease, transform 0.3s ease; /* For fade out during roulette mode */
+    padding: 15px 5px;
 }
 
 
-.jackpot-value h2 { /* Pot Value Text */
-    font-size: 3.8rem; /* Slightly reduced */
-    font-weight: 700;
-    color: var(--primary-color);
-    margin: 0;
+.jackpot-value h2 {
+    font-size: 4.2rem; font-weight: 700; color: var(--primary-color); margin: 0;
     font-family: var(--font-mono);
     line-height: 1.1;
     animation: valueGlow 1.8s infinite ease-in-out;
-    /* transition: font-size 0.3s ease; For roulette mode if needed */
 }
 @keyframes valueGlow {
     0%, 100% { text-shadow: 0 0 8px rgba(0, 230, 118, 0.4); }
     50% { text-shadow: 0 0 20px var(--primary-color), 0 0 10px var(--primary-light); }
 }
-/* .jackpot-header.roulette-mode .jackpot-value h2 { font-size: 2.5rem; } Example if value shrinks */
-
 
 .timer-circle {
-    position: relative;
-    width: 110px; /* Slightly reduced */
-    height: 110px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 0 auto 8px auto; /* Adjusted margin */
+    position: relative; width: 130px; height: 130px; display: flex;
+    justify-content: center; align-items: center; margin: 0 auto 10px auto;
 }
 .timer-progress { width: 100%; height: 100%; transform: rotate(-90deg); }
-.timer-background, .timer-foreground { fill: none; stroke-width: 7px; /* Slightly thinner */ }
+.timer-background, .timer-foreground { fill: none; stroke-width: 8px; }
 .timer-background { stroke: var(--background-light); }
 .timer-foreground {
-    stroke: var(--primary-color); stroke-linecap: round;
-    stroke-dashoffset: 0; /* Initial offset */
-    transition: stroke-dashoffset 1s linear; /* Smooth transition for countdown */
-    filter: drop-shadow(0 0 3px var(--primary-color)); /* Softer glow */
+    stroke: var(--primary-color); stroke-linecap: round; stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1s linear; filter: drop-shadow(0 0 4px var(--primary-color));
 }
 .timer-text {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    font-size: 3.2rem; /* Adjusted size */
-    font-weight: 700; color: var(--primary-color);
+    font-size: 3.8rem; font-weight: 700; color: var(--primary-color);
     font-family: var(--font-mono);
-    transition: color 0.3s ease, text-shadow 0.3s ease; /* For urgent pulse */
 }
-/* .jackpot-header.roulette-mode .timer-circle { display: none; } Hide timer visuals in roulette mode */
-
 .timer-pulse { animation: timerPulse 2s infinite ease-in-out; }
 .urgent-pulse {
-    animation: urgentPulse 0.6s infinite ease-in-out alternate; /* Alternate for better pulse */
+    animation: urgentPulse 0.6s infinite ease-in-out;
     color: var(--error-color) !important;
-    text-shadow: 0 0 5px rgba(244, 67, 54, 0.6);
+    text-shadow: 0 0 5px rgba(244, 67, 54, 0.5);
 }
 @keyframes timerPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
-@keyframes urgentPulse {
-    0% { opacity: 1; transform: scale(1); }
-    100% { opacity: 0.8; transform: scale(1.08); } /* More noticeable pulse */
-}
+@keyframes urgentPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.08); } }
 
-.stat-value { /* Participant Count Text */
-    font-size: 3.2rem; /* Adjusted size */
-    font-weight: 700; color: var(--text-primary);
-    display: block; line-height: 1.1; margin-top: 10px; /* Ensure consistent spacing */
+.stat-value {
+    font-size: 3.8rem; font-weight: 700; color: var(--text-primary);
+    display: block; line-height: 1.1; margin-top: 10px;
 }
-/* .jackpot-header.roulette-mode .jackpot-stats { display: none; } Hide stats in roulette mode */
 
 .value-label, .timer-label, .stat-label {
-    margin-top: 8px; /* Consistent margin */
-    font-size: 0.85rem; /* Slightly smaller label */
+    margin-top: 10px;
+    font-size: 0.9rem;
     letter-spacing: 1px;
     color: var(--text-secondary);
     text-transform: uppercase;
@@ -665,140 +624,116 @@ code { /* General code tag styling */
  ROULETTE ANIMATION
  =========================*/
 
-.inline-roulette { /* This is the main container for the roulette strip */
+.inline-roulette {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: transparent; /* Should be transparent to show header bg or its own if defined */
-    z-index: 10; /* Above header content but below modals */
-    overflow: hidden;
-    /* border-radius: 12px 12px 0 0; /* Matches jackpot-section if it's full header */
-    display: flex; /* Centering the .roulette-container inside */
+    background: transparent; z-index: 10; overflow: hidden;
+    border-radius: 12px 12px 0 0;
+    display: flex;
     align-items: center;
     justify-content: center;
-    /* transition: opacity 0.5s ease, transform 0.5s ease; Added for smooth appearance */
 }
-.roulette-container { /* The actual scrolling part's viewport */
-    position: relative; width: 95%; /* Use percentage for responsiveness */
-    max-width: 1200px; /* Max width of the roulette strip itself */
-    height: 90px; /* Height of the roulette visual items */
-    overflow: hidden;
-    background-color: rgba(13, 17, 23, 0.75); /* Semi-transparent dark background */
-    border-radius: 8px;
+.roulette-container {
+    position: relative; width: 90%;
+    max-width: 1000px;
+    height: 90px; overflow: hidden;
+    background-color: rgba(13, 17, 23, 0.7); border-radius: 8px;
     border: 1px solid var(--border-color);
-    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(2px); /* Frosted glass effect */
+    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6); backdrop-filter: blur(2px);
 }
-.roulette-track { /* The long strip of items that moves */
+.roulette-track {
     display: flex; position: absolute; left: 0; top: 0; height: 100%;
-    /* Padding to center the first/last "visible" item under the ticker */
-    padding-left: calc(50% - 30px); /* Half of a typical item width (e.g. 60px item / 2) */
-    padding-right: calc(50% - 30px);
-    will-change: transform; /* Optimize for transform animations */
-    transition: none; /* Animation handled by JS rAF */
+    padding-left: calc(50% - 45px); /* Half of item width */
+    padding-right: calc(50% - 45px); /* Half of item width */
+    will-change: transform; transition: none;
 }
 
 .roulette-item {
-    flex: 0 0 auto; /* Don't grow or shrink, use defined width */
-    width: 60px;  /* Width of each item image/avatar */
-    height: 60px; /* Height of each item image/avatar */
-    margin: 15px 5px; /* Vertical centering (90px container - 60px item = 30px / 2 = 15px top/bottom), horizontal spacing */
-    background: rgba(30, 35, 40, 0.85);
+    flex: 0 0 auto;
+    width: 90px; /* Item width */
+    height: 80px; /* Item height */
+    margin: 5px; /* Margin around item */
+    background: rgba(30, 35, 40, 0.8);
     border-radius: 6px;
-    box-shadow: var(--shadow-sm); /* Softer shadow for many items */
-    overflow: hidden;
-    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-    border: 2px solid transparent; /* Base border, color changed by JS or winner highlight */
-    display: flex; align-items: center; justify-content: center;
-    padding: 0; /* Image fills item */
-}
-.roulette-item:hover {
-    transform: scale(1.1); /* Slight scale on hover */
     box-shadow: var(--shadow-md);
-    z-index: 1;
+    overflow: hidden;
+    transition: transform var(--transition-medium), box-shadow var(--transition-medium);
+    border: 2px solid transparent;
+    position: relative;
+    backface-visibility: hidden; /* Improve rendering performance */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0; /* Remove padding if image is main content */
 }
 
-.roulette-avatar { /* The image inside a roulette item */
-    display: block; width: 100%; height: 100%;
-    object-fit: cover; /* Cover ensures image fills, might crop */
-    /* object-fit: contain; /* Contain ensures image is fully visible, might leave space */
-    /* transition: transform 0.2s ease; Optional: zoom avatar on item hover */
-    border-radius: 0; /* Avatar itself shouldn't have radius if item has it */
+.roulette-item:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: var(--shadow-lg);
+    z-index: 1; /* Bring to front on hover */
 }
-/* .roulette-item:hover .roulette-avatar { transform: scale(1.05); } */
 
+.roulette-avatar {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-medium);
+    border: none; /* Remove border from avatar if item has one */
+    border-radius: 0; /* Remove border-radius if item handles it */
+}
 
-/* Winner Highlight (dynamically applied by JS) */
-/* Base style in JS, animation here or in JS injected style */
-/* .winner-highlight animation is defined in JS via injected <style> tag for dynamic color */
+.roulette-item:hover .roulette-avatar { transform: scale(1.1); }
 
+.roulette-item.winner-highlight {
+    /* Styles applied via JS in finalizeSpin */
+}
 
-.roulette-ticker { /* The vertical line/arrow indicating the center */
+.roulette-ticker {
     position: absolute; top: 0; left: 50%; transform: translateX(-50%);
-    width: 4px; height: 100%;
-    z-index: 15; /* Above items but below winner info box */
-    pointer-events: none; /* Doesn't interfere with clicks */
+    width: 4px; height: 100%; z-index: 15; pointer-events: none;
 }
 .ticker-line {
     width: 100%; height: 100%;
-    background: linear-gradient(to bottom, rgba(0,230,118,0), var(--primary-color) 40%, var(--primary-color) 60%, rgba(0,230,118,0));
-    box-shadow: 0 0 10px var(--primary-color); /* Glow for the line */
+    background: linear-gradient(to bottom, rgba(0,230,118,0), rgba(0,230,118,0.8) 40%, rgba(0,230,118,0.8) 60%, rgba(0,230,118,0));
+    box-shadow: 0 0 10px rgba(0, 230, 118, 0.7);
 }
-.roulette-ticker::before, .roulette-ticker::after { /* Arrowheads for the ticker */
+.roulette-ticker::before, .roulette-ticker::after {
     content: ''; position: absolute; left: 50%; transform: translateX(-50%);
-    width: 0; height: 0; border-left: 7px solid transparent; border-right: 7px solid transparent; /* Slightly larger arrow */
-    filter: drop-shadow(0 0 3px var(--primary-color));
+    width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent;
+    filter: drop-shadow(0 0 3px rgba(0, 230, 118, 0.5));
 }
-.roulette-ticker::before { top: -7px; border-bottom: 10px solid var(--primary-color); } /* Pointing down */
-.roulette-ticker::after { bottom: -7px; border-top: 10px solid var(--primary-color); } /* Pointing up */
+.roulette-ticker::before { top: -6px; border-bottom: 8px solid rgba(0, 230, 118, 0.8); }
+.roulette-ticker::after { bottom: -6px; border-top: 8px solid rgba(0, 230, 118, 0.8); }
 
-.winner-info { /* Box that appears over roulette to show winner details */
+.winner-info {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: radial-gradient(circle, rgba(20, 25, 30, 0.96), rgba(13, 17, 23, 0.99)); /* Darker, more opaque */
+    background: radial-gradient(circle, rgba(20, 25, 30, 0.95), rgba(13, 17, 23, 0.98));
     padding: 10px; display: flex; flex-direction: column; justify-content: center;
     align-items: center; text-align: center; box-sizing: border-box;
-    z-index: 20; /* Highest, above ticker and items */
-    opacity: 0; display: none; /* Controlled by JS */
-    backdrop-filter: blur(4px); /* Stronger blur */
-    border-radius: inherit; /* Inherit from parent (.inline-roulette or .jackpot-header) */
+    z-index: 20; opacity: 0; display: none; /* Initially hidden, controlled by JS */
+    backdrop-filter: blur(3px);
 }
-@keyframes fadeIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } } /* Subtle fade in */
-
-.winner-header { display: flex; align-items: center; justify-content: center; margin-bottom: 8px; }
-.winner-avatar {
-    width: 45px; height: 45px; border-radius: 50%;
-    border: 2px solid var(--primary-color); /* Default, JS might override with user color */
-    box-shadow: 0 0 12px var(--primary-color); /* Default, JS might override */
-    margin-right: 12px; object-fit: cover; flex-shrink: 0;
-}
-.winner-header h3 { /* Winner Name */
-    margin: 0; font-size: 1.2rem; color: var(--text-primary); /* Default, JS might override */
-    font-family: var(--font-secondary); font-weight: 700;
-}
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+.winner-header { display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
+.winner-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary-color); box-shadow: 0 0 10px rgba(0, 230, 118, 0.5); margin-right: 10px; object-fit: cover; flex-shrink: 0; }
+.winner-header h3 { margin: 0; font-size: 1.1rem; }
 .winner-details { margin-top: 5px; font-size: 0.9rem; }
-.winner-details p { margin: 4px 0; font-size: 0.95rem; color: var(--text-secondary); }
+.winner-details p { margin: 3px 0; font-size: 0.9rem; color: var(--text-secondary); }
 .winner-details span { color: var(--primary-light); font-weight: bold; }
-.congrats {
-    font-size: 1.3rem !important; color: var(--primary-color); font-weight: 700;
-    margin-top: 8px !important; text-transform: uppercase; letter-spacing: 2px;
-    animation: colorPulseCongrat 2.5s infinite ease-in-out;
-    text-shadow: 0 0 8px currentColor, 0 0 12px var(--primary-light);
-}
-@keyframes colorPulseCongrat { /* Renamed to avoid conflict if colorPulse is used elsewhere */
-    0%, 100% { transform: scale(1); opacity: 0.8; }
-    50% { transform: scale(1.08); opacity: 1; }
-}
+.congrats { font-size: 1.2rem !important; color: var(--primary-color); font-weight: 700; margin-top: 5px !important; text-transform: uppercase; letter-spacing: 2px; animation: colorPulse 3s infinite; text-shadow: 0 0 8px currentColor; }
+@keyframes colorPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 
-/* .return-btn is styled via .btn and .btn-primary if used */
+.return-btn { display: none !important; /* If not used, can be removed from HTML too */ }
 
 .confetti-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 18; }
 .confetti-piece {
-    position: absolute; width: 8px; height: 8px; background-color: var(--color); /* Color set by JS */
-    top: -20px; opacity: 0.9;
-    animation: confettiFall var(--duration, 3s) linear var(--delay, 0s) forwards;
+    position: absolute; width: 8px; height: 8px; background-color: var(--color);
+    top: -20px; opacity: 0.9; animation: confettiFall var(--duration, 3s) linear var(--delay, 0s) forwards;
     transform-origin: center center;
 }
 @keyframes confettiFall {
     0% { transform: translateY(0) translateX(0) rotateZ(var(--rotation-start, 0deg)) scale(1); opacity: 0.9; }
-    100% { transform: translateY(220px) translateX(var(--fall-x, 0px)) rotateZ(var(--rotation-end, 720deg)) scale(0.3); opacity: 0; } /* Fall further, shrink more */
+    100% { transform: translateY(200px) translateX(var(--fall-x, 0px)) rotateZ(var(--rotation-end, 720deg)) scale(0.5); opacity: 0; }
 }
 
 /*=========================
@@ -806,108 +741,116 @@ code { /* General code tag styling */
  =========================*/
 
 .deposit-button-container {
-    padding: 20px 25px; /* Adjusted padding */
-    background-color: var(--background-medium); /* Consistent with jackpot section */
-    z-index: 5; position: relative;
-    border-top: 1px solid var(--border-color);
-    display: flex; flex-direction: column; align-items: center; gap: 15px;
-    flex-shrink: 0;
-}
-
-#showDepositModal { /* This is the main "DEPOSIT SKINS" button */
-    width: auto; /* Allow button to size to content + padding */
-    min-width: 250px; /* Ensure a decent minimum width */
-    padding: 14px 30px; /* Generous padding for a primary action */
-    /* Inherits .btn and .btn-deposit styles */
-}
-/* Disabled state for #showDepositModal is handled by .btn-deposit.deposit-disabled */
-
-
-.current-items-section { /* Container for participant deposits */
-    padding: 20px; /* Adjusted padding */
-    z-index: 5; position: relative;
+    padding: 25px;
     background-color: var(--background-medium);
-    border-radius: 0 0 12px 12px; /* Rounded bottom corners of jackpot section */
+    z-index: 5;
+    position: relative;
     border-top: 1px solid var(--border-color);
-    flex-grow: 1; /* Allow this section to fill remaining vertical space */
-    display: flex; flex-direction: column;
-    min-height: 200px; /* Ensure some minimum height for the items area */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    flex-shrink: 0; /* Prevent shrinking */
 }
-.section-title { /* "CURRENT ITEMS IN POT" */
-    font-size: 1.1rem; /* Slightly reduced */
-    font-weight: 600; margin-bottom: 20px; color: var(--text-primary);
-    text-transform: uppercase; letter-spacing: 1px; /* Reduced spacing */
+
+#showDepositModal {
+    width: 280px;
+    padding: 14px 30px;
+    max-width: none;
+}
+
+#showDepositModal.deposit-disabled {
+     background: var(--background-light);
+     opacity: 0.6;
+     cursor: not-allowed;
+     box-shadow: none;
+     color: var(--text-secondary);
+}
+#showDepositModal.deposit-disabled:before { display: none; }
+
+
+.current-items-section {
+    padding: 25px;
+    z-index: 5;
+    position: relative;
+    background-color: var(--background-medium);
+    border-radius: 0 0 12px 12px;
+    border-top: 1px solid var(--border-color);
+    flex-grow: 1; /* Allow this section to grow and fill space in .jackpot-section */
+    display: flex; /* Added */
+    flex-direction: column; /* Added */
+}
+.section-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 25px;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
     border-bottom: 1px solid var(--border-color);
-    padding-bottom: 10px; text-align: center; flex-shrink: 0;
+    padding-bottom: 12px;
+    text-align: center;
+    flex-shrink: 0; /* Prevent shrinking */
 }
 .empty-pot-message {
-    text-align: center; padding: 30px 20px; /* Reduced padding */
-    color: var(--text-secondary); font-size: 1rem; /* Adjusted font size */
-    background-color: rgba(33, 38, 45, 0.5); /* Slightly more transparent background-light */
-    border-radius: 8px; border: 1px dashed var(--border-color);
-    display: block; margin: 10px 0; /* Reduced margin */
-    flex-grow: 1; /* Takes up space if items-container is empty */
-    display: flex; align-items: center; justify-content: center; /* Center content */
+    text-align: center; padding: 40px 20px; color: var(--text-secondary); font-size: 1.1rem;
+    background-color: var(--background-light); border-radius: 8px;
+    border: 1px dashed var(--border-color); display: block; margin: 15px 0;
+    flex-grow: 1; /* Allow to take space if items-container is empty */
+    display: flex; /* Center content */
+    align-items: center; /* Center content */
+    justify-content: center; /* Center content */
 }
 
-.items-container { /* Scrolls if many participants */
-    display: flex; flex-direction: column; gap: 12px; /* Reduced gap */
-    padding: 8px; /* Reduced padding */
-    min-height: 100px; /* Min height before scroll */
-    flex-grow: 1; overflow-y: auto;
+.items-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 10px;
+    min-height: 100px;
+    flex-grow: 1; /* Allow items container to grow */
+    overflow-y: auto; /* Add scroll if items overflow */
 }
 
-.player-deposit-container { /* A single player's deposit block */
-    background: linear-gradient(to bottom, var(--background-light) 0%, var(--background-medium) 100%);
-    border-radius: 8px; padding: 12px; /* Reduced padding */
-    border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-sm); /* Softer shadow */
-    width: 100%;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    flex-shrink: 0;
-    animation: newDepositPulse 0.5s ease-out forwards; /* Applied via JS for new deposits */
+.player-deposit-container {
+    background: linear-gradient(to bottom, var(--background-light), var(--background-medium));
+    border-radius: 8px; padding: 15px; border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md); width: 100%;
+    transition: transform var(--transition-medium), box-shadow var(--transition-medium);
+    flex-shrink: 0; /* Prevent individual deposits from shrinking weirdly */
 }
-.player-deposit-container:not(.player-deposit-new) { animation: none; } /* Remove animation after initial display */
-
-.player-deposit-container:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-.player-deposit-header { display: flex; align-items: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid rgba(48, 54, 61, 0.4); }
-.player-avatar { width: 36px; height: 36px; border-radius: 50%; margin-right: 10px; border: 2px solid var(--primary-color); object-fit: cover; flex-shrink: 0; }
-.player-info { flex: 1; min-width: 0; } /* Prevent overflow issues */
-.player-name { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.player-deposit-value { /* Shows user's total value and % chance */
-    font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); /* Default, JS sets color */
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    transition: color 0.2s ease;
-}
-.player-items-grid { /* Grid for items within a player's deposit block */
-    display: flex; flex-wrap: wrap; gap: 6px; /* Reduced gap */
-    margin-top: 8px; justify-content: flex-start; /* Align items to start */
-}
-.player-deposit-item { /* Individual item display in pot */
-    width: 70px; height: 88px; /* Adjusted size */
-    background: rgba(22, 27, 34, 0.75); border-radius: 4px; /* Sharper radius */
-    overflow: hidden; box-shadow: var(--shadow-sm); transition: transform 0.15s ease;
-    border: 1px solid var(--border-color);
-    border-left-width: 3px; border-left-style: solid; /* Color accent set by JS */
-    flex: 0 0 auto; display: flex; flex-direction: column;
-}
-.player-deposit-item:hover { transform: translateY(-2px); box-shadow: 0 2px 8px rgba(0,0,0,0.2), 0 0 5px rgba(0, 230, 118, 0.15); }
-.player-deposit-item-image { width: 100%; height: 50px; object-fit: contain; background-color: var(--background-medium); border-bottom: 1px solid rgba(48, 54, 61, 0.3); display: block; }
-.player-deposit-item-info { padding: 3px 4px; height: 38px; display: flex; flex-direction: column; justify-content: center; flex-grow: 1; text-align: center; }
-/* .player-deposit-item-name was removed in JS to show only price */
-.player-deposit-item-value { font-size: 0.75rem; font-weight: 600; color: var(--text-primary); /* Default color, JS sets specific */ }
-.player-deposit-item-more { /* For "+X more items" text */
-    display: flex; align-items: center; justify-content: center;
-    font-size: 0.75rem; font-weight: 500; padding: 4px; margin-top: 4px;
-    width: 70px; /* Match item width */
+.player-deposit-container:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.player-deposit-header { display: flex; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(48, 54, 61, 0.5); }
+.player-avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 12px; border: 2px solid var(--primary-color); object-fit: cover; flex-shrink: 0; }
+.player-info { flex: 1; min-width: 0; }
+.player-name { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player-deposit-value {
+    font-size: 0.9rem;
+    font-weight: 600;
     color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color var(--transition-fast);
 }
-
-@keyframes newDepositPulse { /* Animation for new deposit block appearing */
-    from { opacity: 0; transform: translateY(15px) scale(0.98); }
-    to { opacity: 1; transform: translateY(0) scale(1); }
+.player-items-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: flex-start; }
+.player-deposit-item {
+    width: 80px; height: 100px; background: rgba(22, 27, 34, 0.7); border-radius: 5px;
+    overflow: hidden; box-shadow: var(--shadow-sm); transition: transform var(--transition-fast);
+    border: 1px solid var(--border-color); flex: 0 0 auto; display: flex; flex-direction: column;
+    border-left-width: 3px; border-left-style: solid;
 }
-/* .player-deposit-new is added by JS */
+.player-deposit-item:hover { transform: translateY(-3px); box-shadow: var(--shadow-md), 0 0 8px rgba(0, 230, 118, 0.2); }
+.player-deposit-item-image { width: 100%; height: 60px; object-fit: contain; background-color: var(--background-medium); border-bottom: 1px solid rgba(48, 54, 61, 0.5); display: block; }
+.player-deposit-item-info { padding: 4px; height: 40px; display: flex; flex-direction: column; justify-content: center; flex-grow: 1; }
+.player-deposit-item-name { font-size: 0.65rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); margin-bottom: 2px; }
+.player-deposit-item-value { font-size: 0.7rem; font-weight: 700; }
+.player-deposit-item-more { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; padding: 5px; margin-top: 5px; }
+@keyframes newDepositPulse {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+.player-deposit-new { animation: newDepositPulse 0.5s ease-out forwards; }
 
 /*=========================
  MODALS
@@ -915,486 +858,618 @@ code { /* General code tag styling */
 
 .modal {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background-color: rgba(0, 0, 0, 0.88); /* Darker backdrop */
+    background-color: rgba(0, 0, 0, 0.85);
     display: none; /* Controlled by JS */
     justify-content: center; align-items: center; z-index: 1000; padding: 20px;
-    backdrop-filter: blur(6px); /* Stronger blur */
+    backdrop-filter: blur(5px);
 }
 .modal-content {
     background-color: var(--background-medium);
-    border-radius: 10px; /* Slightly softer radius */
+    border-radius: 12px;
     width: 100%;
     max-width: 700px; /* Default max width */
-    max-height: 90vh; /* Limit height */
-    display: flex; flex-direction: column;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border-color);
-    animation: modalIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Faster animation */
-    overflow: hidden;
+    animation: modalIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    overflow: hidden; /* Let modal-body handle scroll */
 }
-/* Specific modal sizes */
-.age-verification .modal-content { max-width: 480px; }
-#depositModal .modal-content { max-width: 850px; } /* Slightly wider for inventory */
-#profileModal .modal-content { max-width: 520px; }
-.winning-history-modal .modal-content { max-width: 750px; }
+.age-verification .modal-content { max-width: 500px; }
+#depositModal .modal-content { max-width: 900px; }
+#tradeUrlModal .modal-content { max-width: 600px; }
+.winning-history-modal .modal-content { max-width: 800px; } /* For Winning History */
 
 
 @keyframes modalIn {
-    from { opacity: 0; transform: scale(0.95) translateY(-15px); } /* More subtle entry */
+    from { opacity: 0; transform: scale(0.9) translateY(-20px); }
     to { opacity: 1; transform: scale(1) translateY(0); }
 }
 
 .modal-header {
-    padding: 12px 20px; /* Reduced padding */
+    padding: 15px 25px;
     border-bottom: 1px solid var(--border-color);
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     background: linear-gradient(135deg, var(--background-medium), var(--background-light));
-    /* border-radius: 10px 10px 0 0; /* Matches modal-content */
+    border-radius: 12px 12px 0 0;
     flex-shrink: 0;
 }
 .modal-header h2 {
-    margin: 0; color: var(--primary-color);
-    font-size: 1.3rem; /* Adjusted size */
-    font-family: var(--font-primary); font-weight: 600;
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 1.4rem;
+    font-family: var(--font-primary);
 }
 .close-btn {
-    background: none; border: none; color: var(--text-secondary); font-size: 1.7rem;
-    line-height: 1; cursor: pointer; transition: var(--transition-medium); padding: 4px 8px; /* Ensure clickable area */
+    background: none; border: none; color: var(--text-secondary); font-size: 1.8rem;
+    line-height: 1; cursor: pointer; transition: var(--transition-medium); padding: 5px;
 }
-.close-btn:hover { color: var(--primary-color); transform: rotate(90deg) scale(1.1); }
+.close-btn:hover { color: var(--primary-color); transform: rotate(90deg); }
 
-.modal-body { padding: 20px; overflow-y: auto; flex-grow: 1; line-height: 1.6; } /* Reduced padding */
-.modal-body p { margin-bottom: 12px; color: var(--text-secondary); }
+.modal-body { padding: 25px; overflow-y: auto; flex-grow: 1; line-height: 1.7; }
+.modal-body p { margin-bottom: 15px; color: var(--text-secondary); }
 .modal-body p:last-child { margin-bottom: 0; }
-.modal-body ul { list-style: disc; margin: 12px 0 12px 22px; padding-left: 12px; }
-.modal-body li { margin-bottom: 7px; color: var(--text-secondary); }
+.modal-body ul { list-style: disc; margin: 15px 0 15px 25px; padding-left: 15px; }
+.modal-body li { margin-bottom: 8px; color: var(--text-secondary); }
 
 .modal-footer {
-    padding: 12px 20px; /* Reduced padding */
+    padding: 15px 25px;
     border-top: 1px solid var(--border-color);
     background-color: var(--background-light);
-    /* border-radius: 0 0 10px 10px; /* Matches modal-content */
-    flex-shrink: 0; display: flex; justify-content: flex-end; align-items: center; gap: 8px;
+    border-radius: 0 0 12px 12px;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
 }
 
 /* Form Elements */
-.form-group { margin-bottom: 18px; }
-.form-group label { display: block; margin-bottom: 7px; font-weight: 600; color: var(--text-primary); font-family: var(--font-primary); font-size: 0.95rem; }
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary); font-family: var(--font-primary); }
 .form-group input[type="text"], .form-group input[type="url"], .form-group input[type="number"], .form-group input[type="password"], .form-group input[type="email"], .form-group textarea {
-    width: 100%; padding: 10px 12px; /* Adjusted padding */
-    border: 1px solid var(--border-color); border-radius: 4px;
-    background-color: var(--background-dark); color: var(--text-primary);
-    font-family: var(--font-primary); font-size: 0.95rem;
-    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+    width: 100%; padding: 12px 15px; border: 1px solid var(--border-color);
+    border-radius: 4px; background-color: var(--background-dark); color: var(--text-primary);
+    font-family: var(--font-primary); font-size: 1rem;
+    transition: border-color var(--transition-medium), box-shadow var(--transition-medium);
     box-sizing: border-box;
 }
 .form-group input:focus, .form-group textarea:focus {
     border-color: var(--primary-color); outline: none;
-    box-shadow: 0 0 0 2.5px rgba(0, 230, 118, 0.25); /* Slightly stronger focus */
+    box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.2);
 }
-.checkbox-container { display: flex; align-items: center; margin: 12px 0; }
-.checkbox-container input[type="checkbox"] { margin-right: 8px; width: 17px; height: 17px; accent-color: var(--primary-color); cursor: pointer; flex-shrink: 0; }
-.checkbox-container label { cursor: pointer; color: var(--text-primary); line-height: 1.3; font-size: 0.9rem; }
-.help-text { font-size: 0.85rem; color: var(--text-secondary); margin-top: 8px; }
+.checkbox-container { display: flex; align-items: center; margin: 15px 0; }
+.checkbox-container input[type="checkbox"] { margin-right: 10px; width: 18px; height: 18px; accent-color: var(--primary-color); cursor: pointer; flex-shrink: 0; }
+.checkbox-container label { cursor: pointer; color: var(--text-primary); line-height: 1.3; }
+.help-text { font-size: 0.9rem; color: var(--text-secondary); margin-top: 10px; }
 .help-text a { color: var(--primary-light); text-decoration: underline; }
 .help-text a:hover { color: var(--primary-color); }
 
 /* Inventory Modal Styles */
-.inventory-container { margin-bottom: 18px; }
+.inventory-container { margin-bottom: 20px; }
 .inventory-container h3 {
-    font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 8px;
-    text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; /* Less bold */
+    font-size: 1rem; color: var(--text-secondary); margin-bottom: 10px;
+    text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;
 }
-.inventory-items { /* Grid for user's inventory */
-    display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); /* Slightly smaller items */
-    gap: 8px; max-height: 280px; /* Adjusted max height */
-    overflow-y: auto; background-color: var(--background-light);
-    padding: 12px; border-radius: 6px; border: 1px solid var(--border-color);
+.inventory-items {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px;
+    max-height: 300px; overflow-y: auto; background-color: var(--background-light);
+    padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);
 }
-.empty-inventory-message, .error-message { grid-column: 1 / -1; text-align: center; color: var(--text-secondary); padding: 18px; font-size: 0.95rem; }
+.empty-inventory-message, .error-message { grid-column: 1 / -1; text-align: center; color: var(--text-secondary); padding: 20px; }
 .error-message { color: var(--error-color); }
-.inventory-item { /* Individual item in user's inventory grid */
+.inventory-item {
     background-color: var(--background-medium); border-radius: 4px; overflow: hidden; cursor: pointer;
-    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+    transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
     border: 2px solid transparent; display: flex; flex-direction: column;
 }
-.inventory-item:hover { transform: translateY(-2px) scale(1.02); border-color: rgba(0, 230, 118, 0.2); }
-.inventory-item.selected {
-    border-color: var(--primary-color);
-    box-shadow: 0 0 12px rgba(0, 230, 118, 0.35);
-    transform: scale(1.05); /* More pronounced selection */
-}
-.inventory-item img { width: 100%; height: 70px; object-fit: contain; background-color: var(--background-dark); display: block; border-bottom: 1px solid var(--border-color); }
-.item-details { padding: 6px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; min-height: 40px; text-align: center; }
-/* .item-name was removed for inventory items display (price only shown in tooltip) */
-.inventory-item .item-value { font-size: 0.9rem; font-weight: 600; color: var(--primary-color); /* Price below image */ }
+.inventory-item:hover { transform: translateY(-3px); border-color: rgba(0, 230, 118, 0.3); }
+.inventory-item.selected { border-color: var(--primary-color); box-shadow: 0 0 15px rgba(0, 230, 118, 0.4); transform: scale(1.03); }
+.inventory-item img { width: 100%; height: 80px; object-fit: contain; background-color: var(--background-dark); display: block; border-bottom: 1px solid var(--border-color); }
+.item-details { padding: 8px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; min-height: 50px; }
+.item-name { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; line-height: 1.2; }
+.inventory-item .item-value { font-size: 0.85rem; font-weight: 700; color: var(--primary-color); text-align: right; margin-top: auto; }
 
 /* Selected Items (Deposit Modal) */
-.selected-items { margin-top: 18px; }
-.selected-items h3 { font-size: 0.95rem; color: var(--text-secondary); margin-bottom: 8px; text-transform: uppercase; font-weight: 500; letter-spacing: 0.5px; }
-.selected-items-container { /* Area showing items picked for deposit */
-    display: flex; flex-wrap: wrap; gap: 8px;
-    min-height: 70px; max-height: 160px; overflow-y: auto;
-    background-color: var(--background-light); padding: 8px;
-    border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 12px;
+.selected-items { margin-top: 20px; }
+.selected-items h3 { font-size: 1rem; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+.selected-items-container {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    min-height: 80px; max-height: 180px; overflow-y: auto;
+    background-color: var(--background-light); padding: 10px;
+    border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;
 }
-.selected-item-display { /* Small preview of a selected item */
-    position: relative; width: 70px; border-radius: 4px; overflow: hidden;
+.selected-item-display {
+    position: relative; width: 80px; border-radius: 4px; overflow: hidden;
     background-color: var(--background-medium); border: 1px solid var(--border-color);
     flex-shrink: 0; display: flex; flex-direction: column; cursor: pointer;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
 }
-.selected-item-display:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
-.selected-item-display img { width: 100%; height: 50px; object-fit: contain; background-color: var(--background-dark); display: block; }
-/* .selected-item-display .item-name (removed) */
-.selected-item-display .item-value { font-size: 0.7rem; font-weight: 500; padding: 2px 4px; color: var(--primary-light); text-align: center; }
-.remove-item-btn { /* Little 'x' button on selected items */
-    position: absolute; top: 2px; right: 2px; width: 16px; height: 16px;
-    background-color: rgba(0, 0, 0, 0.6); color: white; border-radius: 50%; border: none;
-    font-size: 9px; line-height: 16px; cursor: pointer; display: flex;
-    align-items: center; justify-content: center; transition: background-color 0.15s ease, transform 0.15s ease;
+.selected-item-display:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.selected-item-display img { width: 100%; height: 60px; object-fit: contain; background-color: var(--background-dark); display: block; }
+.selected-item-display .item-name { font-size: 0.7rem; font-weight: 500; padding: 3px 5px 0 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-secondary); text-align: center; }
+.selected-item-display .item-value { font-size: 0.75rem; font-weight: 600; padding: 0 5px 3px 5px; color: var(--primary-light); text-align: center; }
+.remove-item-btn {
+    position: absolute; top: 3px; right: 3px; width: 18px; height: 18px;
+    background-color: rgba(0, 0, 0, 0.7); color: white; border-radius: 50%; border: none;
+    font-size: 10px; line-height: 18px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; transition: background-color var(--transition-fast), transform var(--transition-fast);
     padding: 0; z-index: 1;
 }
-.remove-item-btn:hover { background-color: var(--error-color); transform: scale(1.15); }
-.total-value { /* "Total Value: $X.XX" display in deposit modal */
+.remove-item-btn:hover { background-color: var(--error-color); transform: scale(1.1); }
+.total-value {
     display: flex; justify-content: space-between; align-items: center;
-    padding: 8px 12px; background-color: var(--background-light); border-radius: 4px;
-    border: 1px solid var(--border-color); margin-top: 8px; font-weight: 600; font-size: 1.05rem;
+    padding: 10px 15px; background-color: var(--background-light); border-radius: 4px;
+    border: 1px solid var(--border-color); margin-top: 10px; font-weight: 600; font-size: 1.1rem;
 }
 .total-value span:last-child { color: var(--primary-color); font-family: var(--font-mono); }
 
 /* Loading indicator */
 .loading-indicator {
-    display: none; /* JS toggles to flex */
-    flex-direction: column; align-items: center; justify-content: center;
-    padding: 25px; background-color: transparent; border-radius: 6px;
-    margin: 18px 0; color: var(--text-secondary); grid-column: 1 / -1;
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    padding: 30px; background-color: transparent; border-radius: 8px;
+    margin: 20px 0; color: var(--text-secondary); grid-column: 1 / -1; /* For use in grid layouts */
 }
 .spinner {
-    width: 36px; height: 36px; border: 3.5px solid rgba(0, 230, 118, 0.25); /* Softer border */
+    width: 40px; height: 40px; border: 4px solid rgba(0, 230, 118, 0.3);
     border-radius: 50%; border-top-color: var(--primary-color);
-    animation: spin 0.9s linear infinite; margin-bottom: 12px; /* Faster spin */
+    animation: spin 1s linear infinite; margin-bottom: 15px;
 }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
 
 /* --- Profile Modal Styles --- */
-#profileModal .modal-content { max-width: 480px; } /* Consistent with earlier def */
-.profile-modal-body { padding: 25px 30px; } /* Adjusted padding */
-.profile-modal-user-info { display: flex; flex-direction: column; align-items: center; gap: 8px; margin-bottom: 20px; text-align: center; }
-.profile-modal-avatar { width: 75px; height: 75px; border-radius: 50%; border: 2.5px solid var(--primary-color); object-fit: cover; }
-.profile-modal-name { font-family: var(--font-primary); font-size: 1.4em; font-weight: 600; color: var(--text-primary); margin-top: 4px; }
+#profileModal .modal-content { max-width: 480px; }
+.profile-modal-body { padding: 30px 35px; }
+.profile-modal-user-info { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 25px; text-align: center; }
+.profile-modal-avatar { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--primary-color); object-fit: cover; }
+.profile-modal-name { font-family: var(--font-primary); font-size: 1.5em; font-weight: 600; color: var(--text-primary); margin-top: 5px; }
 
 .profile-modal-stats {
-    text-align: center; margin-bottom: 25px; padding: 12px;
-    background-color: var(--background-light); border-radius: 5px;
-    border: 1px solid var(--border-color); display: flex;
-    justify-content: space-around; gap: 8px;
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 15px;
+    background-color: var(--background-light);
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    display: flex; /* Added for side-by-side items */
+    justify-content: space-around; /* Distribute items */
+    gap: 10px; /* Space between items */
 }
-.profile-modal-stat-item { flex: 1; }
+.profile-modal-stat-item {
+    flex: 1; /* Allow items to grow and share space */
+}
 .profile-modal-stat-label {
-    display: block; font-size: 0.85em; color: var(--text-secondary);
-    margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.8px;
+    display: block; font-size: 0.9em; color: var(--text-secondary);
+    margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;
 }
 .profile-modal-stat-value {
-    font-family: var(--font-mono); font-size: 1.5em; font-weight: 600; /* Less bold */
+    font-family: var(--font-mono); font-size: 1.6em; font-weight: 700;
     color: var(--secondary-light);
 }
 
-.profile-modal-trade-url { margin-bottom: 12px; }
-#profileModalTradeUrl { font-family: var(--font-mono); font-size: 0.9em; }
-.profile-modal-help-text { margin-top: 8px; font-size: 0.75em; }
-.profile-modal-footer { justify-content: space-between; background-color: var(--background-light); padding: 12px 20px; border-top: 1px solid var(--border-color); /* border-bottom-left-radius: 10px; border-bottom-right-radius: 10px; */ }
+.profile-modal-trade-url { margin-bottom: 15px; }
+#profileModalTradeUrl { font-family: var(--font-mono); font-size: 0.95em; }
+.profile-modal-help-text { margin-top: 10px; font-size: 0.8em; }
+.profile-modal-footer { justify-content: space-between; background-color: var(--background-light); padding: 15px 25px; border-top: 1px solid var(--border-color); border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
 
 /* --- Profile Modal Pending Offer Status --- */
-.profile-pending-offer-status { /* Already defined, ensure consistency */
-    margin-bottom: 18px; padding: 10px 12px;
-    background-color: rgba(255, 193, 7, 0.12); /* Slightly more subtle */
-    border: 1px solid var(--warning-color); border-radius: 4px;
-    text-align: center; font-size: 0.88em;
+.profile-pending-offer-status {
+    margin-bottom: 20px;
+    padding: 12px 15px;
+    background-color: rgba(255, 193, 7, 0.1);
+    border: 1px solid var(--warning-color);
+    border-radius: 4px;
+    text-align: center;
+    font-size: 0.9em;
 }
-.profile-pending-offer-status p { margin: 0; color: var(--warning-color); line-height: 1.45; }
+.profile-pending-offer-status p { margin: 0; color: var(--warning-color); line-height: 1.5; }
 .profile-pending-offer-status a, .profile-pending-link { color: var(--secondary-light) !important; font-weight: bold; text-decoration: underline !important; }
 .profile-pending-offer-status a:hover, .profile-pending-link:hover { color: var(--secondary-color) !important; opacity: 0.9; }
-.profile-pending-offer-status i { margin-right: 4px; }
+.profile-pending-offer-status i { margin-right: 5px; }
 
 
 /*=========================
  STATIC PAGES (FAQ, FAIR, ABOUT, TOS)
  =========================*/
 
-.content-section { margin-bottom: 25px; padding-bottom: 18px; border-bottom: 1px solid rgba(48, 54, 61, 0.4); line-height: 1.65; }
+.content-section { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(48, 54, 61, 0.5); line-height: 1.7; }
 .content-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-.content-section-title { font-size: 1.3rem; font-weight: 600; color: var(--text-primary); margin-bottom: 12px; padding-left: 10px; border-left: 3px solid var(--primary-color); }
-.content-section-body { padding: 0 12px; }
-.content-section-body p { margin-bottom: 12px; line-height: 1.65; color: var(--text-secondary); }
+.content-section-title { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); margin-bottom: 15px; padding-left: 12px; border-left: 3px solid var(--primary-color); }
+.content-section-body { padding: 0 15px; }
+.content-section-body p { margin-bottom: 15px; line-height: 1.7; color: var(--text-secondary); }
 .content-section-body p:last-child { margin-bottom: 0; }
-.content-section-body ul, .content-section-body ol { margin: 12px 0 12px 22px; padding-left: 18px; }
-.content-section-body li { margin-bottom: 8px; }
-.content-section-body strong { color: var(--text-accent); font-weight: 500; } /* Less bold */
+.content-section-body ul, .content-section-body ol { margin: 15px 0 15px 25px; padding-left: 20px; }
+.content-section-body li { margin-bottom: 10px; }
+.content-section-body strong { color: var(--text-accent); font-weight: 600; }
 .content-section-body a { color: var(--primary-light); text-decoration: underline; }
 .content-section-body a:hover { color: var(--primary-color); }
-.content-section-body code { /* Same as global code style */ }
+.content-section-body code { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; }
 
 /* About Page */
-#about-page .content-section-body p { text-align: justify; padding: 0 4px; }
+#about-page .content-section-body p { text-align: justify; padding: 0 5px; }
 #about-page .content-section-title { color: var(--primary-light); }
 
 /* TOS Page */
-#tos-page .content-section { background-color: rgba(22, 27, 34, 0.3); border-radius: 6px; padding: 18px; margin-bottom: 22px; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
+#tos-page .content-section { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 20px; margin-bottom: 25px; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
 #tos-page .content-section:last-child { border-bottom: 1px solid var(--border-color); }
-#tos-page .content-section-title { margin-top: 0; border-left-color: var(--secondary-color); }
-#tos-page ul { margin-left: 18px; margin-bottom: 12px; list-style-type: disc; }
-#tos-page ul li { margin-bottom: 8px; color: var(--text-secondary); }
+#tos-page .content-section-title { margin-top: 0; border-left: 3px solid var(--secondary-color); }
+#tos-page ul { margin-left: 20px; margin-bottom: 15px; list-style-type: disc; }
+#tos-page ul li { margin-bottom: 10px; color: var(--text-secondary); }
 
 /* FAQ Page */
-#faq-page .content-section { background-color: rgba(22, 27, 34, 0.3); border-radius: 6px; padding: 18px; margin-bottom: 18px; transition: transform 0.25s ease, box-shadow 0.25s ease; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
+#faq-page .content-section { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 20px; margin-bottom: 20px; transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
 #faq-page .content-section:last-child { border-bottom: 1px solid var(--border-color); }
-#faq-page .content-section:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+#faq-page .content-section:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
 #faq-page .content-section-title { color: var(--secondary-color); cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-left: none; padding-left: 0; }
-#faq-page .content-section-title::after { content: '+'; font-size: 1.4rem; color: var(--primary-color); transition: transform 0.25s ease; }
-#faq-page .content-section.active .content-section-title::after { content: '−'; transform: rotate(180deg); } /* Using minus sign */
-#faq-page .content-section-body { display: none; /* JS toggles to block */ }
-#faq-page .content-section.active .content-section-body { display: block; padding-top: 10px; }
-
+#faq-page .content-section-title::after { content: '+'; font-size: 1.5rem; color: var(--primary-color); transition: transform 0.3s ease; }
+#faq-page .content-section.active .content-section-title::after { content: '-'; transform: rotate(180deg); }
 
 /* Provably Fair Page */
-#fair-page .content-card { padding-bottom: 35px; }
-#fair-page #provably-fair-verification { background-color: rgba(22, 27, 34, 0.3); border-radius: 6px; padding: 22px; margin-top: 25px; border: 1px solid var(--border-color); }
+#fair-page .content-card { padding-bottom: 40px; }
+#fair-page #provably-fair-verification { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 25px; margin-top: 30px; border: 1px solid var(--border-color); }
 #fair-page .verify-form {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 18px;
-    background-color: transparent; padding: 0; border: none; margin: 0 0 22px 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Default two columns for seed inputs */
+    gap: 20px;
+    background-color: transparent; padding: 0; border: none; margin: 0 0 25px 0;
 }
-#fair-page .verify-form .form-group-full-width { grid-column: 1 / -1; }
-#fair-page .form-group { margin-bottom: 0; }
-#fair-page .verify-form button { grid-column: 1 / -1; } /* Button spans full width */
+/* Make Round ID form group span full width */
+#fair-page .verify-form .form-group-full-width {
+    grid-column: 1 / -1; /* Span across all columns */
+}
 
-#fair-page .verification-result { margin-top: 18px; padding: 12px; border-radius: 5px; background-color: var(--background-light); border: 1px solid var(--border-color); }
-#fair-page .history-table { width: 100%; border-collapse: collapse; margin-top: 22px; background-color: rgba(22, 27, 34, 0.3); font-size: 0.85rem; /* Smaller text for table */ }
-#fair-page .history-table th, #fair-page .history-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
-#fair-page .history-table th { background-color: var(--background-light); color: var(--primary-color); font-weight: 500; }
+#fair-page .form-group { margin-bottom: 0; }
+#fair-page .verify-form button { grid-column: 1 / -1; }
+#fair-page .verification-result { margin-top: 20px; padding: 15px; border-radius: 6px; background-color: var(--background-light); border: 1px solid var(--border-color); }
+#fair-page .history-table { width: 100%; border-collapse: collapse; margin-top: 25px; background-color: rgba(22, 27, 34, 0.4); }
+#fair-page .history-table th, #fair-page .history-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+#fair-page .history-table th { background-color: var(--background-light); color: var(--primary-color); font-weight: 600; }
 #fair-page .history-table tr:hover { background-color: var(--background-light); }
 
-
-/* Provably Fair Verification Form & Result - Base styles (re-check if this is different from #fair-page specific) */
-.verify-form { background-color: var(--background-light); padding: 18px; border-radius: 6px; margin: 18px 0; border: 1px solid var(--border-color); }
-.verification-result { margin-top: 12px; padding: 12px; border-radius: 4px; background-color: var(--background-light); display: none; border: 1px solid var(--border-color); line-height: 1.45; font-size: 0.9rem; }
+/* Provably Fair Verification Form & Result - Base styles */
+.verify-form { background-color: var(--background-light); padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--border-color); }
+.verification-result { margin-top: 15px; padding: 15px; border-radius: 4px; background-color: var(--background-light); display: none; border: 1px solid var(--border-color); line-height: 1.5; }
 .verification-result.loading { background-color: var(--background-medium); border-color: var(--secondary-light); color: var(--text-primary); }
-.verification-result.success { background-color: rgba(0, 230, 118, 0.08); border-color: var(--success-color); color: var(--text-primary); }
-.verification-result.error { background-color: rgba(244, 67, 54, 0.08); border-color: var(--error-color); color: var(--text-primary); }
-.verification-result h4 { margin-top: 0; margin-bottom: 12px; color: var(--primary-color); font-size: 1.1rem; }
-.verification-result p { margin-bottom: 7px; word-wrap: break-word; }
-.verification-result strong { color: var(--text-accent); font-weight: 500; }
-.verification-result code.seed-value { background-color: var(--background-dark); padding: 2px 5px; border-radius: 3px; font-family: var(--font-mono); color: var(--secondary-light); font-size: 0.85em; border: 1px solid var(--border-color); display: inline-block; margin: 0 2px; }
+.verification-result.success { background-color: rgba(0, 230, 118, 0.1); border-color: var(--success-color); color: var(--text-primary); }
+.verification-result.error { background-color: rgba(244, 67, 54, 0.1); border-color: var(--error-color); color: var(--text-primary); }
+.verification-result h4 { margin-top: 0; margin-bottom: 15px; color: var(--primary-color); }
+.verification-result p { margin-bottom: 8px; word-wrap: break-word; }
+.verification-result strong { color: var(--text-accent); }
+.verification-result code.seed-value { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; display: inline-block; }
 .verification-result code.wrap-anywhere { word-break: break-all; }
 
 /* Round History Table - Base styles (used for both Provably Fair and Winning History) */
-.table-container { overflow-x: auto; margin-bottom: 18px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 6px; }
-.history-table { width: 100%; min-width: 550px; /* Adjusted min-width */ border-collapse: collapse; font-size: 0.88rem; }
-.history-table th, .history-table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; vertical-align: middle; }
+.table-container { overflow-x: auto; margin-bottom: 20px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 8px; }
+.history-table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 0.9rem; }
+.history-table th, .history-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; vertical-align: middle; }
 .history-table tr:last-child td { border-bottom: none; }
-.history-table th { background-color: var(--background-medium); color: var(--primary-color); font-weight: 500; text-transform: uppercase; font-size: 0.8rem; position: sticky; top: 0; z-index: 1; } /* Sticky header for scroll */
+.history-table th { background-color: var(--background-medium); color: var(--primary-color); font-weight: 600; text-transform: uppercase; font-size: 0.85rem; position: sticky; top: 0; z-index: 1; }
 .history-table .loading-message, .history-table .no-rounds-message, .history-table .error-message, .empty-history-message {
-    text-align: center; color: var(--text-secondary); padding: 18px; font-style: italic; white-space: normal;
+    text-align: center; color: var(--text-secondary); padding: 20px; font-style: italic; white-space: normal;
 }
-.history-table .error-message, .empty-history-message.error { color: var(--error-color); font-style: normal; }
-.history-table tbody tr:hover { background-color: rgba(255, 255, 255, 0.04); } /* More subtle hover */
+.history-table .error-message, .empty-history-message.error { color: var(--error-color); font-style: normal; } /* Error style for empty message too */
+.history-table tbody tr:hover { background-color: rgba(255, 255, 255, 0.05); }
 .history-table td:last-child { white-space: normal; text-align: right; } /* Allow wrap and align right for action buttons */
 
 /* Winning History Table Specifics */
-.winning-history-table td { white-space: normal; }
-.winning-history-table td:nth-child(3) { font-weight: 600; color: var(--primary-light); } /* Amount Won */
+.winning-history-table td { white-space: normal; } /* Allow wrapping for longer statuses */
+.winning-history-table td:nth-child(3) { font-weight: bold; color: var(--primary-light); } /* Amount Won */
 .winning-history-table td:nth-child(4) { text-align: center; } /* Trade Status/Link centered */
 
-.trade-link { /* For links in winning history trade status */
-    color: var(--secondary-light); text-decoration: underline; display: inline-flex; align-items: center; gap: 4px;
-    transition: color var(--transition-fast); font-size: 0.85em;
+.trade-link {
+    color: var(--secondary-light); text-decoration: underline; display: inline-flex; align-items: center; gap: 5px;
+    transition: color var(--transition-fast);
 }
 .trade-link:hover { color: var(--secondary-color); }
-.trade-link i { font-size: 0.9em; } /* Icon size within link */
-/* .trade-link.pending i { color: var(--warning-color); } /* If specific styling for pending icon needed */
+.trade-link.pending i { color: var(--warning-color); }
 
-.trade-status { /* General class for status text, can be link or span */
-    font-weight: 500; padding: 2px 7px; border-radius: 3px; font-size: 0.8rem; /* Smaller status badges */
-    display: inline-flex; align-items: center; gap: 4px;
-    border: 1px solid transparent; /* Base border */
+.trade-status {
+    font-weight: 600; padding: 3px 8px; border-radius: 4px; font-size: 0.85em;
+    display: inline-flex; align-items: center; gap: 5px;
 }
-/* Specific status colors */
-.trade-status.accepted, .trade-status.sent, .trade-status.success { color: var(--success-color); background-color: rgba(76, 175, 80, 0.1); border-color: rgba(76, 175, 80, 0.25); }
-.trade-status.failed, .trade-status.declined, .trade-status.canceled, .trade-status.expired, .trade-status.invaliditems, .trade-status.error { color: var(--error-color); background-color: rgba(244, 67, 54, 0.1); border-color: rgba(244, 67, 54, 0.25); }
-.trade-status.pending, .trade-status.pending-send, .trade-status.escrow, .trade-status.pendingconfirmation, .trade-status.warning { color: var(--warning-color); background-color: rgba(255, 193, 7, 0.1); border-color: rgba(255, 193, 7, 0.25); }
-.trade-status i { font-size: 0.85em; }
+.trade-status.accepted { color: var(--success-color); background-color: rgba(76, 175, 80, 0.15); border: 1px solid rgba(76, 175, 80, 0.3); }
+.trade-status.failed { color: var(--error-color); background-color: rgba(244, 67, 54, 0.15); border: 1px solid rgba(244, 67, 54, 0.3); }
+.trade-status.pending { color: var(--warning-color); background-color: rgba(255, 193, 7, 0.15); border: 1px solid rgba(255, 193, 7, 0.3); }
+.trade-status i { font-size: 0.9em; }
 
 
 /* Pagination */
-.pagination-container { display: flex; justify-content: center; align-items: center; gap: 6px; margin-top: 18px; flex-wrap: wrap; }
-.page-button { padding: 5px 9px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 3px; color: var(--text-primary); cursor: pointer; transition: var(--transition-fast); font-size: 0.85rem; }
+.pagination-container { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+.page-button { padding: 6px 10px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary); cursor: pointer; transition: var(--transition-fast); font-size: 0.9rem; }
 .page-button:hover:not(:disabled) { background-color: var(--primary-dark); color: var(--background-dark); border-color: var(--primary-dark); }
 .page-button.active { background-color: var(--primary-color); color: var(--background-dark); border-color: var(--primary-color); cursor: default; }
-.page-button:disabled { opacity: 0.45; cursor: not-allowed; }
-.page-ellipsis { color: var(--text-secondary); padding: 5px 0; margin: 0 1px; font-size: 0.85rem; }
+.page-button:disabled { opacity: 0.5; cursor: not-allowed; }
+.page-ellipsis { color: var(--text-secondary); padding: 6px 0; margin: 0 2px; }
 
 
-/* --- ADDED: Deposit Modal Footer Enhancements (Legacy, if acceptDepositOfferBtn was still used) --- */
-/* #acceptDepositOfferBtn { ... } */ /* This button was removed from HTML structure, styles not strictly needed now */
-
-.deposit-status-text { /* For messages in deposit modal footer */
-    flex-grow: 1; text-align: left; padding: 0 8px; font-size: 0.88em;
-    line-height: 1.35; color: var(--text-secondary); transition: color 0.25s ease;
-    display: flex; align-items: center;
+/* --- ADDED: Deposit Modal Footer Enhancements --- */
+#acceptDepositOfferBtn {
+    background-color: var(--success-color);
+    color: white;
+    border: 1px solid var(--success-color);
+    padding: 10px 15px;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
+
+#acceptDepositOfferBtn:hover:not(:disabled) {
+    background-color: #45a049;
+    border-color: #45a049;
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+    transform: translateY(-2px);
+}
+
+#acceptDepositOfferBtn i {
+    margin-left: 8px;
+    font-size: 0.9em;
+}
+
+.deposit-status-text {
+    flex-grow: 1;
+    text-align: left;
+    padding: 0 10px;
+    font-size: 0.9em;
+    line-height: 1.4;
+    color: var(--text-secondary);
+    transition: color 0.3s ease;
+    display: flex;
+    align-items: center;
+}
+
 .deposit-status-text.info { color: var(--info-color); }
 .deposit-status-text.success { color: var(--success-color); }
 .deposit-status-text.warning { color: var(--warning-color); }
 .deposit-status-text.error { color: var(--error-color); }
-.deposit-status-text a.notification-link { /* Style for links inside deposit status */
-    color: var(--primary-light) !important;
-    font-weight: 600;
-    text-decoration: underline !important;
-}
-.deposit-status-text a.notification-link:hover { color: var(--primary-color) !important; }
 
 
 /* --- ADDED: Pending Offer Indicators --- */
-/* .pending-offer-indicator is defined earlier in header section */
+.pending-offer-indicator {
+    display: inline-block;
+    color: var(--warning-color);
+    font-size: 1.1rem;
+    cursor: help;
+    animation: pulseWarning 1.5s infinite ease-in-out;
+    vertical-align: middle;
+    line-height: 1;
+}
+
+/* Defined earlier, ensure it's not duplicated:
+@keyframes pulseWarning {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: 0.7; }
+} */
 
 /* --- ADDED: Footer --- */
 .main-footer {
-    background-color: var(--background-dark); color: var(--text-secondary);
-    padding: 18px 0; margin-top: 35px; text-align: center;
-    font-size: 0.8rem; border-top: 1px solid var(--border-color);
+    background-color: var(--background-dark);
+    color: var(--text-secondary);
+    padding: 20px 0;
+    margin-top: 40px;
+    text-align: center;
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border-color);
 }
-.main-footer p { margin-bottom: 7px; line-height: 1.45; }
-.main-footer a { color: var(--text-secondary); text-decoration: underline; margin: 0 4px; }
-.main-footer a:hover { color: var(--primary-light); }
+
+.main-footer p {
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+.main-footer a {
+    color: var(--text-secondary);
+    text-decoration: underline;
+    margin: 0 5px;
+}
+.main-footer a:hover {
+    color: var(--primary-light);
+}
 
 /*=========================
  CHAT STYLES - REVISED
  =========================*/
 .chat-container {
-    width: 280px; flex-shrink: 0;
+    width: 280px;
+    flex-shrink: 0; /* Prevent chat from shrinking if jackpot section is wide */
     background-color: var(--background-light);
-    border-radius: 10px; /* Softer radius */
+    border-radius: 12px;
     border: 1px solid var(--border-color);
-    box-shadow: var(--shadow-md); /* Softer shadow */
-    display: flex; flex-direction: column;
-    padding: 0;
-    height: 580px; /* Slightly reduced fixed height */
-    max-height: 70vh;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    padding: 0; /* Remove padding from container itself */
+    height: 600px; /* MODIFIED: Fixed height for the entire chat container */
+    max-height: 70vh; /* Optional: prevent it from being too tall on very large screens */
 }
 
 .chat-header {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 8px 12px; /* Reduced padding */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
     background: var(--background-medium);
     border-bottom: 1px solid var(--border-color);
-    border-radius: 10px 10px 0 0;
-    flex-shrink: 0;
+    border-radius: 12px 12px 0 0; /* Rounded top corners */
+    flex-shrink: 0; /* Prevent header from shrinking */
 }
-.chat-header h3 {
-    margin: 0; font-size: 1rem; /* Adjusted size */
-    color: var(--primary-color); font-weight: 500; /* Less bold */
-}
-.chat-online-status { font-size: 0.8rem; color: var(--text-secondary); }
-#chatOnlineUsers { font-weight: 600; color: var(--primary-light); }
 
-.chat-messages-container { /* Where messages appear */
-    flex-grow: 1; padding: 12px; overflow-y: auto;
-    display: flex; flex-direction: column-reverse; /* New messages at bottom */
-    gap: 10px; /* Reduced gap */
-    background-color: var(--background-dark);
+.chat-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    font-weight: 600;
 }
-/* Scrollbar for chat messages */
-.chat-messages-container::-webkit-scrollbar { width: 5px; }
-.chat-messages-container::-webkit-scrollbar-track { background: var(--background-medium); border-radius: 2.5px; }
-.chat-messages-container::-webkit-scrollbar-thumb { background-color: var(--primary-dark); border-radius: 2.5px; }
+
+.chat-online-status {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+#chatOnlineUsers {
+    font-weight: bold;
+    color: var(--primary-light);
+}
+
+.chat-messages-container {
+    flex-grow: 1; /* Takes up remaining space within the fixed height of .chat-container */
+    padding: 15px;
+    overflow-y: auto; /* Enables scrolling for messages */
+    display: flex;
+    flex-direction: column-reverse; /* New messages at bottom, scroll up for old */
+    gap: 12px;
+    background-color: var(--background-dark);
+    /* min-height is removed as height is now fixed by parent */
+}
+
+
+.chat-messages-container::-webkit-scrollbar {
+    width: 6px;
+}
+.chat-messages-container::-webkit-scrollbar-track {
+    background: var(--background-medium);
+    border-radius: 3px;
+}
+.chat-messages-container::-webkit-scrollbar-thumb {
+    background-color: var(--primary-dark);
+    border-radius: 3px;
+}
 
 .chat-message {
-    display: flex; align-items: flex-start; gap: 8px;
-    padding: 8px; border-radius: 5px; /* Softer radius */
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 6px;
     background-color: var(--background-light);
     border: 1px solid var(--border-color);
-    max-width: 96%; /* Prevent full width messages */
-    word-wrap: break-word; box-shadow: var(--shadow-sm);
-    animation: chatMessageFadeIn 0.25s ease-out;
+    max-width: 95%; /* Prevent messages from taking full width */
+    word-wrap: break-word; /* Ensure long words break */
+    box-shadow: var(--shadow-sm);
+    animation: chatMessageFadeIn 0.3s ease-out; /* Added for new messages */
 }
 @keyframes chatMessageFadeIn {
-    from { opacity: 0; transform: translateY(8px); }
+    from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-.chat-message.system-message { /* System messages like "User connected" */
-    background-color: transparent; border: none; box-shadow: none;
-    color: var(--text-secondary); font-style: italic;
-    font-size: 0.8rem; text-align: center; padding: 4px 0;
-    max-width: 100%; animation: none;
+.chat-message.system-message {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    color: var(--text-secondary);
+    font-style: italic;
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 5px 0;
+    max-width: 100%;
+    animation: none; /* No fade-in for system messages if preferred */
 }
 
 .chat-message-avatar {
-    width: 30px; height: 30px; /* Smaller avatar */
-    border-radius: 50%; object-fit: cover; flex-shrink: 0;
-    border: 1.5px solid transparent; /* Thinner border, color from JS */
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 2px solid transparent; /* Base border, color applied by JS */
 }
 
-.chat-message-content { display: flex; flex-direction: column; min-width: 0; }
-.chat-message-user { /* Username in chat */
-    font-size: 0.85rem; font-weight: 600; margin-bottom: 3px;
+.chat-message-content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0; /* Allow text to wrap properly */
+}
+
+.chat-message-user {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 4px;
     /* Color applied by JS */
 }
-.chat-message-text { /* Actual message text */
-    font-size: 0.88rem; line-height: 1.45;
-    color: var(--text-primary); margin: 0;
-    white-space: pre-wrap; /* Preserve newlines from input */
+
+.chat-message-text {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+    margin: 0;
+    white-space: pre-wrap; /* Preserve whitespace and newlines from input */
 }
 
-.chat-input-area { /* Container for input field and send button */
-    display: flex; padding: 10px 12px;
+.chat-input-area {
+    display: flex;
+    padding: 12px 15px;
     border-top: 1px solid var(--border-color);
     background-color: var(--background-medium);
-    gap: 8px; border-radius: 0 0 10px 10px;
-    flex-shrink: 0;
+    gap: 10px;
+    border-radius: 0 0 12px 12px; /* Rounded bottom corners */
+    flex-shrink: 0; /* Prevent input area from shrinking */
 }
+
 #chatMessageInput {
-    flex-grow: 1; padding: 8px 10px; /* Adjusted padding */
-    border: 1px solid var(--border-color); border-radius: 4px;
-    background-color: var(--background-dark); color: var(--text-primary);
-    font-family: var(--font-primary); font-size: 0.88rem;
+    flex-grow: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--background-dark);
+    color: var(--text-primary);
+    font-family: var(--font-primary);
+    font-size: 0.9rem;
 }
 #chatMessageInput:focus {
-    border-color: var(--primary-color); outline: none;
-    box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.2); /* Softer focus shadow */
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.15);
 }
-#chatMessageInput::placeholder { color: var(--text-secondary); opacity: 0.6; }
-
-#chatSendMessageBtn { /* Send button in chat */
-    padding: 8px 12px; font-size: 0.88rem;
-    /* Inherits .btn .btn-primary styles */
+#chatMessageInput::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.7;
 }
 
-/* Responsive Adjustments */
-@media (max-width: 980px) {
+#chatSendMessageBtn {
+    padding: 10px 15px;
+    font-size: 0.9rem;
+}
+
+/* Ensure jackpot section doesn't overlap chat at smaller viewport widths before flex-wrap kicks in effectively */
+@media (max-width: 980px) { /* Adjust breakpoint as needed */
     .jackpot-and-chat-container {
-        flex-direction: column; align-items: center;
+        flex-direction: column;
+        align-items: center; /* Center items when stacked */
     }
     .jackpot-section {
-        width: 100%; max-width: 650px; /* Max width when stacked */
-        margin-bottom: 18px;
+        width: 100%; /* Full width when stacked */
+        max-width: 680px; /* Or your preferred max width */
+        margin-bottom: 20px; /* Space between jackpot and chat when stacked */
     }
     .chat-container {
-        width: 100%; max-width: 550px; /* Max width for chat when stacked */
-        height: 480px; max-height: 60vh;
+        width: 100%; /* Full width when stacked */
+        max-width: 600px; /* Or your preferred max width for chat */
+        height: 500px; /* Adjust height if needed for stacked view */
+        max-height: 60vh;
     }
-    .main-header .container { flex-direction: column; gap: 8px; }
-    .header-left, .header-center, .header-right { width: 100%; justify-content: center; gap: 8px; }
-    .primary-nav ul, .secondary-nav ul { flex-wrap: wrap; justify-content: center; }
-    .jackpot-header { justify-content: space-around; /* Better distribution of items */ }
-    .jackpot-value h2, .timer-text, .stat-value { font-size: 2.8rem; /* Smaller for mobile */ }
-    .timer-circle { width: 90px; height: 90px; }
+    .main-header .container {
+        flex-direction: column;
+        gap: 5px;
+    }
+    .header-left, .header-center, .header-right {
+        width: 100%;
+        justify-content: center;
+        gap: 5px;
+    }
+    .primary-nav ul, .secondary-nav ul {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
 }
 
-@media (min-width: 1200px) 
-     .jackpot-and-chat-container {
+@media (min-width: 1200px) {
+    .jackpot-and-chat-container {
         position: relative;
-        left: 150px;
-     } 
+        left: 150px;  
+    }
 }
