@@ -168,7 +168,7 @@ code { /* General code tag styling */
 }
 
 /*=========================
- WINNER TRADE OFFER NOTIFICATION POPUP (NEW)
+ WINNER TRADE OFFER NOTIFICATION POPUP
  =========================*/
 .trade-offer-popup {
     position: fixed;
@@ -186,7 +186,8 @@ code { /* General code tag styling */
     transform: translateX(120%); /* Start off-screen */
     transition: transform var(--transition-medium) ease-in-out, opacity var(--transition-medium) ease-in-out;
     opacity: 0;
-    display: flex;
+    display: flex; /* Changed from none to flex to allow transform to work before 'show' */
+    visibility: hidden; /* Use visibility to prevent interaction when off-screen */
     flex-direction: column;
     gap: 15px;
 }
@@ -194,6 +195,7 @@ code { /* General code tag styling */
 .trade-offer-popup.show {
     transform: translateX(0);
     opacity: 1;
+    visibility: visible; /* Make it visible and interactive */
 }
 
 .trade-offer-popup-header {
@@ -238,6 +240,11 @@ code { /* General code tag styling */
     justify-content: flex-end;
     gap: 10px;
 }
+/* Ensure the accept button in this popup uses the .btn and .btn-success styles */
+#winnerTradeOfferPopupAccept.btn.btn-success {
+    /* Styles are inherited, specific overrides if needed */
+}
+
 
 /*=========================
  HEADER & NAVIGATION
@@ -610,30 +617,31 @@ code { /* General code tag styling */
     border-bottom: 1px solid var(--border-color);
     border-radius: 12px 12px 0 0;
     box-shadow: var(--shadow-sm);
-    min-height: 170px;
+    min-height: 170px; /* Default height */
     position: relative;
-    overflow: hidden;
+    overflow: hidden; /* Important for containing absolutely positioned elements */
     z-index: 5;
-    transition: height 0.5s ease, min-height 0.5s ease, background 0.3s ease, opacity 0.5s ease; /* Added opacity transition */
+    transition: height 0.5s ease, min-height 0.5s ease, background 0.3s ease, opacity 0.5s ease;
     flex-wrap: wrap;
     flex-shrink: 0;
 }
 
 .jackpot-header.roulette-mode {
-    background: linear-gradient(135deg, var(--background-dark), var(--background-medium));
-    height: 140px; /* Height for roulette view */
+    background: linear-gradient(135deg, var(--background-dark), var(--background-medium)); /* Darker for roulette */
+    height: 140px; /* Fixed height when roulette is active */
     min-height: 140px;
-    align-items: center; /* Vertically center roulette */
-    padding-top: 0;
+    align-items: center; /* Vertically center roulette track if it's a direct child or for other content */
+    padding-top: 0; /* Adjust padding for roulette view */
     padding-bottom: 0;
 }
-/* Hide header elements when roulette is active, controlled by JS adding/removing 'hide-for-roulette' */
+
+/* Class to hide elements smoothly during roulette transition */
 .jackpot-header .jackpot-value.hide-for-roulette,
 .jackpot-header .jackpot-timer.hide-for-roulette,
 .jackpot-header .jackpot-stats.hide-for-roulette {
     opacity: 0;
     pointer-events: none; /* Prevent interaction when hidden */
-    transition: opacity 0.3s ease;
+    transition: opacity 0.3s ease !important; /* Ensure this transition applies */
 }
 
 
@@ -647,7 +655,7 @@ code { /* General code tag styling */
     align-items: center;
     text-align: center;
     padding: 15px 5px;
-    transition: opacity 0.3s ease; /* For smooth hide/show */
+    transition: opacity 0.3s ease; /* Smooth fade for normal hide/show */
 }
 
 
@@ -706,17 +714,17 @@ code { /* General code tag styling */
  =========================*/
 
 .inline-roulette {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: transparent; /* Ensure it overlays header elements if needed */
-    z-index: 10; /* Above other header content */
+    position: absolute; /* Positioned within .jackpot-header */
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: transparent; 
+    z-index: 10; /* Above other header content if any, but below winner-info box */
     overflow: hidden;
-    /* border-radius: 12px 12px 0 0; /* Match header */
-    display: none; /* Initially hidden, shown by JS */
-    align-items: center;
-    justify-content: center;
-    opacity: 0; /* Start faded out */
-    transform: translateY(20px); /* Start slightly below */
-    transition: opacity 0.5s ease, transform 0.5s ease; /* For fade/slide in */
+    display: none; /* Controlled by JS adding .active class */
+    align-items: center; /* Vertically center .roulette-container */
+    justify-content: center; /* Horizontally center .roulette-container */
+    opacity: 0;
+    transform: translateY(10px); /* Start slightly below for slide-in effect */
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
 }
 .inline-roulette.active { /* Class added by JS to show roulette */
     display: flex;
@@ -724,59 +732,63 @@ code { /* General code tag styling */
     transform: translateY(0);
 }
 
-.roulette-container {
-    position: relative; width: 90%; /* Relative to .inline-roulette */
-    max-width: 1000px; /* Max width of the track container */
+.roulette-container { /* Actual scrolling viewport for the track */
+    position: relative;
+    width: 100%; /* Take full width of .inline-roulette */
+    max-width: 1000px; /* Max width of the track visible area */
     height: 90px; /* Height of the roulette strip */
-    overflow: hidden;
-    background-color: rgba(13, 17, 23, 0.7); /* Semi-transparent dark background */
+    overflow: hidden; /* This is crucial, hides non-visible parts of track */
+    background-color: rgba(13, 17, 23, 0.7);
     border-radius: 8px;
     border: 1px solid var(--border-color);
     box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(2px); /* Optional: blur content behind it */
+    backdrop-filter: blur(2px);
 }
 .roulette-track {
-    display: flex; position: absolute; left: 0; top: 0; height: 100%;
-    /* Padding to center the first/last visible item against the ticker */
-    padding-left: calc(50% - 45px); /* (container_width / 2) - (item_width / 2) where item_width is 90px */
+    display: flex;
+    position: absolute;
+    left: 0; /* JS will animate transform: translateX() on this element */
+    top: 0;
+    height: 100%;
+    padding-left: calc(50% - 45px); /* (viewport_width / 2) - (item_width / 2) */
     padding-right: calc(50% - 45px);
-    will-change: transform; /* Performance hint for browsers */
-    transition: none; /* JS will handle transform transitions */
+    will-change: transform;
+    transition: none; /* JS handles transform for smooth animation */
 }
 
 .roulette-item {
-    flex: 0 0 auto; /* Don't grow or shrink, use defined width */
-    width: 90px; /* Item width */
-    height: 80px; /* Item height, leaving space for margins/ticker */
-    margin: 5px; /* Margin around item for spacing */
-    background: rgba(30, 35, 40, 0.8); /* Darker item background */
+    flex: 0 0 auto;
+    width: 90px;
+    height: 80px;
+    margin: 5px;
+    background: rgba(30, 35, 40, 0.8);
     border-radius: 6px;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
     overflow: hidden;
-    transition: transform var(--transition-medium), box-shadow var(--transition-medium);
-    border: 2px solid transparent; /* Base border, winner highlight will change this */
+    transition: transform var(--transition-medium), box-shadow var(--transition-medium), border-color var(--transition-fast);
+    border: 2px solid transparent;
     position: relative;
-    backface-visibility: hidden; /* Improve rendering performance */
+    backface-visibility: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0; /* Remove padding if image is main content */
+    padding: 0;
 }
 
 .roulette-item:hover {
     transform: translateY(-5px) scale(1.05);
     box-shadow: var(--shadow-lg);
-    z-index: 1; /* Bring to front on hover */
+    z-index: 1;
 }
 
 .roulette-avatar {
     display: block;
     width: 100%;
     height: 100%;
-    object-fit: cover; /* Cover the area, might crop */
+    object-fit: cover;
     transition: transform var(--transition-medium);
-    border: none; /* Remove border from avatar if item has one */
-    border-radius: 0; /* Remove border-radius if item handles it */
+    border: none;
+    border-radius: 0;
 }
 
 .roulette-item:hover .roulette-avatar { transform: scale(1.1); }
@@ -800,52 +812,42 @@ code { /* General code tag styling */
 .roulette-ticker::after { bottom: -6px; border-top: 8px solid rgba(0, 230, 118, 0.8); }
 
 
-/* Winner Info Box styling (within .inline-roulette) */
 .winner-info {
     position: absolute;
-    /* Centered on top of the roulette track after spin, or positioned as needed by JS */
     top: 50%; left: 50%;
-    transform: translate(-50%, -50%) scale(0.9); /* Initial state for animation */
-    width: 300px; /* Or desired width */
+    transform: translate(-50%, -50%) scale(0.9);
+    width: 300px;
     background: radial-gradient(circle, rgba(20, 25, 30, 0.97), rgba(13, 17, 23, 0.99));
     padding: 20px;
     border-radius: 10px;
     border: 1px solid var(--primary-color);
     box-shadow: 0 0 25px rgba(0, 230, 118, 0.5), var(--shadow-lg);
-    display: none; /* Controlled by JS */
+    display: none; 
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
-    z-index: 20; /* Above roulette track */
+    z-index: 20; /* Above roulette track and ticker */
     opacity: 0;
-    /* animation: fadeInWinnerBox 0.5s 0.2s ease-out forwards; /* JS will trigger this by adding a class or direct style */
 }
 
-.winner-info.show { /* Class added by JS */
+.winner-info.show {
     display: flex;
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
     transition: opacity 0.4s ease-out, transform 0.4s ease-out;
 }
 
-
-@keyframes fadeInWinnerBox { /* Alternative if JS doesn't handle transition directly */
-    from { opacity: 0; transform: translate(-50%, -50%) scale(0.9); }
-    to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-}
-
-
 .winner-header { display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
 .winner-avatar { width: 60px; height: 60px; border-radius: 50%; border: 3px solid var(--primary-color); box-shadow: 0 0 15px rgba(0, 230, 118, 0.5); margin-right: 15px; object-fit: cover; flex-shrink: 0; }
-.winner-header h3 { margin: 0; font-size: 1.5rem; font-family: var(--font-secondary); } /* Larger name */
+.winner-header h3 { margin: 0; font-size: 1.5rem; font-family: var(--font-secondary); }
 .winner-details { margin-top: 8px; font-size: 1rem; }
 .winner-details p { margin: 5px 0; font-size: 1rem; color: var(--text-secondary); }
 .winner-details span { color: var(--primary-light); font-weight: bold; font-family: var(--font-mono); }
 .congrats { font-size: 1.4rem !important; color: var(--primary-color); font-weight: 700; margin-top: 12px !important; text-transform: uppercase; letter-spacing: 2px; animation: colorPulse 2s infinite ease-in-out; text-shadow: 0 0 8px currentColor; }
 @keyframes colorPulse { 0%, 100% { transform: scale(1); text-shadow: 0 0 8px currentColor; } 50% { transform: scale(1.05); text-shadow: 0 0 15px currentColor; } }
 
-.return-btn { display: none !important; /* If not used, can be removed from HTML too */ }
+.return-btn { display: none !important; }
 
 .confetti-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 18; }
 .confetti-piece {
@@ -858,7 +860,7 @@ code { /* General code tag styling */
     100% { transform: translateY(200px) translateX(var(--fall-x, 0px)) rotateZ(var(--rotation-end, 720deg)) scale(0.5); opacity: 0; }
 }
 
-/* Dynamic style for winner item pulse (will be injected by JS) */
+/* Dynamic style for winner item pulse (injected by JS with --winner-color) */
 /* .winner-highlight { ... } @keyframes winnerPulse { ... } */
 
 /*=========================
@@ -1364,12 +1366,6 @@ code { /* General code tag styling */
     line-height: 1;
 }
 
-/* Defined earlier, ensure it's not duplicated:
-@keyframes pulseWarning {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.15); opacity: 0.7; }
-} */
-
 /* --- ADDED: Footer --- */
 .main-footer {
     background-color: var(--background-dark);
@@ -1447,7 +1443,6 @@ code { /* General code tag styling */
     flex-direction: column-reverse; /* New messages at bottom, scroll up for old */
     gap: 12px;
     background-color: var(--background-dark);
-    /* min-height is removed as height is now fixed by parent */
 }
 
 
@@ -1559,24 +1554,24 @@ code { /* General code tag styling */
     font-size: 0.9rem;
 }
 
-/* Ensure jackpot section doesn't overlap chat at smaller viewport widths before flex-wrap kicks in effectively */
-@media (max-width: 980px) { /* Adjust breakpoint as needed */
+/* Responsive Adjustments */
+@media (max-width: 980px) {
     .jackpot-and-chat-container {
         flex-direction: column;
-        align-items: center; /* Center items when stacked */
+        align-items: center;
     }
     .jackpot-section {
-        width: 100%; /* Full width when stacked */
-        max-width: 680px; /* Or your preferred max width */
-        margin-bottom: 20px; /* Space between jackpot and chat when stacked */
+        width: 100%;
+        max-width: 680px;
+        margin-bottom: 20px;
     }
     .chat-container {
-        width: 100%; /* Full width when stacked */
-        max-width: 600px; /* Or your preferred max width for chat */
-        height: 500px; /* Adjust height if needed for stacked view */
+        width: 100%;
+        max-width: 600px;
+        height: 500px;
         max-height: 60vh;
     }
-    .main-header .container { /* Adjusted from .main-header .container to .header-container for specificity */
+    .header-container { /* Changed from .main-header .container */
         flex-direction: column;
         gap: 5px;
     }
@@ -1589,40 +1584,19 @@ code { /* General code tag styling */
         flex-wrap: wrap;
         justify-content: center;
     }
-
 }
 
-/* Make jackpot section and chat side-by-side again on larger screens, removing the left offset */
-@media (min-width: 981px) { /* Screen width where they go side-by-side */
+@media (min-width: 981px) {
     .jackpot-and-chat-container {
         flex-direction: row;
-        align-items: flex-start; /* Align to top */
-        /* position: static; /* Remove fixed positioning if any */
-        /* left: auto; /* Remove fixed positioning if any */
+        align-items: flex-start;
     }
     .jackpot-section {
-        width: calc(100% - 300px - 20px); /* Adjust width: 100% - chat_width - gap */
-        max-width: 680px; /* Keep a max-width if desired */
+        width: calc(100% - 280px - 20px); /* jackpot width = 100% - chat_width - gap */
+        max-width: 680px; /* Retain a max-width if desired */
         margin-bottom: 0;
     }
     .chat-container {
         width: 280px; /* Fixed width for chat */
     }
 }
-
-/* Specific override for very large screens if the left offset was intentional for >1200px */
-/* This seems to conflict with the 981px rule if not managed carefully.
-   The previous 1200px rule caused the jackpot to shift left.
-   If the goal is just to have them side-by-side and centered, the 981px rule should suffice.
-   If a specific offset is desired only on very large screens, it needs to be distinct.
-   For now, I'll comment out the 1200px rule that pushes it left, as it seems to be
-   the source of layout issues when combined with flexbox.
-*/
-/*
-@media (min-width: 1200px) {
-    .jackpot-and-chat-container {
-        position: relative;
-        left: 150px;
-    }
-}
-*/
