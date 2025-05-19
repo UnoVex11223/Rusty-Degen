@@ -1500,8 +1500,8 @@ code { /* General code tag styling */
 
 @media (min-width: 1200px) {
     .jackpot-and-chat-container {
-        /* Removed left positioning to allow natural centering via parent .container */
-        /* position: relative; */
-        /* left: 150px; */
+         Removed left positioning to allow natural centering via parent .container 
+         position: relative; 
+         left: 150px; 
     }
 }
