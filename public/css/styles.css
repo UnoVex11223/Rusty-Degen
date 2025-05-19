@@ -834,15 +834,35 @@ code { /* General code tag styling */
     transition: color var(--transition-fast);
 }
 .player-items-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: flex-start; }
+
+/* MODIFIED for Issue 3: Pot Item Appearance */
 .player-deposit-item {
-    width: 80px; height: 100px; background: rgba(22, 27, 34, 0.7); border-radius: 5px;
+    width: 90px; /* Made more square and slightly larger */
+    height: 90px; /* Made more square and slightly larger */
+    background: rgba(22, 27, 34, 0.7); border-radius: 5px;
     overflow: hidden; box-shadow: var(--shadow-sm); transition: transform var(--transition-fast);
     border: 1px solid var(--border-color); flex: 0 0 auto; display: flex; flex-direction: column;
     border-left-width: 3px; border-left-style: solid;
 }
 .player-deposit-item:hover { transform: translateY(-3px); box-shadow: var(--shadow-md), 0 0 8px rgba(0, 230, 118, 0.2); }
-.player-deposit-item-image { width: 100%; height: 60px; object-fit: contain; background-color: var(--background-medium); border-bottom: 1px solid rgba(48, 54, 61, 0.5); display: block; }
-.player-deposit-item-info { padding: 4px; height: 40px; display: flex; flex-direction: column; justify-content: center; flex-grow: 1; }
+.player-deposit-item-image {
+    width: 100%;
+    height: 55px; /* Adjusted to fit new parent height, leaving space for info */
+    object-fit: contain;
+    background-color: var(--background-medium);
+    border-bottom: 1px solid rgba(48, 54, 61, 0.5);
+    display: block;
+}
+.player-deposit-item-info {
+    padding: 4px;
+    height: 35px; /* Adjusted to fit new parent height */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    flex-grow: 1;
+}
+/* End of MODIFIED for Issue 3 */
+
 .player-deposit-item-name { font-size: 0.65rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); margin-bottom: 2px; }
 .player-deposit-item-value { font-size: 0.7rem; font-weight: 700; }
 .player-deposit-item-more { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; padding: 5px; margin-top: 5px; }
@@ -880,7 +900,7 @@ code { /* General code tag styling */
 #depositModal .modal-content { max-width: 900px; }
 #tradeUrlModal .modal-content { max-width: 600px; }
 .winning-history-modal .modal-content { max-width: 800px; }
-.accept-winnings-modal .modal-content { max-width: 550px; } /* New: Accept Winnings Modal Size */
+.accept-winnings-modal .modal-content { max-width: 550px; }
 
 
 @keyframes modalIn {
@@ -1475,6 +1495,6 @@ code { /* General code tag styling */
 @media (min-width: 1200px) {
     .jackpot-and-chat-container {
         position: relative;
-        left: 150px;  
+        left: 150px;
     }
 }
