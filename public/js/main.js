@@ -10,6 +10,7 @@
 // - REMOVED: "Details" button from Provably Fair round history.
 // - ADDED: Frontend visual cooldown for chat send button.
 // - APPLIED USER REQUESTED FIXES for issue 1 and issue 2.
+// - Refined logic for skins stuck in pot and winner popup timing.
 
 // Ensure Socket.IO client library is loaded before this script
 
@@ -170,10 +171,11 @@ let userColorMap = new Map();
 let notificationTimeout = null;
 let spinStartTime = 0;
 let currentDepositOfferURL = null;
-let currentWinningsOfferURL = null; // Added
-let pendingWinningsOffer = null; // Added for queued winnings when spinning
+let currentWinningsOfferURL = null;
+let pendingWinningsOffer = null;
 let onlineUserCount = 0;
 let isChatSendOnCooldown = false;
+let lastReceivedWinningOffer = null; // Variable to store last winning offer details
 
 function showModal(modalElement) {
     if (modalElement) modalElement.style.display = 'flex';
@@ -184,11 +186,11 @@ function hideModal(modalElement) {
     if (modalElement === DOMElements.deposit.depositModal) {
         resetDepositModalUI();
     }
-    if (modalElement === DOMElements.acceptWinningsModal.modal) { // Added
+    if (modalElement === DOMElements.acceptWinningsModal.modal) {
         resetAcceptWinningsModalUI();
     }
 }
-window.hideModal = hideModal; // Make it globally accessible
+window.hideModal = hideModal;
 
 function showPage(pageElement) {
     Object.values(DOMElements.pages).forEach(page => {
@@ -341,11 +343,11 @@ function resetDepositModalUI() {
     currentDepositOfferURL = null;
 }
 
-function resetAcceptWinningsModalUI() { // Added
+function resetAcceptWinningsModalUI() {
     const { statusText, acceptOnSteamBtn, offerIdDisplay } = DOMElements.acceptWinningsModal;
     if (statusText) {
         statusText.textContent = '';
-        statusText.className = 'deposit-status-text'; // Re-use class if suitable
+        statusText.className = 'deposit-status-text';
     }
     if (acceptOnSteamBtn) {
         acceptOnSteamBtn.disabled = true;
@@ -355,9 +357,8 @@ function resetAcceptWinningsModalUI() { // Added
     currentWinningsOfferURL = null;
 }
 
-function processPendingWinningsOffer() { // Added
-    if (!pendingWinningsOffer) return;
-    const { offerURL, offerId, status } = pendingWinningsOffer;
+// USER REQUEST: Add this helper function (already present, confirmed good)
+function showWinningsPopup(offerURL, offerId, status) {
     const { modal, offerIdDisplay, statusText, acceptOnSteamBtn } = DOMElements.acceptWinningsModal;
     currentWinningsOfferURL = offerURL;
     if (offerIdDisplay) offerIdDisplay.textContent = `Trade Offer ID: #${offerId}`;
@@ -370,7 +371,6 @@ function processPendingWinningsOffer() { // Added
         acceptOnSteamBtn.setAttribute('data-offer-url', offerURL);
     }
     showModal(modal);
-    pendingWinningsOffer = null;
 }
 
 
@@ -1368,8 +1368,6 @@ function finalizeSpin(winningElement, winner) {
         console.log("FinalizeSpin called, but seems already finalized or data invalid.");
         if (isSpinning) {
             isSpinning = false; updateDepositButtonState();
-            // processPendingWinningsOffer(); // Original line from file
-            // USER REQUEST: The processPendingWinningsOffer should be in handleSpinEnd
         }
         return;
     }
@@ -1405,8 +1403,6 @@ function handleSpinEnd(winningElement, winner) {
         console.error("handleSpinEnd called with invalid data/element.");
         if (!isSpinning) return;
         isSpinning = false; updateDepositButtonState();
-        // processPendingWinningsOffer(); // Original line from file
-        // USER REQUEST: Logic below handles this
         resetToJackpotView();
         return;
     }
@@ -1448,10 +1444,8 @@ function handleSpinEnd(winningElement, winner) {
                         } else {
                             clearInterval(window.typeChanceInterval); window.typeChanceInterval = null;
                             setTimeout(() => { launchConfetti(userColor); }, 200);
-                            isSpinning = false; updateDepositButtonState(); // Moved from original location per user request
-                            // processPendingWinningsOffer(); // Original line from file
+                            isSpinning = false; updateDepositButtonState();
 
-                            // USER REQUEST: Process any pending winnings offers
                             if (pendingWinningsOffer && pendingWinningsOffer.waitingForAnimation) {
                                 console.log("Animation complete, processing pending winnings offer");
                                 if (pendingWinningsOffer.offerURL) {
@@ -1460,6 +1454,9 @@ function handleSpinEnd(winningElement, winner) {
                                         pendingWinningsOffer.offerId,
                                         pendingWinningsOffer.status
                                     );
+                                } else {
+                                     console.warn("Winner popup: OfferURL not found in pendingWinningsOffer. User won, but specific trade details might be missing for popup.");
+                                     showNotification("Congratulations! Your winnings are being processed. Check your Winning History or Steam soon.", "success", 15000);
                                 }
                                 pendingWinningsOffer = null;
                             }
@@ -1470,20 +1467,16 @@ function handleSpinEnd(winningElement, winner) {
                     }, typeDelay);
                 }
             }, typeDelay);
-        }, 500); // This 500ms timeout was already here
+        }, 500);
     } else {
         console.error("Winner info display elements missing. Cannot display winner details.");
         isSpinning = false; updateDepositButtonState();
-        // processPendingWinningsOffer(); // Original line from file
-        // USER REQUEST: Process any pending winnings offers if error occurs here as well
-        if (pendingWinningsOffer && pendingWinningsOffer.waitingForAnimation) {
-            console.log("Animation error path, processing pending winnings offer");
+        if (pendingWinningsOffer && pendingWinningsOffer.waitingForAnimation) { // Also handle here if UI elements are missing
+            console.log("Animation error path (UI elements missing), processing pending winnings offer");
             if (pendingWinningsOffer.offerURL) {
-                showWinningsPopup(
-                    pendingWinningsOffer.offerURL,
-                    pendingWinningsOffer.offerId,
-                    pendingWinningsOffer.status
-                );
+                showWinningsPopup(pendingWinningsOffer.offerURL, pendingWinningsOffer.offerId, pendingWinningsOffer.status);
+            } else {
+                 showNotification("Congratulations! Your winnings are being processed. Check your Winning History or Steam soon.", "success", 15000);
             }
             pendingWinningsOffer = null;
         }
@@ -1566,25 +1559,22 @@ function resetToJackpotView() {
     }
     clearConfetti();
 
-    // USER REQUEST: Fix for Issue 1 - Clear deposited items after winning animation
+    // This is the user's requested fix for skins looping, confirmed good.
     const container = DOMElements.jackpot.participantsContainer;
     if (container) {
-        container.innerHTML = ''; // Completely clear the container
-        // Reinsert empty message if needed
+        container.innerHTML = '';
         const emptyMsg = DOMElements.jackpot.emptyPotMessage;
         if (emptyMsg) {
-            container.appendChild(emptyMsg); //
-            emptyMsg.style.display = 'block'; //
+            container.appendChild(emptyMsg);
+            emptyMsg.style.display = 'block';
         }
     }
-
-    // Reset the current round data to clear any lingering state
     if (currentRound) {
-        currentRound.participants = []; //
-        currentRound.items = []; //
-        currentRound.totalValue = 0; //
+        currentRound.participants = [];
+        currentRound.items = [];
+        currentRound.totalValue = 0;
     }
-    updateParticipantsUI(); //
+    updateParticipantsUI();
 
 
     setTimeout(() => {
@@ -1608,7 +1598,7 @@ function resetToJackpotView() {
                 }, 50 + index * 50);
             }
         });
-        initiateNewRoundVisualReset(); // This was already called, but seems appropriate after clearing specific round data
+        initiateNewRoundVisualReset();
         updateDepositButtonState();
         if (socket?.connected) {
             console.log("Requesting fresh round data after reset to jackpot view.");
@@ -1947,7 +1937,7 @@ function updateChatOnlineUsers(count) {
     }
 }
 
-async function loadWinningHistory() { // Added
+async function loadWinningHistory() {
     const { modal, tableBody, loadingIndicator, noWinningsMessage } = DOMElements.winningHistoryModal;
     if (!currentUser) {
         showNotification("Please log in to view your winning history.", "info");
@@ -2023,23 +2013,6 @@ async function loadWinningHistory() { // Added
     }
 }
 
-// USER REQUEST: Add this helper function
-function showWinningsPopup(offerURL, offerId, status) { //
-    const { modal, offerIdDisplay, statusText, acceptOnSteamBtn } = DOMElements.acceptWinningsModal; //
-    currentWinningsOfferURL = offerURL; //
-    if (offerIdDisplay) offerIdDisplay.textContent = `Trade Offer ID: #${offerId}`; //
-    if (statusText) { //
-        statusText.textContent = `Status: ${status || 'Sent'}. Click below to accept.`; //
-        statusText.className = 'deposit-status-text info'; //
-    }
-    if (acceptOnSteamBtn) { //
-        acceptOnSteamBtn.disabled = false; //
-        acceptOnSteamBtn.setAttribute('data-offer-url', offerURL); //
-    }
-    showModal(modal); //
-}
-
-
 function setupSocketConnection() {
     socket.on('connect', () => {
         console.log('Socket connected:', socket.id);
@@ -2060,8 +2033,8 @@ function setupSocketConnection() {
 
     socket.on('roundCreated', (data) => {
         console.log('New round created:', data); currentRound = data;
-        resetToJackpotView();
-        updateRoundUI();
+        resetToJackpotView(); // This will clear the pot and then requestRoundData
+        updateRoundUI();      // Update UI based on the new empty round
         updateDepositButtonState();
     });
     socket.on('participantUpdated', (data) => {
@@ -2082,27 +2055,39 @@ function setupSocketConnection() {
             updateDepositButtonState();
         }
     });
-    socket.on('roundWinner', (data) => { //
-        console.log('Round winner received:', data); //
-        if (currentRound && currentRound.roundId === data.roundId) { //
-            if (!currentRound.winner) currentRound.winner = data.winner; //
-            currentRound.status = 'rolling'; //
-            // Check if current user is the winner and handle accordingly
-            if (currentUser &&  //
-                (data.winner.id === currentUser._id || data.winner.id === currentUser.id || //
-                 data.winner._id === currentUser._id || data.winner._id === currentUser.id)) { //
-                console.log('Current user is the winner! Will show acceptance popup after animation.'); //
-                // Set a flag to show the acceptance popup after animation completes
-                pendingWinningsOffer = {  //
-                    waitingForAnimation: true, //
-                    roundId: data.roundId //
-                }; //
-                // Show a notification now
-                showNotification('You won! Accept your winnings after the animation.', 'success', 10000); //
-            } //
-            handleWinnerAnnouncement(data); //
-        } else console.warn("Received winner for mismatched round ID. Current:", currentRound?.roundId, "Received:", data.roundId); //
+
+    socket.on('roundWinner', (data) => {
+        console.log('Round winner received:', data);
+        if (currentRound && currentRound.roundId === data.roundId) {
+            if (!currentRound.winner) currentRound.winner = data.winner;
+            currentRound.status = 'rolling';
+
+            if (currentUser &&
+                (data.winner.id === currentUser._id || data.winner.id === currentUser.id ||
+                 data.winner._id === currentUser._id || data.winner._id === currentUser.id)) {
+                console.log('Current user is the winner! Preparing for animation.');
+
+                pendingWinningsOffer = { // Initialize pendingWinningsOffer
+                    waitingForAnimation: true,
+                    roundId: data.roundId
+                };
+
+                // Check if we've already received the trade offer for this winning round
+                if (lastReceivedWinningOffer && lastReceivedWinningOffer.roundId === data.roundId) {
+                    pendingWinningsOffer.offerURL = lastReceivedWinningOffer.offerURL;
+                    pendingWinningsOffer.offerId = lastReceivedWinningOffer.offerId;
+                    pendingWinningsOffer.status = lastReceivedWinningOffer.status;
+                    console.log('Populated pendingWinningsOffer from lastReceivedWinningOffer:', pendingWinningsOffer);
+                    lastReceivedWinningOffer = null; // Clear it as it's now associated
+                } else {
+                    console.log('Winning offer details not yet received for this round. Will wait for tradeOfferSent.');
+                }
+                showNotification('You won! Accept your winnings after the animation.', 'success', 10000);
+            }
+            handleWinnerAnnouncement(data);
+        } else console.warn("Received winner for mismatched round ID. Current:", currentRound?.roundId, "Received:", data.roundId);
     });
+
     socket.on('roundCompleted', (data) => {
         console.log('Round completed event received:', data);
         if (currentRound && currentRound.roundId === data.roundId) {
@@ -2129,17 +2114,48 @@ function setupSocketConnection() {
             showNotification('Error syncing with server.', 'error');
              initiateNewRoundVisualReset(); return;
         }
-        currentRound = data;
+        currentRound = data; // Set currentRound with the new data
+
+        const container = DOMElements.jackpot.participantsContainer;
+        if (container) {
+            if (data.status === 'active' && data.participants?.length > 0) {
+                console.log("Rendering existing deposits for ACTIVE round from full round data.");
+                container.innerHTML = ''; // Clear before re-rendering for active round
+                if (DOMElements.jackpot.emptyPotMessage) DOMElements.jackpot.emptyPotMessage.style.display = 'none';
+
+                const validParticipants = data.participants.filter(p => p.user && (p.user._id || p.user.id));
+                const sortedParticipants = [...validParticipants].sort((a,b) => (b.itemsValue || 0) - (a.itemsValue || 0));
+
+                sortedParticipants.forEach(p => {
+                    const participantItems = data.items?.filter(item => item.owner === (p.user._id || p.user.id)) || [];
+                    displayLatestDeposit({
+                        userId: p.user._id || p.user.id,
+                        username: p.user.username,
+                        avatar: p.user.avatar,
+                        itemsValue: p.itemsValue,
+                        depositedItems: participantItems
+                    });
+                    const element = container.querySelector(`.player-deposit-container[data-user-id="${p.user._id || p.user.id}"]`);
+                    if (element) element.classList.remove('player-deposit-new');
+                });
+                updateAllParticipantPercentages();
+            } else {
+                // For 'pending', 'completed', 'error', 'rolling', or 'active' with no participants
+                console.log(`Round status is '${data.status}'. Ensuring visual pot is reset.`);
+                initiateNewRoundVisualReset(); // Clears the container and shows empty message.
+            }
+        }
+
+        // Update other UI elements based on the new currentRound data
         updateRoundUI();
         updateDepositButtonState();
 
-        if (currentRound.status === 'rolling' || currentRound.status === 'completed') {
-             if (!isSpinning && currentRound.winner) {
+
+        // Handle specific statuses after general UI update
+        if (currentRound.status === 'rolling' || (currentRound.status === 'completed' && currentRound.winner)) {
+             if (!isSpinning) {
                  console.log("Connected mid-round/post-completion with winner known, triggering animation/display.");
-                 handleWinnerAnnouncement(currentRound);
-             } else if (!isSpinning) {
-                  console.log("Connected after round ended or is rolling without winner. Resetting view or waiting for winner.");
-                  resetToJackpotView();
+                 handleWinnerAnnouncement(currentRound); // Pass the full currentRound object
              }
         } else if (currentRound.status === 'active') {
              if (currentRound.participants?.length > 0 && currentRound.timeLeft > 0 && !timerActive) {
@@ -2153,72 +2169,44 @@ function setupSocketConnection() {
                   console.log("Server data indicates no participants, stopping client timer.");
                   timerActive = false; if (roundTimer) clearInterval(roundTimer); roundTimer = null;
                   updateTimerUI(CONFIG.ROUND_DURATION); updateDepositButtonState();
-             } else if (!timerActive) {
+             } else if (!timerActive) { // If timer is not active, ensure UI reflects server's timeLeft
                  updateTimerUI(currentRound.timeLeft);
              }
         } else if (currentRound.status === 'pending') {
-            console.log("Received pending round state. Resetting visuals.");
-            initiateNewRoundVisualReset();
+            // initiateNewRoundVisualReset has already been called by the logic above for non-active rounds
             if(DOMElements.jackpot.timerValue) DOMElements.jackpot.timerValue.textContent = "Waiting";
-            updateDepositButtonState();
         } else if (!currentRound.status) {
-             console.warn("Received round data with no status. Resetting visuals.");
-             initiateNewRoundVisualReset();
-        }
-
-        const container = DOMElements.jackpot.participantsContainer;
-        if(container && data.participants?.length > 0) {
-            console.log("Rendering existing deposits from full round data.");
-            container.innerHTML = '';
-            if (DOMElements.jackpot.emptyPotMessage) DOMElements.jackpot.emptyPotMessage.style.display = 'none';
-            const validParticipants = data.participants.filter(p => p.user && (p.user._id || p.user.id));
-            const sortedParticipants = [...validParticipants].sort((a,b) => (b.itemsValue || 0) - (a.itemsValue || 0));
-            sortedParticipants.forEach(p => {
-                const participantItems = data.items?.filter(item => item.owner === (p.user._id || p.user.id)) || [];
-                displayLatestDeposit({
-                    userId: p.user._id || p.user.id,
-                    username: p.user.username,
-                    avatar: p.user.avatar,
-                    itemsValue: p.itemsValue,
-                    depositedItems: participantItems
-                });
-                const element = container.querySelector(`.player-deposit-container[data-user-id="${p.user._id || p.user.id}"]`);
-                if (element) element.classList.remove('player-deposit-new');
-            });
-             updateAllParticipantPercentages();
-        } else if (container && (!data.participants || data.participants.length === 0)) {
-            initiateNewRoundVisualReset();
+             console.warn("Received round data with no status. Visuals reset by initiateNewRoundVisualReset.");
         }
     });
 
-    socket.on('tradeOfferSent', (data) => { //
-         console.log('Trade offer sent event received:', data); //
-         if (currentUser && data.userId === (currentUser._id || currentUser.id) && data.offerURL) { //
-              if (data.type === 'winning') { // Check if it's a winning offer
-                  if (isSpinning || (pendingWinningsOffer && pendingWinningsOffer.waitingForAnimation)) { //
-                      // Store the data to be processed after animation
-                      pendingWinningsOffer = {  //
-                           offerURL: data.offerURL, //
-                           offerId: data.offerId, //
-                           status: data.status, //
-                          waitingForAnimation: true //
-                      }; //
-                      console.log('Winner offer received but animation playing, will show popup after animation'); //
-                  } else { //
-                      // Show popup immediately if no animation playing
-                      showWinningsPopup(data.offerURL, data.offerId, data.status); //
-                  } //
-                  // Show a notification as well for users who might miss the modal
-                  showNotification(`Winnings Sent! <a href="${data.offerURL}" target="_blank" rel="noopener noreferrer" class="notification-link">Accept on Steam</a> (#${data.offerId})`, 'success', 15000); //
-              } else { //
-                   // Handle deposit offers...
-                   // This part is for existing deposit notifications if any, or general use.
-                   // The specific deposit modal handles its own notifications mostly.
+
+    socket.on('tradeOfferSent', (data) => {
+         console.log('Trade offer sent event received:', data);
+         if (currentUser && data.userId === (currentUser._id || currentUser.id) && data.offerURL) {
+              if (data.type === 'winning') {
+                  lastReceivedWinningOffer = { // Store details
+                      offerURL: data.offerURL,
+                      offerId: data.offerId,
+                      status: data.status,
+                      roundId: data.roundId // Ensure backend sends this
+                  };
+                  console.log('Stored lastReceivedWinningOffer for potential winner popup:', lastReceivedWinningOffer);
+
+                  // If the animation has already started for THIS round's winner (currentUser)
+                  // and pendingWinningsOffer was initialized by roundWinner event
+                  if (pendingWinningsOffer && pendingWinningsOffer.waitingForAnimation && pendingWinningsOffer.roundId === data.roundId) {
+                      pendingWinningsOffer.offerURL = data.offerURL;
+                      pendingWinningsOffer.offerId = data.offerId;
+                      pendingWinningsOffer.status = data.status;
+                      console.log("Updated pendingWinningsOffer with trade details during animation phase.");
+                  }
+                  // General notification, user will get popup via roundWinner -> handleSpinEnd
+                  showNotification(`Winnings Sent! (#${data.offerId}) Accept after animation if you won.`, 'success', 10000);
+              } else {
                   showNotification(`Trade Offer Update: <a href="${data.offerURL}" target="_blank" rel="noopener noreferrer" class="notification-link">View Offer on Steam</a> (#${data.offerId}) - Status: ${data.status}`, 'info', 10000);
               }
-         } else if (currentUser && data.userId === (currentUser._id || currentUser.id)) { //
-              // Fallback notification...
-              // Fallback if URL is missing but it's for the current user
+         } else if (currentUser && data.userId === (currentUser._id || currentUser.id)) {
               showNotification(`Trade Offer Sent: Check Steam for your items! (Offer #${data.offerId})`, 'success', 8000);
          }
     });
@@ -2283,12 +2271,11 @@ function setupEventListeners() {
         userProfile?.classList.remove('open');
     });
 
-    // Event listener for Winning History
     winningHistoryDropdownButton?.addEventListener('click', (e) => {
         e.preventDefault(); e.stopPropagation();
         const menu = DOMElements.user.userDropdownMenu;
         if (currentUser) {
-            loadWinningHistory(); // This function will also show the modal
+            loadWinningHistory();
         } else {
             showNotification("Please log in to view your winning history.", "info");
         }
@@ -2302,7 +2289,6 @@ function setupEventListeners() {
     DOMElements.profileModal.closeBtn?.addEventListener('click', () => hideModal(DOMElements.profileModal.modal));
     DOMElements.profileModal.cancelBtn?.addEventListener('click', () => hideModal(DOMElements.profileModal.modal));
 
-    // Accept Winnings Modal Listeners
     const awModal = DOMElements.acceptWinningsModal;
     awModal.closeBtn?.addEventListener('click', () => hideModal(awModal.modal));
     awModal.closeFooterBtn?.addEventListener('click', () => hideModal(awModal.modal));
@@ -2317,7 +2303,6 @@ function setupEventListeners() {
         }
     });
 
-    // Winning History Modal Listeners
     const whModal = DOMElements.winningHistoryModal;
     whModal.closeBtn?.addEventListener('click', () => hideModal(whModal.modal));
     whModal.closeFooterBtn?.addEventListener('click', () => hideModal(whModal.modal));
@@ -2372,8 +2357,8 @@ function setupEventListeners() {
 
     window.addEventListener('click', (e) => {
         const profileModalEl = DOMElements.profileModal.modal;
-        const acceptWinningsModalEl = DOMElements.acceptWinningsModal.modal; // Added
-        const winningHistoryModalEl = DOMElements.winningHistoryModal.modal; // Added
+        const acceptWinningsModalEl = DOMElements.acceptWinningsModal.modal;
+        const winningHistoryModalEl = DOMElements.winningHistoryModal.modal;
 
         if (userDropdownMenu && userProfile && userDropdownMenu.style.display === 'block' &&
             !userProfile.contains(e.target) && !userDropdownMenu.contains(e.target)) {
@@ -2383,21 +2368,21 @@ function setupEventListeners() {
         }
         if (e.target === DOMElements.deposit.depositModal) hideModal(DOMElements.deposit.depositModal);
         if (e.target === profileModalEl) hideModal(profileModalEl);
-        if (e.target === acceptWinningsModalEl) hideModal(acceptWinningsModalEl); // Added
-        if (e.target === winningHistoryModalEl) hideModal(winningHistoryModalEl); // Added
+        if (e.target === acceptWinningsModalEl) hideModal(acceptWinningsModalEl);
+        if (e.target === winningHistoryModalEl) hideModal(winningHistoryModalEl);
     });
 
     document.addEventListener('keydown', function(event) {
         const profileModalEl = DOMElements.profileModal.modal;
         const depositModalEl = DOMElements.deposit.depositModal;
-        const acceptWinningsModalEl = DOMElements.acceptWinningsModal.modal; // Added
-        const winningHistoryModalEl = DOMElements.winningHistoryModal.modal; // Added
+        const acceptWinningsModalEl = DOMElements.acceptWinningsModal.modal;
+        const winningHistoryModalEl = DOMElements.winningHistoryModal.modal;
 
         if (event.key === 'Escape') {
              if (profileModalEl?.style.display === 'flex') hideModal(profileModalEl);
              else if (depositModalEl?.style.display === 'flex') hideModal(depositModalEl);
-             else if (acceptWinningsModalEl?.style.display === 'flex') hideModal(acceptWinningsModalEl); // Added
-             else if (winningHistoryModalEl?.style.display === 'flex') hideModal(winningHistoryModalEl); // Added
+             else if (acceptWinningsModalEl?.style.display === 'flex') hideModal(acceptWinningsModalEl);
+             else if (winningHistoryModalEl?.style.display === 'flex') hideModal(winningHistoryModalEl);
              else if (userDropdownMenu && userDropdownMenu.style.display === 'block') {
                  userDropdownMenu.style.display = 'none';
                  userProfile?.setAttribute('aria-expanded', 'false');
@@ -2487,3 +2472,4 @@ document.addEventListener('DOMContentLoaded', () => {
     updateChatUI();
 });
 
+console.log("main.js updated with Winnings Modal and Winning History logic, user requested fixes for issue 1 & 2, and refined logic for pot clearing and winner popup.");
