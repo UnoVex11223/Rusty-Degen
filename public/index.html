@@ -76,8 +76,7 @@
         </div>
     </div>
 
-    <div class="modal" id="tradeUrlModal">
-        <div class="modal-content">
+    <div class="modal" id="tradeUrlModal"> <div class="modal-content">
             <div class="modal-header">
                 <h2>Set Your Trade URL</h2>
                 <button class="close-btn" id="closeTradeUrlModal" aria-label="Close trade URL modal">&times;</button>
@@ -285,13 +284,15 @@
                                         <p>Deposited: <span id="winnerDeposit">$0.00</span></p>
                                         <p>Chance: <span id="winnerChance">0.00%</span></p>
                                         <p class="congrats">Congratulations!</p>
+                                        <button id="acceptWinningOfferBtn" class="btn btn-success" style="display: none; margin-top: 15px;">
+                                            Accept Winnings on Steam <i class="fas fa-external-link-alt"></i>
+                                        </button>
                                     </div>
                                     <div class="confetti-container" id="confettiContainer"></div>
                                 </div>
                                 <audio id="spinSound" src="spin-sound.mp3" preload="auto"></audio>
                                 <audio id="depositSound" src="deposit-join.mp3" preload="auto"></audio>
-                                <button class="btn btn-primary return-btn" id="returnToJackpot" style="display: none;">Return</button>
-                            </div>
+                                </div>
                         </div>
 
                         <div class="deposit-button-container" id="depositBtnContainer">
@@ -342,7 +343,7 @@
             <section id="tos-page" style="display: none;">
                  <div class="content-card">
                      <h1>Terms of Service</h1>
-                     <p><small>Last Updated: May 17, 2025</small></p> <div class="content-section">
+                     <p><small>Last Updated: May 18, 2025</small></p> <div class="content-section">
                          <h3 class="content-section-title">1. Agreement to Terms</h3>
                          <div class="content-section-body">
                              <p>When you access or utilize RustyDegen's platform, you confirm that you've reviewed, comprehended, and consent to abide by these Service Terms. Should you disagree with any portion of these conditions, you are required to discontinue use of our platform immediately.</p>
@@ -603,7 +604,7 @@
                            window.showPage(page);
                            // If it's the modal link, also close the modal
                            const modal = link.closest('.modal');
-                           if (modal && typeof window.hideModal === 'function') {
+                           if (modal && typeof window.hideModal === 'function') { // Check for hideModal too
                                 window.hideModal(modal);
                            }
                       });
