@@ -67,9 +67,35 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <span id="depositStatusText" class="deposit-status-text" style="flex-grow: 1; text-align: left; color: var(--text-secondary); font-size: 0.9em;">Select items from your inventory to deposit.</span>
+                <span id="depositStatusText" class="deposit-status-text" style="flex-grow: 1; text-align: left; color: var(--text-secondary); font-size: 0.9em;"></span>
                 <button class="btn btn-primary" id="depositButton" disabled>Request Deposit Offer</button>
+                <button class="btn btn-success" id="acceptDepositOfferBtn" style="display: none;" title="Opens the Steam trade offer in a new tab">
+                     Accept on Steam <i class="fas fa-external-link-alt"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="tradeUrlModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Set Your Trade URL</h2>
+                <button class="close-btn" id="closeTradeUrlModal" aria-label="Close trade URL modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Please enter your Steam Trade URL to complete deposits and receive winnings:</p>
+                <div class="form-group">
+                    <label for="modalTradeUrlInput">Steam Trade URL</label>
+                    <input type="url" id="modalTradeUrlInput" placeholder="https://steamcommunity.com/tradeoffer/new/?partner=...">
                 </div>
+                <p class="help-text">
+                    You can find your trade URL in your
+                    <a href="https://steamcommunity.com/my/tradeoffers/privacy" target="_blank" rel="noopener noreferrer">Steam Trade Privacy Settings</a>.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" id="saveTradeUrl">Save Trade URL</button>
+            </div>
         </div>
     </div>
 
@@ -86,7 +112,7 @@
                 </div>
 
                 <div id="profile-pending-offer-status" class="profile-pending-offer-status" style="display: none; margin-bottom: 15px; padding: 10px; background-color: var(--background-light); border: 1px solid var(--secondary-dark); border-radius: 4px; text-align: center;">
-                    </div>
+                </div>
 
                 <div class="profile-modal-stats">
                     <div class="profile-modal-stat-item">
@@ -190,7 +216,8 @@
                         <div class="user-profile" id="userProfile" style="display: none;" role="button" aria-haspopup="true" aria-expanded="false" tabindex="0">
                             <div class="user-avatar-container">
                                 <img src="/img/default-avatar.png" alt="User Avatar" class="user-avatar" id="userAvatar">
-                                <div class="user-status online" id="userStatusIndicator"></div> </div>
+                                <div class="user-status online" id="userStatusIndicator"></div>
+                            </div>
                             <span class="user-name" id="userName">PlayerName</span>
                         </div>
 
@@ -212,6 +239,7 @@
             </div>
         </div>
     </header>
+
     <main class="main-content">
         <div class="container">
 
@@ -262,7 +290,8 @@
                                 </div>
                                 <audio id="spinSound" src="spin-sound.mp3" preload="auto"></audio>
                                 <audio id="depositSound" src="deposit-join.mp3" preload="auto"></audio>
-                                </div>
+                                <button class="btn btn-primary return-btn" id="returnToJackpot" style="display: none;">Return</button>
+                            </div>
                         </div>
 
                         <div class="deposit-button-container" id="depositBtnContainer">
@@ -409,7 +438,7 @@
                              <p>3. Click the "Deposit Skins" button on the main jackpot page.</p>
                              <p>4. Select the Rust items you wish to deposit from your inventory shown in the modal (up to the allowed limit per deposit).</p>
                              <p>5. Click "Request Deposit Offer".</p>
-                             <p>6. If successful, a status message with a link to "Accept on Steam" will appear in the deposit modal. Click it to open the trade offer in a new Steam tab.</p>
+                             <p>6. If successful, a button "Accept on Steam" will appear. Click it to open the trade offer in a new Steam tab.</p>
                              <p>7. Review and accept the trade offer in Steam. Your items will be added to the pot shortly after Steam confirms the trade.</p>
                          </div>
                      </div>
@@ -428,7 +457,7 @@
                      <div class="content-section faq-item">
                          <h3 class="content-section-title">How do I receive my winnings?</h3>
                          <div class="content-section-body" style="display: none;">
-                             <p>If you win, our bot will automatically create and send a Steam trade offer containing the winning items (minus the site fee) to the Trade URL set in your profile. You will receive a notification on the site with a link to the trade offer. You'll need to accept the trade offer within Steam to receive the items into your inventory.</p>
+                             <p>If you win, our bot will automatically create and send a Steam trade offer containing the winning items (minus the site fee) to the Trade URL set in your profile. You will receive a notification on the site, and you'll need to accept the trade offer within Steam to receive the items into your inventory.</p>
                          </div>
                      </div>
                      <div class="content-section faq-item">
@@ -541,7 +570,6 @@
     <script src="/js/main.js"></script>
 
     <script>
-        // Script for FAQ accordion and dynamic footer/modal links
         document.addEventListener('DOMContentLoaded', () => {
             const faqItems = document.querySelectorAll('#faq-page .faq-item .content-section-title');
             faqItems.forEach(title => {
@@ -549,7 +577,7 @@
                     const item = title.closest('.faq-item');
                     const body = item.querySelector('.content-section-body');
                     if (item && body) {
-                        // Close other items
+                         // Close other items
                         document.querySelectorAll('#faq-page .faq-item.active').forEach(openItem => {
                             if (openItem !== item) {
                                 openItem.classList.remove('active');
@@ -557,7 +585,7 @@
                                 if (openBody) openBody.style.display = 'none';
                             }
                         });
-                        // Toggle current item
+                         // Toggle current item
                         item.classList.toggle('active');
                         body.style.display = item.classList.contains('active') ? 'block' : 'none';
                     }
@@ -568,25 +596,17 @@
              const setupLink = (linkId, pageElementId) => {
                  const link = document.getElementById(linkId);
                  const page = document.getElementById(pageElementId);
-                 if (link && page && typeof window.showPage === 'function') { // Ensure main.js's showPage is available
+                  // Check if showPage is globally available (it should be from main.js)
+                 if (link && page && typeof window.showPage === 'function') {
                       link.addEventListener('click', (e) => {
                            e.preventDefault();
                            window.showPage(page);
-                           const modal = link.closest('.modal'); // If link is inside a modal
-                           if (modal && typeof window.hideModal === 'function') { // Ensure main.js's hideModal is available
+                           // If it's the modal link, also close the modal
+                           const modal = link.closest('.modal');
+                           if (modal && typeof window.hideModal === 'function') {
                                 window.hideModal(modal);
                            }
-                           window.scrollTo(0, 0); // Scroll to top of page
                       });
-                 } else if (link && page) { // Fallback if main.js functions not ready/found
-                    link.addEventListener('click', (e) => {
-                        e.preventDefault();
-                        Object.values(document.querySelectorAll('section[id$="-page"]')).forEach(p => p.style.display = 'none');
-                        page.style.display = 'block';
-                        const modal = link.closest('.modal');
-                        if(modal) modal.style.display = 'none';
-                        window.scrollTo(0,0);
-                    });
                  }
              };
              setupLink('tos-link-modal', 'tos-page');
