@@ -461,13 +461,54 @@ code { /* General code tag styling */
 .btn-success { /* Inherits .btn */
      background-color: var(--success-color);
      color: white;
-     border-color: var(--success-color);
+     border-color: var(--success-color); /* Use this for consistency */
 }
 .btn-success:hover:not(:disabled) {
      background-color: #45a049; /* Darker green */
      border-color: #45a049;
      box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
 }
+
+/* --- ADDED: Styling for the Winning Offer Button (acceptWinningOfferBtn) --- */
+#acceptWinningOfferBtn {
+    background-color: var(--success-color);
+    color: white;
+    border: 1px solid var(--success-color); /* Consistent with .btn-success */
+    padding: 10px 15px;
+    font-size: 1rem;
+    /* margin-top is already set inline in HTML, but can be standardized here if preferred */
+    display: inline-flex; /* from .btn */
+    align-items: center; /* from .btn */
+    justify-content: center; /* from .btn */
+    animation: pulseButton 1.5s infinite ease-in-out;
+}
+
+#acceptWinningOfferBtn:hover:not(:disabled) {
+    background-color: #45a049; /* Consistent with .btn-success:hover */
+    border-color: #45a049; /* Consistent with .btn-success:hover */
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4); /* Consistent */
+    transform: translateY(-2px); /* Consistent with .btn:hover */
+}
+
+#acceptWinningOfferBtn i {
+    margin-left: 8px;
+    font-size: 0.9em; /* Slightly smaller icon if needed */
+}
+
+/* Keyframe for button pulse - can be shared if other buttons need it */
+@keyframes pulseButton {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4); }
+}
+
+#acceptWinningOfferBtn.ready { /* Optional class for when offer is ready */
+    animation: pulseButton 1s infinite ease-in-out, readyGlow 1.2s infinite alternate;
+}
+@keyframes readyGlow {
+    from { box-shadow: 0 0 5px var(--success-color), 0 0 10px var(--success-color); }
+    to { box-shadow: 0 0 15px #69f0ae, 0 0 25px #69f0ae; }
+}
+
 
 /*=========================
  MAIN CONTENT & SECTIONS
@@ -543,19 +584,23 @@ code { /* General code tag styling */
     position: relative;
     overflow: hidden;
     z-index: 5;
-    transition: height 0.5s ease, min-height 0.5s ease, background 0.3s ease;
+    transition: height 0.5s ease, min-height 0.5s ease, background 0.3s ease; /* Keep original transition */
     flex-wrap: wrap;
     flex-shrink: 0;
 }
 
+/* MODIFIED: Jackpot Header Roulette Mode Transition */
 .jackpot-header.roulette-mode {
     background: linear-gradient(135deg, var(--background-dark), var(--background-medium));
-    height: 140px;
-    min-height: 140px;
-    align-items: center;
-    padding-top: 0;
+    height: 140px; /* Or desired height for roulette view */
+    min-height: 140px; /* Match height */
+    align-items: center; /* Vertically center content if header shrinks */
+    padding-top: 0; /* Remove padding if content is centered differently */
     padding-bottom: 0;
+    /* Make transition faster and more direct */
+    transition: height 0.3s ease, min-height 0.3s ease, background 0.3s ease;
 }
+
 
 .jackpot-timer, .jackpot-value, .jackpot-stats {
     min-width: 170px;
@@ -723,7 +768,7 @@ code { /* General code tag styling */
 .congrats { font-size: 1.2rem !important; color: var(--primary-color); font-weight: 700; margin-top: 5px !important; text-transform: uppercase; letter-spacing: 2px; animation: colorPulse 3s infinite; text-shadow: 0 0 8px currentColor; }
 @keyframes colorPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 
-.return-btn { display: none !important; /* If not used, can be removed from HTML too */ }
+/* .return-btn { display: none !important; } /* If not used, can be removed from HTML too */ */
 
 .confetti-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 18; }
 .confetti-piece {
@@ -1187,15 +1232,15 @@ code { /* General code tag styling */
 
 
 /* --- ADDED: Deposit Modal Footer Enhancements --- */
-#acceptDepositOfferBtn {
+#acceptDepositOfferBtn { /* This is for the DEPOSIT modal, not the winner one */
     background-color: var(--success-color);
     color: white;
     border: 1px solid var(--success-color);
-    padding: 10px 15px;
-    font-size: 1rem;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
+    padding: 10px 15px; /* Match other .btn-success */
+    font-size: 1rem; /* Match other .btn-success */
+    display: inline-flex; /* from .btn */
+    align-items: center; /* from .btn */
+    justify-content: center; /* from .btn */
 }
 
 #acceptDepositOfferBtn:hover:not(:disabled) {
@@ -1228,24 +1273,10 @@ code { /* General code tag styling */
 .deposit-status-text.error { color: var(--error-color); }
 
 
-/* --- ADDED: Pending Offer Indicators --- */
-.pending-offer-indicator {
-    display: inline-block;
-    color: var(--warning-color);
-    font-size: 1.1rem;
-    cursor: help;
-    animation: pulseWarning 1.5s infinite ease-in-out;
-    vertical-align: middle;
-    line-height: 1;
-}
+/* --- ADDED: Pending Offer Indicators (already existed, ensure no duplication) --- */
+/* .pending-offer-indicator is defined earlier */
 
-/* Defined earlier, ensure it's not duplicated:
-@keyframes pulseWarning {
-    0%, 100% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.15); opacity: 0.7; }
-} */
-
-/* --- ADDED: Footer --- */
+/* --- ADDED: Footer (already existed, ensure no duplication) --- */
 .main-footer {
     background-color: var(--background-dark);
     color: var(--text-secondary);
@@ -1469,7 +1500,8 @@ code { /* General code tag styling */
 
 @media (min-width: 1200px) {
     .jackpot-and-chat-container {
-        position: relative;
-        left: 150px;  
+        /* Removed left positioning to allow natural centering via parent .container */
+        /* position: relative; */
+        /* left: 150px; */
     }
 }
