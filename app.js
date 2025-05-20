@@ -245,7 +245,11 @@ const roundSchema = new mongoose.Schema({
     taxAmount: { type: Number, default: 0, min: 0 },
     taxedItems: [{ assetId: String, name: String, price: { type: Number, min: 0 } }], // Info about items taken as tax
     payoutOfferId: { type: String, index: true }, // ID of the trade offer sent for winnings
-    payoutOfferStatus: { type: String, enum: ['Sent', 'Accepted', 'Declined', 'Canceled', 'Expired', 'InvalidItems', 'Escrow', 'Failed', 'Unknown'], default: 'Unknown' } // Status of the payout trade offer
+    payoutOfferStatus: {
+        type: String,
+        enum: ['PendingAcceptanceByWinner', 'Sent', 'Accepted', 'Declined', 'Canceled', 'Expired', 'InvalidItems', 'Escrow', 'Failed', 'Unknown', 'No Items Won', 'Failed - No Trade URL', 'Failed - Inventory Issue'],
+        default: 'Unknown'
+    }
 });
 roundSchema.index({ 'participants.user': 1 }); // Index for querying participants
 roundSchema.index({ winner: 1, status: 1, completedTime: -1 }); // For winning history query
@@ -536,7 +540,7 @@ async function endRound() {
         io.emit('roundRolling', { roundId: roundIdToEnd });
 
         const round = await Round.findById(roundMongoId)
-            .populate('participants.user', 'steamId username avatar tradeUrl')
+            .populate('participants.user', 'steamId username avatar tradeUrl') // Ensure tradeUrl is populated for winner
             .populate('items')
             .lean();
 
@@ -556,35 +560,41 @@ async function endRound() {
             return;
         }
 
-        let finalItems = [...round.items]; // These are all items initially in the pot
+        // Filter out items based on tax rules BEFORE winner selection
+        // These 'finalItems' are what the winner will actually receive.
+        let finalItemsForWinner = [...round.items];
         let originalPotValue = round.participants.reduce((sum, p) => sum + (p?.itemsValue || 0), 0);
-        let valueForWinner = originalPotValue;
+        let valueForWinnerCalculation = originalPotValue; // This will be adjusted by tax
         let taxAmount = 0;
-        let taxedItemsInfo = [];
-        let itemsToTakeForTaxIds = new Set();
+        let taxedItemsInfo = []; // Store info about items taken as tax
 
         if (originalPotValue >= MIN_POT_FOR_TAX) {
             const targetTaxValue = originalPotValue * (TAX_MIN_PERCENT / 100);
             const maxTaxValue = originalPotValue * (TAX_MAX_PERCENT / 100);
-            const sortedItemsForTax = [...round.items].sort((a, b) => a.price - b.price);
+            // Sort items by price (ascending) to take smallest items first for tax
+            const sortedItemsForTaxConsideration = [...round.items].sort((a, b) => (a.price || 0) - (b.price || 0));
             let currentTaxValueAccumulated = 0;
+            let itemsToTakeForTaxIds = new Set();
 
-            for (const item of sortedItemsForTax) {
+            for (const item of sortedItemsForTaxConsideration) {
+                // If adding this item does not exceed max tax AND we haven't met target tax or are still under max
                 if (currentTaxValueAccumulated + item.price <= maxTaxValue) {
                     itemsToTakeForTaxIds.add(item._id.toString());
                     taxedItemsInfo.push({ assetId: item.assetId, name: item.name, price: item.price });
                     currentTaxValueAccumulated += item.price;
-                    if (currentTaxValueAccumulated >= targetTaxValue) break;
-                } else {
-                    break; 
+                    if (currentTaxValueAccumulated >= targetTaxValue) break; // Stop if target tax is met
+                } else if (currentTaxValueAccumulated < targetTaxValue) {
+                    // If we haven't met target and this item is too big, try to find a smaller one if possible
+                    // This logic can be complex; for now, we stop if the next smallest item exceeds maxTaxValue
+                    break;
                 }
             }
 
             if (itemsToTakeForTaxIds.size > 0) {
-                finalItems = round.items.filter(item => !itemsToTakeForTaxIds.has(item._id.toString()));
+                finalItemsForWinner = round.items.filter(item => !itemsToTakeForTaxIds.has(item._id.toString()));
                 taxAmount = currentTaxValueAccumulated;
-                valueForWinner = originalPotValue - taxAmount;
-                console.log(`Tax Applied for Round ${round.roundId}: $${taxAmount.toFixed(2)} (${itemsToTakeForTaxIds.size} items). Original Value: $${originalPotValue.toFixed(2)}. New Pot Value for Winner: $${valueForWinner.toFixed(2)}`);
+                valueForWinnerCalculation = originalPotValue - taxAmount; // Actual value for the winner after tax
+                console.log(`Tax Applied for Round ${round.roundId}: $${taxAmount.toFixed(2)} (${itemsToTakeForTaxIds.size} items). Original Value: $${originalPotValue.toFixed(2)}. New Pot Value for Winner: $${valueForWinnerCalculation.toFixed(2)}`);
             }
         }
 
@@ -598,54 +608,53 @@ async function endRound() {
         if (totalTickets <= 0) throw new Error(`Cannot determine winner: Total tickets is zero for round ${round.roundId}.`);
         const winningTicket = decimalFromHash % totalTickets;
         let cumulativeTickets = 0;
-        let winnerInfo = null;
+        let winnerInfo = null; // This will be the populated user object from round.participants
 
         for (const participant of round.participants) {
             if (!participant?.tickets || !participant.user) continue;
             cumulativeTickets += participant.tickets;
             if (winningTicket < cumulativeTickets) {
-                winnerInfo = participant.user; // winnerInfo here is the populated user object
+                winnerInfo = participant.user; // winnerInfo is the populated user object
                 break;
             }
         }
 
         if (!winnerInfo || !winnerInfo._id) throw new Error(`Winner selection failed for round ${round.roundId}.`);
 
-        await User.findByIdAndUpdate(winnerInfo._id, { $inc: { totalWinningsValue: valueForWinner } });
-        console.log(`Updated winnings stats for ${winnerInfo.username}: New total winnings will be $${( (await User.findById(winnerInfo._id).lean()).totalWinningsValue ).toFixed(2)} (added $${valueForWinner.toFixed(2)})`);
+        // Update winner's stats. valueForWinnerCalculation is the actual value they won.
+        await User.findByIdAndUpdate(winnerInfo._id, { $inc: { totalWinningsValue: valueForWinnerCalculation } });
+        console.log(`Updated winnings stats for ${winnerInfo.username}: Added $${valueForWinnerCalculation.toFixed(2)}`);
 
         const finalUpdateData = {
-            status: 'completed', completedTime: new Date(), clientSeed: clientSeed,
-            provableHash: provableHash, winningTicket: winningTicket, winner: winnerInfo._id,
-            taxAmount: taxAmount, taxedItems: taxedItemsInfo,
-            totalValue: valueForWinner, 
-            items: finalItems.map(i => i._id), 
-            // MODIFICATION for "Accept Winnings" Flow:
-            // payoutOfferStatus: 'Pending Send' // Old
+            status: 'completed',
+            completedTime: new Date(),
+            clientSeed: clientSeed,
+            provableHash: provableHash,
+            winningTicket: winningTicket,
+            winner: winnerInfo._id,
+            taxAmount: taxAmount,
+            taxedItems: taxedItemsInfo,
+            totalValue: valueForWinnerCalculation, // Store the after-tax value for the winner
+            items: finalItemsForWinner.map(i => i._id), // Store IDs of items the winner gets
             payoutOfferStatus: 'PendingAcceptanceByWinner' // NEW: Set this status
         };
 
         const completedRound = await Round.findOneAndUpdate({ _id: roundMongoId }, { $set: finalUpdateData }, { new: true });
         if (!completedRound) throw new Error("Failed to save completed round data.");
 
-        console.log(`Round ${round.roundId} completed. Winner: ${winnerInfo.username} (Ticket: ${winningTicket}/${totalTickets}, Value Won: $${valueForWinner.toFixed(2)})`);
+        console.log(`Round ${round.roundId} completed. Winner: ${winnerInfo.username} (Ticket: ${winningTicket}/${totalTickets}, Value Won: $${valueForWinnerCalculation.toFixed(2)})`);
 
-        // MODIFICATION for "Accept Winnings" Flow:
-        // Instead of io.emit('roundWinner', ...) and sendWinningTradeOffer,
-        // emit an event that tells the frontend to show the "Accept Winnings" button.
-        io.emit('roundWinnerPendingAcceptance', { // NEW EVENT
+        io.emit('roundWinnerPendingAcceptance', {
             roundId: round.roundId,
             winner: { id: winnerInfo._id, steamId: winnerInfo.steamId, username: winnerInfo.username, avatar: winnerInfo.avatar },
             winningTicket: winningTicket,
-            totalValue: valueForWinner, // This is the value winner will receive
+            totalValue: valueForWinnerCalculation, // This is the value winner will receive after tax
             totalTickets: totalTickets,
-            serverSeed: round.serverSeed, // For provably fair display, if needed immediately
+            serverSeed: round.serverSeed,
             clientSeed: clientSeed,
             provableHash: provableHash,
             serverSeedHash: round.serverSeedHash
         });
-        // The actual trade offer is now sent when the user clicks "Accept" via the new API endpoint.
-        // await sendWinningTradeOffer(completedRound, winnerInfo, finalItems); // DO NOT CALL HERE ANYMORE
 
     } catch (err) {
         console.error(`CRITICAL ERROR during endRound for round ${roundIdToEnd}:`, err);
@@ -659,31 +668,28 @@ async function endRound() {
 }
 
 async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
-    // This function remains largely the same but is now called by the new '/api/round/accept-winnings' endpoint
-    // instead of directly by endRound.
+    // Ensure roundDoc and winner are populated as needed (especially winner.tradeUrl and roundDoc.totalValue which is after-tax)
     if (!isBotReady) {
         console.error(`PAYOUT_ERROR: Bot not ready. Round ${roundDoc.roundId}.`);
         io.emit('notification', { type: 'error', userId: winner._id.toString(), message: `Bot Error: Payout for round ${roundDoc.roundId} delayed.` });
         await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed' } });
-        return;
+        return null; // Return null or throw to indicate failure
     }
-    // Ensure winner object has tradeUrl (it should be populated by the calling function)
     if (!winner.tradeUrl) {
         console.error(`PAYOUT_ERROR: Winner ${winner.username} no Trade URL. Round ${roundDoc.roundId}.`);
         io.emit('notification', { type: 'error', userId: winner._id.toString(), message: 'Set Trade URL for winnings.' });
         await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - No Trade URL' } });
-        return;
+        return null;
     }
     if (!itemsToSend || itemsToSend.length === 0) {
-        console.log(`PAYOUT_INFO: No items for winner. Round ${roundDoc.roundId}.`);
-        if (roundDoc.taxAmount > 0 && roundDoc.totalValue <= 0) {
-            io.emit('notification', { type: 'info', userId: winner._id.toString(), message: `Round ${roundDoc.roundId} winnings ($${roundDoc.taxAmount.toFixed(2)}) were site tax.` });
-        }
-        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: itemsToSend.length === 0 ? 'No Items Won' : 'Failed' } });
-        return;
+        console.log(`PAYOUT_INFO: No items for winner (after tax). Round ${roundDoc.roundId}. Pot Value: $${roundDoc.totalValue.toFixed(2)}`);
+        io.emit('notification', { type: 'info', userId: winner._id.toString(), message: `No items to send for Round #${roundDoc.roundId} (Pot value: $${roundDoc.totalValue.toFixed(2)} after tax).` });
+        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'No Items Won' } });
+        return null;
     }
 
-    console.log(`Sending ${itemsToSend.length} items for round ${roundDoc.roundId} to ${winner.username}.`);
+    console.log(`Attempting to send ${itemsToSend.length} items (Value: $${roundDoc.totalValue.toFixed(2)}) for round ${roundDoc.roundId} to ${winner.username}.`);
+    let sentOfferDetails = null;
     try {
         const offer = manager.createOffer(winner.tradeUrl);
         offer.addMyItems(itemsToSend.map(item => ({ assetid: item.assetId, appid: RUST_APP_ID, contextid: RUST_CONTEXT_ID })));
@@ -691,32 +697,31 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
 
         const identitySecret = process.env.STEAM_IDENTITY_SECRET;
         const sentOffer = await new Promise((resolve, reject) => {
-            offer.send(!!identitySecret, (err, status) => { // Status here is like 'pending', 'sent' etc.
+            offer.send(!!identitySecret, (err, statusCallback) => { // statusCallback is like 'pending', 'sent'
                 if (err) return reject(err);
                 // The actual ETradeOfferState is in offer.state after this callback
-                // For simplicity, we use the status from callback first, manager.on('sentOfferChanged') will give final state
-                resolve({ status, offerId: offer.id });
+                resolve({ statusCallback, offerId: offer.id, state: offer.state });
             });
         });
         
         const offerURL = `https://steamcommunity.com/tradeoffer/${sentOffer.offerId}/`;
-        // Initial status update. 'sentOfferChanged' event handler will update it further.
-        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferId: sentOffer.offerId, payoutOfferStatus: 'Sent' } });
-        console.log(`PAYOUT_SUCCESS: Offer ${sentOffer.offerId} sent to ${winner.username} for round ${roundDoc.roundId}. Status reported by send(): ${sentOffer.status}`);
+        const offerStatusForDB = TradeOfferManager.ETradeOfferState[sentOffer.state] || 'Sent'; // Use actual state
 
-        io.emit('tradeOfferSent', { // This event is crucial for the frontend
+        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferId: sentOffer.offerId, payoutOfferStatus: offerStatusForDB } });
+        console.log(`PAYOUT_SUCCESS: Offer ${sentOffer.offerId} sent to ${winner.username} for round ${roundDoc.roundId}. Offer State: ${offerStatusForDB}, Callback Status: ${sentOffer.statusCallback}`);
+
+        sentOfferDetails = {
             roundId: roundDoc.roundId, userId: winner._id.toString(), username: winner.username,
-            offerId: sentOffer.offerId, offerURL: offerURL, status: sentOffer.status, type: 'winning'
-        });
+            offerId: sentOffer.offerId, offerURL: offerURL, status: offerStatusForDB, type: 'winning'
+        };
+        io.emit('tradeOfferSent', sentOfferDetails);
 
-        // Note: The 'sentOffer.status' might be 'pending' if 2FA is needed for the bot.
-        // The TradeOfferManager 'sentOfferChanged' event will handle transitions to Escrow, Accepted, etc.
-        if (sentOffer.status === 'pending' || sentOffer.status === 'pendingConfirmation') { // from offer.send callback
-             // manager.on('sentOfferChanged') will likely update to InEscrow or similar if confirmation is needed
-             console.log(`Offer #${sentOffer.offerId} requires confirmation by bot (Status from send(): ${sentOffer.status}).`);
+        if (sentOffer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
+             console.log(`Offer #${sentOffer.offerId} requires confirmation by bot (State: ${offerStatusForDB}).`);
              const notifMsg = `Winnings sent (Offer #${sentOffer.offerId}), but require bot confirmation or may be in escrow.`;
              io.emit('notification', { type: 'info', userId: winner._id.toString(), message: notifMsg });
         }
+        return sentOfferDetails;
 
     } catch (err) { 
         let offerStatusUpdate = 'Failed';
@@ -725,12 +730,13 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
             userMessage = 'Your Trade URL is invalid or expired. Please update it to receive winnings.'; offerStatusUpdate = 'Failed - Bad URL';
         } else if (err.eresult === 15 || err.eresult === 16) { 
             userMessage = 'Could not send winnings. Ensure your Steam inventory is public and not full.'; offerStatusUpdate = 'Failed - Inventory Issue';
-        } else if (err.message?.includes('escrow') || err.eresult === 11) { // EResult 11 can sometimes mean escrow
-            userMessage = `Winnings sent, but may be held in escrow by Steam.`; offerStatusUpdate = 'Escrow';
+        } else if (err.message?.includes('escrow') || err.eresult === 11 || err.eresult === 50) { // EResult 11/50 can mean escrow
+            userMessage = `Winnings sent, but may be held in Steam escrow.`; offerStatusUpdate = 'Escrow';
         }
         console.error(`PAYOUT_ERROR: Offer for round ${roundDoc.roundId}. EResult ${err.eresult} - ${err.message}`, err);
         io.emit('notification', { type: 'error', userId: winner._id.toString(), message: userMessage });
         await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: offerStatusUpdate } });
+        return null;
     }
 }
 
@@ -814,7 +820,7 @@ app.get('/api/user/winning-history', ensureAuthenticated, async (req, res) => {
 
         const history = winnings.map(win => ({
             gameId: win.roundId,
-            amountWon: win.totalValue, 
+            amountWon: win.totalValue, // This is the after-tax amount the winner received
             dateWon: win.completedTime,
             tradeOfferId: win.payoutOfferId,
             tradeStatus: win.payoutOfferStatus || 'Unknown'
@@ -829,48 +835,47 @@ app.get('/api/user/winning-history', ensureAuthenticated, async (req, res) => {
 // NEW ENDPOINT for "Accept Winnings"
 app.post('/api/round/accept-winnings', ensureAuthenticated, sensitiveActionLimiter, async (req, res) => {
     try {
-        const user = req.user; // User must be authenticated
+        const user = req.user;
 
         // Find the latest completed round for this user where payout is 'PendingAcceptanceByWinner'
-        // You might pass roundId from frontend if user can have multiple pending wins.
-        // For simplicity, assuming one at a time or latest.
         const round = await Round.findOne({
             winner: user._id,
-            status: 'completed',
-            payoutOfferStatus: 'PendingAcceptanceByWinner'
+            status: 'completed', // Ensure round itself is 'completed'
+            payoutOfferStatus: 'PendingAcceptanceByWinner' // Crucial: Only allow for this status
         }).sort({ completedTime: -1 })
-          .populate('winner', 'steamId username avatar tradeUrl') // Populate winner for tradeUrl and other details
-          .populate('items'); // Populate items to be sent (ensure 'items' field in Round stores the winner's items)
+          .populate('winner', 'steamId username avatar tradeUrl') // Populate winner for tradeUrl
+          .populate('items'); // Populate 'items' field, which should store IDs of items for winner
 
         if (!round) {
             return res.status(404).json({ error: 'No winnings pending your acceptance found or round already processed.' });
         }
+        if (!round.winner) { // Should not happen if query is correct
+             console.error(`CRITICAL: Round ${round.roundId} found for accept-winnings but winner field is not populated.`);
+             return res.status(500).json({ error: 'Internal error processing your request.' });
+        }
 
-        // 'round.items' should contain the actual item documents or just their ObjectIds.
-        // If they are ObjectIds, you might need to re-fetch them if sendWinningTradeOffer expects full item objects.
-        // Assuming round.items are the actual item objects (after tax) meant for the winner.
-        // If round.items are just IDs from the Item collection:
-        // const itemsToWin = await Item.find({ '_id': { $in: round.items } }).lean();
-
-        // Ensure 'itemsToWin' are the actual items destined for the winner (e.g. 'finalItems' from endRound).
-        // The 'round.items' in the schema should correctly reference these.
-        const itemsToWin = round.items; // Assuming this is an array of populated item objects for the winner
+        // The 'round.items' are the ObjectIds of the items the winner should receive (after tax).
+        // We need to fetch the full item details (assetId, etc.) to send the trade offer.
+        const itemsToWinDetails = await Item.find({ '_id': { $in: round.items } }).lean();
 
         if (!round.winner.tradeUrl) {
             await Round.updateOne({ _id: round._id }, { $set: { payoutOfferStatus: 'Failed - No Trade URL' } });
             return res.status(400).json({ error: 'Please set your Steam Trade URL in your profile to accept winnings.' });
         }
+        
+        // Call the sendWinningTradeOffer function with the populated winner and detailed items
+        const offerDetails = await sendWinningTradeOffer(round, round.winner, itemsToWinDetails);
 
-        // Call the sendWinningTradeOffer function
-        await sendWinningTradeOffer(round, round.winner, itemsToWin);
-        // sendWinningTradeOffer will update the round's payoutOfferStatus to 'Sent', 'Failed', etc.
-        // and will emit 'tradeOfferSent' via socket.
-
-        res.json({ success: true, message: 'Winnings accepted. Trade offer is being processed.' });
+        if (offerDetails && offerDetails.offerId) {
+            // sendWinningTradeOffer already emits 'tradeOfferSent' and updates Round doc
+            res.json({ success: true, message: 'Winnings accepted! Trade offer sent.', offerId: offerDetails.offerId, offerURL: offerDetails.offerURL });
+        } else {
+            // sendWinningTradeOffer handles DB update for failure and emits notifications
+            res.status(500).json({ error: 'Failed to send trade offer. Please check notifications or try again.' });
+        }
 
     } catch (error) {
-        console.error('Error accepting winnings:', error);
-        // Potentially update round status to 'Failed' if an error occurs here before sending
+        console.error(`Error in /api/round/accept-winnings for user ${req.user?.username}:`, error);
         res.status(500).json({ error: 'Server error while accepting winnings. Please try again or contact support.' });
     }
 });
@@ -1264,7 +1269,10 @@ function formatRoundForClient(round) {
         serverSeed: round.status === 'completed' ? round.serverSeed : undefined,
         clientSeed: round.status === 'completed' ? round.clientSeed : undefined,
         provableHash: round.status === 'completed' ? round.provableHash : undefined,
-        taxAmount: round.taxAmount
+        taxAmount: round.taxAmount,
+        // For client to know if it should show "Accept Winnings" or "Accept on Steam" if already sent
+        payoutOfferId: round.status === 'completed' ? round.payoutOfferId : undefined,
+        payoutOfferStatus: round.status === 'completed' ? round.payoutOfferStatus : undefined
     };
 }
 
@@ -1394,7 +1402,7 @@ io.on('connection', (socket) => {
              
              // If no valid in-memory currentRound, fetch from DB
              if (!roundToSend) {
-                 roundToSend = await Round.findOne({ status: { $in: ['active', 'rolling', 'pending'] } })
+                 roundToSend = await Round.findOne({ status: { $in: ['active', 'rolling', 'pending', 'completed'] } }) // Include 'completed' for cases where user connects right after round ends but before new one starts
                        .sort({ startTime: -1 })
                        .populate('participants.user', 'steamId username avatar')
                        .populate('items') // Populate items in the round
@@ -1408,7 +1416,7 @@ io.on('connection', (socket) => {
              }
             const formattedData = formatRoundForClient(roundToSend); // This needs populated items
             if (formattedData) socket.emit('roundData', formattedData); // Send to requesting client
-            else socket.emit('noActiveRound');
+            else socket.emit('noActiveRound'); // Or a specific "no round data" event
         } catch (err) {
             console.error(`Error fetching round data for socket ${socket.id}:`, err);
             socket.emit('roundError', { error: 'Failed to load round data.' });
@@ -1503,4 +1511,4 @@ app.use((err, req, res, next) => {
     res.status(status).json({ error: message });
 });
 
-console.log("app.js updated with winning history backend logic.");
+console.log("app.js updated with new winnings acceptance flow.");
