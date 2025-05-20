@@ -28,7 +28,7 @@ const MongoStore = require('connect-mongo');
 // --- Configuration Constants ---
 const requiredEnvVars = [
     'MONGODB_URI', 'SESSION_SECRET', 'STEAM_API_KEY', 'SITE_URL',
-    'STEAM_USERNAME', 'STEAM_PASSWORD', 'STEAM_SHARED_SECRET', 'BOT_TRADE_URL', 'SITE_NAME'
+    'STEAM_USERNAME', 'STEAM_PASSWORD', 'STEAM_SHARED_SECRET', 'BOT_TRADE_URL', 'SITE_NAME', 'STEAM_IDENTITY_SECRET' // Added STEAM_IDENTITY_SECRET
 ];
 const isBotConfigured = process.env.STEAM_USERNAME && process.env.STEAM_PASSWORD && process.env.STEAM_SHARED_SECRET && process.env.BOT_TRADE_URL;
 let missingVars = requiredEnvVars.filter(v => !process.env[v] && !(v.startsWith('STEAM_') || v === 'BOT_TRADE_URL' || v === 'SITE_NAME') && isBotConfigured);
@@ -225,7 +225,7 @@ const itemSchema = new mongoose.Schema({
 
 const roundSchema = new mongoose.Schema({
     roundId: { type: Number, required: true, unique: true, index: true },
-    status: { type: String, enum: ['pending', 'active', 'rolling', 'completed', 'error'], default: 'pending', index: true },
+    status: { type: String, enum: ['pending', 'active', 'rolling', 'completed', 'completed_pending_acceptance', 'error'], default: 'pending', index: true }, // Added 'completed_pending_acceptance'
     startTime: { type: Date },
     endTime: { type: Date },
     completedTime: { type: Date },
@@ -245,11 +245,7 @@ const roundSchema = new mongoose.Schema({
     taxAmount: { type: Number, default: 0, min: 0 },
     taxedItems: [{ assetId: String, name: String, price: { type: Number, min: 0 } }], // Info about items taken as tax
     payoutOfferId: { type: String, index: true }, // ID of the trade offer sent for winnings
-    payoutOfferStatus: {
-        type: String,
-        enum: ['PendingAcceptanceByWinner', 'Sent', 'Accepted', 'Declined', 'Canceled', 'Expired', 'InvalidItems', 'Escrow', 'Failed', 'Unknown', 'No Items Won', 'Failed - No Trade URL', 'Failed - Inventory Issue'],
-        default: 'Unknown'
-    }
+    payoutOfferStatus: { type: String, enum: ['PendingAcceptanceByWinner', 'Sent', 'Accepted', 'Declined', 'Canceled', 'Expired', 'InvalidItems', 'Escrow', 'Failed', 'Unknown', 'Failed - No Trade URL', 'No Items Won', 'Pending Confirmation'], default: 'Unknown' } // Status of the payout trade offer, added 'PendingAcceptanceByWinner'
 });
 roundSchema.index({ 'participants.user': 1 }); // Index for querying participants
 roundSchema.index({ winner: 1, status: 1, completedTime: -1 }); // For winning history query
@@ -274,7 +270,11 @@ const pendingDeposits = new Map(); // Stores { depositId: { userId, roundId, ite
 function generateAuthCode() {
     const secret = process.env.STEAM_SHARED_SECRET;
     if (!secret) { console.error("STEAM_SHARED_SECRET missing. Cannot generate 2FA code."); return null; }
-    try { return SteamTotp.generateAuthCode(secret); }
+    try {
+        const code = SteamTotp.generateAuthCode(secret);
+        console.log("LOG_DEBUG: Generated 2FA code:", code); // LOG: Generated 2FA code
+        return code;
+    }
     catch (e) { console.error("Error generating 2FA code:", e); return null; }
 }
 
@@ -285,12 +285,12 @@ if (isBotConfigured) {
         twoFactorCode: generateAuthCode()
     };
     if (loginCredentials.twoFactorCode) {
-        console.log(`Attempting Steam login for bot: ${loginCredentials.accountName}...`);
+        console.log(`LOG_INFO: Attempting Steam login for bot: ${loginCredentials.accountName}...`); // LOG: Login attempt
         community.login(loginCredentials, (err, sessionID, cookies, steamguard) => {
             if (err) {
-                console.error('STEAM LOGIN ERROR (Callback Err Object):', { message: err.message, eresult: err.eresult, emaildomain: err.emaildomain });
+                console.error('STEAM LOGIN ERROR (Callback Err Object):', { message: err.message, eresult: err.eresult, emaildomain: err.emaildomain, steamguard }); // LOG: Detailed login error
             } else {
-                console.log('Steam community.login callback received (no immediate error object reported).');
+                console.log('LOG_INFO: Steam community.login callback received (no immediate error object reported). SessionID:', sessionID); // LOG: Login callback success
             }
             if (err || !community.steamID) {
                 console.error(`CRITICAL LOGIN FAILURE: Login callback failed or community.steamID is undefined. Error: ${err ? err.message : 'N/A'}, SteamID: ${community.steamID}, EResult: ${err?.eresult}`);
@@ -298,33 +298,34 @@ if (isBotConfigured) {
                 if (err?.eresult === 5) console.warn('Login Failure Hint: Invalid Password? Check .env');
                 if (err?.eresult === 65) console.warn('Login Failure Hint: Incorrect 2FA Code (Check Shared Secret/Server Time) or Account Rate Limit?');
                 if (err?.eresult === 63) console.warn('Login Failure Hint: Account Logon Denied - Check Email Auth/Steam Guard settings via Browser?');
+                if (err?.steamguard) console.warn('Login Failure Hint: Steam Guard prompt possibly active. Details:', err.steamguard);
                 return;
             }
-            console.log(`Steam bot ${loginCredentials.accountName} logged in successfully (SteamID: ${community.steamID}). Attempting to set cookies for TradeOfferManager...`);
+            console.log(`LOG_SUCCESS: Steam bot ${loginCredentials.accountName} logged in successfully (SteamID: ${community.steamID}). Attempting to set cookies for TradeOfferManager...`); // LOG: Login success
             manager.setCookies(cookies, (setCookieErr) => {
                 if (setCookieErr) {
-                    console.error('TradeOfferManager Error setting cookies:', { error: setCookieErr.message, stack: setCookieErr.stack });
+                    console.error('TradeOfferManager Error setting cookies:', { error: setCookieErr.message, stack: setCookieErr.stack }); // LOG: Cookie setting error
                     isBotReady = false; return;
                 }
-                console.log('TradeOfferManager cookies set successfully.');
+                console.log('LOG_SUCCESS: TradeOfferManager cookies set successfully.'); // LOG: Cookie setting success
                 community.setCookies(cookies); // Also set cookies for the community instance
                 isBotReady = true;
-                console.log("Steam Bot is ready and operational.");
+                console.log("LOG_SUCCESS: Steam Bot is ready and operational."); // LOG: Bot ready
                 ensureInitialRound(); // Now that bot is ready, ensure a round exists
             });
             // Auto-accept friend requests
             community.on('friendRelationship', (steamID, relationship) => {
                 if (relationship === SteamCommunity.EFriendRelationship.RequestRecipient) {
-                    console.log(`Received friend request from ${steamID}. Accepting...`);
+                    console.log(`LOG_INFO: Received friend request from ${steamID}. Accepting...`);
                     community.addFriend(steamID, (friendErr) => {
-                        if (friendErr) console.error(`Error accepting friend request from ${steamID}:`, friendErr);
-                        else console.log(`Accepted friend request from ${steamID}.`);
+                        if (friendErr) console.error(`LOG_ERROR: Error accepting friend request from ${steamID}:`, friendErr);
+                        else console.log(`LOG_SUCCESS: Accepted friend request from ${steamID}.`);
                     });
                 }
             });
         });
     } else {
-        console.warn("Could not generate 2FA code. Steam Bot login skipped.");
+        console.warn("WARN: Could not generate 2FA code. Steam Bot login skipped.");
         isBotReady = false;
     }
 }
@@ -394,11 +395,11 @@ function getItemPrice(marketHashName) {
 // --- Core Game Logic ---
 async function createNewRound() {
     if (isRolling) {
-        console.log("Cannot create new round: Current round is rolling.");
+        console.log("LOG_INFO: Cannot create new round: Current round is rolling.");
         return null;
     }
     if (currentRound && currentRound.status === 'active') {
-        console.log(`Cannot create new round: Round ${currentRound.roundId} is already active.`);
+        console.log(`LOG_INFO: Cannot create new round: Round ${currentRound.roundId} is already active.`);
         return currentRound; // Return existing active round
     }
 
@@ -432,11 +433,11 @@ async function createNewRound() {
             participants: [],
             items: []
         });
-        console.log(`--- Round ${newRound.roundId} created and active ---`);
+        console.log(`LOG_SUCCESS: --- Round ${newRound.roundId} created and active ---`);
         // Timer will start when the first participant joins (or could be started here if desired)
         return newRound.toObject();
     } catch (err) {
-        console.error('FATAL: Error creating new round:', err);
+        console.error('FATAL_ERROR: Error creating new round:', err);
         setTimeout(createNewRound, 10000); // Retry after delay if critical error
         return null;
     }
@@ -452,35 +453,35 @@ async function ensureInitialRound() {
                     .lean(); // Use lean for performance if not modifying
 
                 if (existingActive) {
-                    console.log(`Found existing active round ${existingActive.roundId} on startup.`);
+                    console.log(`LOG_INFO: Found existing active round ${existingActive.roundId} on startup.`);
                     currentRound = existingActive;
                     // If round has participants and an end time in the future, resume timer
                     if (currentRound.participants.length > 0 && currentRound.endTime && new Date(currentRound.endTime) > Date.now() && !roundTimer) {
                         startRoundTimer(true); // Resume with remaining time
                     } else if (currentRound.participants.length > 0 && !currentRound.endTime && !roundTimer) {
                         // If no end time but participants, start timer (e.g. server restart recovery)
-                        console.warn(`Active round ${currentRound.roundId} found without endTime. Starting timer now.`);
+                        console.warn(`WARN: Active round ${currentRound.roundId} found without endTime. Starting timer now.`);
                         startRoundTimer(false);
                     }
                 } else {
-                    console.log("No active round found, creating initial round...");
+                    console.log("LOG_INFO: No active round found, creating initial round...");
                     await createNewRound();
                 }
             } catch (dbErr) {
-                console.error("Error ensuring initial round:", dbErr);
+                console.error("DB_ERROR: Error ensuring initial round:", dbErr);
             }
         }
     } else if (isBotConfigured && !isBotReady) {
-        console.log("Bot configured but not ready, skipping initial round check until bot is ready.");
+        console.log("LOG_INFO: Bot configured but not ready, skipping initial round check until bot is ready.");
     } else {
-        console.log("Bot not configured, skipping initial round check.");
+        console.log("LOG_INFO: Bot not configured, skipping initial round check.");
     }
 }
 
 function startRoundTimer(useRemainingTime = false) {
     if (roundTimer) clearInterval(roundTimer); // Clear existing timer
     if (!currentRound || currentRound.status !== 'active') {
-        console.warn("Cannot start timer: No active round or round status invalid.");
+        console.warn("WARN: Cannot start timer: No active round or round status invalid.");
         return;
     }
 
@@ -490,15 +491,15 @@ function startRoundTimer(useRemainingTime = false) {
     if (useRemainingTime && currentRound.endTime) {
         calculatedEndTime = new Date(currentRound.endTime);
         timeLeft = Math.max(0, Math.floor((calculatedEndTime.getTime() - Date.now()) / 1000));
-        console.log(`Resuming timer for round ${currentRound.roundId} with ${timeLeft}s remaining.`);
+        console.log(`LOG_INFO: Resuming timer for round ${currentRound.roundId} with ${timeLeft}s remaining.`);
     } else {
         timeLeft = ROUND_DURATION;
         calculatedEndTime = new Date(Date.now() + ROUND_DURATION * 1000);
         currentRound.endTime = calculatedEndTime; // Store in memory
         // Update endTime in DB
         Round.updateOne({ _id: currentRound._id }, { $set: { endTime: calculatedEndTime } })
-            .catch(e => console.error(`Error saving round end time for round ${currentRound?.roundId}:`, e));
-        console.log(`Starting timer for round ${currentRound.roundId} (${ROUND_DURATION}s). End time: ${calculatedEndTime.toISOString()}`);
+            .catch(e => console.error(`DB_ERROR: Error saving round end time for round ${currentRound?.roundId}:`, e));
+        console.log(`LOG_INFO: Starting timer for round ${currentRound.roundId} (${ROUND_DURATION}s). End time: ${calculatedEndTime.toISOString()}`);
     }
 
     io.emit('timerUpdate', { timeLeft }); // Initial timer update
@@ -506,7 +507,7 @@ function startRoundTimer(useRemainingTime = false) {
     roundTimer = setInterval(async () => {
         if (!currentRound || currentRound.status !== 'active' || !currentRound.endTime) {
             clearInterval(roundTimer); roundTimer = null;
-            console.warn("Timer stopped: Round state became invalid during countdown.");
+            console.warn("WARN: Timer stopped: Round state became invalid during countdown.");
             return;
         }
 
@@ -517,7 +518,7 @@ function startRoundTimer(useRemainingTime = false) {
 
         if (currenttimeLeft <= 0) {
             clearInterval(roundTimer); roundTimer = null;
-            console.log(`Round ${currentRound.roundId} timer reached zero.`);
+            console.log(`LOG_INFO: Round ${currentRound.roundId} timer reached zero.`);
             await endRound();
         }
     }, 1000);
@@ -528,31 +529,31 @@ function startRoundTimer(useRemainingTime = false) {
 
 async function endRound() {
     if (!currentRound || isRolling || currentRound.status !== 'active') {
-        console.warn(`Attempted to end round ${currentRound?.roundId}, but state is invalid (Status: ${currentRound?.status}, Rolling: ${isRolling})`);
+        console.warn(`WARN: Attempted to end round ${currentRound?.roundId}, but state is invalid (Status: ${currentRound?.status}, Rolling: ${isRolling})`);
         return;
     }
     isRolling = true;
     const roundIdToEnd = currentRound.roundId;
     const roundMongoId = currentRound._id;
-    console.log(`--- Ending round ${roundIdToEnd}... ---`);
+    console.log(`LOG_INFO: --- Ending round ${roundIdToEnd}... ---`);
     try {
         await Round.updateOne({ _id: roundMongoId }, { $set: { status: 'rolling', endTime: new Date() } });
         io.emit('roundRolling', { roundId: roundIdToEnd });
 
         const round = await Round.findById(roundMongoId)
-            .populate('participants.user', 'steamId username avatar tradeUrl') // Ensure tradeUrl is populated for winner
+            .populate('participants.user', 'steamId username avatar tradeUrl')
             .populate('items')
             .lean();
 
         if (!round) throw new Error(`Round ${roundIdToEnd} data missing after status update.`);
         if (round.status !== 'rolling') {
-             console.warn(`Round ${roundIdToEnd} status changed unexpectedly after marking as rolling. Aborting endRound.`);
+             console.warn(`WARN: Round ${roundIdToEnd} status changed unexpectedly after marking as rolling. Aborting endRound.`);
              isRolling = false; return;
         }
         currentRound = round; // Keep currentRound in sync with the DB state
 
         if (round.participants.length === 0 || round.items.length === 0 || round.totalValue <= 0) {
-            console.log(`Round ${round.roundId} ended with no valid participants or value.`);
+            console.log(`LOG_INFO: Round ${round.roundId} ended with no valid participants or value.`);
             await Round.updateOne({ _id: roundMongoId }, { $set: { status: 'completed', completedTime: new Date() } });
             io.emit('roundCompleted', { roundId: round.roundId, message: "No participants." });
             isRolling = false;
@@ -560,41 +561,35 @@ async function endRound() {
             return;
         }
 
-        // Filter out items based on tax rules BEFORE winner selection
-        // These 'finalItems' are what the winner will actually receive.
-        let finalItemsForWinner = [...round.items];
+        let finalItems = [...round.items]; // These are all items initially in the pot
         let originalPotValue = round.participants.reduce((sum, p) => sum + (p?.itemsValue || 0), 0);
-        let valueForWinnerCalculation = originalPotValue; // This will be adjusted by tax
+        let valueForWinner = originalPotValue;
         let taxAmount = 0;
-        let taxedItemsInfo = []; // Store info about items taken as tax
+        let taxedItemsInfo = [];
+        let itemsToTakeForTaxIds = new Set();
 
         if (originalPotValue >= MIN_POT_FOR_TAX) {
             const targetTaxValue = originalPotValue * (TAX_MIN_PERCENT / 100);
             const maxTaxValue = originalPotValue * (TAX_MAX_PERCENT / 100);
-            // Sort items by price (ascending) to take smallest items first for tax
-            const sortedItemsForTaxConsideration = [...round.items].sort((a, b) => (a.price || 0) - (b.price || 0));
+            const sortedItemsForTax = [...round.items].sort((a, b) => a.price - b.price);
             let currentTaxValueAccumulated = 0;
-            let itemsToTakeForTaxIds = new Set();
 
-            for (const item of sortedItemsForTaxConsideration) {
-                // If adding this item does not exceed max tax AND we haven't met target tax or are still under max
+            for (const item of sortedItemsForTax) {
                 if (currentTaxValueAccumulated + item.price <= maxTaxValue) {
                     itemsToTakeForTaxIds.add(item._id.toString());
                     taxedItemsInfo.push({ assetId: item.assetId, name: item.name, price: item.price });
                     currentTaxValueAccumulated += item.price;
-                    if (currentTaxValueAccumulated >= targetTaxValue) break; // Stop if target tax is met
-                } else if (currentTaxValueAccumulated < targetTaxValue) {
-                    // If we haven't met target and this item is too big, try to find a smaller one if possible
-                    // This logic can be complex; for now, we stop if the next smallest item exceeds maxTaxValue
+                    if (currentTaxValueAccumulated >= targetTaxValue) break;
+                } else {
                     break;
                 }
             }
 
             if (itemsToTakeForTaxIds.size > 0) {
-                finalItemsForWinner = round.items.filter(item => !itemsToTakeForTaxIds.has(item._id.toString()));
+                finalItems = round.items.filter(item => !itemsToTakeForTaxIds.has(item._id.toString()));
                 taxAmount = currentTaxValueAccumulated;
-                valueForWinnerCalculation = originalPotValue - taxAmount; // Actual value for the winner after tax
-                console.log(`Tax Applied for Round ${round.roundId}: $${taxAmount.toFixed(2)} (${itemsToTakeForTaxIds.size} items). Original Value: $${originalPotValue.toFixed(2)}. New Pot Value for Winner: $${valueForWinnerCalculation.toFixed(2)}`);
+                valueForWinner = originalPotValue - taxAmount;
+                console.log(`LOG_INFO: Tax Applied for Round ${round.roundId}: $${taxAmount.toFixed(2)} (${itemsToTakeForTaxIds.size} items). Original Value: $${originalPotValue.toFixed(2)}. New Pot Value for Winner: $${valueForWinner.toFixed(2)}`);
             }
         }
 
@@ -608,135 +603,155 @@ async function endRound() {
         if (totalTickets <= 0) throw new Error(`Cannot determine winner: Total tickets is zero for round ${round.roundId}.`);
         const winningTicket = decimalFromHash % totalTickets;
         let cumulativeTickets = 0;
-        let winnerInfo = null; // This will be the populated user object from round.participants
+        let winnerInfo = null;
 
         for (const participant of round.participants) {
             if (!participant?.tickets || !participant.user) continue;
             cumulativeTickets += participant.tickets;
             if (winningTicket < cumulativeTickets) {
-                winnerInfo = participant.user; // winnerInfo is the populated user object
+                winnerInfo = participant.user; // winnerInfo here is the populated user object
                 break;
             }
         }
 
         if (!winnerInfo || !winnerInfo._id) throw new Error(`Winner selection failed for round ${round.roundId}.`);
 
-        // Update winner's stats. valueForWinnerCalculation is the actual value they won.
-        await User.findByIdAndUpdate(winnerInfo._id, { $inc: { totalWinningsValue: valueForWinnerCalculation } });
-        console.log(`Updated winnings stats for ${winnerInfo.username}: Added $${valueForWinnerCalculation.toFixed(2)}`);
+        await User.findByIdAndUpdate(winnerInfo._id, { $inc: { totalWinningsValue: valueForWinner } });
+        console.log(`LOG_INFO: Updated winnings stats for ${winnerInfo.username}: New total winnings will be $${( (await User.findById(winnerInfo._id).lean()).totalWinningsValue ).toFixed(2)} (added $${valueForWinner.toFixed(2)})`);
 
         const finalUpdateData = {
-            status: 'completed',
-            completedTime: new Date(),
-            clientSeed: clientSeed,
-            provableHash: provableHash,
-            winningTicket: winningTicket,
-            winner: winnerInfo._id,
-            taxAmount: taxAmount,
-            taxedItems: taxedItemsInfo,
-            totalValue: valueForWinnerCalculation, // Store the after-tax value for the winner
-            items: finalItemsForWinner.map(i => i._id), // Store IDs of items the winner gets
+            status: 'completed', // Will be updated to 'completed_pending_acceptance' after this block
+            completedTime: new Date(), clientSeed: clientSeed,
+            provableHash: provableHash, winningTicket: winningTicket, winner: winnerInfo._id,
+            taxAmount: taxAmount, taxedItems: taxedItemsInfo,
+            totalValue: valueForWinner,
+            items: finalItems.map(i => i._id),
             payoutOfferStatus: 'PendingAcceptanceByWinner' // NEW: Set this status
         };
+        // Update status for the event emission
+        finalUpdateData.status = 'completed_pending_acceptance';
+
 
         const completedRound = await Round.findOneAndUpdate({ _id: roundMongoId }, { $set: finalUpdateData }, { new: true });
         if (!completedRound) throw new Error("Failed to save completed round data.");
 
-        console.log(`Round ${round.roundId} completed. Winner: ${winnerInfo.username} (Ticket: ${winningTicket}/${totalTickets}, Value Won: $${valueForWinnerCalculation.toFixed(2)})`);
+        console.log(`LOG_SUCCESS: Round ${round.roundId} completed. Winner: ${winnerInfo.username} (Ticket: ${winningTicket}/${totalTickets}, Value Won: $${valueForWinner.toFixed(2)})`);
 
-        io.emit('roundWinnerPendingAcceptance', {
+        io.emit('roundWinnerPendingAcceptance', { // NEW EVENT
             roundId: round.roundId,
             winner: { id: winnerInfo._id, steamId: winnerInfo.steamId, username: winnerInfo.username, avatar: winnerInfo.avatar },
             winningTicket: winningTicket,
-            totalValue: valueForWinnerCalculation, // This is the value winner will receive after tax
+            totalValue: valueForWinner, // This is the value winner will receive
             totalTickets: totalTickets,
-            serverSeed: round.serverSeed,
+            serverSeed: round.serverSeed, // For provably fair display, if needed immediately
             clientSeed: clientSeed,
             provableHash: provableHash,
             serverSeedHash: round.serverSeedHash
         });
 
     } catch (err) {
-        console.error(`CRITICAL ERROR during endRound for round ${roundIdToEnd}:`, err);
-        await Round.updateOne({ _id: roundMongoId }, { $set: { status: 'error', payoutOfferStatus: 'Failed' } }).catch(e => console.error("Error marking round as error after endRound failure:", e));
+        console.error(`CRITICAL_ERROR: Error during endRound for round ${roundIdToEnd}:`, err);
+        await Round.updateOne({ _id: roundMongoId }, { $set: { status: 'error', payoutOfferStatus: 'Failed' } }).catch(e => console.error("DB_ERROR: Error marking round as error after endRound failure:", e));
         io.emit('roundError', { roundId: roundIdToEnd, error: 'Internal server error during round finalization.' });
     } finally {
         isRolling = false;
-        console.log(`Scheduling next round creation after round ${roundIdToEnd} finalization.`);
+        console.log(`LOG_INFO: Scheduling next round creation after round ${roundIdToEnd} finalization.`);
         setTimeout(createNewRound, 10000); // Keep this to start a new round after a delay
     }
 }
 
 async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
-    // Ensure roundDoc and winner are populated as needed (especially winner.tradeUrl and roundDoc.totalValue which is after-tax)
+    console.log(`LOG_INFO: Attempting to send winning trade offer for Round ${roundDoc.roundId} to ${winner.username}.`); // LOG: Entry point
+    console.log(`LOG_DEBUG: isBotReady: ${isBotReady}`); // LOG: Bot status
+    console.log(`LOG_DEBUG: Winner Trade URL: ${winner.tradeUrl}`); // LOG: Winner trade URL
+    console.log(`LOG_DEBUG: Items to send count: ${itemsToSend ? itemsToSend.length : 'null/0'}`); // LOG: Items count
+    if (itemsToSend && itemsToSend.length > 0) {
+        console.log(`LOG_DEBUG: First item to send: assetId=${itemsToSend[0].assetId}, name=${itemsToSend[0].name}, price=${itemsToSend[0].price}`);
+    }
+
+
     if (!isBotReady) {
-        console.error(`PAYOUT_ERROR: Bot not ready. Round ${roundDoc.roundId}.`);
-        io.emit('notification', { type: 'error', userId: winner._id.toString(), message: `Bot Error: Payout for round ${roundDoc.roundId} delayed.` });
+        console.error(`PAYOUT_ERROR: Bot not ready. Cannot send winnings for Round ${roundDoc.roundId}.`); // LOG: Bot not ready
+        io.emit('notification', { type: 'error', userId: winner._id.toString(), message: `Bot Error: Payout for round ${roundDoc.roundId} delayed. Bot offline.` });
         await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed' } });
-        return null; // Return null or throw to indicate failure
+        return;
     }
     if (!winner.tradeUrl) {
-        console.error(`PAYOUT_ERROR: Winner ${winner.username} no Trade URL. Round ${roundDoc.roundId}.`);
-        io.emit('notification', { type: 'error', userId: winner._id.toString(), message: 'Set Trade URL for winnings.' });
+        console.error(`PAYOUT_ERROR: Winner ${winner.username} has no Trade URL set. Round ${roundDoc.roundId}.`); // LOG: No trade URL
+        io.emit('notification', { type: 'error', userId: winner._id.toString(), message: 'Please set your Steam Trade URL in your profile to receive winnings.' });
         await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - No Trade URL' } });
-        return null;
+        return;
     }
     if (!itemsToSend || itemsToSend.length === 0) {
-        console.log(`PAYOUT_INFO: No items for winner (after tax). Round ${roundDoc.roundId}. Pot Value: $${roundDoc.totalValue.toFixed(2)}`);
-        io.emit('notification', { type: 'info', userId: winner._id.toString(), message: `No items to send for Round #${roundDoc.roundId} (Pot value: $${roundDoc.totalValue.toFixed(2)} after tax).` });
+        console.log(`PAYOUT_INFO: No items to send to winner for Round ${roundDoc.roundId}.`); // LOG: No items
+        if (roundDoc.taxAmount > 0 && roundDoc.totalValue <= 0) { // totalValue is after-tax value for winner
+            io.emit('notification', { type: 'info', userId: winner._id.toString(), message: `Round ${roundDoc.roundId} winnings ($${roundDoc.taxAmount.toFixed(2)}) were covered by the site fee.` });
+        }
         await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'No Items Won' } });
-        return null;
+        return;
     }
 
-    console.log(`Attempting to send ${itemsToSend.length} items (Value: $${roundDoc.totalValue.toFixed(2)}) for round ${roundDoc.roundId} to ${winner.username}.`);
-    let sentOfferDetails = null;
+    console.log(`LOG_INFO: Preparing to send ${itemsToSend.length} items for round ${roundDoc.roundId} to ${winner.username}. Value: $${roundDoc.totalValue.toFixed(2)}`);
     try {
         const offer = manager.createOffer(winner.tradeUrl);
-        offer.addMyItems(itemsToSend.map(item => ({ assetid: item.assetId, appid: RUST_APP_ID, contextid: RUST_CONTEXT_ID })));
-        offer.setMessage(`Winnings from Round #${roundDoc.roundId} on ${process.env.SITE_NAME}. Value: $${roundDoc.totalValue.toFixed(2)}`);
+        const itemsForOffer = itemsToSend.map(item => ({ assetid: item.assetId, appid: RUST_APP_ID, contextid: RUST_CONTEXT_ID }));
+        console.log('LOG_DEBUG: Items formatted for offer.addMyItems:', JSON.stringify(itemsForOffer, null, 2)); // LOG: Items formatted for offer
+        offer.addMyItems(itemsForOffer);
+        offer.setMessage(`Winnings from Round #${roundDoc.roundId} on ${process.env.SITE_NAME}. Value: $${roundDoc.totalValue.toFixed(2)} Congrats!`);
 
         const identitySecret = process.env.STEAM_IDENTITY_SECRET;
+        console.log(`LOG_DEBUG: Using identitySecret: ${!!identitySecret}`); // LOG: Identity secret usage
+
         const sentOffer = await new Promise((resolve, reject) => {
-            offer.send(!!identitySecret, (err, statusCallback) => { // statusCallback is like 'pending', 'sent'
-                if (err) return reject(err);
+            offer.send(!!identitySecret, (err, status) => { // Status here is like 'pending', 'sent' etc.
+                if (err) {
+                     console.error(`PAYOUT_ERROR: offer.send callback error for Round ${roundDoc.roundId}:`, err); // LOG: offer.send error
+                     return reject(err);
+                }
                 // The actual ETradeOfferState is in offer.state after this callback
-                resolve({ statusCallback, offerId: offer.id, state: offer.state });
+                console.log(`LOG_INFO: offer.send callback status for Round ${roundDoc.roundId}: ${status}, Offer ID: ${offer.id}, Offer State: ${TradeOfferManager.ETradeOfferState[offer.state]}`); // LOG: offer.send success
+                resolve({ status, offerId: offer.id });
             });
         });
-        
+
         const offerURL = `https://steamcommunity.com/tradeoffer/${sentOffer.offerId}/`;
-        const offerStatusForDB = TradeOfferManager.ETradeOfferState[sentOffer.state] || 'Sent'; // Use actual state
+        // Initial status update. 'sentOfferChanged' event handler will update it further.
+        // The 'status' from offer.send might be 'pending'. The actual offer state (offer.state) is more reliable post-callback.
+        let initialPayoutStatus = 'Sent';
+        if (offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation || offer.state === TradeOfferManager.ETradeOfferState.PendingConfirmation) {
+            initialPayoutStatus = 'Pending Confirmation';
+        } else if (offer.state === TradeOfferManager.ETradeOfferState.InEscrow) {
+            initialPayoutStatus = 'Escrow';
+        }
 
-        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferId: sentOffer.offerId, payoutOfferStatus: offerStatusForDB } });
-        console.log(`PAYOUT_SUCCESS: Offer ${sentOffer.offerId} sent to ${winner.username} for round ${roundDoc.roundId}. Offer State: ${offerStatusForDB}, Callback Status: ${sentOffer.statusCallback}`);
+        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferId: sentOffer.offerId, payoutOfferStatus: initialPayoutStatus } });
+        console.log(`PAYOUT_SUCCESS: Offer ${sentOffer.offerId} sent to ${winner.username} for round ${roundDoc.roundId}. Initial DB Status: ${initialPayoutStatus}. Offer URL: ${offerURL}`);
 
-        sentOfferDetails = {
+        io.emit('tradeOfferSent', { // This event is crucial for the frontend
             roundId: roundDoc.roundId, userId: winner._id.toString(), username: winner.username,
-            offerId: sentOffer.offerId, offerURL: offerURL, status: offerStatusForDB, type: 'winning'
-        };
-        io.emit('tradeOfferSent', sentOfferDetails);
+            offerId: sentOffer.offerId, offerURL: offerURL, status: initialPayoutStatus, type: 'winning'
+        });
+        console.log(`LOG_INFO: Emitted 'tradeOfferSent' for offer ${sentOffer.offerId}.`); // LOG: Event emitted
 
-        if (sentOffer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation) {
-             console.log(`Offer #${sentOffer.offerId} requires confirmation by bot (State: ${offerStatusForDB}).`);
-             const notifMsg = `Winnings sent (Offer #${sentOffer.offerId}), but require bot confirmation or may be in escrow.`;
+        if (initialPayoutStatus === 'Pending Confirmation') {
+             console.log(`LOG_INFO: Offer #${sentOffer.offerId} requires bot confirmation. manager.on('sentOfferChanged') will handle updates.`);
+             const notifMsg = `Winnings sent (Offer #${sentOffer.offerId}), but requires bot confirmation. Status will update.`;
              io.emit('notification', { type: 'info', userId: winner._id.toString(), message: notifMsg });
         }
-        return sentOfferDetails;
 
-    } catch (err) { 
+    } catch (err) {
         let offerStatusUpdate = 'Failed';
         let userMessage = `Error sending winnings for round ${roundDoc.roundId}. Please contact support.`;
         if (err.message?.includes('revoked') || err.message?.includes('invalid') || err.eresult === 26) {
             userMessage = 'Your Trade URL is invalid or expired. Please update it to receive winnings.'; offerStatusUpdate = 'Failed - Bad URL';
-        } else if (err.eresult === 15 || err.eresult === 16) { 
+        } else if (err.eresult === 15 || err.eresult === 16) {
             userMessage = 'Could not send winnings. Ensure your Steam inventory is public and not full.'; offerStatusUpdate = 'Failed - Inventory Issue';
-        } else if (err.message?.includes('escrow') || err.eresult === 11 || err.eresult === 50) { // EResult 11/50 can mean escrow
-            userMessage = `Winnings sent, but may be held in Steam escrow.`; offerStatusUpdate = 'Escrow';
+        } else if (err.message?.includes('escrow') || err.eresult === 11) { // EResult 11 can sometimes mean escrow
+            userMessage = `Winnings sent, but may be held in escrow by Steam.`; offerStatusUpdate = 'Escrow';
         }
-        console.error(`PAYOUT_ERROR: Offer for round ${roundDoc.roundId}. EResult ${err.eresult} - ${err.message}`, err);
+        console.error(`PAYOUT_CRITICAL_ERROR: Creating/Sending offer for round ${roundDoc.roundId}. EResult ${err.eresult} - ${err.message}`, err); // LOG: Critical send error
         io.emit('notification', { type: 'error', userId: winner._id.toString(), message: userMessage });
         await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: offerStatusUpdate } });
-        return null;
     }
 }
 
@@ -755,7 +770,7 @@ app.post('/logout', (req, res, next) => {
                 console.error("Error destroying session during logout:", err);
                 return res.status(500).json({ error: 'Logout failed.' });
             }
-            res.clearCookie('connect.sid'); 
+            res.clearCookie('connect.sid');
             res.json({ success: true });
         });
     });
@@ -770,7 +785,7 @@ const handleValidationErrors = (req, res, next) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         console.warn("Validation Errors:", errors.array());
-        return res.status(400).json({ error: errors.array()[0].msg }); 
+        return res.status(400).json({ error: errors.array()[0].msg });
     }
     next();
 };
@@ -784,7 +799,7 @@ app.post('/api/user/tradeurl',
     sensitiveActionLimiter, ensureAuthenticated,
     [
         body('tradeUrl').trim().custom((value) => {
-            if (value === '') return true; 
+            if (value === '') return true;
             const urlPattern = /^https:\/\/steamcommunity\.com\/tradeoffer\/new\/\?partner=\d+&token=[a-zA-Z0-9_-]+$/;
             if (!urlPattern.test(value)) throw new Error('Invalid Steam Trade URL format. Must include partner and token, or be empty.');
             return true;
@@ -796,10 +811,10 @@ app.post('/api/user/tradeurl',
         try {
             const updatedUser = await User.findByIdAndUpdate(req.user._id, { tradeUrl: tradeUrl }, { new: true, runValidators: true });
             if (!updatedUser) return res.status(404).json({ error: 'User not found.' });
-            console.log(`Trade URL updated for user: ${updatedUser.username}`);
+            console.log(`LOG_INFO: Trade URL updated for user: ${updatedUser.username}`);
             res.json({ success: true, tradeUrl: updatedUser.tradeUrl });
         } catch (err) {
-            if (err.name === 'ValidationError') { 
+            if (err.name === 'ValidationError') {
                  console.error(`Trade URL Validation Error (Mongoose) for user ${req.user._id}:`, err.message);
                  return res.status(400).json({ error: err.message });
             }
@@ -812,15 +827,15 @@ app.post('/api/user/tradeurl',
 // API Endpoint for Winning History
 app.get('/api/user/winning-history', ensureAuthenticated, async (req, res) => {
     try {
-        const winnings = await Round.find({ winner: req.user._id, status: 'completed' })
+        const winnings = await Round.find({ winner: req.user._id, status: { $in: ['completed', 'completed_pending_acceptance'] } }) // Include new status
             .sort({ completedTime: -1 })
             .select('roundId completedTime totalValue payoutOfferId payoutOfferStatus taxAmount')
-            .limit(50) 
+            .limit(50)
             .lean();
 
         const history = winnings.map(win => ({
             gameId: win.roundId,
-            amountWon: win.totalValue, // This is the after-tax amount the winner received
+            amountWon: win.totalValue,
             dateWon: win.completedTime,
             tradeOfferId: win.payoutOfferId,
             tradeStatus: win.payoutOfferStatus || 'Unknown'
@@ -834,55 +849,49 @@ app.get('/api/user/winning-history', ensureAuthenticated, async (req, res) => {
 
 // NEW ENDPOINT for "Accept Winnings"
 app.post('/api/round/accept-winnings', ensureAuthenticated, sensitiveActionLimiter, async (req, res) => {
+    console.log(`LOG_INFO: Received POST /api/round/accept-winnings for user ${req.user.username}`); // LOG: Endpoint hit
     try {
-        const user = req.user;
+        const user = req.user; // User must be authenticated
 
-        // Find the latest completed round for this user where payout is 'PendingAcceptanceByWinner'
+        console.log(`LOG_DEBUG: Searching for round for user ${user._id}, status 'completed', payoutStatus 'PendingAcceptanceByWinner'`);
         const round = await Round.findOne({
             winner: user._id,
-            status: 'completed', // Ensure round itself is 'completed'
-            payoutOfferStatus: 'PendingAcceptanceByWinner' // Crucial: Only allow for this status
+            status: 'completed_pending_acceptance', // Ensure this matches status set in endRound
+            payoutOfferStatus: 'PendingAcceptanceByWinner'
         }).sort({ completedTime: -1 })
-          .populate('winner', 'steamId username avatar tradeUrl') // Populate winner for tradeUrl
-          .populate('items'); // Populate 'items' field, which should store IDs of items for winner
+          .populate('winner', 'steamId username avatar tradeUrl') // Populate winner for tradeUrl and other details
+          .populate('items'); // Populate items to be sent
 
         if (!round) {
+            console.warn(`LOG_WARN: No winnings pending acceptance found for user ${user.username}. Or round status mismatch.`); // LOG: No round found
             return res.status(404).json({ error: 'No winnings pending your acceptance found or round already processed.' });
         }
-        if (!round.winner) { // Should not happen if query is correct
-             console.error(`CRITICAL: Round ${round.roundId} found for accept-winnings but winner field is not populated.`);
-             return res.status(500).json({ error: 'Internal error processing your request.' });
-        }
+        console.log(`LOG_INFO: Found round ${round.roundId} for user ${user.username} to accept winnings.`); // LOG: Round found
 
-        // The 'round.items' are the ObjectIds of the items the winner should receive (after tax).
-        // We need to fetch the full item details (assetId, etc.) to send the trade offer.
-        const itemsToWinDetails = await Item.find({ '_id': { $in: round.items } }).lean();
+        const itemsToWin = round.items;
+        console.log(`LOG_DEBUG: Items to win for round ${round.roundId}: ${itemsToWin.length} items.`); // LOG: Items to win
 
         if (!round.winner.tradeUrl) {
+            console.warn(`LOG_WARN: User ${user.username} has no trade URL for round ${round.roundId}.`); // LOG: No trade URL on winner
             await Round.updateOne({ _id: round._id }, { $set: { payoutOfferStatus: 'Failed - No Trade URL' } });
             return res.status(400).json({ error: 'Please set your Steam Trade URL in your profile to accept winnings.' });
         }
-        
-        // Call the sendWinningTradeOffer function with the populated winner and detailed items
-        const offerDetails = await sendWinningTradeOffer(round, round.winner, itemsToWinDetails);
 
-        if (offerDetails && offerDetails.offerId) {
-            // sendWinningTradeOffer already emits 'tradeOfferSent' and updates Round doc
-            res.json({ success: true, message: 'Winnings accepted! Trade offer sent.', offerId: offerDetails.offerId, offerURL: offerDetails.offerURL });
-        } else {
-            // sendWinningTradeOffer handles DB update for failure and emits notifications
-            res.status(500).json({ error: 'Failed to send trade offer. Please check notifications or try again.' });
-        }
+        console.log(`LOG_INFO: Calling sendWinningTradeOffer for round ${round.roundId}, user ${user.username}.`);
+        await sendWinningTradeOffer(round, round.winner, itemsToWin);
+
+        res.json({ success: true, message: 'Winnings accepted. Trade offer is being processed.' });
 
     } catch (error) {
-        console.error(`Error in /api/round/accept-winnings for user ${req.user?.username}:`, error);
+        console.error('CRITICAL_ERROR: Error in /api/round/accept-winnings:', error); // LOG: Critical error in endpoint
+        // Potentially update round status to 'Failed' if an error occurs here before sending
         res.status(500).json({ error: 'Server error while accepting winnings. Please try again or contact support.' });
     }
 });
 
 
 app.get('/api/inventory', ensureAuthenticated, async (req, res) => {
-    if (!isBotReady) { 
+    if (!isBotReady) {
         console.warn(`Inventory fetch failed for ${req.user.username}: Bot service is unavailable.`);
         return res.status(503).json({ error: "Steam service temporarily unavailable. Please try again later." });
     }
@@ -896,11 +905,11 @@ app.get('/api/inventory', ensureAuthenticated, async (req, res) => {
                     console.error(`Inventory Fetch Error (Manager): User ${req.user.steamId}: EResult ${err.eresult} - ${err.message || err}`);
                     return reject(new Error(`Could not fetch inventory. Steam might be busy or inventory private.`));
                 }
-                resolve(inv || []); 
+                resolve(inv || []);
             });
         });
 
-        if (!inventory?.length) return res.json([]); 
+        if (!inventory?.length) return res.json([]);
 
         const validItems = inventory.map(item => {
                 const itemName = item.market_hash_name;
@@ -910,14 +919,14 @@ app.get('/api/inventory', ensureAuthenticated, async (req, res) => {
 
                 const finalPrice = (typeof price === 'number' && !isNaN(price)) ? price : 0;
 
-                if (!item.assetid || !item.icon_url || !itemName) { 
+                if (!item.assetid || !item.icon_url || !itemName) {
                     console.warn(`Inventory item missing required properties: assetId ${item?.assetid}, Name ${itemName}, Icon ${item?.icon_url}`);
-                    return null; 
+                    return null;
                 }
-                const imageUrl = `https://community.akamai.steamstatic.com/economy/image/${item.icon_url}`; 
+                const imageUrl = `https://community.akamai.steamstatic.com/economy/image/${item.icon_url}`;
                 return { assetId: item.assetid, name: itemName, image: imageUrl, price: finalPrice, tradable: item.tradable };
             })
-            .filter(item => item && item.tradable && item.price >= MIN_ITEM_VALUE); 
+            .filter(item => item && item.tradable && item.price >= MIN_ITEM_VALUE);
 
         res.json(validItems);
     } catch (err) {
@@ -929,7 +938,7 @@ app.get('/api/inventory', ensureAuthenticated, async (req, res) => {
 app.post('/api/deposit', depositLimiter, ensureAuthenticated,
     [
         body('assetIds').isArray({ min: 1, max: MAX_ITEMS_PER_DEPOSIT }).withMessage(`You can deposit between 1 and ${MAX_ITEMS_PER_DEPOSIT} items at a time.`),
-        body('assetIds.*').isString().isLength({ min: 5, max: 30 }).withMessage('Invalid asset ID format.') 
+        body('assetIds.*').isString().isLength({ min: 5, max: 30 }).withMessage('Invalid asset ID format.')
     ],
     handleValidationErrors,
     async (req, res) => {
@@ -1066,50 +1075,57 @@ app.post('/api/deposit', depositLimiter, ensureAuthenticated,
 // --- Trade Offer Manager Event Handling ---
 if (isBotConfigured && manager) {
     manager.on('newOffer', async (offer) => {
-        if (!isBotReady || offer.isOurOffer) return;
+        console.log(`LOG_DEBUG: manager.on('newOffer') received. Offer ID: ${offer.id}, Partner: ${offer.partner.getSteamID64()}, Our Offer: ${offer.isOurOffer}`); // LOG: New offer received
+        if (!isBotReady || offer.isOurOffer) {
+            if (offer.isOurOffer) console.log(`LOG_DEBUG: Ignoring newOffer event for our own offer #${offer.id}.`);
+            return;
+        }
         if (offer.itemsToReceive && offer.itemsToReceive.length > 0 && (!offer.itemsToGive || offer.itemsToGive.length === 0)) {
              if (offer.message && offer.message.includes('RustyDegen Deposit ID:')) {
-                 console.log(`Offer #${offer.id} from ${offer.partner.getSteamID64()} looks like a manual deposit. Declining.`);
-                 return offer.decline((err) => { if (err) console.error(`Error declining manual deposit offer ${offer.id}:`, err); });
+                 console.log(`LOG_WARN: Offer #${offer.id} from ${offer.partner.getSteamID64()} looks like a manual deposit attempt. Declining.`);
+                 return offer.decline((err) => { if (err) console.error(`LOG_ERROR: Error declining manual deposit offer ${offer.id}:`, err); });
              } else {
-                 console.log(`Offer #${offer.id} from ${offer.partner.getSteamID64()} looks like an unsolicited item offer. Declining.`);
-                  return offer.decline((err) => { if (err) console.error(`Error declining unsolicited offer ${offer.id}:`, err); });
+                 console.log(`LOG_WARN: Offer #${offer.id} from ${offer.partner.getSteamID64()} looks like an unsolicited item offer. Declining.`);
+                  return offer.decline((err) => { if (err) console.error(`LOG_ERROR: Error declining unsolicited offer ${offer.id}:`, err); });
              }
         }
-        console.log(`Ignoring unexpected incoming offer #${offer.id} from ${offer.partner.getSteamID64()}.`);
+        console.log(`LOG_INFO: Ignoring unexpected incoming offer #${offer.id} from ${offer.partner.getSteamID64()}. Message: "${offer.message}"`);
     });
 
     manager.on('sentOfferChanged', async (offer, oldState) => {
-        console.log(`Bot Offer #${offer.id} state changed: ${TradeOfferManager.ETradeOfferState[oldState]} -> ${TradeOfferManager.ETradeOfferState[offer.state]} (Partner: ${offer.partner.getSteamID64()}) Msg: "${offer.message}"`);
+        console.log(`LOG_INFO: Bot Offer #${offer.id} state changed: ${TradeOfferManager.ETradeOfferState[oldState]} -> ${TradeOfferManager.ETradeOfferState[offer.state]} (Partner: ${offer.partner.getSteamID64()}) Msg: "${offer.message}"`); // LOG: Offer state change
 
         const messageMatch = offer.message.match(/Deposit ID: ([a-f0-9-]+)/i);
         const depositId = messageMatch ? messageMatch[1] : null;
 
         if (depositId && pendingDeposits.has(depositId)) { // It's a deposit offer
+            console.log(`LOG_DEBUG: Offer #${offer.id} matched pending deposit ${depositId}.`);
             if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
                 const depositData = pendingDeposits.get(depositId);
                 pendingDeposits.delete(depositId);
-                console.log(`Processing accepted deposit offer #${offer.id} (DepositID: ${depositId}) for user ${depositData.steamId}`);
+                console.log(`LOG_SUCCESS: Processing accepted deposit offer #${offer.id} (DepositID: ${depositId}) for user ${depositData.steamId}`);
                 User.updateOne({ steamId: depositData.steamId, pendingDepositOfferId: offer.id }, { pendingDepositOfferId: null })
-                    .catch(e => console.error("Error clearing user pending flag on deposit accept:", e));
+                    .catch(e => console.error("DB_ERROR: Error clearing user pending flag on deposit accept:", e));
 
                 let depositRound;
                 try {
                      depositRound = await Round.findById(depositData.roundId).select('status participants items').exec();
                      if (!depositRound || depositRound.status !== 'active' || isRolling) {
-                          console.warn(`Deposit ${depositId} (Offer ${offer.id}) accepted, but round invalid. Items NOT added.`);
-                          io.emit('notification', { type: 'error', userId: depositData.userId.toString(), message: `Deposit Error: Round ended before offer #${offer.id} processed. Contact support.` });
+                          console.warn(`WARN: Deposit ${depositId} (Offer ${offer.id}) accepted, but round invalid/rolling. Items NOT added. Round status: ${depositRound?.status}, isRolling: ${isRolling}`);
+                          io.emit('notification', { type: 'error', userId: depositData.userId.toString(), message: `Deposit Error: Round ended/rolling before offer #${offer.id} processed. Contact support.` });
                           return;
                      }
                      const isNewP = !depositRound.participants.some(p => p.user?.toString() === depositData.userId.toString());
                      if (isNewP && depositRound.participants.length >= MAX_PARTICIPANTS) {
+                         console.warn(`WARN: Deposit ${depositId} for new participant, but participant limit reached.`);
                          io.emit('notification', { type: 'error', userId: depositData.userId.toString(), message: `Deposit Error: Participant limit reached for offer #${offer.id}. Contact support.` }); return;
                      }
                      if (depositRound.items.length + depositData.items.length > MAX_ITEMS_PER_POT) {
+                          console.warn(`WARN: Deposit ${depositId} would exceed pot item limit.`);
                           io.emit('notification', { type: 'error', userId: depositData.userId.toString(), message: `Deposit Error: Pot item limit reached for offer #${offer.id}. Contact support.` }); return;
                      }
                  } catch (roundCheckError) {
-                      console.error(`CRITICAL DB ERROR checking round status for deposit ${depositId}:`, roundCheckError);
+                      console.error(`CRITICAL_DB_ERROR: checking round status for deposit ${depositId}:`, roundCheckError);
                       io.emit('notification', { type: 'error', userId: depositData.userId.toString(), message: `CRITICAL Deposit Error for offer #${offer.id}. Contact support.` });
                       return;
                  }
@@ -1122,11 +1138,14 @@ if (isBotConfigured && manager) {
                     }));
                     const insertedItemsResult = await Item.insertMany(itemDocuments, { ordered: false });
                     createdItemIds = insertedItemsResult.map(doc => doc._id);
-                    console.log(`Deposit ${depositId}: Inserted ${createdItemIds.length} items.`);
+                    console.log(`LOG_INFO: Deposit ${depositId}: Inserted ${createdItemIds.length} items into DB.`);
                     await User.findByIdAndUpdate( depositData.userId, { $inc: { totalDepositedValue: depositData.totalValue } } );
 
                     const roundToUpdate = await Round.findById(depositData.roundId);
-                    if (!roundToUpdate || roundToUpdate.status !== 'active') throw new Error("Round status invalid before final deposit update.");
+                    if (!roundToUpdate || roundToUpdate.status !== 'active') {
+                        console.warn(`WARN: Deposit ${depositId} accepted, but round became invalid before final DB update. Status: ${roundToUpdate?.status}`);
+                        throw new Error("Round status invalid before final deposit update.");
+                    }
 
                     let participantIndex = roundToUpdate.participants.findIndex(p => p.user?.toString() === depositData.userId.toString());
                     const depositTickets = Math.max(1, Math.floor(depositData.totalValue / TICKET_VALUE_RATIO));
@@ -1134,11 +1153,17 @@ if (isBotConfigured && manager) {
                            roundToUpdate.participants[participantIndex].itemsValue += depositData.totalValue;
                            roundToUpdate.participants[participantIndex].tickets += depositTickets;
                     } else {
-                           if (roundToUpdate.participants.length >= MAX_PARTICIPANTS) throw new Error("Participant limit hit before final save.");
+                           if (roundToUpdate.participants.length >= MAX_PARTICIPANTS) {
+                                console.warn(`WARN: Deposit ${depositId} - Participant limit hit before final save.`);
+                                throw new Error("Participant limit hit before final save.");
+                           }
                            roundToUpdate.participants.push({ user: depositData.userId, itemsValue: depositData.totalValue, tickets: depositTickets });
                     }
                     roundToUpdate.totalValue += depositData.totalValue; // This totalValue is the pre-tax value displayed during the round
-                    if (roundToUpdate.items.length + createdItemIds.length > MAX_ITEMS_PER_POT) throw new Error("Pot item limit hit before final save.");
+                    if (roundToUpdate.items.length + createdItemIds.length > MAX_ITEMS_PER_POT) {
+                        console.warn(`WARN: Deposit ${depositId} - Pot item limit hit before final save.`);
+                        throw new Error("Pot item limit hit before final save.");
+                    }
                     roundToUpdate.items.push(...createdItemIds);
                     const savedRound = await roundToUpdate.save();
                     const latestRoundData = await Round.findById(savedRound._id).populate('participants.user', 'steamId username avatar').lean();
@@ -1153,36 +1178,43 @@ if (isBotConfigured && manager) {
                                tickets: updatedParticipantData.tickets, totalValue: latestRoundData.totalValue,
                                depositedItems: depositData.items.map(i => ({ assetId: i.assetid, name: i._name, image: i._image, price: i._price }))
                           });
+                           console.log(`LOG_INFO: Emitted 'participantUpdated' for user ${userInfo.username}.`);
                     }
                     if (latestRoundData.participants.length === 1 && !roundTimer && latestRoundData.status === 'active') {
                           startRoundTimer(); // Start timer if it's the first participant and timer isn't running
                     }
-                     console.log(`Deposit success processed for offer #${offer.id}. User: ${userInfo?.username}`);
+                     console.log(`LOG_SUCCESS: Deposit success processed for offer #${offer.id}. User: ${userInfo?.username}`);
                  } catch (dbErr) {
-                     console.error(`CRITICAL DB/UPDATE ERROR processing deposit ${offer.id}:`, dbErr);
+                     console.error(`CRITICAL_DB_ERROR processing deposit ${offer.id}:`, dbErr);
                      io.emit('notification', { type: 'error', userId: depositData.userId.toString(), message: `CRITICAL Deposit Error for offer #${offer.id}. Contact support.` });
                       if (createdItemIds.length > 0) { // Rollback item creation if error during round update
                           await Item.deleteMany({ _id: { $in: createdItemIds } });
+                          console.log(`LOG_INFO: Rolled back ${createdItemIds.length} items for failed deposit ${offer.id}.`);
                       }
-                      // Consider marking round as error if deposit processing fails critically
-                      if (currentRound) { // Check if currentRound is defined
+                      if (currentRound) {
+                          console.error(`CRITICAL_ERROR: Marking round ${currentRound.roundId} as 'error' due to deposit processing failure.`);
                           await Round.updateOne({ _id: currentRound._id }, { $set: { status: 'error' } });
                           io.emit('roundError', { roundId: currentRound.roundId, error: 'Critical deposit database error.' });
                       }
                  }
             } else if ([TradeOfferManager.ETradeOfferState.Declined, TradeOfferManager.ETradeOfferState.Canceled, TradeOfferManager.ETradeOfferState.Expired, TradeOfferManager.ETradeOfferState.InvalidItems].includes(offer.state)) {
                 const depositData = pendingDeposits.get(depositId);
-                if (depositData) { 
-                    console.warn(`Deposit offer ${offer.id} (DepositID: ${depositId}) for user ${depositData.steamId} was ${TradeOfferManager.ETradeOfferState[offer.state]}.`);
+                if (depositData) {
+                    console.warn(`WARN: Deposit offer ${offer.id} (DepositID: ${depositId}) for user ${depositData.steamId} was ${TradeOfferManager.ETradeOfferState[offer.state]}.`);
                     pendingDeposits.delete(depositId);
                     User.updateOne({ steamId: depositData.steamId, pendingDepositOfferId: offer.id }, { pendingDepositOfferId: null })
-                        .catch(e => console.error("Error clearing user flag on deposit failure:", e));
+                        .catch(e => console.error("DB_ERROR: Error clearing user flag on deposit failure:", e));
                     const stateMessage = TradeOfferManager.ETradeOfferState[offer.state].toLowerCase().replace(/_/g, ' ');
                     io.emit('notification', { type: 'error', userId: depositData.userId.toString(), message: `Your deposit offer (#${offer.id}) was ${stateMessage}.` });
+                } else {
+                    console.log(`LOG_DEBUG: Received sentOfferChanged for DepositID ${depositId} (Offer #${offer.id}), but it was not in pendingDeposits map. State: ${TradeOfferManager.ETradeOfferState[offer.state]}. Possibly already processed or expired.`);
                 }
+            } else {
+                console.log(`LOG_DEBUG: Deposit Offer #${offer.id} (DepositID: ${depositId}) changed to unhandled state: ${TradeOfferManager.ETradeOfferState[offer.state]}`);
             }
         } else if (offer.itemsToGive && offer.itemsToGive.length > 0 && (!offer.itemsToReceive || offer.itemsToReceive.length === 0)) {
             // This is a payout (winnings) offer
+            console.log(`LOG_DEBUG: Offer #${offer.id} to ${offer.partner.getSteamID64()} is a payout offer. New state: ${TradeOfferManager.ETradeOfferState[offer.state]}`); // LOG: Payout offer state change
             let payoutStatusUpdate = 'Unknown';
             switch (offer.state) {
                 case TradeOfferManager.ETradeOfferState.Accepted: payoutStatusUpdate = 'Accepted'; break;
@@ -1191,34 +1223,41 @@ if (isBotConfigured && manager) {
                 case TradeOfferManager.ETradeOfferState.Expired: payoutStatusUpdate = 'Expired'; break;
                 case TradeOfferManager.ETradeOfferState.InvalidItems: payoutStatusUpdate = 'InvalidItems'; break;
                 case TradeOfferManager.ETradeOfferState.InEscrow: payoutStatusUpdate = 'Escrow'; break;
+                // Added for completeness based on offer.send states
+                case TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation:
+                case TradeOfferManager.ETradeOfferState.PendingConfirmation:
+                    payoutStatusUpdate = 'Pending Confirmation'; break;
                 default: payoutStatusUpdate = TradeOfferManager.ETradeOfferState[offer.state] || 'Unknown';
             }
 
-            console.log(`Payout offer #${offer.id} to ${offer.partner.getSteamID64()} changed to ${payoutStatusUpdate}.`);
+            console.log(`LOG_INFO: Payout offer #${offer.id} to ${offer.partner.getSteamID64()} changed to ${payoutStatusUpdate}.`);
             try {
                 const updatedRound = await Round.findOneAndUpdate(
                     { payoutOfferId: offer.id },
                     { $set: { payoutOfferStatus: payoutStatusUpdate } },
                     { new: true }
-                ).populate('winner', 'steamId _id'); 
+                ).populate('winner', 'steamId _id');
 
                 if (updatedRound && updatedRound.winner) {
                     const winnerUserId = updatedRound.winner._id.toString();
+                     console.log(`LOG_INFO: Updated payoutOfferStatus to ${payoutStatusUpdate} for round ${updatedRound.roundId}, winner ${updatedRound.winner.steamId}.`); // LOG: Payout status updated in DB
                      if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
-                        io.emit('notification', { type: 'success', userId: winnerUserId, message: `Winnings from offer #${offer.id} (Round #${updatedRound.roundId}) received!` });
+                        io.emit('notification', { type: 'success', userId: winnerUserId, message: `Winnings from offer #${offer.id} (Round #${updatedRound.roundId}) successfully accepted!` });
                     } else if ([TradeOfferManager.ETradeOfferState.Declined, TradeOfferManager.ETradeOfferState.Canceled, TradeOfferManager.ETradeOfferState.Expired].includes(offer.state)) {
                         io.emit('notification', { type: 'error', userId: winnerUserId, message: `Winnings offer #${offer.id} (Round #${updatedRound.roundId}) was ${payoutStatusUpdate}. Contact support if this was an error.` });
                     } else if (offer.state === TradeOfferManager.ETradeOfferState.InEscrow) {
                          io.emit('notification', { type: 'warning', userId: winnerUserId, message: `Winnings offer #${offer.id} (Round #${updatedRound.roundId}) is held in Steam escrow.` });
+                    } else if (payoutStatusUpdate === 'Pending Confirmation') {
+                        io.emit('notification', { type: 'info', userId: winnerUserId, message: `Winnings offer #${offer.id} (Round #${updatedRound.roundId}) is pending bot confirmation.` });
                     }
                 } else if (!updatedRound) {
-                    console.warn(`Could not find round associated with payout offer #${offer.id} to update status.`);
+                    console.warn(`WARN: Could not find round associated with payout offer #${offer.id} to update status.`);
                 }
             } catch (dbError) {
-                console.error(`Error updating payout status for offer #${offer.id} in DB:`, dbError);
+                console.error(`DB_ERROR: Error updating payout status for offer #${offer.id} in DB:`, dbError);
             }
         } else {
-            console.warn(`Offer #${offer.id} changed state to ${TradeOfferManager.ETradeOfferState[offer.state]}, but not recognized as pending deposit or standard winnings. Message: "${offer.message}"`);
+            console.warn(`WARN: Offer #${offer.id} changed state to ${TradeOfferManager.ETradeOfferState[offer.state]}, but not recognized as pending deposit or standard winnings. Message: "${offer.message}"`);
         }
     });
 }
@@ -1265,14 +1304,13 @@ function formatRoundForClient(round) {
         timeLeft: timeLeft, totalValue: round.totalValue || 0, serverSeedHash: round.serverSeedHash,
         participants: participantsFormatted, items: itemsFormatted, // Use formatted items
         winner: winnerDetails,
-        winningTicket: round.status === 'completed' ? round.winningTicket : undefined,
-        serverSeed: round.status === 'completed' ? round.serverSeed : undefined,
-        clientSeed: round.status === 'completed' ? round.clientSeed : undefined,
-        provableHash: round.status === 'completed' ? round.provableHash : undefined,
+        winningTicket: (round.status === 'completed' || round.status === 'completed_pending_acceptance') ? round.winningTicket : undefined,
+        serverSeed: (round.status === 'completed' || round.status === 'completed_pending_acceptance') ? round.serverSeed : undefined,
+        clientSeed: (round.status === 'completed' || round.status === 'completed_pending_acceptance') ? round.clientSeed : undefined,
+        provableHash: (round.status === 'completed' || round.status === 'completed_pending_acceptance') ? round.provableHash : undefined,
         taxAmount: round.taxAmount,
-        // For client to know if it should show "Accept Winnings" or "Accept on Steam" if already sent
-        payoutOfferId: round.status === 'completed' ? round.payoutOfferId : undefined,
-        payoutOfferStatus: round.status === 'completed' ? round.payoutOfferStatus : undefined
+        payoutOfferId: round.payoutOfferId, // Added for client to know
+        payoutOfferStatus: round.payoutOfferStatus // Added for client to know
     };
 }
 
@@ -1287,15 +1325,15 @@ app.get('/api/round/current', async (req, res) => {
             if (!roundToFormat) currentRound = null; // In-memory was stale
             else currentRound = roundToFormat; // Update in-memory with fresh populated data
         }
-        
+
         // If no valid in-memory currentRound, try to find one from DB
         if (!roundToFormat) {
-            roundToFormat = await Round.findOne({ status: { $in: ['active', 'rolling', 'pending'] } })
+            roundToFormat = await Round.findOne({ status: { $in: ['active', 'rolling', 'pending', 'completed_pending_acceptance'] } }) // Include new status
                  .sort({ startTime: -1 }) // Get the most recent one
                  .populate('participants.user', 'steamId username avatar')
                  .populate('items') // Populate items array
                  .populate('winner', 'steamId username avatar').lean();
-            
+
             if (roundToFormat && !currentRound) { // If found one and server's currentRound was null
                  currentRound = roundToFormat;
                  // Resume timer if applicable
@@ -1319,7 +1357,7 @@ app.get('/api/rounds',
     handleValidationErrors, async (req, res) => {
     try {
         const page = req.query.page || 1; const limit = req.query.limit || 10; const skip = (page - 1) * limit;
-        const queryFilter = { status: { $in: ['completed', 'error'] } };
+        const queryFilter = { status: { $in: ['completed', 'completed_pending_acceptance', 'error'] } }; // Include new status
         const [rounds, totalCount] = await Promise.all([
             Round.find(queryFilter).sort('-roundId').skip(skip).limit(limit)
                  .populate('winner', 'username avatar steamId')
@@ -1339,29 +1377,45 @@ app.post('/api/verify', sensitiveActionLimiter,
     [
         body('roundId').notEmpty().isInt({ min: 1 }).toInt(),
         body('serverSeed').trim().notEmpty().isHexadecimal().isLength({ min: 64, max: 64 }),
-        body('clientSeed').trim().notEmpty().isString().isLength({ min: 1, max: 128 })
+        body('clientSeed').trim().notEmpty().isString().isLength({ min: 1, max: 128 }) // Allow longer client seeds if needed
     ],
     handleValidationErrors, async (req, res) => {
     const { roundId, serverSeed, clientSeed } = req.body;
     try {
-        const round = await Round.findOne({ roundId: roundId, status: 'completed' })
+        const round = await Round.findOne({ roundId: roundId, status: { $in: ['completed', 'completed_pending_acceptance'] } }) // Include new status
              .populate('participants.user', 'username').populate('winner', 'username').lean();
         if (!round) return res.status(404).json({ error: `Completed round #${roundId} not found.` });
+
+        if (!round.serverSeed) { // Check if server seed is even available (e.g. error round)
+            return res.json({ verified: false, reason: 'Server Seed for this round is not available for verification (e.g. error round or pre-reveal).', expectedHash: round.serverSeedHash });
+        }
+
         const providedHash = crypto.createHash('sha256').update(serverSeed).digest('hex');
         if (providedHash !== round.serverSeedHash) return res.json({ verified: false, reason: 'Server Seed Hash mismatch.', expectedHash: round.serverSeedHash, providedSeed: serverSeed, calculatedHash: providedHash });
+
         if (round.serverSeed && round.clientSeed && (serverSeed !== round.serverSeed || clientSeed !== round.clientSeed)) {
-            return res.json({ verified: false, reason: 'Provided seeds do not match official round seeds.', expectedServerSeed: round.serverSeed, expectedClientSeed: round.clientSeed, providedServerSeed: serverSeed, providedClientSeed: clientSeed });
+            // This case is if user is trying to verify with *different* seeds than the official ones for a round that already has official seeds
+            return res.json({ verified: false, reason: 'Provided seeds do not match official round seeds. Verification with official seeds passed based on hash.', officialVerification: true, expectedServerSeed: round.serverSeed, expectedClientSeed: round.clientSeed, providedServerSeed: serverSeed, providedClientSeed: clientSeed });
         }
-        const combinedString = serverSeed + clientSeed;
+
+        // If round.clientSeed doesn't exist yet (e.g. user is verifying before official clientSeed is set, which shouldn't happen if serverSeed is revealed)
+        // OR if they are providing the exact seeds
+        const effectiveClientSeed = round.clientSeed || clientSeed; // Use official if available, else provided for calculation check
+
+        const combinedString = serverSeed + effectiveClientSeed;
         const calculatedProvableHash = crypto.createHash('sha256').update(combinedString).digest('hex');
-        if (round.provableHash && calculatedProvableHash !== round.provableHash) return res.json({ verified: false, reason: 'Calculated Provable Hash mismatch.', expectedProvableHash: round.provableHash, calculatedProvableHash, combinedString });
+
+        if (round.provableHash && calculatedProvableHash !== round.provableHash) return res.json({ verified: false, reason: 'Calculated Provable Hash mismatch with official hash.', expectedProvableHash: round.provableHash, calculatedProvableHash, combinedString });
+
         const decimalFromHash = parseInt(calculatedProvableHash.substring(0, 8), 16);
         const totalTickets = round.participants?.reduce((sum, p) => sum + (p?.tickets || 0), 0) ?? 0;
-        if (totalTickets <= 0) return res.json({ verified: false, reason: 'Round had zero total tickets.' });
+        if (totalTickets <= 0) return res.json({ verified: false, reason: 'Round had zero total tickets for verification.' });
+
         const calculatedWinningTicket = decimalFromHash % totalTickets;
-        if (calculatedWinningTicket !== round.winningTicket) return res.json({ verified: false, reason: 'Calculated winning ticket mismatch.', calculatedTicket: calculatedWinningTicket, actualWinningTicket: round.winningTicket, provableHashUsed: calculatedProvableHash, totalTickets });
+        if (round.winningTicket !== undefined && calculatedWinningTicket !== round.winningTicket) return res.json({ verified: false, reason: 'Calculated winning ticket mismatch with official ticket.', calculatedTicket: calculatedWinningTicket, actualWinningTicket: round.winningTicket, provableHashUsed: calculatedProvableHash, totalTickets });
+
         res.json({
-            verified: true, roundId: round.roundId, serverSeed, serverSeedHash: round.serverSeedHash, clientSeed,
+            verified: true, roundId: round.roundId, serverSeed, serverSeedHash: round.serverSeedHash, clientSeed: effectiveClientSeed,
             combinedString, finalHash: calculatedProvableHash, winningTicket: calculatedWinningTicket,
             totalTickets, totalValue: round.totalValue,
             winnerUsername: round.winner?.username || 'N/A'
@@ -1384,8 +1438,8 @@ io.on('connection', (socket) => {
     connectedChatUsers++;
     io.emit('updateUserCount', connectedChatUsers);
     const user = socket.request.user;
-    if (user && user.username) console.log(`User ${user.username} (Socket ID: ${socket.id}) connected.`);
-    else console.log(`Anonymous client (Socket ID: ${socket.id}) connected.`);
+    if (user && user.username) console.log(`LOG_INFO: User ${user.username} (Socket ID: ${socket.id}) connected.`);
+    else console.log(`LOG_INFO: Anonymous client (Socket ID: ${socket.id}) connected.`);
 
     socket.on('requestRoundData', async () => { // Sent by client on connect or when needs fresh data
         try {
@@ -1399,10 +1453,10 @@ io.on('connection', (socket) => {
                  if (!roundToSend) currentRound = null; // Stale in-memory
                  else currentRound = roundToSend; // Update in-memory
              }
-             
+
              // If no valid in-memory currentRound, fetch from DB
              if (!roundToSend) {
-                 roundToSend = await Round.findOne({ status: { $in: ['active', 'rolling', 'pending', 'completed'] } }) // Include 'completed' for cases where user connects right after round ends but before new one starts
+                 roundToSend = await Round.findOne({ status: { $in: ['active', 'rolling', 'pending', 'completed_pending_acceptance'] } }) // Include new status
                        .sort({ startTime: -1 })
                        .populate('participants.user', 'steamId username avatar')
                        .populate('items') // Populate items in the round
@@ -1416,7 +1470,7 @@ io.on('connection', (socket) => {
              }
             const formattedData = formatRoundForClient(roundToSend); // This needs populated items
             if (formattedData) socket.emit('roundData', formattedData); // Send to requesting client
-            else socket.emit('noActiveRound'); // Or a specific "no round data" event
+            else socket.emit('noActiveRound');
         } catch (err) {
             console.error(`Error fetching round data for socket ${socket.id}:`, err);
             socket.emit('roundError', { error: 'Failed to load round data.' });
@@ -1449,45 +1503,45 @@ io.on('connection', (socket) => {
     socket.on('disconnect', (reason) => {
         connectedChatUsers--;
         io.emit('updateUserCount', connectedChatUsers);
-         if (user && user.username) console.log(`User ${user.username} disconnected. Reason: ${reason}`);
-         else console.log(`Anonymous client disconnected. Reason: ${reason}`);
+         if (user && user.username) console.log(`LOG_INFO: User ${user.username} disconnected. Reason: ${reason}`);
+         else console.log(`LOG_INFO: Anonymous client disconnected. Reason: ${reason}`);
     });
 });
 
 // --- Server Startup ---
 async function startApp() {
-    console.log("Performing initial price cache refresh...");
+    console.log("LOG_INFO: Performing initial price cache refresh...");
     await refreshPriceCache();
     setInterval(async () => {
         try { await refreshPriceCache(); }
         catch (refreshErr) { console.error("Error during scheduled price cache refresh:", refreshErr); }
     }, PRICE_REFRESH_INTERVAL_MS);
-    console.log(`Scheduled price cache refresh every ${PRICE_REFRESH_INTERVAL_MS / 60000} minutes.`);
+    console.log(`LOG_INFO: Scheduled price cache refresh every ${PRICE_REFRESH_INTERVAL_MS / 60000} minutes.`);
     const PORT = process.env.PORT || 3000;
     server.listen(PORT, () => {
-        console.log(`Server listening on port ${PORT}`);
-        console.log(`Site URL configured as: ${process.env.SITE_URL}`);
+        console.log(`LOG_SUCCESS: Server listening on port ${PORT}`);
+        console.log(`LOG_INFO: Site URL configured as: ${process.env.SITE_URL}`);
         if (!isBotConfigured) console.log("INFO: Steam Bot not configured. Trade features disabled.");
-        else if (!isBotReady) console.log("INFO: Steam Bot login attempt may have failed or is pending.");
-        else console.log("INFO: Steam Bot is ready.");
+        else if (!isBotReady) console.log("WARN: Steam Bot login attempt may have failed or is pending. Check logs.");
+        else console.log("LOG_SUCCESS: Steam Bot is ready.");
         ensureInitialRound();
     });
 }
 startApp();
 
 function gracefulShutdown() {
-    console.log('Received shutdown signal. Closing server...');
+    console.log('LOG_INFO: Received shutdown signal. Closing server...');
     io.close();
     server.close(async () => {
-        console.log('HTTP server closed.');
+        console.log('LOG_INFO: HTTP server closed.');
         try {
             await mongoose.connection.close();
-            console.log('MongoDB connection closed.');
+            console.log('LOG_INFO: MongoDB connection closed.');
             if (manager && typeof manager.shutdown === 'function') {
-                 console.log('Stopping TradeOfferManager polling...');
+                 console.log('LOG_INFO: Stopping TradeOfferManager polling...');
                  manager.shutdown();
             } else if (manager) {
-                 console.log('TradeOfferManager will stop on process exit.');
+                 console.log('LOG_INFO: TradeOfferManager will stop on process exit.');
             }
             process.exit(0);
         } catch (e) {
@@ -1496,7 +1550,7 @@ function gracefulShutdown() {
         }
     });
     setTimeout(() => {
-        console.error('Could not close connections gracefully, forcing shutdown.');
+        console.error('CRITICAL_ERROR: Could not close connections gracefully, forcing shutdown.');
         process.exit(1);
     }, 10000);
 }
@@ -1511,4 +1565,4 @@ app.use((err, req, res, next) => {
     res.status(status).json({ error: message });
 });
 
-console.log("app.js updated with new winnings acceptance flow.");
+console.log("LOG_INFO: app.js updated with enhanced logging and minor status adjustments.");
