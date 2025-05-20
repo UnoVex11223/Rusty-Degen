@@ -8,7 +8,7 @@ const SteamStrategy = require('passport-steam').Strategy;
 const mongoose = require('mongoose');
 const http = require('http');
 const socketIo = require('socket.io');
-const crypto = require('crypto');
+const crypto =require('crypto');
 const SteamCommunity = require('steamcommunity');
 const TradeOfferManager = require('steam-tradeoffer-manager');
 const cors = require('cors');
@@ -702,8 +702,9 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
         const identitySecret = process.env.STEAM_IDENTITY_SECRET;
         console.log(`LOG_DEBUG: Using identitySecret: ${!!identitySecret}`); // LOG: Identity secret usage
 
+        // MODIFIED PART STARTS HERE
         const sentOffer = await new Promise((resolve, reject) => {
-            offer.send(!!identitySecret, (err, status) => { // Status here is like 'pending', 'sent' etc.
+            offer.send(!!identitySecret, function(err, status) { // Ensure this is a function
                 if (err) {
                      console.error(`PAYOUT_ERROR: offer.send callback error for Round ${roundDoc.roundId}:`, err); // LOG: offer.send error
                      return reject(err);
@@ -713,6 +714,7 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
                 resolve({ status, offerId: offer.id });
             });
         });
+        // MODIFIED PART ENDS HERE
 
         const offerURL = `https://steamcommunity.com/tradeoffer/${sentOffer.offerId}/`;
         // Initial status update. 'sentOfferChanged' event handler will update it further.
