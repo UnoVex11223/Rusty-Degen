@@ -705,16 +705,14 @@ code { /* General code tag styling */
 .roulette-ticker::before { top: -6px; border-bottom: 8px solid rgba(0, 230, 118, 0.8); }
 .roulette-ticker::after { bottom: -6px; border-top: 8px solid rgba(0, 230, 118, 0.8); }
 
-/* Winner Info Box (inline green box - kept hidden during spin by JS) */
 .winner-info {
     position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    /* background: radial-gradient(circle, rgba(20, 25, 30, 0.95), rgba(13, 17, 23, 0.98)); */ /* Old background */
+    background: radial-gradient(circle, rgba(20, 25, 30, 0.95), rgba(13, 17, 23, 0.98));
     padding: 10px; display: flex; flex-direction: column; justify-content: center;
     align-items: center; text-align: center; box-sizing: border-box;
     z-index: 20; opacity: 0; display: none; /* Initially hidden, controlled by JS */
-    /* backdrop-filter: blur(3px); */
+    backdrop-filter: blur(3px);
 }
-/*
 @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
 .winner-header { display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
 .winner-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary-color); box-shadow: 0 0 10px rgba(0, 230, 118, 0.5); margin-right: 10px; object-fit: cover; flex-shrink: 0; }
@@ -724,7 +722,6 @@ code { /* General code tag styling */
 .winner-details span { color: var(--primary-light); font-weight: bold; }
 .congrats { font-size: 1.2rem !important; color: var(--primary-color); font-weight: 700; margin-top: 5px !important; text-transform: uppercase; letter-spacing: 2px; animation: colorPulse 3s infinite; text-shadow: 0 0 8px currentColor; }
 @keyframes colorPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-*/
 
 .return-btn { display: none !important; /* If not used, can be removed from HTML too */ }
 
@@ -837,36 +834,16 @@ code { /* General code tag styling */
     transition: color var(--transition-fast);
 }
 .player-items-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: flex-start; }
-
-/* MODIFIED for Issue 3: Pot Item Appearance */
 .player-deposit-item {
-    width: 90px; /* Made more square and slightly larger */
-    height: 90px; /* Made more square and slightly larger */
-    background: rgba(22, 27, 34, 0.7); border-radius: 5px;
+    width: 80px; height: 100px; background: rgba(22, 27, 34, 0.7); border-radius: 5px;
     overflow: hidden; box-shadow: var(--shadow-sm); transition: transform var(--transition-fast);
     border: 1px solid var(--border-color); flex: 0 0 auto; display: flex; flex-direction: column;
     border-left-width: 3px; border-left-style: solid;
 }
 .player-deposit-item:hover { transform: translateY(-3px); box-shadow: var(--shadow-md), 0 0 8px rgba(0, 230, 118, 0.2); }
-.player-deposit-item-image {
-    width: 100%;
-    height: 55px; /* Adjusted to fit new parent height, leaving space for info */
-    object-fit: contain;
-    background-color: var(--background-medium);
-    border-bottom: 1px solid rgba(48, 54, 61, 0.5);
-    display: block;
-}
-.player-deposit-item-info {
-    padding: 4px;
-    height: 35px; /* Adjusted to fit new parent height */
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    flex-grow: 1;
-}
-/* End of MODIFIED for Issue 3 */
-
-.player-deposit-item-name { font-size: 0.65rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); margin-bottom: 2px; line-height: 1.2; }
+.player-deposit-item-image { width: 100%; height: 60px; object-fit: contain; background-color: var(--background-medium); border-bottom: 1px solid rgba(48, 54, 61, 0.5); display: block; }
+.player-deposit-item-info { padding: 4px; height: 40px; display: flex; flex-direction: column; justify-content: center; flex-grow: 1; }
+.player-deposit-item-name { font-size: 0.65rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); margin-bottom: 2px; }
 .player-deposit-item-value { font-size: 0.7rem; font-weight: 700; }
 .player-deposit-item-more { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; padding: 5px; margin-top: 5px; }
 @keyframes newDepositPulse {
@@ -903,7 +880,7 @@ code { /* General code tag styling */
 #depositModal .modal-content { max-width: 900px; }
 #tradeUrlModal .modal-content { max-width: 600px; }
 .winning-history-modal .modal-content { max-width: 800px; }
-.accept-winnings-modal .modal-content { max-width: 550px; }
+.accept-winnings-modal .modal-content { max-width: 550px; } /* New: Accept Winnings Modal Size */
 
 
 @keyframes modalIn {
@@ -1094,46 +1071,6 @@ code { /* General code tag styling */
 .profile-pending-offer-status a, .profile-pending-link { color: var(--secondary-light) !important; font-weight: bold; text-decoration: underline !important; }
 .profile-pending-offer-status a:hover, .profile-pending-link:hover { color: var(--secondary-color) !important; opacity: 0.9; }
 .profile-pending-offer-status i { margin-right: 5px; }
-
-/* --- Accept Winnings Modal Winner Info --- */
-.accept-winnings-winner-info {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin-bottom: 15px; /* Space before "Congratulations!" */
-    margin-top: 5px; /* Shift content slightly down */
-}
-.accept-winnings-avatar {
-    width: 70px; /* Slightly larger avatar */
-    height: 70px;
-    border-radius: 50%;
-    border: 3px solid var(--primary-color);
-    box-shadow: 0 0 12px rgba(0, 230, 118, 0.4);
-    object-fit: cover;
-    margin-bottom: 8px; /* Space between avatar and name */
-}
-.accept-winnings-name {
-    font-size: 1.3em;
-    font-weight: 600;
-    color: var(--text-primary);
-    font-family: var(--font-secondary);
-}
-.accept-winnings-congrats {
-    font-size: 1.5rem !important; /* Larger size */
-    color: var(--primary-color) !important; /* Neon green */
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 1.5px;
-    text-align: center;
-    margin-top: 0px !important;
-    margin-bottom: 15px !important; /* Space after congrats */
-    animation: pulseNeonGreen 1.5s infinite ease-in-out;
-    text-shadow: 0 0 5px var(--primary-color), 0 0 10px rgba(0, 230, 118, 0.5);
-}
-@keyframes pulseNeonGreen {
-    0%, 100% { transform: scale(1); opacity: 0.9; }
-    50% { transform: scale(1.05); opacity: 1; }
-}
 
 
 /*=========================
@@ -1536,10 +1473,8 @@ code { /* General code tag styling */
 }
 
 @media (min-width: 1200px) {
-    
     .jackpot-and-chat-container {
         position: relative;
-        left: 150px; 
+        left: 150px;  
     }
-    
 }
