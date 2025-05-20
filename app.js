@@ -702,23 +702,31 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
         const identitySecret = process.env.STEAM_IDENTITY_SECRET;
         console.log(`LOG_DEBUG: Using identitySecret: ${!!identitySecret}`);
 
-        // MODIFIED PART STARTS HERE
-        const offerOptions = {};
-        if (identitySecret) { // If STEAM_IDENTITY_SECRET is present and non-empty, attempt mobile confirmation
-            offerOptions.mobileConfirm = true;
-        }
-
+        // FIXED PART STARTS HERE
         const sentOffer = await new Promise((resolve, reject) => {
-            offer.send(offerOptions, function(err, status) { // Always pass options object
-                if (err) {
-                     console.error(`PAYOUT_ERROR: offer.send callback error for Round ${roundDoc.roundId}:`, err);
-                     return reject(err);
-                }
-                console.log(`LOG_INFO: offer.send callback status for Round ${roundDoc.roundId}: ${status}, Offer ID: ${offer.id}, Offer State: ${TradeOfferManager.ETradeOfferState[offer.state]}`);
-                resolve({ status, offerId: offer.id });
-            });
+            if (identitySecret) {
+                // Pass mobile confirmation as first param if identitySecret is present
+                offer.send(true, function(err, status) {
+                    if (err) {
+                        console.error(`PAYOUT_ERROR: offer.send callback error for Round ${roundDoc.roundId}:`, err);
+                        return reject(err);
+                    }
+                    console.log(`LOG_INFO: offer.send callback status for Round ${roundDoc.roundId}: ${status}, Offer ID: ${offer.id}, Offer State: ${TradeOfferManager.ETradeOfferState[offer.state]}`);
+                    resolve({ status, offerId: offer.id });
+                });
+            } else {
+                // No mobile confirmation needed, just send with callback
+                offer.send(function(err, status) {
+                    if (err) {
+                        console.error(`PAYOUT_ERROR: offer.send callback error for Round ${roundDoc.roundId}:`, err);
+                        return reject(err);
+                    }
+                    console.log(`LOG_INFO: offer.send callback status for Round ${roundDoc.roundId}: ${status}, Offer ID: ${offer.id}, Offer State: ${TradeOfferManager.ETradeOfferState[offer.state]}`);
+                    resolve({ status, offerId: offer.id });
+                });
+            }
         });
-        // MODIFIED PART ENDS HERE
+        // FIXED PART ENDS HERE
 
         const offerURL = `https://steamcommunity.com/tradeoffer/${sentOffer.offerId}/`;
         let initialPayoutStatus = 'Sent';
