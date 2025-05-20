@@ -700,25 +700,27 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
         offer.setMessage(`Winnings from Round #${roundDoc.roundId} on ${process.env.SITE_NAME}. Value: $${roundDoc.totalValue.toFixed(2)} Congrats!`);
 
         const identitySecret = process.env.STEAM_IDENTITY_SECRET;
-        console.log(`LOG_DEBUG: Using identitySecret: ${!!identitySecret}`); // LOG: Identity secret usage
+        console.log(`LOG_DEBUG: Using identitySecret: ${!!identitySecret}`);
 
         // MODIFIED PART STARTS HERE
+        const offerOptions = {};
+        if (identitySecret) { // If STEAM_IDENTITY_SECRET is present and non-empty, attempt mobile confirmation
+            offerOptions.mobileConfirm = true;
+        }
+
         const sentOffer = await new Promise((resolve, reject) => {
-            offer.send(!!identitySecret, function(err, status) { // Ensure this is a function
+            offer.send(offerOptions, function(err, status) { // Always pass options object
                 if (err) {
-                     console.error(`PAYOUT_ERROR: offer.send callback error for Round ${roundDoc.roundId}:`, err); // LOG: offer.send error
+                     console.error(`PAYOUT_ERROR: offer.send callback error for Round ${roundDoc.roundId}:`, err);
                      return reject(err);
                 }
-                // The actual ETradeOfferState is in offer.state after this callback
-                console.log(`LOG_INFO: offer.send callback status for Round ${roundDoc.roundId}: ${status}, Offer ID: ${offer.id}, Offer State: ${TradeOfferManager.ETradeOfferState[offer.state]}`); // LOG: offer.send success
+                console.log(`LOG_INFO: offer.send callback status for Round ${roundDoc.roundId}: ${status}, Offer ID: ${offer.id}, Offer State: ${TradeOfferManager.ETradeOfferState[offer.state]}`);
                 resolve({ status, offerId: offer.id });
             });
         });
         // MODIFIED PART ENDS HERE
 
         const offerURL = `https://steamcommunity.com/tradeoffer/${sentOffer.offerId}/`;
-        // Initial status update. 'sentOfferChanged' event handler will update it further.
-        // The 'status' from offer.send might be 'pending'. The actual offer state (offer.state) is more reliable post-callback.
         let initialPayoutStatus = 'Sent';
         if (offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation || offer.state === TradeOfferManager.ETradeOfferState.PendingConfirmation) {
             initialPayoutStatus = 'Pending Confirmation';
@@ -729,11 +731,11 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
         await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferId: sentOffer.offerId, payoutOfferStatus: initialPayoutStatus } });
         console.log(`PAYOUT_SUCCESS: Offer ${sentOffer.offerId} sent to ${winner.username} for round ${roundDoc.roundId}. Initial DB Status: ${initialPayoutStatus}. Offer URL: ${offerURL}`);
 
-        io.emit('tradeOfferSent', { // This event is crucial for the frontend
+        io.emit('tradeOfferSent', {
             roundId: roundDoc.roundId, userId: winner._id.toString(), username: winner.username,
             offerId: sentOffer.offerId, offerURL: offerURL, status: initialPayoutStatus, type: 'winning'
         });
-        console.log(`LOG_INFO: Emitted 'tradeOfferSent' for offer ${sentOffer.offerId}.`); // LOG: Event emitted
+        console.log(`LOG_INFO: Emitted 'tradeOfferSent' for offer ${sentOffer.offerId}.`);
 
         if (initialPayoutStatus === 'Pending Confirmation') {
              console.log(`LOG_INFO: Offer #${sentOffer.offerId} requires bot confirmation. manager.on('sentOfferChanged') will handle updates.`);
@@ -1567,4 +1569,4 @@ app.use((err, req, res, next) => {
     res.status(status).json({ error: message });
 });
 
-console.log("LOG_INFO: app.js updated with enhanced logging and minor status adjustments.");
+console.log("LOG_INFO: app.js updated to use options object for offer.send and minor status adjustments.");
