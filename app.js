@@ -701,13 +701,14 @@ function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
         offer.addMyItems(itemsForOffer);
         offer.setMessage(`Winnings from Round #${roundDoc.roundId} on ${process.env.SITE_NAME}. Value: $${roundDoc.totalValue.toFixed(2)} Congrats!`);
         
-        // This is the key fix - use a standard callback pattern, not an async function
-        function onOfferSent(err, status) {
+        // CRITICAL FIX: Define a pure callback function (not async)
+        function offerSentCallback(err, status) {
             if (err) {
                 // Handle error
                 console.error(`PAYOUT_ERROR: offer.send callback error for Round ${roundDoc.roundId}:`, err);
                 let offerStatusUpdate = 'Failed';
                 let userMessage = `Error sending winnings for round ${roundDoc.roundId}. Please contact support.`;
+                
                 // Error categorization code
                 if (err.message?.includes('revoked') || err.message?.includes('invalid') || err.eresult === 26) {
                     userMessage = 'Your Trade URL is invalid or expired. Please update it to receive winnings.';
@@ -719,12 +720,14 @@ function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
                     userMessage = `Winnings sent, but may be held in escrow by Steam.`;
                     offerStatusUpdate = 'Escrow';
                 }
+                
                 io.emit('notification', {
                     type: 'error',
                     userId: winner._id.toString(),
                     message: userMessage
                 });
-                // Update status in DB - use plain Promise here, not await
+                
+                // Use Promise style for DB operations, not await
                 Round.updateOne(
                     { _id: roundDoc._id },
                     { $set: { payoutOfferId: offer.id || null, payoutOfferStatus: offerStatusUpdate } }
@@ -735,8 +738,10 @@ function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
             }
             // Success handling
             console.log(`LOG_INFO: offer.send callback status for Round ${roundDoc.roundId}: ${status}, Offer ID: ${offer.id}, Offer State: ${TradeOfferManager.ETradeOfferState[offer.state]}`);
-            const actualOfferId = offer.id;
+            
+            const actualOfferId = offer.id; // Should be populated by the library
             const offerURL = `https://steamcommunity.com/tradeoffer/${actualOfferId}/`;
+
             let initialPayoutStatus = 'Sent';
             if (offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation ||
                 offer.state === TradeOfferManager.ETradeOfferState.PendingConfirmation) {
@@ -744,7 +749,8 @@ function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
             } else if (offer.state === TradeOfferManager.ETradeOfferState.InEscrow) {
                 initialPayoutStatus = 'Escrow';
             }
-            // Update database - use Promise, not await
+            
+            // Use Promise style for DB operations, not await
             Round.updateOne(
                 { _id: roundDoc._id },
                 { $set: { payoutOfferId: actualOfferId, payoutOfferStatus: initialPayoutStatus } }
@@ -778,16 +784,16 @@ function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
                 });
             });
         }
-        // Send offer using callback pattern, not async/await
+        
+        // CRITICAL: Make sure we're passing the correct callback to offer.send
+        // Notice we're passing the function reference directly, not calling it
         if (process.env.STEAM_IDENTITY_SECRET) {
-            // With mobile confirmation
-            offer.send(true, onOfferSent);
+            offer.send(true, offerSentCallback);
         } else {
-            // Without mobile confirmation
-            offer.send(onOfferSent);
+            offer.send(offerSentCallback);
         }
     } catch (err) {
-        // Handle any synchronous errors from createOffer, addMyItems, etc.
+        // Handle synchronous errors
         console.error(`PAYOUT_CRITICAL_ERROR: Error preparing offer for round ${roundDoc.roundId}:`, err);
         // Update round status
         Round.updateOne(
