@@ -661,17 +661,17 @@ async function endRound() {
 function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
     const timestamp = new Date().toISOString();
 
-    // 1. Detailed Initial Checks with timestamped logging
+    // 1. Detailed Initial Checks with timestamped logging (as in original)
     if (!isBotReady) {
         console.error(`[${timestamp}] PAYOUT_ERROR (Round ${roundDoc.roundId}): Bot not ready.`);
-        if (io && winner && winner._id) { // Ensure winner object and _id exist before trying to use them
+        if (io && winner && winner._id) {
             io.emit('notification', { type: 'error', userId: winner._id.toString(), message: `Bot Error: Payout for round ${roundDoc.roundId} delayed. Bot offline.` });
         }
         Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - Bot Not Ready' } })
             .catch(dbErr => { console.error(`[${timestamp}] DB_ERROR (Round ${roundDoc.roundId}): Failed to update round status (bot not ready):`, dbErr); });
         return;
     }
-    if (!winner || !winner.tradeUrl) { // Check winner object itself along with tradeUrl
+    if (!winner || !winner.tradeUrl) {
         const winnerUsername = winner && winner.username ? winner.username : 'N/A_WINNER_OBJECT_MISSING_OR_INVALID';
         console.error(`[${timestamp}] PAYOUT_ERROR (Round ${roundDoc.roundId}): Winner ${winnerUsername} has no Trade URL set.`);
         if (io && winner && winner._id) {
@@ -715,116 +715,121 @@ function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
         offer.addMyItems(itemsForOffer);
         offer.setMessage(`Winnings from Round #${roundDoc.roundId} on ${process.env.SITE_NAME}. Value: $${roundDoc.totalValue.toFixed(2)} Congrats!`);
 
-        // 3. Define a "pure" standard callback function (not async)
-        function offerSentCallback(err, status) {
-            const callbackTimestamp = new Date().toISOString();
-            if (err) {
-                console.error(`[${callbackTimestamp}] PAYOUT_ERROR (Round ${roundDoc.roundId}): offer.send callback error. Raw error object:`, err);
-                try {
-                    const errDetails = {
-                        message: err && err.message,
-                        eresult: err && err.eresult,
-                        isErrorObject: err instanceof Error,
-                        type: typeof err,
-                        hasOriginalError: err && typeof err.originalError === 'object' && err.originalError !== null,
-                        originalErrorMessage: err && err.originalError && err.originalError.message,
-                        originalErrorEResult: err && err.originalError && err.originalError.eresult,
-                        stack: err && err.stack, // Include stack if available
-                        offerIdAttempted: offer && offer.id // Log the offer ID if available
-                    };
-                    console.error(`[${callbackTimestamp}] PAYOUT_ERROR_PARSED_DETAILS (Round ${roundDoc.roundId}):`, errDetails);
-                    // Log the error as a string in case it's an HTML response from Steam
-                    if (typeof err === 'string') {
-                        console.error(`[${callbackTimestamp}] PAYOUT_ERROR_AS_STRING (Round ${roundDoc.roundId}): ${err.substring(0, 500)}...`);
+        // Define a callback using an alternative approach
+        const callbackObject = {
+            callback: function(err, status) { // This is the actual callback function
+                const callbackTimestamp = new Date().toISOString();
+                console.log(`[${callbackTimestamp}] CALLBACK_REACHED (Round ${roundDoc.roundId}): Called with error: ${err ? 'YES' : 'NO'}, Status: ${status}`);
+
+                if (err) {
+                    console.error(`[${callbackTimestamp}] PAYOUT_ERROR (Round ${roundDoc.roundId}): Raw error object:`, err);
+                    // (Error logging and user notification from original code should be here)
+                    try {
+                        const errDetails = {
+                            message: err && err.message,
+                            eresult: err && err.eresult,
+                            isErrorObject: err instanceof Error,
+                            type: typeof err,
+                            hasOriginalError: err && typeof err.originalError === 'object' && err.originalError !== null,
+                            originalErrorMessage: err && err.originalError && err.originalError.message,
+                            originalErrorEResult: err && err.originalError && err.originalError.eresult,
+                            stack: err && err.stack,
+                            offerIdAttempted: offer && offer.id
+                        };
+                        console.error(`[${callbackTimestamp}] PAYOUT_ERROR_PARSED_DETAILS (Round ${roundDoc.roundId}):`, errDetails);
+                        if (typeof err === 'string') {
+                            console.error(`[${callbackTimestamp}] PAYOUT_ERROR_AS_STRING (Round ${roundDoc.roundId}): ${err.substring(0, 500)}...`);
+                        }
+                    } catch (parseErr) {
+                        console.error(`[${callbackTimestamp}] PAYOUT_ERROR (Round ${roundDoc.roundId}): Error while trying to parse/log the main error object:`, parseErr);
                     }
-                } catch (parseErr) {
-                    console.error(`[${callbackTimestamp}] PAYOUT_ERROR (Round ${roundDoc.roundId}): Error while trying to parse/log the main error object:`, parseErr);
+
+                    let offerStatusUpdate = 'Failed';
+                    let userMessage = `Error sending winnings for round ${roundDoc.roundId}. Please contact support. (Code: ${err && err.eresult ? err.eresult : 'N/A'})`;
+
+                    if (err && (err.message?.includes('revoked') || err.message?.includes('invalid') || err.eresult === 26)) {
+                        userMessage = 'Your Trade URL is invalid or expired. Please update it to receive winnings.';
+                        offerStatusUpdate = 'Failed - Bad URL';
+                    } else if (err && (err.eresult === 15 || err.eresult === 16)) {
+                        userMessage = 'Could not send winnings. Ensure your Steam inventory is public, not full, and you can trade.';
+                        offerStatusUpdate = 'Failed - Inventory/Trade Issue';
+                    } else if (err && (err.message?.includes('escrow') || err.eresult === 11)) {
+                        userMessage = `Winnings sent, but may be held in escrow by Steam. (Offer ID: ${offer && offer.id ? offer.id : 'N/A'})`;
+                        offerStatusUpdate = 'Escrow';
+                    }
+
+                    if (io && winner && winner._id) {
+                        io.emit('notification', { type: 'error', userId: winner._id.toString(), message: userMessage });
+                    }
+
+                    Round.updateOne(
+                        { _id: roundDoc._id },
+                        { $set: { payoutOfferId: (offer && offer.id) || null, payoutOfferStatus: offerStatusUpdate } }
+                    ).catch(dbErr => {
+                        console.error(`[${callbackTimestamp}] DB_ERROR (Round ${roundDoc.roundId}): Error updating round status after offer send error: ${dbErr.message}`);
+                    });
+                    return;
                 }
 
-                let offerStatusUpdate = 'Failed';
-                let userMessage = `Error sending winnings for round ${roundDoc.roundId}. Please contact support. (Code: ${err && err.eresult ? err.eresult : 'N/A'})`;
+                // Success handling
+                console.log(`[${callbackTimestamp}] LOG_INFO (Round ${roundDoc.roundId}): offer.send initial callback success. Status: ${status}, Offer ID: ${offer.id}, Offer State: ${offer.state ? TradeOfferManager.ETradeOfferState[offer.state] : 'N/A'}`);
 
-                if (err && (err.message?.includes('revoked') || err.message?.includes('invalid') || err.eresult === 26)) {
-                    userMessage = 'Your Trade URL is invalid or expired. Please update it to receive winnings.';
-                    offerStatusUpdate = 'Failed - Bad URL';
-                } else if (err && (err.eresult === 15 || err.eresult === 16)) {
-                    userMessage = 'Could not send winnings. Ensure your Steam inventory is public, not full, and you can trade.';
-                    offerStatusUpdate = 'Failed - Inventory/Trade Issue';
-                } else if (err && (err.message?.includes('escrow') || err.eresult === 11)) {
-                    userMessage = `Winnings sent, but may be held in escrow by Steam. (Offer ID: ${offer && offer.id ? offer.id : 'N/A'})`;
-                    offerStatusUpdate = 'Escrow';
-                }
+                const actualOfferId = offer.id;
+                const offerURL = `https://steamcommunity.com/tradeoffer/${actualOfferId}/`;
+                let initialPayoutStatus = 'Sent'; // Default
 
-                if (io && winner && winner._id) {
-                    io.emit('notification', { type: 'error', userId: winner._id.toString(), message: userMessage });
+                if (offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation ||
+                    offer.state === TradeOfferManager.ETradeOfferState.PendingConfirmation) {
+                    initialPayoutStatus = 'Pending Confirmation';
+                } else if (offer.state === TradeOfferManager.ETradeOfferState.InEscrow) {
+                    initialPayoutStatus = 'Escrow';
+                } else if (status === 'pending' && process.env.STEAM_IDENTITY_SECRET) { // As per user's original logic
+                    initialPayoutStatus = 'Pending Confirmation';
+                } else if (status === 'sent' && offer.state === TradeOfferManager.ETradeOfferState.Active) {
+                    initialPayoutStatus = 'Sent';
                 }
+                // If status is 'pending' without STEAM_IDENTITY_SECRET, it might still be 'Sent' if offer.state is Active.
+                // If status from callback is 'pending' and offer.state is e.g. Active, it likely means it was sent but awaits recipient action.
 
                 Round.updateOne(
                     { _id: roundDoc._id },
-                    { $set: { payoutOfferId: (offer && offer.id) || null, payoutOfferStatus: offerStatusUpdate } }
-                ).catch(dbErr => {
-                    console.error(`[${callbackTimestamp}] DB_ERROR (Round ${roundDoc.roundId}): Error updating round status after offer send error:`, dbErr);
-                });
-                return;
-            }
+                    { $set: { payoutOfferId: actualOfferId, payoutOfferStatus: initialPayoutStatus } }
+                ).then(() => {
+                    console.log(`[${callbackTimestamp}] PAYOUT_SUCCESS (Round ${roundDoc.roundId}): DB updated for offer ${actualOfferId}. Status: ${initialPayoutStatus}. URL: ${offerURL}`);
+                    if (io && winner && winner._id) {
+                        io.emit('tradeOfferSent', {
+                            roundId: roundDoc.roundId,
+                            userId: winner._id.toString(),
+                            username: winner.username,
+                            offerId: actualOfferId,
+                            offerURL: offerURL,
+                            status: initialPayoutStatus,
+                            type: 'winning'
+                        });
 
-            // Success handling
-            console.log(`[${callbackTimestamp}] LOG_INFO (Round ${roundDoc.roundId}): offer.send initial callback. Status: ${status}, Offer ID: ${offer.id}, Offer State: ${offer.state ? TradeOfferManager.ETradeOfferState[offer.state] : 'N/A'}`);
-            
-            const actualOfferId = offer.id;
-            const offerURL = `https://steamcommunity.com/tradeoffer/${actualOfferId}/`;
-            let initialPayoutStatus = 'Sent'; // Default status
-            
-            if (offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation || 
-                offer.state === TradeOfferManager.ETradeOfferState.PendingConfirmation) {
-                initialPayoutStatus = 'Pending Confirmation';
-                 console.log(`[${callbackTimestamp}] LOG_INFO (Round ${roundDoc.roundId}): Offer ${actualOfferId} requires mobile confirmation by the bot.`);
-            } else if (offer.state === TradeOfferManager.ETradeOfferState.InEscrow) {
-                initialPayoutStatus = 'Escrow';
-                console.log(`[${callbackTimestamp}] LOG_INFO (Round ${roundDoc.roundId}): Offer ${actualOfferId} is in escrow.`);
-            } else if (status === 'pending' && process.env.STEAM_IDENTITY_SECRET) { 
-                initialPayoutStatus = 'Pending Confirmation';
-            } else if (status === 'sent' && offer.state === TradeOfferManager.ETradeOfferState.Active) {
-                 initialPayoutStatus = 'Sent'; 
-            }
-
-
-            Round.updateOne(
-                { _id: roundDoc._id },
-                { $set: { payoutOfferId: actualOfferId, payoutOfferStatus: initialPayoutStatus } }
-            ).then(() => {
-                console.log(`[${callbackTimestamp}] PAYOUT_SUCCESS (Round ${roundDoc.roundId}): DB updated for offer ${actualOfferId}. Status: ${initialPayoutStatus}. URL: ${offerURL}`);
-                if (io && winner && winner._id) {
-                    io.emit('tradeOfferSent', {
-                        roundId: roundDoc.roundId,
-                        userId: winner._id.toString(),
-                        username: winner.username,
-                        offerId: actualOfferId,
-                        offerURL: offerURL,
-                        status: initialPayoutStatus,
-                        type: 'winning'
-                    });
-                    
-                    let notifMessage = `Winnings offer #${actualOfferId} sent! Status: ${initialPayoutStatus}.`;
-                    let notifType = 'success';
-                    if (initialPayoutStatus === 'Pending Confirmation') {
-                        notifMessage = `Winnings offer #${actualOfferId} sent, but requires bot confirmation. Status will update.`;
-                        notifType = 'info';
-                    } else if (initialPayoutStatus === 'Escrow') {
-                        notifMessage = `Winnings offer #${actualOfferId} is held in Steam escrow.`;
-                        notifType = 'warning';
+                        let notifMessage = `Winnings offer #${actualOfferId} sent! Status: ${initialPayoutStatus}.`;
+                        let notifType = 'success';
+                        if (initialPayoutStatus === 'Pending Confirmation') {
+                            notifMessage = `Winnings offer #${actualOfferId} sent, but requires bot confirmation. Status will update.`;
+                            notifType = 'info';
+                        } else if (initialPayoutStatus === 'Escrow') {
+                            notifMessage = `Winnings offer #${actualOfferId} is held in Steam escrow.`;
+                            notifType = 'warning';
+                        }
+                        io.emit('notification', { type: notifType, userId: winner._id.toString(), message: notifMessage });
                     }
-                    io.emit('notification', { type: notifType, userId: winner._id.toString(), message: notifMessage });
-                }
-            }).catch(dbErr => {
-                console.error(`[${callbackTimestamp}] DB_ERROR (Round ${roundDoc.roundId}): Error updating round with offer ID ${actualOfferId}:`, dbErr);
-                Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - DB Error Post-Send' } })
-                    .catch(finalDbErr => { console.error(`[${callbackTimestamp}] DB_ERROR (Round ${roundDoc.roundId}): Critical failure updating DB post-send and post-error:`, finalDbErr); });
-            });
-        }
+                }).catch(dbErr => {
+                    console.error(`[${callbackTimestamp}] DB_ERROR (Round ${roundDoc.roundId}): Error updating round with offer ID ${actualOfferId}: ${dbErr.message}`);
+                    Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - DB Error Post-Send' } })
+                        .catch(finalDbErr => { console.error(`[${callbackTimestamp}] DB_ERROR (Round ${roundDoc.roundId}): Critical failure updating DB post-send and post-error:`, finalDbErr); });
+                });
+            }
+        };
 
-        // Pre-send checks and logging
-        console.log(`[${timestamp}] PRE-SEND CHECK (Round ${roundDoc.roundId}): isBotReady: ${isBotReady}`);
+        // Create a stable callback reference
+        const stableCallback = callbackObject.callback.bind(callbackObject);
+
+        console.log(`[${timestamp}] PRE-SEND CHECK (Round ${roundDoc.roundId}): Type of stableCallback: ${typeof stableCallback}`);
         if (community && typeof community.getSessionID === 'function') {
              try {
                 console.log(`[${timestamp}] PRE-SEND CHECK (Round ${roundDoc.roundId}): Community SessionID: ${community.getSessionID()}`);
@@ -834,13 +839,12 @@ function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
         } else {
             console.warn(`[${timestamp}] PRE-SEND CHECK (Round ${roundDoc.roundId}): community object or getSessionID method not available.`);
         }
-        console.log(`[${timestamp}] PRE-SEND CHECK (Round ${roundDoc.roundId}): Type of offerSentCallback: ${typeof offerSentCallback}`);
 
-
+        // Use the stable callback reference
         if (process.env.STEAM_IDENTITY_SECRET) {
-            offer.send(true, offerSentCallback);
+            offer.send(true, stableCallback);
         } else {
-            offer.send(offerSentCallback);
+            offer.send(stableCallback);
         }
         console.log(`[${timestamp}] LOG_DEBUG (Round ${roundDoc.roundId}): offer.send() called. Asynchronous operation initiated.`);
 
@@ -850,7 +854,6 @@ function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
         try {
             console.error(`[${catchTimestamp}] Full synchronous error details (Round ${roundDoc.roundId}): Message: ${err.message}, Stack: ${err.stack}`);
         } catch (logErr) { console.error("Error trying to log full synchronous error.");}
-
 
         Round.updateOne( { _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - Synchronous Offer Prep Error' } })
             .catch(dbErr => { console.error(`[${catchTimestamp}] DB_ERROR (Round ${roundDoc.roundId}): Error updating round status on synchronous offer prep failure:`, dbErr); });
