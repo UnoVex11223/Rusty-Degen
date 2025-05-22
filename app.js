@@ -248,7 +248,7 @@ const roundSchema = new mongoose.Schema({
     taxAmount: { type: Number, default: 0, min: 0 },
     taxedItems: [{ assetId: String, name: String, price: { type: Number, min: 0 } }], // Info about items taken as tax
     payoutOfferId: { type: String, index: true }, // ID of the trade offer sent for winnings
-    payoutOfferStatus: { type: String, enum: ['PendingAcceptanceByWinner', 'Sent', 'Accepted', 'Declined', 'Canceled', 'Expired', 'InvalidItems', 'Escrow', 'Failed', 'Unknown', 'Failed - No Trade URL', 'No Items Won', 'Pending Confirmation', 'Failed - Bot Not Ready', 'Failed - Offer Creation Error', 'Failed - Bad URL', 'Failed - Inventory/Trade Issue', 'Failed - DB Error Post-Send', 'Failed - Synchronous Offer Prep Error', 'Failed - Invalid Trade URL Format', 'Failed - Bot Inventory Issue'], default: 'Unknown' } // ADDED: New status for invalid format
+    payoutOfferStatus: { type: String, enum: ['PendingAcceptanceByWinner', 'Sent', 'Accepted', 'Declined', 'Canceled', 'Expired', 'InvalidItems', 'Escrow', 'Failed', 'Unknown', 'Failed - No Trade URL', 'No Items Won', 'Pending Confirmation', 'Failed - Bot Not Ready', 'Failed - Offer Creation Error', 'Failed - Bad URL', 'Failed - Inventory/Trade Issue', 'Failed - DB Error Post-Send', 'Failed - Synchronous Offer Prep Error', 'Failed - Invalid Trade URL Format', 'Failed - Bot Inventory Issue', 'Failed - Bot Session Issue'], default: 'Unknown' } // ADDED: New status for invalid format and Bot Session Issue
 });
 roundSchema.index({ 'participants.user': 1 }); // Index for querying participants
 roundSchema.index({ winner: 1, status: 1, completedTime: -1 }); // For winning history query
@@ -302,35 +302,55 @@ function generateAuthCode() {
 // ====================================================================================
 async function refreshBotSession() {
     return new Promise((resolve, reject) => {
-        console.log("LOG_INFO: Refreshing bot session...");
-        
-        try {
-            // getSessionID is synchronous, not async
-            const sessionID = community.getSessionID();
-            console.log("LOG_INFO: Current session ID:", sessionID);
-            
-            // If we have cookies, update the manager
-            if (community.cookies && community.cookies.length > 0) {
-                manager.setCookies(community.cookies, (err) => {
-                    if (err) {
-                        console.error("LOG_ERROR: Failed to set refreshed cookies:", err);
-                        reject(err);
+        console.log("LOG_INFO: Attempting to refresh bot session cookies for TradeOfferManager...");
+
+        if (!community) {
+            console.error("LOG_ERROR: SteamCommunity instance is not available in refreshBotSession.");
+            return reject(new Error("SteamCommunity instance unavailable. Critical for session refresh."));
+        }
+        if (!manager) {
+            console.error("LOG_ERROR: TradeOfferManager instance is not available in refreshBotSession.");
+            return reject(new Error("TradeOfferManager instance unavailable. Critical for session refresh."));
+        }
+
+        // Check if the bot's main community instance considers itself logged in.
+        // community.steamID is a good indicator.
+        if (!community.steamID) {
+            console.warn("LOG_WARN: Bot (SteamCommunity) appears to be logged out (no steamID). Cannot refresh session for manager.");
+            isBotReady = false; // Mark bot as not ready if its main session is gone
+            return reject(new Error("Bot is logged out (SteamCommunity has no steamID). Cannot refresh TradeOfferManager session."));
+        }
+
+        const currentCommunityCookies = community.cookies; // Get cookies from the main SteamCommunity instance
+
+        if (currentCommunityCookies && currentCommunityCookies.length > 0) {
+            console.log(`LOG_INFO: Found ${currentCommunityCookies.length} cookies in SteamCommunity instance. Attempting to set on TradeOfferManager.`);
+            manager.setCookies(currentCommunityCookies, (err) => { // This should set them on the manager's internal community instance/cookie jar
+                if (err) {
+                    console.error("LOG_ERROR: Failed to set refreshed cookies on TradeOfferManager:", err);
+                    // This is a failure to update the manager, which is critical if it's about to be used.
+                    reject(err);
+                } else {
+                    console.log("LOG_SUCCESS: TradeOfferManager cookies refreshed successfully.");
+                    // Optionally, verify if the manager's cookie jar now reflects this, though this is an internal detail of the library.
+                    // For example, by checking `manager.jar.getCookies('https://steamcommunity.com').length` if `manager.jar` is accessible and behaves as expected.
+                    if (manager.jar && manager.jar.getCookies('https://steamcommunity.com').length > 0) {
+                        console.log("LOG_DEBUG: TradeOfferManager internal cookie jar confirmed populated after refresh.");
                     } else {
-                        console.log("LOG_SUCCESS: Bot session refreshed successfully");
-                        resolve();
+                        console.warn("LOG_WARN: TradeOfferManager internal cookie jar still seems empty or lacks steamcommunity.com cookies after successful setCookies call. This could lead to issues.");
                     }
-                });
-            } else {
-                console.warn("LOG_WARN: No cookies available to refresh");
-                resolve(); // Don't reject, just continue
-            }
-        } catch (err) {
-            console.error("LOG_ERROR: Error in refreshBotSession:", err);
-            // Don't reject, just log and continue
-            resolve();
+                    resolve();
+                }
+            });
+        } else {
+            console.warn("LOG_WARN: No cookies available in SteamCommunity instance to refresh TradeOfferManager's session. Manager might be using stale or no cookies. This indicates the main bot session might be dead.");
+            isBotReady = false; // Mark bot as not ready if its main session appears to have no cookies
+            // This is a critical failure for refreshing the manager's session.
+            reject(new Error("No cookies found in SteamCommunity instance; bot's main session is likely dead. Cannot refresh TradeOfferManager session."));
         }
     });
 }
+
 
 if (isBotConfigured) {
     const loginCredentials = {
@@ -798,12 +818,20 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
 
     // ENHANCED: Try refreshing bot session before creating offer
     try {
-        await refreshBotSession();
-        console.log(`[${timestamp}] LOG_SUCCESS: Bot session refreshed before payout.`);
+        await refreshBotSession(); // This will now throw if community.cookies is empty or other critical errors occur
+        console.log(`[${timestamp}] LOG_SUCCESS: Bot session (TradeOfferManager cookies) refreshed before payout.`);
     } catch (sessionErr) {
-        console.error(`[${timestamp}] LOG_ERROR: Failed to refresh bot session:`, sessionErr);
-        // Continue anyway as the current session might still work
+        console.error(`[${timestamp}] PAYOUT_ABORT (Round ${roundDoc.roundId}): Critical failure refreshing bot session:`, sessionErr.message);
+        // If session refresh fails, it's highly likely the subsequent trade will also fail.
+        // We MUST NOT proceed.
+        Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - Bot Session Issue' } })
+            .catch(dbErr => { console.error(`[${timestamp}] DB_ERROR (Round ${roundDoc.roundId}): Failed to update round status (bot session issue):`, dbErr); });
+        if (io && winner && winner._id) {
+            io.emit('notification', { type: 'error', userId: winner._id.toString(), message: `Bot session error. Payout for round ${roundDoc.roundId} cannot proceed at this time. Please try 'Accept Winnings' again shortly or contact support.` });
+        }
+        return; // IMPORTANT: Abort sending the offer
     }
+
 
     // --- USER-PROVIDED CODE FOR INVENTORY VERIFICATION (MATCH BY NAME) TO BE INSERTED HERE ---
     // The following block is where your new inventory verification logic should go.
@@ -853,13 +881,26 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
         const offer = manager.createOffer(winner.tradeUrl);
 
         // ENHANCED: Log offer creation details
+        // Note: offer.hasSetCookies is true if manager.jar had steamcommunity cookies when offer was created.
+        // This is a good check to ensure our session refresh logic is working for the manager.
         console.log(`[${timestamp}] LOG_DEBUG: Offer object created:`, {
-            id: offer.id,
-            state: offer.state,
+            id: offer.id, // Will be null until sent and confirmed by Steam
+            state: offer.state, // Initial state, e.g., 1 (New)
             partner: offer.partner?.getSteamID64(),
             isOurOffer: offer.isOurOffer,
-            hasSetCookies: !!manager.cookies
+            hasSetCookies: offer.hasSetCookies // Critical check
         });
+        
+        if (!offer.hasSetCookies) {
+            console.error(`[${timestamp}] PAYOUT_CRITICAL_ERROR (Round ${roundDoc.roundId}): TradeOfferManager does not have necessary session cookies set. Aborting. TradeURL: ${winner.tradeUrl}`);
+             Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - Bot Session Issue' } }) // Re-use status
+                .catch(dbErr => { console.error(`[${timestamp}] DB_ERROR (Round ${roundDoc.roundId}): Error updating round status on offer.hasSetCookies failure:`, dbErr); });
+            if (io && winner && winner._id) {
+                io.emit('notification', { type: 'error', userId: winner._id.toString(), message: `Error creating trade offer due to bot session problem. Please contact support.` });
+            }
+            return;
+        }
+
 
         if (!offer || typeof offer.send !== 'function') {
             console.error(`[${timestamp}] PAYOUT_CRITICAL_ERROR (Round ${roundDoc.roundId}): Failed to create a valid offer object. TradeURL: ${winner.tradeUrl}`);
@@ -898,7 +939,7 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
                         originalErrorMessage: err && err.originalError && err.originalError.message,
                         originalErrorEResult: err && err.originalError && err.originalError.eresult,
                         stack: err && err.stack,
-                        offerIdAttempted: offer && offer.id
+                        offerIdAttempted: offer && offer.id // May be null if error before ID assignment
                     };
                     console.error(`[${callbackTimestamp}] PAYOUT_ERROR_PARSED_DETAILS (Round ${roundDoc.roundId}):`, errDetails);
                     if (typeof err === 'string') {
@@ -912,7 +953,7 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
                 let userMessage = `Error sending winnings for round ${roundDoc.roundId}. Please contact support. (Code: ${err && err.eresult ? err.eresult : 'N/A'})`;
 
                 // ENHANCED: Better error handling for EResult 26 (Invalid/Revoked Trade URL)
-                if (err && (err.message?.includes('revoked') || err.message?.includes('invalid') || err.eresult === 26)) {
+                if (err && (err.message?.includes('revoked') || err.message?.includes('invalid') || err.eresult === 26 || err.message?.includes('(26)'))) {
                     userMessage = 'Your Trade URL is invalid, expired, or has been revoked. Please update it in your profile to receive winnings.';
                     offerStatusUpdate = 'Failed - Bad URL';
                 } else if (err && (err.eresult === 15 || err.eresult === 16)) {
