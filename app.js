@@ -264,6 +264,22 @@ const manager = new TradeOfferManager({
     pollInterval: 10000, // Poll for new offers every 10 seconds
     cancelTime: 10 * 60 * 1000, // Cancel offers that haven't been accepted in 10 minutes
 });
+
+// After creating the manager instance, set the identity secret if available
+if (process.env.STEAM_IDENTITY_SECRET) {
+    community.on('confKeyNeeded', (tag, callback) => {
+        const time = Math.floor(Date.now() / 1000);
+        // Make sure SteamTotp is available here
+        if (SteamTotp && typeof SteamTotp.generateConfirmationKey === 'function') {
+            const confKey = SteamTotp.generateConfirmationKey(process.env.STEAM_IDENTITY_SECRET, time, tag);
+            callback(null, time, confKey);
+        } else {
+            console.error("FATAL: SteamTotp.generateConfirmationKey is not available for confKeyNeeded. STEAM_IDENTITY_SECRET is set but confirmations may fail.");
+            callback(new Error("Confirmation key generation failed: SteamTotp unavailable"), null, null);
+        }
+    });
+}
+
 let isBotReady = false;
 const pendingDeposits = new Map(); // Stores { depositId: { userId, roundId, items, totalValue, steamId } }
 
@@ -771,13 +787,13 @@ function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
 
             // Success handling
             console.log(`[${callbackTimestamp}] LOG_INFO (Round ${roundDoc.roundId}): offer.send initial callback success. Status: ${status}, Offer ID: ${offer.id}, Offer State: ${offer.state ? TradeOfferManager.ETradeOfferState[offer.state] : 'N/A'}`);
-            
+
             const actualOfferId = offer.id;
             const offerURL = `https://steamcommunity.com/tradeoffer/${actualOfferId}/`;
             let initialPayoutStatus = 'Sent'; // Default status
-            
+
             // Determine status based on offer state and callback status
-            if (offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation || 
+            if (offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation ||
                 offer.state === TradeOfferManager.ETradeOfferState.PendingConfirmation) {
                 initialPayoutStatus = 'Pending Confirmation';
                  console.log(`[${callbackTimestamp}] LOG_INFO (Round ${roundDoc.roundId}): Offer ${actualOfferId} requires mobile confirmation by the bot.`);
@@ -787,7 +803,7 @@ function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
             } else if (status === 'pending' && process.env.STEAM_IDENTITY_SECRET && offer.state !== TradeOfferManager.ETradeOfferState.Active) { // 'pending' status from callback with identity secret often means needs confirmation
                 initialPayoutStatus = 'Pending Confirmation';
             } else if (status === 'sent' || (status === 'pending' && offer.state === TradeOfferManager.ETradeOfferState.Active)) { // 'sent' or 'pending' but active means it's with the user
-                 initialPayoutStatus = 'Sent'; 
+                 initialPayoutStatus = 'Sent';
             }
             // Note: 'status' from callback can be 'pending' if it needs mobile confirmation OR if it's just sent and waiting for user.
             // offer.state gives a more precise state from TradeOfferManager.
@@ -807,7 +823,7 @@ function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
                         status: initialPayoutStatus,
                         type: 'winning'
                     });
-                    
+
                     let notifMessage = `Winnings offer #${actualOfferId} sent! Status: ${initialPayoutStatus}.`;
                     let notifType = 'success';
 
@@ -841,12 +857,13 @@ function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
         }
         console.log(`[${timestamp}] PRE-SEND CHECK (Round ${roundDoc.roundId}): Type of offerSentCallback: ${typeof offerSentCallback}`);
 
+        // MODIFIED SECTION for offer.send()
+        // The steam-tradeoffer-manager library automatically handles mobile confirmations
+        // when you've set up the identity secret properly (via community.on('confKeyNeeded', ...)).
+        // You don't need to pass any special parameters to offer.send() related to the identity secret.
+        offer.send(offerSentCallback);
+        // END OF MODIFIED SECTION
 
-        if (process.env.STEAM_IDENTITY_SECRET) {
-            offer.send(true, offerSentCallback);
-        } else {
-            offer.send(offerSentCallback);
-        }
         console.log(`[${timestamp}] LOG_DEBUG (Round ${roundDoc.roundId}): offer.send() called. Asynchronous operation initiated.`);
 
     } catch (err) {
