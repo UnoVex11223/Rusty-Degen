@@ -1823,7 +1823,9 @@ function initiateNewRoundVisualReset() {
     const emptyMsg = DOMElements.jackpot.emptyPotMessage;
     if (container && emptyMsg) {
         container.innerHTML = '';
-        if (!container.contains(emptyMsg)) container.appendChild(emptyMsg);
+        if (!container.contains(emptyMsg)) container.appendChild(emptyMsg
+
+if (!container.contains(emptyMsg)) container.appendChild(emptyMsg);
         emptyMsg.style.display = 'block';
     }
 
@@ -2706,11 +2708,9 @@ async function handleProfileSave() {
          showNotification("Not logged in or profile elements missing.", "error"); return;
     }
     const newTradeUrl = tradeUrlInput.value.trim();
-
-    // Use the TRADE_URL_REGEX defined in Part 1 for validation
+    // FIXED: Use the consistent trade URL validation regex
     if (newTradeUrl && !TRADE_URL_REGEX.test(newTradeUrl)) {
-        showNotification('Invalid Steam Trade URL format. Ensure it matches the pattern: https://steamcommunity.com/tradeoffer/new/?partner=PARTNER_ID&token=TOKEN (or leave empty to clear).', 'error', 9000);
-        return;
+        showNotification('Invalid Steam Trade URL format. Ensure it includes partner and token parameters, or leave empty to clear.', 'error', 7000); return;
     }
 
     saveBtn.disabled = true; saveBtn.textContent = 'Saving...';
@@ -2753,5 +2753,4 @@ document.addEventListener('DOMContentLoaded', () => {
     updateChatUI();
 });
 
-console.log("main.js updated with TRADE_URL_REGEX and to handle new 'roundWinnerPendingAcceptance' flow and improved modal state management for winnings.");
-}
+console.log("main.js updated to handle new 'roundWinnerPendingAcceptance' flow and improved modal state management for winnings.");
