@@ -960,7 +960,7 @@ app.get('/api/user/winning-history', ensureAuthenticated, async (req, res) => {
         const winnings = await Round.find({ winner: req.user._id, status: { $in: ['completed', 'completed_pending_acceptance'] } }) // Include new status
             .sort({ completedTime: -1 })
             .select('roundId completedTime totalValue payoutOfferId payoutOfferStatus taxAmount')
-            .limit(50)
+            .limit(10)
             .lean();
 
         const history = winnings.map(win => ({
@@ -1461,19 +1461,23 @@ app.get('/api/round/current', async (req, res) => {
 });
 
 app.get('/api/rounds',
-    [query('page').optional().isInt({ min: 1 }).toInt(), query('limit').optional().isInt({ min: 1, max: 50 }).toInt()],
     handleValidationErrors, async (req, res) => {
     try {
-        const page = req.query.page || 1; const limit = req.query.limit || 10; const skip = (page - 1) * limit;
         const queryFilter = { status: { $in: ['completed', 'completed_pending_acceptance', 'error'] } };
-        const [rounds, totalCount] = await Promise.all([
-            Round.find(queryFilter).sort('-roundId').skip(skip).limit(limit)
-                 .populate('winner', 'username avatar steamId')
-                 .select('roundId startTime endTime completedTime totalValue winner serverSeed serverSeedHash clientSeed winningTicket provableHash status taxAmount taxedItems payoutOfferId payoutOfferStatus')
-                 .lean(),
-            Round.countDocuments(queryFilter)
-        ]);
-        res.json({ rounds, totalPages: Math.ceil(totalCount / limit), currentPage: page, totalRounds: totalCount });
+        
+        const rounds = await Round.find(queryFilter)
+            .sort('-roundId')
+            .limit(10)  // Always get only 10 most recent
+            .populate('winner', 'username avatar steamId')
+            .select('roundId startTime endTime completedTime totalValue winner serverSeed serverSeedHash clientSeed winningTicket provableHash status taxAmount taxedItems payoutOfferId payoutOfferStatus')
+            .lean();
+
+        res.json({ 
+            rounds, 
+            totalPages: 1,      // Always 1 page since no pagination
+            currentPage: 1,     // Always on page 1
+            totalRounds: rounds.length  // Will be 10 or less
+        });
     } catch (err) {
         console.error('Error fetching past rounds:', err);
         res.status(500).json({ error: 'Server error fetching round history.' });
