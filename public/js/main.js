@@ -1824,8 +1824,8 @@ function initiateNewRoundVisualReset() {
     if (container && emptyMsg) {
         container.innerHTML = '';
         if (!container.contains(emptyMsg)) container.appendChild(emptyMsg);
-                emptyMsg.style.display = 'block';
-
+        emptyMsg.style.display = 'block';
+    } // <<< CORRECTED: Added closing brace for the 'if (container && emptyMsg)' block
 
     if (DOMElements.jackpot.potValue) DOMElements.jackpot.potValue.textContent = "$0.00";
     if (DOMElements.jackpot.participantCount) DOMElements.jackpot.participantCount.textContent = `0/${CONFIG.MAX_PARTICIPANTS_DISPLAY}`;
@@ -1865,7 +1865,6 @@ function findWinnerFromData(winnerData) {
         value: participantDepositedValue
     };
 }
-
 
 async function verifyRound() {
     const { roundIdInput, serverSeedInput, clientSeedInput, verificationResultDisplay } = DOMElements.provablyFair;
@@ -2752,3 +2751,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log("main.js updated to handle new 'roundWinnerPendingAcceptance' flow and improved modal state management for winnings.");
+// The extra closing brace that was here has been removed.
