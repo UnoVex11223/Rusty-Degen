@@ -1823,11 +1823,9 @@ function initiateNewRoundVisualReset() {
     const emptyMsg = DOMElements.jackpot.emptyPotMessage;
     if (container && emptyMsg) {
         container.innerHTML = '';
-        if (!container.contains(emptyMsg)) container.appendChild(emptyMsg
+        if (!container.contains(emptyMsg)) container.appendChild(emptyMsg);
+                emptyMsg.style.display = 'block';
 
-if (!container.contains(emptyMsg)) container.appendChild(emptyMsg);
-        emptyMsg.style.display = 'block';
-    }
 
     if (DOMElements.jackpot.potValue) DOMElements.jackpot.potValue.textContent = "$0.00";
     if (DOMElements.jackpot.participantCount) DOMElements.jackpot.participantCount.textContent = `0/${CONFIG.MAX_PARTICIPANTS_DISPLAY}`;
