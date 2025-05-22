@@ -1,4 +1,4 @@
-// app.js (Fixed with Enhanced Trade URL Debugging and Consistent Validation)
+// app.js (Fixed with Enhanced Trade URL Debugging and Bot Session Management)
 
 // Required dependencies
 const express = require('express');
@@ -295,6 +295,64 @@ function generateAuthCode() {
         return code;
     }
     catch (e) { console.error("Error generating 2FA code:", e); return null; }
+}
+
+// ====================================================================================
+// ENHANCED: Bot Session Refresh Function
+// ====================================================================================
+async function refreshBotSession() {
+    return new Promise((resolve, reject) => {
+        console.log("LOG_INFO: Refreshing bot session...");
+        community.getSessionID((err, sessionID) => {
+            if (err) {
+                console.error("LOG_ERROR: Failed to refresh session:", err);
+                reject(err);
+            } else {
+                console.log("LOG_INFO: New session ID obtained:", sessionID);
+                manager.setCookies(community.cookies, (err) => {
+                    if (err) {
+                        console.error("LOG_ERROR: Failed to set refreshed cookies:", err);
+                        reject(err);
+                    } else {
+                        console.log("LOG_SUCCESS: Bot session refreshed successfully");
+                        resolve();
+                    }
+                });
+            }
+        });
+    });
+}
+
+// ====================================================================================
+// ENHANCED: Test Trade Offer Function
+// ====================================================================================
+async function testTradeOffer(tradeUrl) {
+    console.log("LOG_INFO: Testing trade offer to URL:", tradeUrl);
+    const testOffer = manager.createOffer(tradeUrl);
+    
+    console.log("LOG_DEBUG: Test offer object created:", {
+        id: testOffer.id,
+        state: testOffer.state,
+        partner: testOffer.partner?.getSteamID64(),
+        isOurOffer: testOffer.isOurOffer
+    });
+    
+    testOffer.setMessage("Test offer - please decline");
+    
+    testOffer.send((err, status) => {
+        if (err) {
+            console.error("LOG_ERROR: Test offer failed:", {
+                message: err.message,
+                eresult: err.eresult,
+                stack: err.stack
+            });
+        } else {
+            console.log("LOG_SUCCESS: Test offer sent successfully:", {
+                status: status,
+                offerId: testOffer.id
+            });
+        }
+    });
 }
 
 if (isBotConfigured) {
@@ -675,9 +733,9 @@ async function endRound() {
 }
 
 // ====================================================================================
-// ENHANCED sendWinningTradeOffer FUNCTION WITH DETAILED DEBUGGING
+// ENHANCED sendWinningTradeOffer FUNCTION WITH DETAILED DEBUGGING AND BOT INVENTORY CHECK
 // ====================================================================================
-function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
+async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
     const timestamp = new Date().toISOString();
 
     // ENHANCED: Detailed logging for trade URL debugging
@@ -744,8 +802,62 @@ function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
 
     console.log(`[${timestamp}] LOG_INFO (Round ${roundDoc.roundId}): Preparing to send ${itemsToSend.length} items to ${winner.username}. Value: $${roundDoc.totalValue.toFixed(2)}`);
 
+    // ENHANCED: Try refreshing bot session before creating offer
+    try {
+        await refreshBotSession();
+        console.log(`[${timestamp}] LOG_SUCCESS: Bot session refreshed before payout.`);
+    } catch (sessionErr) {
+        console.error(`[${timestamp}] LOG_ERROR: Failed to refresh bot session:`, sessionErr);
+        // Continue anyway as the current session might still work
+    }
+
+    // ENHANCED: Verify bot has the items
+    try {
+        await new Promise((resolve, reject) => {
+            manager.getInventoryContents(RUST_APP_ID, RUST_CONTEXT_ID, true, (err, inventory) => {
+                if (err) {
+                    console.error(`[${timestamp}] PAYOUT_ERROR: Can't get bot inventory:`, err);
+                    reject(err);
+                    return;
+                }
+                
+                const botAssetIds = inventory.map(item => item.assetid);
+                const requestedAssetIds = itemsToSend.map(item => item.assetId);
+                const missingItems = requestedAssetIds.filter(assetId => !botAssetIds.includes(assetId));
+                
+                console.log(`[${timestamp}] LOG_DEBUG: Bot inventory check - Has ${botAssetIds.length} items total.`);
+                console.log(`[${timestamp}] LOG_DEBUG: Requested asset IDs:`, requestedAssetIds);
+                
+                if (missingItems.length > 0) {
+                    console.error(`[${timestamp}] PAYOUT_ERROR: Bot is missing ${missingItems.length} items:`, missingItems);
+                    reject(new Error(`Bot inventory missing ${missingItems.length} items`));
+                } else {
+                    console.log(`[${timestamp}] LOG_SUCCESS: All items verified in bot inventory.`);
+                    resolve();
+                }
+            });
+        });
+    } catch (invErr) {
+        console.error(`[${timestamp}] PAYOUT_ERROR: Inventory verification failed:`, invErr);
+        Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - Bot Inventory Issue' } })
+            .catch(dbErr => { console.error(`[${timestamp}] DB_ERROR: Failed to update round status:`, dbErr); });
+        if (io && winner && winner._id) {
+            io.emit('notification', { type: 'error', userId: winner._id.toString(), message: `Bot inventory error. Please contact support.` });
+        }
+        return;
+    }
+
     try {
         const offer = manager.createOffer(winner.tradeUrl);
+
+        // ENHANCED: Log offer creation details
+        console.log(`[${timestamp}] LOG_DEBUG: Offer object created:`, {
+            id: offer.id,
+            state: offer.state,
+            partner: offer.partner?.getSteamID64(),
+            isOurOffer: offer.isOurOffer,
+            hasSetCookies: !!manager.cookies
+        });
 
         if (!offer || typeof offer.send !== 'function') {
             console.error(`[${timestamp}] PAYOUT_CRITICAL_ERROR (Round ${roundDoc.roundId}): Failed to create a valid offer object. TradeURL: ${winner.tradeUrl}`);
@@ -762,6 +874,8 @@ function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
             appid: RUST_APP_ID,
             contextid: RUST_CONTEXT_ID
         }));
+        
+        console.log(`[${timestamp}] LOG_DEBUG: Items being added to offer:`, itemsForOffer);
         offer.addMyItems(itemsForOffer);
         offer.setMessage(`Winnings from Round #${roundDoc.roundId} on ${process.env.SITE_NAME}. Value: $${roundDoc.totalValue.toFixed(2)} Congrats!`);
 
@@ -1057,13 +1171,34 @@ app.post('/api/round/accept-winnings', ensureAuthenticated, sensitiveActionLimit
         }
 
         console.log(`LOG_INFO: Calling sendWinningTradeOffer for round ${round.roundId}, user ${user.username}.`);
-        sendWinningTradeOffer(round, round.winner, itemsToWin);
+        await sendWinningTradeOffer(round, round.winner, itemsToWin);
 
         res.json({ success: true, message: 'Winnings accepted. Trade offer is being processed.' });
 
     } catch (error) {
         console.error('CRITICAL_ERROR: Error in /api/round/accept-winnings:', error);
         res.status(500).json({ error: 'Server error while accepting winnings. Please try again or contact support.' });
+    }
+});
+
+// ====================================================================================
+// NEW ENDPOINT: Test Trade URL
+// ====================================================================================
+app.get('/api/test-trade-url/:tradeUrl', ensureAuthenticated, async (req, res) => {
+    const { tradeUrl } = req.params;
+    const decodedUrl = decodeURIComponent(tradeUrl);
+    
+    console.log(`LOG_INFO: Testing trade URL for user ${req.user.username}: ${decodedUrl}`);
+    
+    if (!TRADE_URL_REGEX.test(decodedUrl)) {
+        return res.status(400).json({ error: 'Invalid trade URL format' });
+    }
+    
+    try {
+        await testTradeOffer(decodedUrl);
+        res.json({ success: true, message: 'Test offer sent. Check the console logs for results.' });
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to send test offer', details: error.message });
     }
 });
 
