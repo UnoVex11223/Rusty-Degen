@@ -505,9 +505,9 @@ code { /* General code tag styling */
 
 .jackpot-and-chat-container {
     display: flex;
-    justify-content: center; 
-    align-items: flex-end; /* MODIFIED: Align items to the bottom */
-    gap: 20px; 
+    justify-content: center;
+    align-items: stretch; /* MODIFIED: Align items to stretch to the height of the tallest item */
+    gap: 20px;
 }
 
 
@@ -518,11 +518,11 @@ code { /* General code tag styling */
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border-color);
     position: relative;
-    width: 680px; 
+    width: 680px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    /* Height will be determined by its content or other flex properties */
+    /* Height will be determined by its content or by align-items: stretch from parent */
 }
 
 
@@ -777,9 +777,9 @@ code { /* General code tag styling */
     background-color: var(--background-medium);
     border-radius: 0 0 12px 12px;
     border-top: 1px solid var(--border-color);
-    flex-grow: 1; /* Allow this section to grow and fill space in .jackpot-section */
-    display: flex; /* Added */
-    flex-direction: column; /* Added */
+    flex-grow: 1; 
+    display: flex; 
+    flex-direction: column; 
 }
 .section-title {
     font-size: 1.2rem;
@@ -791,16 +791,16 @@ code { /* General code tag styling */
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 12px;
     text-align: center;
-    flex-shrink: 0; /* Prevent shrinking */
+    flex-shrink: 0; 
 }
 .empty-pot-message {
     text-align: center; padding: 40px 20px; color: var(--text-secondary); font-size: 1.1rem;
     background-color: var(--background-light); border-radius: 8px;
     border: 1px dashed var(--border-color); display: block; margin: 15px 0;
-    flex-grow: 1; /* Allow to take space if items-container is empty */
-    display: flex; /* Center content */
-    align-items: center; /* Center content */
-    justify-content: center; /* Center content */
+    flex-grow: 1; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
 }
 
 .items-container {
@@ -808,9 +808,9 @@ code { /* General code tag styling */
     flex-direction: column;
     gap: 15px;
     padding: 10px;
-    min-height: 100px;
-    flex-grow: 1; /* Allow items container to grow */
-    overflow-y: auto; /* Add scroll if items overflow */
+    min-height: 100px; /* Ensure some min height even if jackpot section is small */
+    flex-grow: 1; 
+    overflow-y: auto; 
 }
 
 .player-deposit-container {
@@ -818,7 +818,7 @@ code { /* General code tag styling */
     border-radius: 8px; padding: 15px; border: 1px solid var(--border-color);
     box-shadow: var(--shadow-md); width: 100%;
     transition: transform var(--transition-medium), box-shadow var(--transition-medium);
-    flex-shrink: 0; /* Prevent individual deposits from shrinking weirdly */
+    flex-shrink: 0; 
 }
 .player-deposit-container:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
 .player-deposit-header { display: flex; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(48, 54, 61, 0.5); }
@@ -1274,16 +1274,17 @@ code { /* General code tag styling */
  =========================*/
 .chat-container {
     width: 280px;
-    flex-shrink: 0; 
+    flex-shrink: 0;
     background-color: var(--background-light);
     border-radius: 12px;
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-lg);
     display: flex;
     flex-direction: column;
-    padding: 0; 
-    height: 600px; 
-    max-height: 70vh; 
+    padding: 0;
+    /* MODIFIED: Removed fixed height to allow stretching by parent */
+    /* height: 600px; */
+    /* max-height: 70vh; */
 }
 
 .chat-header {
@@ -1293,8 +1294,8 @@ code { /* General code tag styling */
     padding: 10px 15px;
     background: var(--background-medium);
     border-bottom: 1px solid var(--border-color);
-    border-radius: 12px 12px 0 0; 
-    flex-shrink: 0; 
+    border-radius: 12px 12px 0 0;
+    flex-shrink: 0;
 }
 
 .chat-header h3 {
@@ -1315,11 +1316,11 @@ code { /* General code tag styling */
 }
 
 .chat-messages-container {
-    flex-grow: 1; 
+    flex-grow: 1;
     padding: 15px;
-    overflow-y: auto; 
+    overflow-y: auto;
     display: flex;
-    flex-direction: column-reverse; 
+    flex-direction: column-reverse;
     gap: 12px;
     background-color: var(--background-dark);
 }
@@ -1345,10 +1346,10 @@ code { /* General code tag styling */
     border-radius: 6px;
     background-color: var(--background-light);
     border: 1px solid var(--border-color);
-    max-width: 95%; 
-    word-wrap: break-word; 
+    max-width: 95%;
+    word-wrap: break-word;
     box-shadow: var(--shadow-sm);
-    animation: chatMessageFadeIn 0.3s ease-out; 
+    animation: chatMessageFadeIn 0.3s ease-out;
 }
 @keyframes chatMessageFadeIn {
     from { opacity: 0; transform: translateY(10px); }
@@ -1365,7 +1366,7 @@ code { /* General code tag styling */
     text-align: center;
     padding: 5px 0;
     max-width: 100%;
-    animation: none; 
+    animation: none;
 }
 
 .chat-message-avatar {
@@ -1374,13 +1375,13 @@ code { /* General code tag styling */
     border-radius: 50%;
     object-fit: cover;
     flex-shrink: 0;
-    border: 2px solid transparent; 
+    border: 2px solid transparent;
 }
 
 .chat-message-content {
     display: flex;
     flex-direction: column;
-    min-width: 0; 
+    min-width: 0;
 }
 
 .chat-message-user {
@@ -1394,7 +1395,7 @@ code { /* General code tag styling */
     line-height: 1.5;
     color: var(--text-primary);
     margin: 0;
-    white-space: pre-wrap; 
+    white-space: pre-wrap;
 }
 
 .chat-input-area {
@@ -1403,8 +1404,8 @@ code { /* General code tag styling */
     border-top: 1px solid var(--border-color);
     background-color: var(--background-medium);
     gap: 10px;
-    border-radius: 0 0 12px 12px; 
-    flex-shrink: 0; 
+    border-radius: 0 0 12px 12px;
+    flex-shrink: 0;
 }
 
 #chatMessageInput {
@@ -1437,12 +1438,12 @@ code { /* General code tag styling */
  =========================*/
 
 .winner-boxes-container {
-    width: 280px; /* Same width as chat-container */
+    width: 280px; 
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    gap: 20px; /* Space between the two winner boxes */
-    /* Height will be determined by its content or alignment */
+    gap: 20px; 
+    /* Height will be determined by align-items: stretch from parent */
 }
 
 .winner-box {
@@ -1452,7 +1453,8 @@ code { /* General code tag styling */
     box-shadow: var(--shadow-lg);
     display: flex;
     flex-direction: column;
-    overflow: hidden; 
+    overflow: hidden;
+    flex-grow: 1; /* Allow individual boxes to grow if winner-boxes-container stretches */
 }
 
 .winner-box-header {
@@ -1460,12 +1462,13 @@ code { /* General code tag styling */
     background: var(--background-medium);
     border-bottom: 1px solid var(--border-color);
     border-radius: 12px 12px 0 0;
+    flex-shrink: 0; /* Prevent header from shrinking/growing too much */
 }
 
 .winner-box-header h3 {
     margin: 0;
     font-size: 1.1rem;
-    color: var(--primary-color); /* MODIFIED: Changed to neon green */
+    color: var(--primary-color); /* MODIFIED: Changed to neon green (already done previously) */
     font-weight: 600;
     text-align: center;
 }
@@ -1476,9 +1479,9 @@ code { /* General code tag styling */
     flex-direction: column;
     align-items: center;
     text-align: center;
-    min-height: 150px; 
-    justify-content: center; 
-    flex-grow: 1; /* Allow content to take available space */
+    min-height: 150px;
+    justify-content: center;
+    flex-grow: 1; 
 }
 
 .winner-box-avatar {
@@ -1496,7 +1499,7 @@ code { /* General code tag styling */
     font-weight: 700;
     color: var(--text-primary);
     margin-bottom: 5px;
-    word-break: break-all; 
+    word-break: break-all;
 }
 
 .winner-box-details {
@@ -1509,7 +1512,7 @@ code { /* General code tag styling */
 }
 .winner-box-details .pot-value {
     font-weight: bold;
-    color: var(--secondary-light); 
+    color: var(--secondary-light);
 }
 
 
@@ -1521,41 +1524,45 @@ code { /* General code tag styling */
 }
 
 .winner-box-spacer {
-    height: 20px; 
+    height: 20px;
     flex-shrink: 0;
 }
 
 
 /* Media Queries */
-@media (max-width: 1270px) { 
+@media (max-width: 1270px) {
     .jackpot-and-chat-container {
         flex-direction: column;
-        align-items: center; 
-        /* align-items: flex-end; /* Revert to flex-end if you want chat and jackpot bottom aligned when stacked */
+        align-items: center;
+        /* If you still want bottoms to align when stacked, you might need a different approach or JS */
+        /* For now, top alignment is implied by column direction or can be set with align-items:center */
     }
     .winner-boxes-container {
         width: 100%;
-        max-width: 600px; 
+        max-width: 600px;
         margin-bottom: 20px;
-        flex-direction: row; 
-        justify-content: space-around; 
-        align-items: flex-start; /* Align winner boxes to the top when horizontal */
+        flex-direction: row;
+        justify-content: space-around;
+        align-items: flex-start; /* Keep winner boxes aligned to their own top when horizontal */
+                                 /* If they should also stretch, this would need to be 'stretch' */
     }
     .winner-boxes-container .winner-box {
-        width: 48%; 
+        width: 48%;
+        /* Remove flex-grow if they shouldn't stretch when horizontal */
     }
     .winner-box-spacer {
-        display: none; 
+        display: none;
     }
 
     .jackpot-section {
-        width: 100%; 
-        max-width: 680px; 
-        margin-bottom: 20px; 
+        width: 100%;
+        max-width: 680px;
+        margin-bottom: 20px;
     }
     .chat-container {
-        width: 100%; 
-        max-width: 600px; 
+        width: 100%;
+        max-width: 600px;
+        /* Re-introduce a sensible height for stacked mobile view if stretch is too much */
         height: 500px; 
         max-height: 60vh;
     }
@@ -1577,15 +1584,20 @@ code { /* General code tag styling */
 
 @media (max-width: 980px) {
     .winner-boxes-container {
-        flex-direction: column; 
+        flex-direction: column;
         align-items: center;
     }
     .winner-boxes-container .winner-box {
         width: 100%;
-        max-width: 280px; 
+        max-width: 280px;
         margin-bottom: 15px;
+        flex-grow: 0; /* Prevent excessive stretching when stacked vertically */
     }
     .winner-boxes-container .winner-box:last-child {
         margin-bottom: 0;
+    }
+     .chat-container {
+        height: 450px; /* Further adjust chat height for smaller screens */
+        max-height: 50vh;
     }
 }
