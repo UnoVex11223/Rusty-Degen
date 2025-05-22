@@ -24,6 +24,9 @@ const CONFIG = {
     CHAT_SEND_COOLDOWN_MS: 2000,
 };
 
+// FIXED: Consistent trade URL validation regex (matches backend exactly)
+const TRADE_URL_REGEX = /^https:\/\/steamcommunity\.com\/tradeoffer\/new\/\?partner=\d+&token=[a-zA-Z0-9_-]+$/;
+
 const COLOR_PALETTE = [
     '#00bcd4', '#ff5722', '#9c27b0', '#4caf50', '#ffeb3b', '#2196f3', '#f44336', '#ff9800',
     '#e91e63', '#8bc34a', '#3f51b5', '#009688', '#cddc39', '#795548', '#607d8b', '#673ab7',
@@ -2703,9 +2706,11 @@ async function handleProfileSave() {
          showNotification("Not logged in or profile elements missing.", "error"); return;
     }
     const newTradeUrl = tradeUrlInput.value.trim();
-    const urlPattern = /^https?:\/\/steamcommunity\.com\/tradeoffer\/new\/\?.*partner=\d+.*token=[a-zA-Z0-9_-]+.*/i;
-    if (newTradeUrl && !urlPattern.test(newTradeUrl)) {
-        showNotification('Invalid Steam Trade URL format. Ensure it includes partner and token parameters, or leave empty to clear.', 'error', 7000); return;
+
+    // Use the TRADE_URL_REGEX defined in Part 1 for validation
+    if (newTradeUrl && !TRADE_URL_REGEX.test(newTradeUrl)) {
+        showNotification('Invalid Steam Trade URL format. Ensure it matches the pattern: https://steamcommunity.com/tradeoffer/new/?partner=PARTNER_ID&token=TOKEN (or leave empty to clear).', 'error', 9000);
+        return;
     }
 
     saveBtn.disabled = true; saveBtn.textContent = 'Saving...';
@@ -2748,4 +2753,5 @@ document.addEventListener('DOMContentLoaded', () => {
     updateChatUI();
 });
 
-console.log("main.js updated to handle new 'roundWinnerPendingAcceptance' flow and improved modal state management for winnings.");
+console.log("main.js updated with TRADE_URL_REGEX and to handle new 'roundWinnerPendingAcceptance' flow and improved modal state management for winnings.");
+}
