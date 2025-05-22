@@ -248,7 +248,7 @@ const roundSchema = new mongoose.Schema({
     taxAmount: { type: Number, default: 0, min: 0 },
     taxedItems: [{ assetId: String, name: String, price: { type: Number, min: 0 } }], // Info about items taken as tax
     payoutOfferId: { type: String, index: true }, // ID of the trade offer sent for winnings
-    payoutOfferStatus: { type: String, enum: ['PendingAcceptanceByWinner', 'Sent', 'Accepted', 'Declined', 'Canceled', 'Expired', 'InvalidItems', 'Escrow', 'Failed', 'Unknown', 'Failed - No Trade URL', 'No Items Won', 'Pending Confirmation', 'Failed - Bot Not Ready', 'Failed - Offer Creation Error', 'Failed - Bad URL', 'Failed - Inventory/Trade Issue', 'Failed - DB Error Post-Send', 'Failed - Synchronous Offer Prep Error', 'Failed - Invalid Trade URL Format'], default: 'Unknown' } // ADDED: New status for invalid format
+    payoutOfferStatus: { type: String, enum: ['PendingAcceptanceByWinner', 'Sent', 'Accepted', 'Declined', 'Canceled', 'Expired', 'InvalidItems', 'Escrow', 'Failed', 'Unknown', 'Failed - No Trade URL', 'No Items Won', 'Pending Confirmation', 'Failed - Bot Not Ready', 'Failed - Offer Creation Error', 'Failed - Bad URL', 'Failed - Inventory/Trade Issue', 'Failed - DB Error Post-Send', 'Failed - Synchronous Offer Prep Error', 'Failed - Invalid Trade URL Format', 'Failed - Bot Inventory Issue'], default: 'Unknown' } // ADDED: New status for invalid format
 });
 roundSchema.index({ 'participants.user': 1 }); // Index for querying participants
 roundSchema.index({ winner: 1, status: 1, completedTime: -1 }); // For winning history query
@@ -298,17 +298,19 @@ function generateAuthCode() {
 }
 
 // ====================================================================================
-// ENHANCED: Bot Session Refresh Function
+// FIXED: Bot Session Refresh Function
 // ====================================================================================
 async function refreshBotSession() {
     return new Promise((resolve, reject) => {
         console.log("LOG_INFO: Refreshing bot session...");
-        community.getSessionID((err, sessionID) => {
-            if (err) {
-                console.error("LOG_ERROR: Failed to refresh session:", err);
-                reject(err);
-            } else {
-                console.log("LOG_INFO: New session ID obtained:", sessionID);
+        
+        try {
+            // getSessionID is synchronous, not async
+            const sessionID = community.getSessionID();
+            console.log("LOG_INFO: Current session ID:", sessionID);
+            
+            // If we have cookies, update the manager
+            if (community.cookies && community.cookies.length > 0) {
                 manager.setCookies(community.cookies, (err) => {
                     if (err) {
                         console.error("LOG_ERROR: Failed to set refreshed cookies:", err);
@@ -318,41 +320,16 @@ async function refreshBotSession() {
                         resolve();
                     }
                 });
+            } else {
+                console.warn("LOG_WARN: No cookies available to refresh");
+                resolve(); // Don't reject, just continue
             }
-        });
-    });
-}
-
-// ====================================================================================
-// ENHANCED: Test Trade Offer Function
-// ====================================================================================
-async function testTradeOffer(tradeUrl) {
-    console.log("LOG_INFO: Testing trade offer to URL:", tradeUrl);
-    const testOffer = manager.createOffer(tradeUrl);
-    
-    console.log("LOG_DEBUG: Test offer object created:", {
-        id: testOffer.id,
-        state: testOffer.state,
-        partner: testOffer.partner?.getSteamID64(),
-        isOurOffer: testOffer.isOurOffer
-    });
-    
-    // Add a small test - check if we can at least get user details
-    testOffer.getUserDetails((err, me, them) => {
-        if (err) {
-            console.error("LOG_ERROR: Cannot get user details for trade:", err);
-        } else {
-            console.log("LOG_SUCCESS: User details retrieved:", {
-                themSteamID: them.steamID,
-                themPersonaName: them.personaName,
-                canTrade: them.canTrade
-            });
+        } catch (err) {
+            console.error("LOG_ERROR: Error in refreshBotSession:", err);
+            // Don't reject, just log and continue
+            resolve();
         }
     });
-    
-    // For now, just log that we successfully created the offer
-    console.log("LOG_SUCCESS: Trade offer object created successfully for URL:", tradeUrl);
-    console.log("LOG_INFO: The 'empty trade' error confirms the URL is valid and reachable!");
 }
 
 if (isBotConfigured) {
@@ -1241,28 +1218,6 @@ app.post('/api/round/accept-winnings', ensureAuthenticated, sensitiveActionLimit
         res.status(500).json({ error: 'Server error while accepting winnings. Please try again or contact support.' });
     }
 });
-
-// ====================================================================================
-// NEW ENDPOINT: Test Trade URL
-// ====================================================================================
-app.get('/api/test-trade-url/:tradeUrl', ensureAuthenticated, async (req, res) => {
-    const { tradeUrl } = req.params;
-    const decodedUrl = decodeURIComponent(tradeUrl);
-    
-    console.log(`LOG_INFO: Testing trade URL for user ${req.user.username}: ${decodedUrl}`);
-    
-    if (!TRADE_URL_REGEX.test(decodedUrl)) {
-        return res.status(400).json({ error: 'Invalid trade URL format' });
-    }
-    
-    try {
-        await testTradeOffer(decodedUrl);
-        res.json({ success: true, message: 'Test offer sent. Check the console logs for results.' });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to send test offer', details: error.message });
-    }
-});
-
 
 app.get('/api/inventory', ensureAuthenticated, async (req, res) => {
     if (!isBotReady) {
