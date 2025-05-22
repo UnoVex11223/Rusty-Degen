@@ -505,10 +505,11 @@ code { /* General code tag styling */
 
 .jackpot-and-chat-container {
     display: flex;
-    justify-content: center;
-    align-items: flex-start; /* Changed from stretch to allow chat fixed height */
-    gap: 20px;
+    justify-content: center; /* Center the group of jackpot-section and chat-container */
+    align-items: flex-start;
+    gap: 20px; /* This will be the space between winner-boxes, jackpot-section, and chat-container */
 }
+
 
 .jackpot-section {
     background-color: var(--background-medium);
@@ -517,8 +518,8 @@ code { /* General code tag styling */
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border-color);
     position: relative;
-    width: 680px;
-    max-width: calc(100% - 300px); /* Max width considering chat width + gap */
+    width: 680px; /* Original width */
+    /* max-width will be adjusted if needed by overall layout considerations */
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
@@ -1439,12 +1440,118 @@ code { /* General code tag styling */
     font-size: 0.9rem;
 }
 
+/*=========================
+ WINNER BOXES STYLES
+ =========================*/
+
+.winner-boxes-container {
+    width: 280px; /* Same width as chat-container */
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px; /* Space between the two winner boxes */
+}
+
+.winner-box {
+    background-color: var(--background-light);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Ensure content respects border radius */
+}
+
+.winner-box-header {
+    padding: 10px 15px;
+    background: var(--background-medium);
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 12px 12px 0 0;
+}
+
+.winner-box-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--secondary-color); /* Using secondary color for these headers */
+    font-weight: 600;
+    text-align: center;
+}
+
+.winner-box-content {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-height: 150px; /* Give some default height */
+    justify-content: center; /* Center "No winner" message if present */
+}
+
+.winner-box-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--primary-color);
+    margin-bottom: 10px;
+    box-shadow: 0 0 15px rgba(0, 230, 118, 0.3);
+}
+
+.winner-box-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+    word-break: break-all; /* For long names */
+}
+
+.winner-box-details {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+.winner-box-details .value {
+    font-weight: bold;
+    color: var(--primary-light);
+}
+.winner-box-details .pot-value {
+    font-weight: bold;
+    color: var(--secondary-light); /* Differentiate pot value color */
+}
+
+
+.no-winner-message p {
+    color: var(--text-secondary);
+    font-style: italic;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+.winner-box-spacer {
+    height: 20px; /* This creates the "free space" between the two boxes */
+    flex-shrink: 0;
+}
+
+
 /* Ensure jackpot section doesn't overlap chat at smaller viewport widths before flex-wrap kicks in effectively */
-@media (max-width: 980px) { /* Adjust breakpoint as needed */
+@media (max-width: 1270px) { /* Adjusted breakpoint to account for new winner boxes */
     .jackpot-and-chat-container {
         flex-direction: column;
         align-items: center; /* Center items when stacked */
     }
+    .winner-boxes-container {
+        width: 100%;
+        max-width: 600px; /* Or your preferred max width */
+        margin-bottom: 20px;
+        flex-direction: row; /* Display side-by-side when stacked */
+        justify-content: space-around; /* Distribute them */
+    }
+    .winner-boxes-container .winner-box {
+        width: 48%; /* Roughly half, considering gap */
+    }
+    .winner-box-spacer {
+        display: none; /* Hide spacer when winner boxes are horizontal */
+    }
+
     .jackpot-section {
         width: 100%; /* Full width when stacked */
         max-width: 680px; /* Or your preferred max width */
@@ -1472,9 +1579,24 @@ code { /* General code tag styling */
 
 }
 
-@media (min-width: 1200px) {
-    .jackpot-and-chat-container {
-        position: relative;
-        left: 150px;  
+/* Original smaller screen adjustments, might need further tweaking if the above is too wide */
+@media (max-width: 980px) {
+    .winner-boxes-container {
+        flex-direction: column; /* Stack winner boxes vertically again on very small screens */
+        align-items: center;
+    }
+    .winner-boxes-container .winner-box {
+        width: 100%;
+        max-width: 280px; /* Limit width when stacked vertically */
+        margin-bottom: 15px;
+    }
+    .winner-boxes-container .winner-box:last-child {
+        margin-bottom: 0;
     }
 }
+
+
+/* Removed the @media (min-width: 1200px) rule for .jackpot-and-chat-container left positioning
+   as the flexbox justify-content: center on the parent should handle centering the whole group.
+   If specific offsets are needed, they might need to be re-evaluated based on the new layout.
+*/
