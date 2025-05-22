@@ -1,4 +1,4 @@
-// app.js (Corrected and Complete with Chat Logic & Winning History Backend)
+// app.js (Fixed with Enhanced Trade URL Debugging and Consistent Validation)
 
 // Required dependencies
 const express = require('express');
@@ -24,6 +24,9 @@ require('dotenv').config();
 
 // --- Enhanced: connect-mongo for persistent sessions ---
 const MongoStore = require('connect-mongo');
+
+// --- FIXED: Consistent Trade URL Validation ---
+const TRADE_URL_REGEX = /^https:\/\/steamcommunity\.com\/tradeoffer\/new\/\?partner=\d+&token=[a-zA-Z0-9_-]+$/;
 
 // --- Configuration Constants ---
 const requiredEnvVars = [
@@ -203,8 +206,8 @@ const userSchema = new mongoose.Schema({
     tradeUrl: {
         type: String,
         default: '',
-        // Basic regex for Steam trade URL format
-        match: [/^https?:\/\/steamcommunity\.com\/tradeoffer\/new\/\?partner=\d+&token=[a-zA-Z0-9_-]+$/, 'Invalid Steam Trade URL format']
+        // FIXED: Using consistent strict regex validation
+        match: [TRADE_URL_REGEX, 'Invalid Steam Trade URL format']
     },
     createdAt: { type: Date, default: Date.now },
     banned: { type: Boolean, default: false },
@@ -245,7 +248,7 @@ const roundSchema = new mongoose.Schema({
     taxAmount: { type: Number, default: 0, min: 0 },
     taxedItems: [{ assetId: String, name: String, price: { type: Number, min: 0 } }], // Info about items taken as tax
     payoutOfferId: { type: String, index: true }, // ID of the trade offer sent for winnings
-    payoutOfferStatus: { type: String, enum: ['PendingAcceptanceByWinner', 'Sent', 'Accepted', 'Declined', 'Canceled', 'Expired', 'InvalidItems', 'Escrow', 'Failed', 'Unknown', 'Failed - No Trade URL', 'No Items Won', 'Pending Confirmation', 'Failed - Bot Not Ready', 'Failed - Offer Creation Error', 'Failed - Bad URL', 'Failed - Inventory/Trade Issue', 'Failed - DB Error Post-Send', 'Failed - Synchronous Offer Prep Error'], default: 'Unknown' } // Status of the payout trade offer, added 'PendingAcceptanceByWinner' and other failure modes
+    payoutOfferStatus: { type: String, enum: ['PendingAcceptanceByWinner', 'Sent', 'Accepted', 'Declined', 'Canceled', 'Expired', 'InvalidItems', 'Escrow', 'Failed', 'Unknown', 'Failed - No Trade URL', 'No Items Won', 'Pending Confirmation', 'Failed - Bot Not Ready', 'Failed - Offer Creation Error', 'Failed - Bad URL', 'Failed - Inventory/Trade Issue', 'Failed - DB Error Post-Send', 'Failed - Synchronous Offer Prep Error', 'Failed - Invalid Trade URL Format'], default: 'Unknown' } // ADDED: New status for invalid format
 });
 roundSchema.index({ 'participants.user': 1 }); // Index for querying participants
 roundSchema.index({ winner: 1, status: 1, completedTime: -1 }); // For winning history query
@@ -672,10 +675,41 @@ async function endRound() {
 }
 
 // ====================================================================================
-// START OF MODIFIED sendWinningTradeOffer FUNCTION
+// ENHANCED sendWinningTradeOffer FUNCTION WITH DETAILED DEBUGGING
 // ====================================================================================
 function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
     const timestamp = new Date().toISOString();
+
+    // ENHANCED: Detailed logging for trade URL debugging
+    console.log(`[${timestamp}] DEBUG_TRADE_URL (Round ${roundDoc.roundId}):`);
+    console.log(`[${timestamp}]   Winner object:`, JSON.stringify(winner, null, 2));
+    console.log(`[${timestamp}]   Winner tradeUrl:`, winner?.tradeUrl);
+    console.log(`[${timestamp}]   TradeUrl type:`, typeof winner?.tradeUrl);
+    console.log(`[${timestamp}]   TradeUrl length:`, winner?.tradeUrl?.length);
+    
+    // ENHANCED: Validate trade URL format before attempting to create offer
+    if (winner?.tradeUrl) {
+        const isValidFormat = TRADE_URL_REGEX.test(winner.tradeUrl);
+        console.log(`[${timestamp}]   TradeUrl format valid:`, isValidFormat);
+        console.log(`[${timestamp}]   Expected format: https://steamcommunity.com/tradeoffer/new/?partner=XXXXXXXX&token=XXXXXXXX`);
+        console.log(`[${timestamp}]   Actual URL: ${winner.tradeUrl}`);
+        
+        if (!isValidFormat) {
+            console.error(`[${timestamp}] PAYOUT_ERROR (Round ${roundDoc.roundId}): Trade URL format validation failed.`);
+            
+            Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - Invalid Trade URL Format' } })
+                .catch(dbErr => { console.error(`[${timestamp}] DB_ERROR: Failed to update round status:`, dbErr); });
+            
+            if (io && winner && winner._id) {
+                io.emit('notification', { 
+                    type: 'error', 
+                    userId: winner._id.toString(), 
+                    message: 'Trade URL format is invalid. Please update it in your profile with the correct Steam trade URL format.' 
+                });
+            }
+            return;
+        }
+    }
 
     // 1. Detailed Initial Checks (as they were)
     if (!isBotReady) {
@@ -690,6 +724,7 @@ function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
     if (!winner || !winner.tradeUrl) {
         const winnerUsername = winner && winner.username ? winner.username : 'N/A_WINNER_OBJECT_MISSING_OR_INVALID';
         console.error(`[${timestamp}] PAYOUT_ERROR (Round ${roundDoc.roundId}): Winner ${winnerUsername} has no Trade URL set.`);
+        console.error(`[${timestamp}]   Winner object keys:`, winner ? Object.keys(winner) : 'winner is null/undefined');
         if (io && winner && winner._id) {
             io.emit('notification', { type: 'error', userId: winner._id.toString(), message: 'Please set your Steam Trade URL in your profile to receive winnings.' });
         }
@@ -760,8 +795,9 @@ function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
                 let offerStatusUpdate = 'Failed';
                 let userMessage = `Error sending winnings for round ${roundDoc.roundId}. Please contact support. (Code: ${err && err.eresult ? err.eresult : 'N/A'})`;
 
+                // ENHANCED: Better error handling for EResult 26 (Invalid/Revoked Trade URL)
                 if (err && (err.message?.includes('revoked') || err.message?.includes('invalid') || err.eresult === 26)) {
-                    userMessage = 'Your Trade URL is invalid or expired. Please update it to receive winnings.';
+                    userMessage = 'Your Trade URL is invalid, expired, or has been revoked. Please update it in your profile to receive winnings.';
                     offerStatusUpdate = 'Failed - Bad URL';
                 } else if (err && (err.eresult === 15 || err.eresult === 16)) {
                     userMessage = 'Could not send winnings. Ensure your Steam inventory is public, not full, and you can trade.';
@@ -770,7 +806,6 @@ function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
                     userMessage = `Winnings sent, but may be held in escrow by Steam. (Offer ID: ${offer && offer.id ? offer.id : 'N/A'})`;
                     offerStatusUpdate = 'Escrow';
                 }
-
 
                 if (io && winner && winner._id) {
                     io.emit('notification', { type: 'error', userId: winner._id.toString(), message: userMessage });
@@ -857,12 +892,9 @@ function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
         }
         console.log(`[${timestamp}] PRE-SEND CHECK (Round ${roundDoc.roundId}): Type of offerSentCallback: ${typeof offerSentCallback}`);
 
-        // MODIFIED SECTION for offer.send()
         // The steam-tradeoffer-manager library automatically handles mobile confirmations
         // when you've set up the identity secret properly (via community.on('confKeyNeeded', ...)).
-        // You don't need to pass any special parameters to offer.send() related to the identity secret.
         offer.send(offerSentCallback);
-        // END OF MODIFIED SECTION
 
         console.log(`[${timestamp}] LOG_DEBUG (Round ${roundDoc.roundId}): offer.send() called. Asynchronous operation initiated.`);
 
@@ -873,7 +905,6 @@ function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
             console.error(`[${catchTimestamp}] Full synchronous error details (Round ${roundDoc.roundId}): Message: ${err.message}, Stack: ${err.stack}`);
         } catch (logErr) { console.error("Error trying to log full synchronous error.");}
 
-
         Round.updateOne( { _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - Synchronous Offer Prep Error' } })
             .catch(dbErr => { console.error(`[${catchTimestamp}] DB_ERROR (Round ${roundDoc.roundId}): Error updating round status on synchronous offer prep failure:`, dbErr); });
         if (io && winner && winner._id) {
@@ -882,7 +913,7 @@ function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
     }
 }
 // ====================================================================================
-// END OF MODIFIED sendWinningTradeOffer FUNCTION
+// END OF ENHANCED sendWinningTradeOffer FUNCTION
 // ====================================================================================
 
 
@@ -930,8 +961,8 @@ app.post('/api/user/tradeurl',
     [
         body('tradeUrl').trim().custom((value) => {
             if (value === '') return true;
-            const urlPattern = /^https:\/\/steamcommunity\.com\/tradeoffer\/new\/\?partner=\d+&token=[a-zA-Z0-9_-]+$/;
-            if (!urlPattern.test(value)) throw new Error('Invalid Steam Trade URL format. Must include partner and token, or be empty.');
+            // FIXED: Using consistent strict validation
+            if (!TRADE_URL_REGEX.test(value)) throw new Error('Invalid Steam Trade URL format. Must be: https://steamcommunity.com/tradeoffer/new/?partner=XXXXXXXX&token=XXXXXXXX');
             return true;
         })
     ],
@@ -977,34 +1008,52 @@ app.get('/api/user/winning-history', ensureAuthenticated, async (req, res) => {
     }
 });
 
-// NEW ENDPOINT for "Accept Winnings"
+// ENHANCED ENDPOINT for "Accept Winnings" with better debugging
 app.post('/api/round/accept-winnings', ensureAuthenticated, sensitiveActionLimiter, async (req, res) => {
-    console.log(`LOG_INFO: Received POST /api/round/accept-winnings for user ${req.user.username}`); // LOG: Endpoint hit
+    console.log(`LOG_INFO: Received POST /api/round/accept-winnings for user ${req.user.username}`);
     try {
-        const user = req.user; // User must be authenticated
+        const user = req.user;
 
-        console.log(`LOG_DEBUG: Searching for round for user ${user._id}, status 'completed_pending_acceptance', payoutStatus 'PendingAcceptanceByWinner'`);
+        // ENHANCED: Add debug logging for user's current trade URL
+        console.log(`LOG_DEBUG: Current user trade URL: "${user.tradeUrl}"`);
+        console.log(`LOG_DEBUG: Trade URL type: ${typeof user.tradeUrl}, length: ${user.tradeUrl?.length}`);
+
         const round = await Round.findOne({
             winner: user._id,
-            status: 'completed_pending_acceptance', // Ensure this matches status set in endRound
+            status: 'completed_pending_acceptance',
             payoutOfferStatus: 'PendingAcceptanceByWinner'
         }).sort({ completedTime: -1 })
-          .populate('winner', 'steamId username avatar tradeUrl') // Populate winner for tradeUrl and other details
-          .populate('items'); // Populate items to be sent
+          .populate('winner', 'steamId username avatar tradeUrl')
+          .populate('items');
 
         if (!round) {
-            console.warn(`LOG_WARN: No winnings pending acceptance found for user ${user.username}. Or round status mismatch.`); // LOG: No round found
+            console.warn(`LOG_WARN: No winnings pending acceptance found for user ${user.username}`);
             return res.status(404).json({ error: 'No winnings pending your acceptance found or round already processed.' });
         }
-        console.log(`LOG_INFO: Found round ${round.roundId} for user ${user.username} to accept winnings.`); // LOG: Round found
+
+        console.log(`LOG_INFO: Found round ${round.roundId} for user ${user.username} to accept winnings.`);
+        console.log(`LOG_DEBUG: Round winner populated data:`, {
+            id: round.winner._id,
+            username: round.winner.username,
+            tradeUrl: round.winner.tradeUrl,
+            tradeUrlLength: round.winner.tradeUrl?.length
+        });
 
         const itemsToWin = round.items;
-        console.log(`LOG_DEBUG: Items to win for round ${round.roundId}: ${itemsToWin.length} items.`); // LOG: Items to win
+        console.log(`LOG_DEBUG: Items to win for round ${round.roundId}: ${itemsToWin.length} items.`);
 
+        // ENHANCED: Double-check trade URL exists and is valid
         if (!round.winner.tradeUrl) {
-            console.warn(`LOG_WARN: User ${user.username} has no trade URL for round ${round.roundId}.`); // LOG: No trade URL on winner
+            console.warn(`LOG_WARN: User ${user.username} has no trade URL in populated round winner data for round ${round.roundId}.`);
             await Round.updateOne({ _id: round._id }, { $set: { payoutOfferStatus: 'Failed - No Trade URL' } });
             return res.status(400).json({ error: 'Please set your Steam Trade URL in your profile to accept winnings.' });
+        }
+
+        // ENHANCED: Validate trade URL format
+        if (!TRADE_URL_REGEX.test(round.winner.tradeUrl)) {
+            console.error(`LOG_ERROR: Invalid trade URL format for user ${user.username}: "${round.winner.tradeUrl}"`);
+            await Round.updateOne({ _id: round._id }, { $set: { payoutOfferStatus: 'Failed - Invalid Trade URL Format' } });
+            return res.status(400).json({ error: 'Your Steam Trade URL format is invalid. Please update it in your profile.' });
         }
 
         console.log(`LOG_INFO: Calling sendWinningTradeOffer for round ${round.roundId}, user ${user.username}.`);
@@ -1013,7 +1062,7 @@ app.post('/api/round/accept-winnings', ensureAuthenticated, sensitiveActionLimit
         res.json({ success: true, message: 'Winnings accepted. Trade offer is being processed.' });
 
     } catch (error) {
-        console.error('CRITICAL_ERROR: Error in /api/round/accept-winnings:', error); // LOG: Critical error in endpoint
+        console.error('CRITICAL_ERROR: Error in /api/round/accept-winnings:', error);
         res.status(500).json({ error: 'Server error while accepting winnings. Please try again or contact support.' });
     }
 });
