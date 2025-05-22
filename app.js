@@ -805,7 +805,12 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
         // Continue anyway as the current session might still work
     }
 
-    // ENHANCED: Verify bot has the items
+    // --- USER-PROVIDED CODE FOR INVENTORY VERIFICATION (MATCH BY NAME) TO BE INSERTED HERE ---
+    // The following block is where your new inventory verification logic should go.
+    // The original code that matched by assetId has been removed.
+    // Please provide the replacement code that matches items by name.
+    /*
+    // ENHANCED: Verify bot has the items (ORIGINAL CODE - TO BE REPLACED)
     try {
         await new Promise((resolve, reject) => {
             manager.getInventoryContents(RUST_APP_ID, RUST_CONTEXT_ID, true, (err, inventory) => {
@@ -840,6 +845,9 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
         }
         return;
     }
+    */
+    // --- END OF PLACEHOLDER FOR USER-PROVIDED CODE ---
+
 
     try {
         const offer = manager.createOffer(winner.tradeUrl);
@@ -863,7 +871,7 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
             return;
         }
 
-        const itemsForOffer = itemsToSend.map(item => ({
+        const itemsForOffer = roundDoc._matchedItemsForOffer || itemsToSend.map(item => ({
             assetid: item.assetId,
             appid: RUST_APP_ID,
             contextid: RUST_CONTEXT_ID
@@ -1023,7 +1031,6 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
 // ====================================================================================
 // END OF ENHANCED sendWinningTradeOffer FUNCTION
 // ====================================================================================
-
 
 // --- Authentication Routes ---
 app.get('/auth/steam', authLimiter, passport.authenticate('steam', { failureRedirect: '/' }));
