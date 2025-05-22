@@ -732,6 +732,23 @@ async function endRound() {
     }
 }
 
+// Enhanced sendWinningTradeOffer with offer status checking
+async function checkOfferStatus(offerId) {
+    return new Promise((resolve) => {
+        manager.getOffer(offerId, (err, offer) => {
+            if (err) {
+                console.log(`LOG_WARN: Could not fetch offer ${offerId}:`, err.message);
+                resolve(null);
+            } else {
+                resolve({
+                    state: offer.state,
+                    stateName: TradeOfferManager.ETradeOfferState[offer.state]
+                });
+            }
+        });
+    });
+}
+
 // ====================================================================================
 // ENHANCED sendWinningTradeOffer FUNCTION WITH DETAILED DEBUGGING AND BOT INVENTORY CHECK
 // ====================================================================================
@@ -1098,6 +1115,50 @@ app.post('/api/user/tradeurl',
         }
     }
 );
+
+// Admin endpoint to clear stuck rounds
+app.post('/api/admin/clear-stuck-round', ensureAuthenticated, async (req, res) => {
+    // Add admin check here if needed
+    // if (!req.user.isAdmin) return res.status(403).json({ error: 'Admin only' });
+    
+    try {
+        // Find and update stuck rounds
+        const stuckRound = await Round.findOneAndUpdate(
+            { status: 'completed_pending_acceptance' },
+            { 
+                $set: { 
+                    status: 'completed',
+                    payoutOfferStatus: 'Failed - Manually Cleared'
+                }
+            },
+            { new: true }
+        );
+        
+        // Clear all pending deposit offers
+        const clearedUsers = await User.updateMany(
+            { pendingDepositOfferId: { $ne: null } },
+            { $set: { pendingDepositOfferId: null } }
+        );
+        
+        console.log('LOG_INFO: Cleared stuck round:', stuckRound?.roundId);
+        console.log('LOG_INFO: Cleared pending offers for users:', clearedUsers.modifiedCount);
+        
+        // Reset current round if needed
+        if (currentRound && currentRound.status === 'completed_pending_acceptance') {
+            currentRound = null;
+            await createNewRound();
+        }
+        
+        res.json({ 
+            success: true, 
+            clearedRound: stuckRound?.roundId,
+            clearedUsers: clearedUsers.modifiedCount 
+        });
+    } catch (error) {
+        console.error('Error clearing stuck round:', error);
+        res.status(500).json({ error: 'Failed to clear stuck round' });
+    }
+});
 
 // API Endpoint for Winning History
 app.get('/api/user/winning-history', ensureAuthenticated, async (req, res) => {
@@ -1794,6 +1855,32 @@ async function startApp() {
         catch (refreshErr) { console.error("Error during scheduled price cache refresh:", refreshErr); }
     }, PRICE_REFRESH_INTERVAL_MS);
     console.log(`LOG_INFO: Scheduled price cache refresh every ${PRICE_REFRESH_INTERVAL_MS / 60000} minutes.`);
+    
+    // Add periodic cleanup of stuck rounds
+    setInterval(async () => {
+        try {
+            // Clean up rounds stuck in pending acceptance for more than 30 minutes
+            const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+            const stuckRounds = await Round.updateMany(
+                { 
+                    status: 'completed_pending_acceptance',
+                    completedTime: { $lt: thirtyMinutesAgo }
+                },
+                { 
+                    $set: { 
+                        status: 'completed',
+                        payoutOfferStatus: 'Failed - Timeout'
+                    }
+                }
+            );
+            if (stuckRounds.modifiedCount > 0) {
+                console.log(`LOG_INFO: Cleaned up ${stuckRounds.modifiedCount} stuck rounds`);
+            }
+        } catch (err) {
+            console.error("Error during stuck round cleanup:", err);
+        }
+    }, 5 * 60 * 1000); // Run every 5 minutes
+    
     const PORT = process.env.PORT || 3000;
     server.listen(PORT, () => {
         console.log(`LOG_SUCCESS: Server listening on port ${PORT}`);
