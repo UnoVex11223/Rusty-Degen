@@ -244,7 +244,12 @@ code { /* General code tag styling */
 /* User Controls */
 .user-controls { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
 
-.user-profile-container { position: relative; display: flex; align-items: center; gap: 8px; /* Added for indicator positioning */ }
+.user-profile-container {
+    position: relative; /* This is the containing block for the absolute .dropdown-menu */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 
 /* --- User Profile Trigger (Simplified) --- */
 .user-profile {
@@ -291,35 +296,22 @@ code { /* General code tag styling */
 /* --- End Pending Offer Indicator --- */
 
 
-/* --- Dropdown Menu (New Simplified Structure) --- */
+/* --- Dropdown Menu (MODIFIED for centering) --- */
 .dropdown-menu {
     display: none; /* JS toggles this to 'block' */
     position: absolute;
-    top: calc(100% + 10px); /* Position below the user-profile */
-    left: 50%; /* Start from center of profile container */
-    transform: translateX(-50%); /* Center the dropdown */
-    /* Align right edge of dropdown with right edge of profile trigger for typical desktop view */
-    right: 0;
-    left: auto; /* Override previous left */
-    transform: none; /* Reset transform if aligning right */
+    top: calc(100% + 10px); /* Position 10px below the user-profile-container's bottom edge */
+    left: 50%; /* Start at the horizontal center of the user-profile-container */
+    right: auto; /* Remove explicit right alignment */
+    transform: translateX(-50%); /* Shift left by half its own width to achieve centering */
     z-index: 1000;
     background-color: var(--background-dark);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     box-shadow: var(--shadow-lg);
-    min-width: 220px; /* Adjusted for longer text like "Winning History" */
+    min-width: 220px;
     overflow: hidden;
 }
-
-.user-profile-container .dropdown-menu {
-    /* If profile container is small, aligning left of container to left of dropdown is better */
-    /* Example: For left-aligned profile button */
-    /* left: 0; right: auto; transform: none; */
-
-    /* For right-aligned profile (current setup), align dropdown's right to container's right */
-     left: auto; right: 0; transform: none;
-}
-
 
 .dropdown-actions { padding: 8px 0; }
 
@@ -334,13 +326,14 @@ code { /* General code tag styling */
 .dropdown-item:hover .icon { color: var(--primary-color); }
 
 /* Logout button specific styling */
-#logoutButton {
+#logoutButton { /* This is an ID, ensure it has '#' */
     border-top: 1px solid var(--border-color); margin-top: 5px;
     color: var(--error-color) !important;
 }
-#logoutButton .icon { color: var(--error-color) !important; }
+#logoutButton .icon { color: var(--error-color) !important; } /* Ensure this targets .icon inside #logoutButton */
 #logoutButton:hover { background-color: rgba(244, 67, 54, 0.1) !important; color: var(--error-color) !important; }
 #logoutButton:hover .icon { color: var(--error-color) !important; }
+
 
 /*=========================
  BUTTONS
@@ -777,9 +770,9 @@ code { /* General code tag styling */
     background-color: var(--background-medium);
     border-radius: 0 0 12px 12px;
     border-top: 1px solid var(--border-color);
-    flex-grow: 1; 
-    display: flex; 
-    flex-direction: column; 
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
 }
 .section-title {
     font-size: 1.2rem;
@@ -791,16 +784,16 @@ code { /* General code tag styling */
     border-bottom: 1px solid var(--border-color);
     padding-bottom: 12px;
     text-align: center;
-    flex-shrink: 0; 
+    flex-shrink: 0;
 }
 .empty-pot-message {
     text-align: center; padding: 40px 20px; color: var(--text-secondary); font-size: 1.1rem;
     background-color: var(--background-light); border-radius: 8px;
     border: 1px dashed var(--border-color); display: block; margin: 15px 0;
-    flex-grow: 1; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .items-container {
@@ -809,8 +802,8 @@ code { /* General code tag styling */
     gap: 15px;
     padding: 10px;
     min-height: 100px; /* Ensure some min height even if jackpot section is small */
-    flex-grow: 1; 
-    overflow-y: auto; 
+    flex-grow: 1;
+    overflow-y: auto;
 }
 
 .player-deposit-container {
@@ -818,7 +811,7 @@ code { /* General code tag styling */
     border-radius: 8px; padding: 15px; border: 1px solid var(--border-color);
     box-shadow: var(--shadow-md); width: 100%;
     transition: transform var(--transition-medium), box-shadow var(--transition-medium);
-    flex-shrink: 0; 
+    flex-shrink: 0;
 }
 .player-deposit-container:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
 .player-deposit-header { display: flex; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(48, 54, 61, 0.5); }
@@ -1284,7 +1277,7 @@ code { /* General code tag styling */
     padding: 0;
     /* MODIFIED: Removed fixed height to allow stretching by parent */
     /* height: 600px; */
-    /* max-height: 70vh; */
+    /* max-height: 70vh; */ /* Also removed to let stretch dictate */
 }
 
 .chat-header {
@@ -1316,7 +1309,7 @@ code { /* General code tag styling */
 }
 
 .chat-messages-container {
-    flex-grow: 1;
+    flex-grow: 1; /* This is key for the chat messages to fill available stretched space */
     padding: 15px;
     overflow-y: auto;
     display: flex;
@@ -1438,11 +1431,11 @@ code { /* General code tag styling */
  =========================*/
 
 .winner-boxes-container {
-    width: 280px; 
+    width: 280px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    gap: 20px; 
+    gap: 20px;
     /* Height will be determined by align-items: stretch from parent */
 }
 
@@ -1462,13 +1455,13 @@ code { /* General code tag styling */
     background: var(--background-medium);
     border-bottom: 1px solid var(--border-color);
     border-radius: 12px 12px 0 0;
-    flex-shrink: 0; /* Prevent header from shrinking/growing too much */
+    flex-shrink: 0;
 }
 
 .winner-box-header h3 {
     margin: 0;
     font-size: 1.1rem;
-    color: var(--primary-color); /* MODIFIED: Changed to neon green (already done previously) */
+    color: var(--primary-color); /* Header color is neon green */
     font-weight: 600;
     text-align: center;
 }
@@ -1479,9 +1472,9 @@ code { /* General code tag styling */
     flex-direction: column;
     align-items: center;
     text-align: center;
-    min-height: 150px;
-    justify-content: center;
-    flex-grow: 1; 
+    min-height: 150px; /* Base min height for content */
+    justify-content: center; /* Center placeholder text */
+    flex-grow: 1; /* Allow content area to expand within the box */
 }
 
 .winner-box-avatar {
@@ -1512,7 +1505,7 @@ code { /* General code tag styling */
 }
 .winner-box-details .pot-value {
     font-weight: bold;
-    color: var(--secondary-light);
+    color: var(--secondary-light); /* Orange for pot value, as per original design for values */
 }
 
 
@@ -1533,22 +1526,20 @@ code { /* General code tag styling */
 @media (max-width: 1270px) {
     .jackpot-and-chat-container {
         flex-direction: column;
-        align-items: center;
-        /* If you still want bottoms to align when stacked, you might need a different approach or JS */
-        /* For now, top alignment is implied by column direction or can be set with align-items:center */
+        align-items: center; /* Center items when stacked */
+        /* align-items: stretch; /* If you want them to stretch full width of container when stacked */
     }
     .winner-boxes-container {
         width: 100%;
         max-width: 600px;
         margin-bottom: 20px;
-        flex-direction: row;
+        flex-direction: row; /* Side-by-side for winner boxes */
         justify-content: space-around;
-        align-items: flex-start; /* Keep winner boxes aligned to their own top when horizontal */
-                                 /* If they should also stretch, this would need to be 'stretch' */
+        align-items: flex-start; /* Align to their own top */
     }
     .winner-boxes-container .winner-box {
-        width: 48%;
-        /* Remove flex-grow if they shouldn't stretch when horizontal */
+        width: 48%; /* Approx half */
+        flex-grow: 0; /* Prevent stretching when side-by-side in this view */
     }
     .winner-box-spacer {
         display: none;
@@ -1562,8 +1553,8 @@ code { /* General code tag styling */
     .chat-container {
         width: 100%;
         max-width: 600px;
-        /* Re-introduce a sensible height for stacked mobile view if stretch is too much */
-        height: 500px; 
+        /* Re-introduce a sensible height for stacked mobile view as stretch might not be ideal here */
+        height: 500px;
         max-height: 60vh;
     }
     .main-header .container {
@@ -1584,14 +1575,13 @@ code { /* General code tag styling */
 
 @media (max-width: 980px) {
     .winner-boxes-container {
-        flex-direction: column;
+        flex-direction: column; /* Stack winner boxes vertically again */
         align-items: center;
     }
     .winner-boxes-container .winner-box {
         width: 100%;
-        max-width: 280px;
+        max-width: 280px; /* Limit width when stacked vertically */
         margin-bottom: 15px;
-        flex-grow: 0; /* Prevent excessive stretching when stacked vertically */
     }
     .winner-boxes-container .winner-box:last-child {
         margin-bottom: 0;
