@@ -1,4 +1,4 @@
-// app.js (Fixed with Enhanced Cookie Management and TradeOfferManager Reliability)
+/ app.js (Enhanced with Improved Cookie Management and Trade Offer Reliability)
 
 // Required dependencies
 const express = require('express');
@@ -61,6 +61,8 @@ const TAX_MAX_PERCENT = 10;
 const MIN_POT_FOR_TAX = parseFloat(process.env.MIN_POT_FOR_TAX) || 100;
 const MAX_CHAT_MESSAGE_LENGTH = 200;
 const CHAT_COOLDOWN_SECONDS = parseInt(process.env.CHAT_COOLDOWN_SECONDS) || 5;
+const COOKIE_REFRESH_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+const MAX_TRADE_RETRY_ATTEMPTS = 2;
 
 // Initialize Express app
 const app = express();
@@ -255,14 +257,95 @@ const Round = mongoose.model('Round', roundSchema);
 
 // --- Steam Bot Setup ---
 const community = new SteamCommunity();
-let manager = null; // Initialize as null, will create after login
-let currentBotCookies = null; // Store cookies globally
+let manager = null;
+let currentBotCookies = null;
+let cookieRefreshInterval = null;
+let lastCookieValidation = 0;
 
-// FIXED: Create a new TradeOfferManager instance with fresh cookies
+// ENHANCED: Validate if cookies are still active
+async function validateAndRefreshCookies() {
+    const timestamp = new Date().toISOString();
+    console.log(`[${timestamp}] LOG_INFO: Validating bot cookies...`);
+    
+    if (!currentBotCookies || currentBotCookies.length === 0) {
+        console.log(`[${timestamp}] LOG_WARN: No cookies available, executing full login...`);
+        return executeBotLogin();
+    }
+    
+    // Test if cookies are still valid by checking if we're logged in
+    return new Promise((resolve, reject) => {
+        if (!community.steamID) {
+            console.log(`[${timestamp}] LOG_WARN: No steamID on community object, cookies likely expired. Re-logging in...`);
+            return executeBotLogin().then(resolve).catch(reject);
+        }
+        
+        // Try to get our own user info as a test
+        community.getSteamUser(community.steamID, (err, user) => {
+            if (err) {
+                console.log(`[${timestamp}] LOG_WARN: Cookie validation failed (getSteamUser error), re-logging in...`, err.message);
+                return executeBotLogin().then(resolve).catch(reject);
+            }
+            
+            // Cookies are still valid
+            console.log(`[${timestamp}] LOG_SUCCESS: Cookies validated successfully. User: ${user.name}`);
+            lastCookieValidation = Date.now();
+            resolve();
+        });
+    });
+}
+
+// ENHANCED: Ensure we have a valid manager without recreating unnecessarily
+async function ensureValidManager() {
+    const timestamp = new Date().toISOString();
+    
+    // If manager doesn't exist, create it
+    if (!manager) {
+        console.log(`[${timestamp}] LOG_INFO: Manager doesn't exist, creating new instance...`);
+        if (!currentBotCookies || currentBotCookies.length === 0) {
+            await validateAndRefreshCookies();
+        }
+        return createTradeOfferManager(currentBotCookies);
+    }
+    
+    // Check if it's been a while since last validation (5 minutes)
+    const timeSinceLastValidation = Date.now() - lastCookieValidation;
+    if (timeSinceLastValidation > 5 * 60 * 1000) {
+        console.log(`[${timestamp}] LOG_INFO: Time for cookie validation (${Math.floor(timeSinceLastValidation / 1000)}s since last check)`);
+        await validateAndRefreshCookies();
+        
+        // Only recreate manager if cookies actually changed
+        if (manager && currentBotCookies) {
+            // Update cookies on existing manager instead of recreating
+            return new Promise((resolve, reject) => {
+                manager.setCookies(currentBotCookies, (err) => {
+                    if (err) {
+                        console.error(`[${timestamp}] LOG_ERROR: Failed to update cookies on existing manager:`, err);
+                        // If updating fails, recreate the manager
+                        return createTradeOfferManager(currentBotCookies).then(resolve).catch(reject);
+                    } else {
+                        console.log(`[${timestamp}] LOG_SUCCESS: Updated cookies on existing manager`);
+                        resolve();
+                    }
+                });
+            });
+        }
+    }
+    
+    return Promise.resolve();
+}
+
+// Keep the original createTradeOfferManager but don't shutdown unless necessary
 function createTradeOfferManager(cookies) {
-    if (manager) {
-        console.log("LOG_INFO: Shutting down existing TradeOfferManager instance");
-        manager.shutdown();
+    const timestamp = new Date().toISOString();
+    
+    // Only shutdown if we're replacing an existing manager
+    if (manager && manager !== null) {
+        console.log(`[${timestamp}] LOG_INFO: Shutting down existing TradeOfferManager instance`);
+        try {
+            manager.shutdown();
+        } catch (shutdownErr) {
+            console.error(`[${timestamp}] LOG_ERROR: Error during manager shutdown:`, shutdownErr);
+        }
         manager = null;
     }
 
@@ -281,10 +364,11 @@ function createTradeOfferManager(cookies) {
     return new Promise((resolve, reject) => {
         manager.setCookies(cookies, (err) => {
             if (err) {
-                console.error('LOG_ERROR: Failed to set cookies on new TradeOfferManager:', err);
+                console.error(`[${timestamp}] LOG_ERROR: Failed to set cookies on new TradeOfferManager:`, err);
                 reject(err);
             } else {
-                console.log('LOG_SUCCESS: Cookies set on new TradeOfferManager instance');
+                console.log(`[${timestamp}] LOG_SUCCESS: Cookies set on new TradeOfferManager instance`);
+                lastCookieValidation = Date.now();
                 resolve();
             }
         });
@@ -335,7 +419,7 @@ async function executeBotLogin() {
     }
     isLoginInProgress = true;
     lastLoginAttemptTimestamp = now;
-    isBotReady = false; // Mark as not ready until successful
+    isBotReady = false;
     console.log("LOG_INFO: Attempting to execute bot login/re-login...");
     return new Promise((resolve, reject) => {
         if (!isBotConfigured) {
@@ -363,24 +447,23 @@ async function executeBotLogin() {
                 if (err?.eresult === 65) console.warn('Login Failure Hint: Incorrect 2FA Code or Account Rate Limit?');
                 if (err?.eresult === 63) console.warn('Login Failure Hint: Account Logon Denied - Check Email/Steam Guard?');
                 isLoginInProgress = false;
-                currentBotCookies = null; // Clear stored cookies on login failure
+                currentBotCookies = null;
                 reject(err || new Error(`Login failed: community.steamID undefined. EResult: ${err?.eresult}`));
                 return;
             }
             console.log(`LOG_SUCCESS (executeBotLogin): Steam bot ${loginCredentials.accountName} logged in (SteamID: ${community.steamID}). Setting cookies...`);
-            // IMPORTANT: Store the fresh cookies globally
             currentBotCookies = cookies;
             community.setCookies(cookies);
             try {
-                // FIXED: Create a new TradeOfferManager instance with fresh cookies
                 await createTradeOfferManager(cookies);
                 isLoginInProgress = false;
                 isBotReady = true;
+                lastCookieValidation = Date.now();
                 console.log("LOG_SUCCESS (executeBotLogin): Steam Bot is fully ready and operational.");
                 resolve(true);
             } catch (setCookieErr) {
                 isLoginInProgress = false;
-                currentBotCookies = null; // Clear stored cookies on error
+                currentBotCookies = null;
                 console.error('TradeOfferManager Error setting cookies after login (executeBotLogin):', setCookieErr);
                 reject(setCookieErr);
             }
@@ -388,53 +471,45 @@ async function executeBotLogin() {
     });
 }
 
-// UPDATED refreshBotSession function
+// SIMPLIFIED refreshBotSession to use ensureValidManager
 async function refreshBotSession() {
-    console.log("LOG_INFO: Checking/Refreshing bot session for TradeOfferManager...");
+    console.log("LOG_INFO: Refreshing bot session...");
     if (!isBotConfigured) {
         isBotReady = false;
         return Promise.reject(new Error("Bot not configured, cannot refresh session."));
     }
-    if (!community) return Promise.reject(new Error("SteamCommunity instance unavailable."));
-    const isSessionLikelyDead = !community.steamID || !currentBotCookies || currentBotCookies.length === 0;
-    if (isSessionLikelyDead) {
-        console.warn("LOG_WARN: Bot session appears compromised (no steamID or no valid cookies). Attempting re-login.");
-        try {
-            await executeBotLogin();
-            if (!isBotReady) {
-                throw new Error("Re-login attempt did not result in a ready bot state.");
-            }
-            console.log("LOG_SUCCESS: Re-login successful via refreshBotSession, session should be active for manager.");
-            return Promise.resolve();
-        } catch (reloginErr) {
-            console.error("LOG_ERROR: Re-login attempt failed during session refresh:", reloginErr.message);
-            isBotReady = false;
-            return Promise.reject(new Error(`Bot re-login failed: ${reloginErr.message}`));
-        }
-    } else {
-        // FIXED: Use stored cookies instead of community.cookies
-        console.log(`LOG_INFO: SteamCommunity session appears active (SteamID: ${community.steamID}). Creating new TradeOfferManager with stored cookies.`);
-        try {
-            if (!currentBotCookies || currentBotCookies.length === 0) {
-                console.warn("LOG_WARN: No stored cookies available despite active session. Forcing re-login.");
-                return executeBotLogin();
-            }
-            await createTradeOfferManager(currentBotCookies);
-            isBotReady = true;
-            console.log("LOG_SUCCESS: TradeOfferManager recreated with stored cookies from active session.");
-            return Promise.resolve();
-        } catch (err) {
-            console.error("LOG_ERROR: Failed to create new TradeOfferManager with stored cookies:", err);
-            console.log("LOG_INFO: Attempting re-login due to manager creation failure.");
-            isBotReady = false;
-            // Try to re-login if manager creation fails
-            return executeBotLogin();
-        }
+    
+    try {
+        await ensureValidManager();
+        isBotReady = true;
+        return Promise.resolve();
+    } catch (err) {
+        console.error("LOG_ERROR: Failed to refresh bot session:", err);
+        isBotReady = false;
+        return Promise.reject(err);
     }
 }
 
+// Set up periodic cookie refresh
+function startPeriodicCookieRefresh() {
+    if (cookieRefreshInterval) {
+        clearInterval(cookieRefreshInterval);
+    }
+    
+    cookieRefreshInterval = setInterval(async () => {
+        if (isBotReady && currentBotCookies) {
+            try {
+                console.log("LOG_INFO: Performing periodic cookie refresh...");
+                await validateAndRefreshCookies();
+            } catch (err) {
+                console.error("LOG_ERROR: Periodic cookie refresh failed:", err);
+                // Don't set isBotReady to false here, let individual operations handle failures
+            }
+        }
+    }, COOKIE_REFRESH_INTERVAL_MS);
+}
 
-// FIXED: Move event handler setup to a separate function
+// Move event handler setup to a separate function
 function setupManagerEventHandlers() {
     if (!manager) return;
 
@@ -661,6 +736,10 @@ if (isBotConfigured) {
                     });
                 }
             });
+            
+            // Start periodic cookie refresh after successful login
+            startPeriodicCookieRefresh();
+            
             ensureInitialRound();
         })
         .catch(err => {
@@ -1007,8 +1086,8 @@ async function checkOfferStatus(offerId) {
     });
 }
 
-// FIXED: Enhanced sendWinningTradeOffer with better cookie management
-async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
+// ENHANCED sendWinningTradeOffer with retry logic
+async function sendWinningTradeOffer(roundDoc, winner, itemsToSend, retryAttempt = 0) {
     const timestamp = new Date().toISOString();
 
     console.log(`[${timestamp}] DEBUG_TRADE_URL (Round ${roundDoc.roundId}): Winner tradeUrl:`, winner?.tradeUrl);
@@ -1061,14 +1140,22 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
         return;
     }
 
-    console.log(`[${timestamp}] LOG_INFO (Round ${roundDoc.roundId}): Preparing to send ${itemsToSend.length} items to ${winner.username}. Value: $${roundDoc.totalValue.toFixed(2)}`);
+    console.log(`[${timestamp}] LOG_INFO (Round ${roundDoc.roundId}): Preparing to send ${itemsToSend.length} items to ${winner.username}. Value: $${roundDoc.totalValue.toFixed(2)} (Attempt ${retryAttempt + 1}/${MAX_TRADE_RETRY_ATTEMPTS + 1})`);
 
-    // FIXED: Always refresh the manager with fresh cookies before payout
+    // Ensure we have a valid manager
     try {
-        await refreshBotSession(); // This now uses currentBotCookies if available
-        console.log(`[${timestamp}] LOG_SUCCESS: Bot session (TradeOfferManager cookies) proactively refreshed before payout for round ${roundDoc.roundId}.`);
+        await ensureValidManager();
+        console.log(`[${timestamp}] LOG_SUCCESS: Bot session validated before payout for round ${roundDoc.roundId}.`);
     } catch (sessionErr) {
-        console.error(`[${timestamp}] PAYOUT_ABORT (Round ${roundDoc.roundId}): Critical failure during proactive session refresh:`, sessionErr.message);
+        console.error(`[${timestamp}] PAYOUT_ERROR (Round ${roundDoc.roundId}): Failed to ensure valid manager:`, sessionErr.message);
+        
+        // If this is not the last retry, attempt again
+        if (retryAttempt < MAX_TRADE_RETRY_ATTEMPTS) {
+            console.log(`[${timestamp}] LOG_INFO: Retrying payout after delay (attempt ${retryAttempt + 2})...`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            return sendWinningTradeOffer(roundDoc, winner, itemsToSend, retryAttempt + 1);
+        }
+        
         Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - Bot Session Issue' } })
             .catch(dbErr => { console.error(`[${timestamp}] DB_ERROR (Round ${roundDoc.roundId}): Failed to update round status (bot session issue):`, dbErr); });
         if (io && winner && winner._id) {
@@ -1078,7 +1165,6 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
     }
 
     try {
-        // FIXED: Use let instead of const so we can reassign if needed
         let offer = manager.createOffer(winner.tradeUrl);
 
         console.log(`[${timestamp}] LOG_DEBUG: Offer object created (Round ${roundDoc.roundId}):`, {
@@ -1086,34 +1172,18 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
             isOurOffer: offer.isOurOffer
         });
 
-        // FIXED: Check if manager actually has valid cookies by verifying the offer's cookie jar
-        if (!offer._cookies || Object.keys(offer._cookies).length === 0) {
-            console.error(`[${timestamp}] PAYOUT_CRITICAL_ERROR (Round ${roundDoc.roundId}): Trade offer has no cookies set. Manager may have lost session state.`);
-
-            // Try one more refresh
-            try {
-                await refreshBotSession(); // This will attempt re-login if needed
-                // Recreate the offer with the refreshed manager
-                const newOffer = manager.createOffer(winner.tradeUrl);
-                if (!newOffer._cookies || Object.keys(newOffer._cookies).length === 0) {
-                    throw new Error("Manager still has no cookies after refresh");
-                }
-                // Use the new offer - FIXED: Now this works because offer is 'let' not 'const'
-                offer = newOffer;
-                console.log(`[${timestamp}] LOG_SUCCESS: Created new offer with refreshed manager cookies.`);
-            } catch (retryErr) {
-                console.error(`[${timestamp}] PAYOUT_ABORT (Round ${roundDoc.roundId}): Failed to recover manager cookies:`, retryErr.message);
-                Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - Bot Session Issue' } })
-                    .catch(dbErr => { console.error(`[${timestamp}] DB_ERROR:`, dbErr); });
-                if (io && winner && winner._id) {
-                    io.emit('notification', { type: 'error', userId: winner._id.toString(), message: `Critical session error for round ${roundDoc.roundId}. Please contact support.` });
-                }
-                return;
-            }
-        }
-
+        // Check if offer was created successfully
         if (!offer || typeof offer.send !== 'function') {
             console.error(`[${timestamp}] PAYOUT_CRITICAL_ERROR (Round ${roundDoc.roundId}): Failed to create a valid offer object. TradeURL: ${winner.tradeUrl}`);
+            
+            // Retry if not at max attempts
+            if (retryAttempt < MAX_TRADE_RETRY_ATTEMPTS) {
+                console.log(`[${timestamp}] LOG_INFO: Retrying after offer creation failure...`);
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                await validateAndRefreshCookies();
+                return sendWinningTradeOffer(roundDoc, winner, itemsToSend, retryAttempt + 1);
+            }
+            
             Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - Offer Creation Error' } }).catch(dbErr => console.error(dbErr));
             if (io && winner && winner._id) io.emit('notification', { type: 'error', userId: winner._id.toString(), message: `Error creating trade offer. System error.` });
             return;
@@ -1133,6 +1203,21 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
 
             if (err) {
                 console.error(`[${callbackTimestamp}] PAYOUT_ERROR (Round ${roundDoc.roundId}): Raw error object:`, err);
+                
+                // Check if we should retry
+                const shouldRetry = retryAttempt < MAX_TRADE_RETRY_ATTEMPTS && 
+                                   err.eresult !== 26 && // Don't retry bad trade URLs
+                                   err.eresult !== 11; // Don't retry escrow issues
+                
+                if (shouldRetry) {
+                    console.log(`[${callbackTimestamp}] LOG_INFO: Retrying after send error (attempt ${retryAttempt + 2})...`);
+                    setTimeout(async () => {
+                        await validateAndRefreshCookies();
+                        sendWinningTradeOffer(roundDoc, winner, itemsToSend, retryAttempt + 1);
+                    }, 2000);
+                    return;
+                }
+                
                 let offerStatusUpdate = 'Failed';
                 let userMessage = `Error sending winnings for round ${roundDoc.roundId}. (Code: ${err.eresult || 'N/A'})`;
 
@@ -1142,9 +1227,9 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
                 } else if (err.eresult === 15 || err.eresult === 16) {
                     userMessage = 'Could not send winnings. Ensure inventory is public/not full.';
                     offerStatusUpdate = 'Failed - Inventory/Trade Issue';
-                } else if (err.message?.includes('escrow') || err.eresult === 11) { // EResult 11 can also be trade ban or new device
+                } else if (err.message?.includes('escrow') || err.eresult === 11) {
                     userMessage = `Winnings sent, but Steam reported an issue (e.g., escrow, trade ban, new device). Offer ID: ${offer.id || 'N/A'}`;
-                    offerStatusUpdate = 'Escrow'; // Or a more generic 'Failed - Steam Issue'
+                    offerStatusUpdate = 'Escrow';
                      if (err.cause && err.cause.eresult === 11 && err.cause.message.includes('k_ETradeOfferConfirmationMethod_None')) {
                         console.log(`[${callbackTimestamp}] INFO (Round ${roundDoc.roundId}): Offer went to escrow (k_ETradeOfferConfirmationMethod_None).`);
                         offerStatusUpdate = 'Escrow';
@@ -1165,7 +1250,7 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
                 initialPayoutStatus = 'Pending Confirmation';
             } else if (offer.state === TradeOfferManager.ETradeOfferState.InEscrow) {
                 initialPayoutStatus = 'Escrow';
-            } else if (status === 'pending' && process.env.STEAM_IDENTITY_SECRET && offer.state !== TradeOfferManager.ETradeOfferState.Active) { // Check if confirmation is likely needed
+            } else if (status === 'pending' && process.env.STEAM_IDENTITY_SECRET && offer.state !== TradeOfferManager.ETradeOfferState.Active) {
                 initialPayoutStatus = 'Pending Confirmation';
             }
 
@@ -1189,6 +1274,15 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
     } catch (err) {
         const catchTimestamp = new Date().toISOString();
         console.error(`[${catchTimestamp}] PAYOUT_CRITICAL_ERROR (Round ${roundDoc.roundId}): Synchronous error preparing/sending offer:`, err);
+        
+        // Retry if appropriate
+        if (retryAttempt < MAX_TRADE_RETRY_ATTEMPTS) {
+            console.log(`[${catchTimestamp}] LOG_INFO: Retrying after synchronous error...`);
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            await validateAndRefreshCookies();
+            return sendWinningTradeOffer(roundDoc, winner, itemsToSend, retryAttempt + 1);
+        }
+        
         Round.updateOne( { _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - Synchronous Offer Prep Error' } }).catch(dbErr => console.error(dbErr));
         if (io && winner && winner._id) io.emit('notification', { type: 'error', userId: winner._id.toString(), message: `Error creating trade offer. (Code: PREPFAIL)` });
     }
@@ -1362,6 +1456,9 @@ app.get('/api/inventory', ensureAuthenticated, async (req, res) => {
         return res.status(503).json({ error: "Steam service temporarily unavailable. Please try again later." });
     }
     try {
+        // Ensure manager is valid before using it
+        await ensureValidManager();
+        
         const inventory = await new Promise((resolve, reject) => {
             manager.getUserInventoryContents(req.user.steamId, RUST_APP_ID, RUST_CONTEXT_ID, true, (err, inv) => {
                 if (err) {
@@ -1469,6 +1566,10 @@ app.post('/api/deposit', depositLimiter, ensureAuthenticated,
 
         try {
             console.log(`Verifying inventory for ${user.username} (SteamID: ${user.steamId}) to confirm ${requestedAssetIds.length} deposit items...`);
+            
+            // Ensure manager is valid before using it
+            await ensureValidManager();
+            
             const userInventory = await new Promise((resolve, reject) => {
                 manager.getUserInventoryContents(user.steamId, RUST_APP_ID, RUST_CONTEXT_ID, true, (err, inv) => {
                     if (err) {
@@ -1915,6 +2016,13 @@ startApp();
 
 function gracefulShutdown() {
     console.log('LOG_INFO: Received shutdown signal. Closing server...');
+    
+    // Clear periodic intervals
+    if (cookieRefreshInterval) {
+        clearInterval(cookieRefreshInterval);
+        cookieRefreshInterval = null;
+    }
+    
     io.close(() => {
         console.log('LOG_INFO: Socket.IO connections closed.');
         server.close(async () => {
