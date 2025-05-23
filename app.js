@@ -1,4 +1,4 @@
-/ app.js (Enhanced with Improved Cookie Management and Trade Offer Reliability)
+
 
 // Required dependencies
 const express = require('express');
