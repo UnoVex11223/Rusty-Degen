@@ -1184,67 +1184,6 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
         if (io && winner && winner._id) io.emit('notification', { type: 'error', userId: winner._id.toString(), message: `Error creating trade offer. (Code: PREPFAIL)` });
     }
 }
-        function offerSentCallback(err, status) {
-            const callbackTimestamp = new Date().toISOString();
-            console.log(`[${callbackTimestamp}] CALLBACK_REACHED (Round ${roundDoc.roundId}): Error: ${err ? 'YES' : 'NO'}, Status: ${status}`);
-
-            if (err) {
-                console.error(`[${callbackTimestamp}] PAYOUT_ERROR (Round ${roundDoc.roundId}): Raw error object:`, err);
-                let offerStatusUpdate = 'Failed';
-                let userMessage = `Error sending winnings for round ${roundDoc.roundId}. (Code: ${err.eresult || 'N/A'})`;
-
-                if (err.message?.includes('(26)') || err.eresult === 26) {
-                    userMessage = 'Your Trade URL is invalid/expired. Please update it.';
-                    offerStatusUpdate = 'Failed - Bad URL';
-                } else if (err.eresult === 15 || err.eresult === 16) {
-                    userMessage = 'Could not send winnings. Ensure inventory is public/not full.';
-                    offerStatusUpdate = 'Failed - Inventory/Trade Issue';
-                } else if (err.message?.includes('escrow') || err.eresult === 11) {
-                    userMessage = `Winnings sent, may be in Steam escrow. (Offer ID: ${offer.id || 'N/A'})`;
-                    offerStatusUpdate = 'Escrow';
-                }
-                if (io && winner && winner._id) io.emit('notification', { type: 'error', userId: winner._id.toString(), message: userMessage });
-                Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferId: offer.id || null, payoutOfferStatus: offerStatusUpdate } }).catch(dbErr => console.error(dbErr));
-                return;
-            }
-
-            console.log(`[${callbackTimestamp}] LOG_INFO (Round ${roundDoc.roundId}): offer.send success. Status: ${status}, Offer ID: ${offer.id}, State: ${TradeOfferManager.ETradeOfferState[offer.state]}`);
-            const actualOfferId = offer.id;
-            const offerURL = `https://steamcommunity.com/tradeoffer/${actualOfferId}/`;
-            let initialPayoutStatus = 'Sent';
-
-            if (offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation || offer.state === TradeOfferManager.ETradeOfferState.PendingConfirmation) {
-                initialPayoutStatus = 'Pending Confirmation';
-            } else if (offer.state === TradeOfferManager.ETradeOfferState.InEscrow) {
-                initialPayoutStatus = 'Escrow';
-            } else if (status === 'pending' && process.env.STEAM_IDENTITY_SECRET && offer.state !== TradeOfferManager.ETradeOfferState.Active) {
-                initialPayoutStatus = 'Pending Confirmation';
-            }
-            
-            Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferId: actualOfferId, payoutOfferStatus: initialPayoutStatus } })
-            .then(() => {
-                console.log(`[${callbackTimestamp}] PAYOUT_SUCCESS (Round ${roundDoc.roundId}): DB updated for offer ${actualOfferId}. Status: ${initialPayoutStatus}.`);
-                if (io && winner && winner._id) {
-                    io.emit('tradeOfferSent', { roundId: roundDoc.roundId, userId: winner._id.toString(), offerId: actualOfferId, offerURL, status: initialPayoutStatus, type: 'winning' });
-                    let notifMessage = `Winnings offer #${actualOfferId} sent! Status: ${initialPayoutStatus}.`;
-                    if (initialPayoutStatus === 'Pending Confirmation') notifMessage = `Winnings offer #${actualOfferId} needs bot confirmation.`;
-                    else if (initialPayoutStatus === 'Escrow') notifMessage = `Winnings offer #${actualOfferId} in Steam escrow.`;
-                    io.emit('notification', { type: initialPayoutStatus === 'Sent' ? 'success' : 'info', userId: winner._id.toString(), message: notifMessage });
-                }
-            }).catch(dbErr => {
-                console.error(`[${callbackTimestamp}] DB_ERROR (Round ${roundDoc.roundId}): Error updating round with offer ID ${actualOfferId}:`, dbErr);
-                Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - DB Error Post-Send' } }).catch(finalDbErr => console.error(finalDbErr));
-            });
-        }
-        offer.send(offerSentCallback);
-        console.log(`[${timestamp}] LOG_DEBUG (Round ${roundDoc.roundId}): offer.send() called.`);
-    } catch (err) {
-        const catchTimestamp = new Date().toISOString();
-        console.error(`[${catchTimestamp}] PAYOUT_CRITICAL_ERROR (Round ${roundDoc.roundId}): Synchronous error preparing/sending offer:`, err);
-        Round.updateOne( { _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - Synchronous Offer Prep Error' } }).catch(dbErr => console.error(dbErr));
-        if (io && winner && winner._id) io.emit('notification', { type: 'error', userId: winner._id.toString(), message: `Error creating trade offer. (Code: PREPFAIL)` });
-    }
-}
 
 // --- Authentication Routes ---
 app.get('/auth/steam', authLimiter, passport.authenticate('steam', { failureRedirect: '/' }));
