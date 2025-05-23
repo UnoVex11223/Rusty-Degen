@@ -1248,7 +1248,7 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend, retryAttempt
         if (!manager) {
             throw new Error('Manager is null after validation');
         }
-        // Create the trade offer
+        console.log(`[${timestamp}] Using trade URL for ${winner.username} (Round ${roundDoc.roundId}): "${winner.tradeUrl}"`);
         let offer;
         try {
             offer = manager.createOffer(winner.tradeUrl);
