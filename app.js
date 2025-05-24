@@ -258,7 +258,7 @@ const roundSchema = new mongoose.Schema({
     taxedItems: [{ assetId: String, name: String, price: { type: Number, min: 0 } }], // Details of items taken as tax
     payoutOfferId: { type: String, index: true }, // Steam trade offer ID for winnings
     payoutOfferStatus: { type: String, enum: [
-        'PendingAcceptanceByWinner', 'Sent', 'Accepted', 'Declined', 'Canceled', 'Expired', 'InvalidItems', 'Escrow', 'Failed', 'Unknown',
+        'PendingAcceptanceByWinner', 'Sent', 'Sent (Confirmed)', 'Accepted', 'Declined', 'Canceled', 'Expired', 'InvalidItems', 'Escrow', 'Failed', 'Unknown',
         'Failed - No Trade URL', 'No Items Won', 'Pending Confirmation', 'Failed - Bot Not Ready', 'Failed - Offer Creation Error',
         'Failed - Bad URL', 'Failed - Inventory/Trade Issue', 'Failed - DB Error Post-Send', 'Failed - Synchronous Offer Prep Error',
         'Failed - Invalid Trade URL Format', 'Failed - Bot Inventory Issue', 'Failed - Bot Session Issue', 'Failed - Manually Cleared',
@@ -388,6 +388,67 @@ function createTradeOfferManager(cookies) {
                 resolve();
             }
         });
+    });
+}
+
+// Add this function to handle trade confirmations
+async function confirmTradeOffer(offerId, offerType = 'trade') {
+    const timestamp = new Date().toISOString();
+    
+    if (!process.env.STEAM_IDENTITY_SECRET) {
+        console.log(`[${timestamp}] LOG_WARN: No STEAM_IDENTITY_SECRET configured. Trade ${offerId} will require manual confirmation.`);
+        return { success: false, error: 'No identity secret configured for auto-confirmation' };
+    }
+    
+    if (!community || !community.steamID) {
+        console.error(`[${timestamp}] LOG_ERROR: Community not logged in, cannot confirm trade ${offerId}`);
+        return { success: false, error: 'Bot not logged in' };
+    }
+    
+    return new Promise((resolve) => {
+        console.log(`[${timestamp}] LOG_INFO: Attempting to auto-confirm ${offerType} offer ${offerId}...`);
+        
+        const time = Math.floor(Date.now() / 1000);
+        const confKey = SteamTotp.generateConfirmationKey(process.env.STEAM_IDENTITY_SECRET, time, 'conf');
+        const allowKey = SteamTotp.generateConfirmationKey(process.env.STEAM_IDENTITY_SECRET, time, 'allow');
+        
+        community.acceptConfirmationForObject(
+            process.env.STEAM_IDENTITY_SECRET,
+            offerId,
+            (err) => {
+                if (err) {
+                    console.error(`[${timestamp}] LOG_ERROR: Failed to auto-confirm ${offerType} offer ${offerId}:`, err.message);
+                    
+                    // Try alternative confirmation method
+                    community.getConfirmations(time, confKey, (err2, confirmations) => {
+                        if (err2) {
+                            console.error(`[${timestamp}] LOG_ERROR: Failed to get confirmations list:`, err2);
+                            resolve({ success: false, error: `Confirmation failed: ${err.message}` });
+                            return;
+                        }
+                        
+                        const conf = confirmations.find(c => c.creator === offerId);
+                        if (conf) {
+                            community.respondToConfirmation(conf.id, conf.key, time, allowKey, true, (err3) => {
+                                if (err3) {
+                                    console.error(`[${timestamp}] LOG_ERROR: Alternative confirmation method failed:`, err3);
+                                    resolve({ success: false, error: `Alternative confirmation failed: ${err3.message}` });
+                                } else {
+                                    console.log(`[${timestamp}] LOG_SUCCESS: ${offerType} offer ${offerId} confirmed via alternative method!`);
+                                    resolve({ success: true });
+                                }
+                            });
+                        } else {
+                            console.log(`[${timestamp}] LOG_WARN: No confirmation found for offer ${offerId}`);
+                            resolve({ success: false, error: 'No confirmation found for this offer' });
+                        }
+                    });
+                } else {
+                    console.log(`[${timestamp}] LOG_SUCCESS: ${offerType} offer ${offerId} auto-confirmed successfully!`);
+                    resolve({ success: true });
+                }
+            }
+        );
     });
 }
 
@@ -1296,6 +1357,23 @@ async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
         });
 
         console.log(`[${timestamp}] SUCCESS: Winnings offer ${offerId} sent to ${winner.username} for round ${roundDoc.roundId}`);
+        
+        // Add confirmation after sending
+        if (status === 'sent' || status === 'CreatedNeedsConfirmation') {
+            setTimeout(async () => {
+                const confirmResult = await confirmTradeOffer(offerId, 'winnings');
+                if (confirmResult.success) {
+                    console.log(`[${timestamp}] Winnings offer ${offerId} auto-confirmed for ${winner.username}`);
+                    await Round.updateOne(
+                        { _id: roundDoc._id },
+                        { $set: { payoutOfferStatus: 'Sent (Confirmed)' } }
+                    );
+                } else {
+                    console.warn(`[${timestamp}] Failed to auto-confirm winnings offer ${offerId}: ${confirmResult.error}`);
+                }
+            }, 2000);
+        }
+        
         return { success: true, offerId: offerId, offerURL: offerURL };
     } catch (error) {
         console.error(`[${timestamp}] Error sending winnings offer for round ${roundDoc.roundId} to ${winner.username}:`, error.message, error.eresult);
@@ -1454,6 +1532,23 @@ async function sendWinningTradeOfferAlternative(roundDoc, winner, itemsToSend) {
         });
 
         console.log(`[${timestamp}] (Alternative) SUCCESS: Winnings offer ${offerId} sent to ${winner.username}`);
+        
+        // Add confirmation after sending
+        if (status === 'sent' || status === 'CreatedNeedsConfirmation') {
+            setTimeout(async () => {
+                const confirmResult = await confirmTradeOffer(offerId, 'winnings');
+                if (confirmResult.success) {
+                    console.log(`[${timestamp}] (Alternative) Winnings offer ${offerId} auto-confirmed for ${winner.username}`);
+                    await Round.updateOne(
+                        { _id: roundDoc._id },
+                        { $set: { payoutOfferStatus: 'Sent (Confirmed)' } }
+                    );
+                } else {
+                    console.warn(`[${timestamp}] (Alternative) Failed to auto-confirm winnings offer ${offerId}: ${confirmResult.error}`);
+                }
+            }, 2000);
+        }
+        
         return { success: true, offerId: offerId, offerURL: offerURL };
 
     } catch (error) {
@@ -1867,6 +1962,18 @@ app.post('/api/deposit', depositLimiter, ensureAuthenticated,
                 console.log(`Set pendingDepositOfferId=${actualOfferId} for user ${user.username}.`);
             } catch (dbUpdateError) {
                 console.error(`CRITICAL: Failed to set pendingDepositOfferId for user ${user.username} after sending offer ${actualOfferId}.`, dbUpdateError);
+            }
+
+            // Add confirmation after sending
+            if (status === 'sent' || status === 'CreatedNeedsConfirmation') {
+                setTimeout(async () => {
+                    const confirmResult = await confirmTradeOffer(actualOfferId, 'deposit');
+                    if (confirmResult.success) {
+                        console.log(`Deposit offer ${actualOfferId} auto-confirmed for ${user.username}`);
+                    } else {
+                        console.warn(`Failed to auto-confirm deposit offer ${actualOfferId}: ${confirmResult.error}`);
+                    }
+                }, 2000);
             }
 
             const offerURL = `https://steamcommunity.com/tradeoffer/${actualOfferId}/`;
