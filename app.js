@@ -24,8 +24,8 @@ const SteamID = require('steamid'); // Make sure to install: npm install steamid
 // --- Enhanced: connect-mongo for persistent sessions ---
 const MongoStore = require('connect-mongo');
 
-// --- FIXED: Consistent Trade URL Validation ---
-const TRADE_URL_REGEX = /^https:\/\/steamcommunity\.com\/tradeoffer\/new\/\?partner=\d+&token=[a-zA-Z0-9_-]+$/;
+// --- UPDATED: More flexible Trade URL validation ---
+const TRADE_URL_REGEX = /^https?:\/\/(www\.)?steamcommunity\.com\/tradeoffer\/new\/\?(?=.*partner=\d+)(?=.*token=[a-zA-Z0-9_-]+).*$/i;
 
 // --- Configuration Constants ---
 const requiredEnvVars = [
@@ -1192,313 +1192,298 @@ function parseTradeURL(tradeUrl) {
     }
 }
 
-// Alternative method 1: Create offer using SteamID and token separately
-async function createOfferMethod1(winner, manager) {
-    const parsed = parseTradeURL(winner.tradeUrl);
-    if (!parsed.valid) {
-        throw new Error(`Invalid trade URL: ${parsed.error}`);
-    }
-
-    // Create offer using SteamID object
-    const offer = manager.createOffer(parsed.steamIdObject);
-    offer.setToken(parsed.token); // Set the token separately
-
-    return offer;
-}
-
-// Alternative method 2: Create offer using partner's SteamID64
-async function createOfferMethod2(winner, manager) {
-    const parsed = parseTradeURL(winner.tradeUrl);
-    if (!parsed.valid) {
-        throw new Error(`Invalid trade URL: ${parsed.error}`);
-    }
-
-    // Create offer using SteamID64 string
-    const offer = manager.createOffer(parsed.steamId64);
-    offer.setToken(parsed.token);
-
-    return offer;
-}
-
-// Alternative method 3: URL normalization before use
-function normalizeTradeURL(tradeUrl) {
-    // Remove any trailing slashes or spaces
-    let normalized = tradeUrl.trim().replace(/\/$/, '');
-
-    // Fix common issues
-    normalized = normalized.replace(/&amp;/g, '&'); // Fix HTML entities
-    normalized = normalized.replace(/^http:/, 'https:'); // Force HTTPS
-
-    // Ensure proper URL encoding
-    try {
-        const url = new URL(normalized);
-        return url.toString();
-    } catch (e) {
-        return normalized; // Return as-is if URL parsing fails
-    }
-}
-
-// Enhanced sendWinningTradeOffer with multiple fallback methods
+// REPLACED FUNCTION BLOCK
 async function sendWinningTradeOffer(roundDoc, winner, itemsToSend, retryAttempt = 0) {
     const timestamp = new Date().toISOString();
     console.log(`[${timestamp}] ========== STARTING WINNING TRADE OFFER ==========`);
-    console.log(`[${timestamp}] Round: ${roundDoc.roundId}, Winner: ${winner?.username}`);
-    console.log(`[${timestamp}] Trade URL from winner object: ${winner?.tradeUrl}`); // Log the initial trade URL
+    console.log(`[${timestamp}] Round: ${roundDoc.roundId}, Winner: ${winner?.username}, Retry: ${retryAttempt}`);
+    console.log(`[${timestamp}] Trade URL: ${winner?.tradeUrl}`);
     console.log(`[${timestamp}] Items to send: ${itemsToSend?.length || 0}`);
 
-    // Validate inputs
     if (!roundDoc || !winner || !itemsToSend) {
-        console.error(`[${timestamp}] PAYOUT_ERROR: Missing required parameters for sendWinningTradeOffer.`);
-        // Avoid DB update if roundDoc is missing
-        if (roundDoc && roundDoc._id) {
-             await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - System Error' } });
-        }
-        return;
+        console.error(`[${timestamp}] PAYOUT_ERROR: Missing required parameters`);
+        const status = 'Failed - System Error';
+        if (roundDoc && roundDoc._id) await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: status } });
+        return { success: false, error: 'Missing required parameters for sending winnings.', payoutOfferStatusUpdate: status };
     }
 
-    // Check trade URL exists on winner object
     if (!winner.tradeUrl) {
-        console.error(`[${timestamp}] PAYOUT_ERROR: Winner ${winner.username} has no trade URL for round ${roundDoc.roundId}`);
-        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - No Trade URL' } });
+        console.error(`[${timestamp}] PAYOUT_ERROR: Winner ${winner.username} has no trade URL`);
+        const status = 'Failed - No Trade URL';
+        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: status } });
         if (io && winner._id) {
             io.to(winner._id.toString()).emit('notification', {
                 type: 'error',
                 message: 'Please set your Steam Trade URL in your profile to receive winnings.'
             });
         }
-        return;
+        return { success: false, error: 'Winner has no trade URL.', payoutOfferStatusUpdate: status };
     }
 
-    // Parse and validate trade URL (this uses the new flexible regex)
-    const parsed = parseTradeURL(winner.tradeUrl);
-    console.log(`[${timestamp}] Trade URL parse result for "${winner.tradeUrl}":`, parsed);
-
-    if (!parsed.valid) {
-        console.error(`[${timestamp}] PAYOUT_ERROR (Round ${roundDoc.roundId}): ${parsed.error}. Original URL: "${winner.tradeUrl}"`);
-        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - Invalid Trade URL Format' } });
+    // FIXED: Simplified trade URL validation - just check basic format
+    const tradeUrl = winner.tradeUrl.trim();
+    if (!TRADE_URL_REGEX.test(tradeUrl)) { // Uses the global updated TRADE_URL_REGEX
+        console.error(`[${timestamp}] PAYOUT_ERROR: Invalid trade URL format. URL: "${tradeUrl}"`);
+        const status = 'Failed - Invalid Trade URL Format';
+        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: status } });
         if (io && winner._id) {
             io.to(winner._id.toString()).emit('notification', {
                 type: 'error',
-                message: `Your Steam Trade URL format is invalid (${parsed.error}). Please update it in your profile.`
+                message: 'Your Steam Trade URL format is invalid. Please update it in your profile.'
             });
         }
-        return;
+        return { success: false, error: 'Invalid trade URL format', payoutOfferStatusUpdate: status };
     }
 
-    // Check for items to send
     if (!itemsToSend || itemsToSend.length === 0) {
-        console.log(`[${timestamp}] PAYOUT_INFO (Round ${roundDoc.roundId}): No items to send to ${winner.username} (all consumed by tax or empty pot).`);
-        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'No Items Won' } });
+        console.log(`[${timestamp}] PAYOUT_INFO: No items to send (all consumed by tax or empty pot).`);
+        const status = 'No Items Won';
+        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: status } });
         if (io && winner._id) {
             io.to(winner._id.toString()).emit('notification', {
                 type: 'info',
-                message: `Congratulations on winning round #${roundDoc.roundId}! No items were sent as the pot was consumed by fees or was empty.`
+                message: `Congratulations on winning round #${roundDoc.roundId}! No items were sent as the pot was consumed by fees or taxes.`
             });
         }
-        return;
+        return { success: true, offerId: null, offerURL: null, status: status, message: 'No items to send.' };
     }
 
-    // Ensure bot is ready
     try {
-        await ensureValidManager(); // This should also handle cookie validation and re-login if necessary
+        await ensureValidManager();
         console.log(`[${timestamp}] Bot session validated for round ${roundDoc.roundId}.`);
-        if (!manager) { // Double check manager exists
-            throw new Error("TradeOfferManager (manager) is null after session validation.");
-        }
+        if (!manager) throw new Error("TradeOfferManager is null after session validation.");
     } catch (sessionError) {
-        console.error(`[${timestamp}] PAYOUT_ERROR (Round ${roundDoc.roundId}): Bot session error:`, sessionError.message, sessionError);
+        console.error(`[${timestamp}] PAYOUT_ERROR: Bot session error:`, sessionError.message);
         if (retryAttempt < MAX_TRADE_RETRY_ATTEMPTS) {
-            console.log(`[${timestamp}] Retrying payout for round ${roundDoc.roundId} after session error (attempt ${retryAttempt + 2})...`);
-            await new Promise(resolve => setTimeout(resolve, 5000 * (retryAttempt + 1))); // Exponential backoff style
+            console.log(`[${timestamp}] Retrying payout (attempt ${retryAttempt + 1} of ${MAX_TRADE_RETRY_ATTEMPTS}) due to session error...`);
+            await new Promise(resolve => setTimeout(resolve, 5000 * (retryAttempt + 1)));
             return sendWinningTradeOffer(roundDoc, winner, itemsToSend, retryAttempt + 1);
         }
-        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - Bot Session Issue' } });
+        const status = 'Failed - Bot Session Issue';
+        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: status } });
         if (io && winner._id) {
-            io.to(winner._id.toString()).emit('notification', { type: 'error', message: 'Bot service is temporarily unavailable. Please try again or contact support.' });
+            io.to(winner._id.toString()).emit('notification', {
+                 type: 'error',
+                 message: 'Bot service is temporarily unavailable for sending winnings. Please try again or contact support.'
+             });
         }
-        return;
+        return { success: false, error: 'Bot session error while sending winnings.', payoutOfferStatusUpdate: status };
     }
 
     let offer = null;
-    let lastOfferCreationError = null;
-    const offerCreationMethods = [
-        { name: 'Direct URL', fn: () => manager.createOffer(winner.tradeUrl) }, // Original trade URL
-        { name: 'Normalized URL', fn: () => manager.createOffer(normalizeTradeURL(winner.tradeUrl)) },
-        { name: 'SteamID + Token', fn: () => createOfferMethod1(winner, manager) }, // Uses parsed SteamID object + token
-        { name: 'SteamID64 + Token', fn: () => createOfferMethod2(winner, manager) }, // Uses parsed SteamID64 string + token
-        { name: 'Partner URL Construction', fn: () => {
-            const reconstructedUrl = `https://steamcommunity.com/tradeoffer/new/?partner=${parsed.partnerId}&token=${parsed.token}`;
-            console.log(`[${timestamp}] Attempting Partner URL Construction with: ${reconstructedUrl}`);
-            return manager.createOffer(reconstructedUrl);
-        }}
-    ];
-
-    for (const method of offerCreationMethods) {
-        try {
-            console.log(`[${timestamp}] Round ${roundDoc.roundId}: Trying offer creation method: ${method.name}`);
-            offer = await method.fn(); // Ensure this is awaited if fn is async (createOfferMethod1/2 are)
-
-            if (offer && typeof offer.addMyItems === 'function') { // Basic check for a valid offer object
-                console.log(`[${timestamp}] Round ${roundDoc.roundId}: ✓ Offer created successfully using method: ${method.name}`);
-                break; // Exit loop if offer creation is successful
-            } else {
-                 lastOfferCreationError = new Error(`Method ${method.name} returned an invalid offer object.`);
-                console.error(`[${timestamp}] Round ${roundDoc.roundId}: ✗ Method '${method.name}' failed: Invalid offer object returned.`);
-                offer = null; // Reset offer if it's not valid
-            }
-        } catch (error) {
-            lastOfferCreationError = error;
-            console.error(`[${timestamp}] Round ${roundDoc.roundId}: ✗ Method '${method.name}' failed:`, error.message, error);
-            offer = null; // Reset offer on error
+    try {
+        // FIXED: Just create the offer with the trade URL directly, like deposits do
+        console.log(`[${timestamp}] Creating offer with trade URL: ${tradeUrl}`);
+        offer = manager.createOffer(tradeUrl);
+        if (!offer || typeof offer.addMyItems !== 'function') {
+            throw new Error("Failed to create valid offer object from trade URL");
         }
-    }
+        console.log(`[${timestamp}] ✓ Offer object created successfully`);
+    } catch (error) {
+        console.error(`[${timestamp}] CRITICAL: Offer creation failed:`, error.message);
+        // If offer creation fails, it might be due to a truly invalid URL
+        // Let's try a different approach - parse the URL and create offer with SteamID
+        if (retryAttempt === 0) { // Only try alternative on the first attempt to avoid loops on persistent errors
+            console.log(`[${timestamp}] Attempting alternative offer creation method...`);
+            try {
+                // Parse the trade URL to extract partner and token
+                const urlMatch = tradeUrl.match(/partner=(\d+)&token=([a-zA-Z0-9_-]+)/);
+                if (!urlMatch) throw new Error("Could not parse trade URL for alternative method. Ensure partner and token are present.");
 
-    if (!offer) {
-        console.error(`[${timestamp}] CRITICAL (Round ${roundDoc.roundId}): All offer creation methods failed for ${winner.username}.`);
-        console.error(`[${timestamp}] Last offer creation error (Round ${roundDoc.roundId}):`, lastOfferCreationError?.message, lastOfferCreationError);
+                const partnerId = urlMatch[1];
+                const token = urlMatch[2];
 
-        let finalStatus = 'Failed - Offer Creation Error';
-        if (lastOfferCreationError && lastOfferCreationError.message && lastOfferCreationError.message.toLowerCase().includes('malformed')) {
-            finalStatus = 'Failed - Malformed Trade URL';
-             if (io && winner._id) {
-                io.to(winner._id.toString()).emit('notification', {
-                    type: 'error',
-                    message: 'Your trade URL appears to be malformed. Please get a new one from Steam and update your profile.'
-                });
+                // Convert partner ID to SteamID64
+                // const SteamID = require('steamid'); // Already required globally
+                const steamIdObj = new SteamID();
+                steamIdObj.universe = SteamID.Universe.PUBLIC;
+                steamIdObj.type = SteamID.Type.INDIVIDUAL;
+                steamIdObj.instance = SteamID.Instance.DESKTOP;
+                steamIdObj.accountid = parseInt(partnerId);
+
+                // Create offer with SteamID and set token
+                offer = manager.createOffer(steamIdObj.getSteamID64()); // Use SteamID64 string
+                offer.setToken(token);
+
+                if (!offer || typeof offer.addMyItems !== 'function') {
+                     throw new Error("Alternative offer creation resulted in an invalid offer object.");
+                }
+                console.log(`[${timestamp}] ✓ Offer created using alternative method (SteamID + token)`);
+            } catch (altError) {
+                console.error(`[${timestamp}] Alternative offer creation also failed:`, altError.message);
+                // If alternative also fails, and retry attempts are left, retry the original method.
+                // Otherwise, proceed to error handling.
+                if (retryAttempt < MAX_TRADE_RETRY_ATTEMPTS) {
+                    console.log(`[${timestamp}] Retrying payout (attempt ${retryAttempt + 1} of ${MAX_TRADE_RETRY_ATTEMPTS}) due to offer creation error (after alt failed)...`);
+                    await new Promise(resolve => setTimeout(resolve, 6000 * (retryAttempt + 1)));
+                    return sendWinningTradeOffer(roundDoc, winner, itemsToSend, retryAttempt + 1);
+                }
+                const status = 'Failed - Offer Creation Error';
+                await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: status } });
+                 if (io && winner._id) {
+                    io.to(winner._id.toString()).emit('notification', { type: 'error', message: 'Could not create trade offer. Please verify your trade URL and try again.' });
+                }
+                return { success: false, error: `Primary and alternative offer creation failed: ${altError.message}`, payoutOfferStatusUpdate: status };
             }
-        }
-
-        if (retryAttempt < MAX_TRADE_RETRY_ATTEMPTS && finalStatus !== 'Failed - Malformed Trade URL') { // Don't retry malformed indefinitely
-            console.log(`[${timestamp}] Retrying payout for round ${roundDoc.roundId} after offer creation failure (attempt ${retryAttempt + 2})...`);
+        } else if (retryAttempt < MAX_TRADE_RETRY_ATTEMPTS) { // Original method failed, but not first attempt, so retry original
+            console.log(`[${timestamp}] Retrying payout (attempt ${retryAttempt + 1} of ${MAX_TRADE_RETRY_ATTEMPTS}) due to offer creation error...`);
             await new Promise(resolve => setTimeout(resolve, 6000 * (retryAttempt + 1)));
             return sendWinningTradeOffer(roundDoc, winner, itemsToSend, retryAttempt + 1);
+        } else { // Original method failed, and no retries left / or not first attempt and alt already tried
+            const status = 'Failed - Offer Creation Error';
+            await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: status } });
+            if (io && winner._id) {
+                 io.to(winner._id.toString()).emit('notification', { type: 'error', message: 'Could not create trade offer. Please verify your trade URL and try again.' });
+            }
+            return { success: false, error: 'Could not create trade offer: ' + error.message, payoutOfferStatusUpdate: status };
         }
-
-        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: finalStatus } });
-         if (io && winner._id && finalStatus === 'Failed - Offer Creation Error') { // General creation error
-             io.to(winner._id.toString()).emit('notification', { type: 'error', message: 'Could not create trade offer. Please try again or contact support.'});
-         }
-        return;
     }
 
-    // Offer object is now available
     try {
-        console.log(`[${timestamp}] Round ${roundDoc.roundId}: Proceeding to add items and send offer for ${winner.username}.`);
-
+        console.log(`[${timestamp}] Adding items and sending offer...`);
         const itemsForOffer = itemsToSend.map(item => ({
-            assetid: String(item.assetId || item.id), // Handle if assetId is under 'id' property
+            assetid: String(item.assetId || item.id),
             appid: RUST_APP_ID,
-            contextid: String(RUST_CONTEXT_ID) // Ensure contextid is string if manager expects it
+            contextid: String(RUST_CONTEXT_ID)
         }));
+        console.log(`[${timestamp}] Items being added:`, itemsForOffer.map(i => i.assetid));
+        offer.addMyItems(itemsForOffer);
 
-        console.log(`[${timestamp}] Round ${roundDoc.roundId}: Items being prepared for offer:`, JSON.stringify(itemsForOffer.map(i => i.assetid)));
-
-        // Add items to the offer
-        const addItemsResult = offer.addMyItems(itemsForOffer);
-        if (!addItemsResult || !offer.itemsToGive || offer.itemsToGive.length !== itemsForOffer.length) {
-             // This check is important. addMyItems might return true but not add all items if some are invalid/missing from bot inv.
-            console.error(`[${timestamp}] PAYOUT_ERROR (Round ${roundDoc.roundId}): Bot failed to add all items to offer. Expected ${itemsForOffer.length}, got ${offer.itemsToGive?.length || 0}. Items might be missing from bot inventory or untradable.`);
-            await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - Bot Inventory Issue' } });
+        if (!offer.itemsToGive || offer.itemsToGive.length !== itemsForOffer.length) {
+            console.error(`[${timestamp}] PAYOUT_ERROR: Bot failed to add all items. Expected ${itemsForOffer.length}, got ${offer.itemsToGive?.length || 0}`);
+            const status = 'Failed - Bot Inventory Issue';
+            await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: status } });
             if (io && winner._id) {
-                io.to(winner._id.toString()).emit('notification', { type: 'error', message: `Critical error: Bot could not find/add all items for your winnings (Round ${roundDoc.roundId}). Contact support immediately.` });
+                io.to(winner._id.toString()).emit('notification', {
+                     type: 'error',
+                     message: `Critical error: Bot could not find all items for payout. Contact support.`
+                 });
             }
-            return;
+            return { success: false, error: 'Bot failed to add all items to trade offer.', payoutOfferStatusUpdate: status };
         }
-        console.log(`[${timestamp}] Round ${roundDoc.roundId}: Successfully added ${offer.itemsToGive.length} items to offer for ${winner.username}.`);
+        console.log(`[${timestamp}] Successfully added ${offer.itemsToGive.length} items to offer`);
 
         const offerMessage = `🎉 Round #${roundDoc.roundId} Winnings - ${process.env.SITE_NAME || 'YourSite'} - Value: $${roundDoc.totalValue.toFixed(2)} 🎉 Congratulations!`;
         offer.setMessage(offerMessage);
+        console.log(`[${timestamp}] Sending offer...`);
 
-        console.log(`[${timestamp}] Round ${roundDoc.roundId}: Offer state before send for ${winner.username}:`, {
-            state: offer.state, // ETradeOfferState
-            itemsToGiveCount: offer.itemsToGive.length,
-            itemsToReceiveCount: offer.itemsToReceive.length,
-            partnerSteamID64: offer.partner ? offer.partner.getSteamID64() : 'N/A',
-            messageSet: offer.message
-        });
-
-        console.log(`[${timestamp}] Round ${roundDoc.roundId}: Attempting to send offer to ${winner.username} (Offer ID if already set: ${offer.id})...`);
-
-        const sendResponse = await new Promise((resolveOfferSend, rejectOfferSend) => {
+        const sendResponse = await new Promise((resolve, reject) => {
             offer.send((err, status) => {
                 const callbackTimestamp = new Date().toISOString();
                 if (err) {
-                    console.error(`[${callbackTimestamp}] PAYOUT_SEND_ERROR (Round ${roundDoc.roundId}) for ${winner.username}: EResult=${err.eresult}, Message='${err.message}', Cause='${err.cause}'`, err);
-                    // Attach offer.id to the error if available for better tracking
+                    console.error(`[${callbackTimestamp}] PAYOUT_SEND_ERROR:`, err);
                     if (offer.id) err.offerId = offer.id;
-                    return rejectOfferSend(err);
+                    return reject(err);
                 }
-                console.log(`[${callbackTimestamp}] PAYOUT_SEND_SUCCESS (Round ${roundDoc.roundId}) for ${winner.username}: Status: ${status}, Offer ID: ${offer.id}, Offer State: ${TradeOfferManager.ETradeOfferState[offer.state]}`);
-                resolveOfferSend({ status, offerId: offer.id, offerState: offer.state });
+                console.log(`[${callbackTimestamp}] PAYOUT_SEND_SUCCESS: Status: ${status}, Offer ID: ${offer.id}, State: ${TradeOfferManager.ETradeOfferState[offer.state]}`);
+                resolve({ steamSendStatus: status, offerId: offer.id, offerStateEnum: offer.state });
             });
         });
 
-        const { status: steamStatus, offerId: actualOfferId, offerState } = sendResponse;
+        const { steamSendStatus, offerId: actualOfferId, offerStateEnum } = sendResponse;
         const offerURL = `https://steamcommunity.com/tradeoffer/${actualOfferId}/`;
-        let initialPayoutStatus = 'Sent'; // Default
+        let initialPayoutStatus = 'Sent';
 
-        if (offerState === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation ||
-            offerState === TradeOfferManager.ETradeOfferState.PendingConfirmation ||
-            (steamStatus === 'pending' && process.env.STEAM_IDENTITY_SECRET)) { // 'pending' status with identity secret often means bot needs to confirm
+        if (offerStateEnum === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation ||
+            offerStateEnum === TradeOfferManager.ETradeOfferState.PendingConfirmation ||
+            (steamSendStatus === 'pending' && process.env.STEAM_IDENTITY_SECRET)) {
             initialPayoutStatus = 'Pending Confirmation';
-        } else if (offerState === TradeOfferManager.ETradeOfferState.InEscrow) {
+        } else if (offerStateEnum === TradeOfferManager.ETradeOfferState.InEscrow) {
             initialPayoutStatus = 'Escrow';
+        } else if (offerStateEnum === TradeOfferManager.ETradeOfferState.Active && steamSendStatus === 'sent') {
+            initialPayoutStatus = 'Sent';
+        } else if (offerStateEnum !== TradeOfferManager.ETradeOfferState.Active) {
+            console.warn(`[${timestamp}] PAYOUT_UNEXPECTED_STATE: Offer ${actualOfferId} in state ${TradeOfferManager.ETradeOfferState[offerStateEnum]} immediately after send.`);
+            initialPayoutStatus = TradeOfferManager.ETradeOfferState[offerStateEnum] || 'Unknown After Send';
         }
-        // Note: offer.state might be ETradeOfferState.Active after a successful send if no confirmation/escrow
 
-        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferId: actualOfferId, payoutOfferStatus: initialPayoutStatus } });
-        console.log(`[${timestamp}] PAYOUT_DB_UPDATE (Round ${roundDoc.roundId}): DB updated for offer ${actualOfferId}. Status set to: ${initialPayoutStatus}.`);
+        await Round.updateOne(
+            { _id: roundDoc._id },
+            { $set: { payoutOfferId: actualOfferId, payoutOfferStatus: initialPayoutStatus } }
+        );
+        console.log(`[${timestamp}] PAYOUT_DB_UPDATE: Offer ${actualOfferId} saved with status: ${initialPayoutStatus}`);
 
         if (io && winner._id) {
-            io.to(winner._id.toString()).emit('tradeOfferSent', { roundId: roundDoc.roundId, userId: winner._id.toString(), offerId: actualOfferId, offerURL, status: initialPayoutStatus, type: 'winning' });
-            let notifMessage = `Winnings offer #${actualOfferId} (Round #${roundDoc.roundId}) has been sent! Status: ${initialPayoutStatus}. Click to view: ${offerURL}`;
-            if (initialPayoutStatus === 'Pending Confirmation') notifMessage = `Winnings offer #${actualOfferId} (Round #${roundDoc.roundId}) needs confirmation. Please check Steam.`;
-            else if (initialPayoutStatus === 'Escrow') notifMessage = `Winnings offer #${actualOfferId} (Round #${roundDoc.roundId}) is in Steam escrow. Please check your trades.`;
-            io.to(winner._id.toString()).emit('notification', { type: initialPayoutStatus === 'Sent' || initialPayoutStatus === 'Accepted' ? 'success' : 'info', message: notifMessage });
+            io.to(winner._id.toString()).emit('tradeOfferSent', {
+                roundId: roundDoc.roundId,
+                userId: winner._id.toString(),
+                offerId: actualOfferId,
+                offerURL,
+                status: initialPayoutStatus,
+                type: 'winning'
+            });
+            let notifMessage = `Winnings offer #${actualOfferId} (${initialPayoutStatus}) has been initiated! Click to view: ${offerURL}`;
+            if (initialPayoutStatus === 'Pending Confirmation') {
+                notifMessage = `Winnings offer #${actualOfferId} needs your confirmation on Steam. Click to view: ${offerURL}`;
+            } else if (initialPayoutStatus === 'Escrow') {
+                notifMessage = `Winnings offer #${actualOfferId} is in Steam escrow. Click to view: ${offerURL}`;
+            }
+            io.to(winner._id.toString()).emit('notification', {
+                 type: (initialPayoutStatus === 'Sent' || initialPayoutStatus === 'Accepted') ? 'success' : 'info',
+                 message: notifMessage
+             });
         }
-        console.log(`[${timestamp}] ========== WINNING TRADE OFFER COMPLETED for Round ${roundDoc.roundId} ==========`);
+        console.log(`[${timestamp}] ========== WINNING TRADE OFFER COMPLETED (Status: ${initialPayoutStatus}) ==========`);
+        return { success: true, offerId: actualOfferId, offerURL, status: initialPayoutStatus };
 
-    } catch (sendProcessError) { // Catches errors from offer.send() or subsequent DB updates
+    } catch (sendProcessError) {
         const errorTimestamp = new Date().toISOString();
-        console.error(`[${errorTimestamp}] PAYOUT_PROCESS_ERROR (Round ${roundDoc.roundId}) for ${winner.username}:`, sendProcessError.message, sendProcessError);
+        console.error(`[${errorTimestamp}] PAYOUT_PROCESS_ERROR (send block):`, sendProcessError.message, sendProcessError.eresult ? `EResult: ${sendProcessError.eresult}` : '');
 
-        let offerStatusUpdate = 'Failed - Send Error'; // Default for this catch block
-        let userMessage = `Error sending your winnings for round ${roundDoc.roundId}.`;
-        let shouldRetrySend = false; // Default to not retry send errors unless specified
+        let offerStatusUpdate = 'Failed - Send Error';
+        let userMessage = `Error sending winnings for round ${roundDoc.roundId}.`;
+        let shouldRetrySend = false;
 
-        if (sendProcessError.eresult) { // If the error has an EResult (likely from offer.send callback)
+        if (sendProcessError.eresult) {
             userMessage += ` (Code: ${sendProcessError.eresult})`;
             switch (sendProcessError.eresult) {
-                case 26: offerStatusUpdate = 'Failed - Invalid Trade URL'; userMessage = 'Your Steam Trade URL is invalid or expired. Please update it in your profile.'; break;
-                case 15: offerStatusUpdate = 'Failed - Inventory Private'; userMessage = 'Could not send winnings. Please ensure your Steam inventory is public and not full, or you are not trade banned.'; break; // Can also be inventory full / cannot trade
-                case 16: offerStatusUpdate = 'Failed - Trade Banned'; userMessage = 'You (or the bot) appear to be trade banned. Contact Steam support.'; break;
-                case 11: offerStatusUpdate = 'Failed - Bot Session Issue'; userMessage = 'Bot session error. Please try again.'; shouldRetrySend = true; break;
-                case 25: offerStatusUpdate = 'Failed - Rate Limited'; userMessage = 'Too many trade offers. Please try again later.'; shouldRetrySend = true; break;
-                // Add other specific EResults if needed
-                default: shouldRetrySend = true; // Retry other EResults by default if not catastrophic
+                case 26: // k_EResultRevoked (often for bad trade URL)
+                     offerStatusUpdate = 'Failed - Invalid Trade URL';
+                     // More specific message for error 26
+                     userMessage = 'Your Steam Trade URL appears to be invalid or expired. Please update it in your profile and contact support to resend your winnings.';
+                     break;
+                case 15: // k_EResultAccessDenied (inventory private)
+                     offerStatusUpdate = 'Failed - Inventory Private';
+                     userMessage = 'Could not send winnings. Please ensure your Steam inventory is public.';
+                     break;
+                case 16: // k_EResultBanned (trade banned)
+                     offerStatusUpdate = 'Failed - Trade Banned';
+                     userMessage = 'You appear to be trade banned. Contact Steam support.';
+                     break;
+                case 11: // k_EResultFail or other session related issues
+                     offerStatusUpdate = 'Failed - Bot Session Issue';
+                     userMessage = 'Bot session error sending trade. Please try again.';
+                     shouldRetrySend = true;
+                     break;
+                case 25: // k_EResultLimitExceeded (rate limit)
+                     offerStatusUpdate = 'Failed - Rate Limited';
+                     userMessage = 'Too many trade offers sent by bot. Please try again later.';
+                     shouldRetrySend = true;
+                     break;
+                // Add other specific eresult codes here if needed
+                default:
+                     shouldRetrySend = false; // Don't retry unknown eresults by default from here
             }
-        } else if (sendProcessError.message?.includes('No items were added')) { // Custom error from item adding check
-             offerStatusUpdate = 'Failed - Bot Inventory Issue';
-             userMessage = `Critical error: Bot could not prepare items for your winnings (Round ${roundDoc.roundId}). Contact support.`;
         }
 
 
         if (shouldRetrySend && retryAttempt < MAX_TRADE_RETRY_ATTEMPTS) {
-            console.log(`[${errorTimestamp}] Retrying payout for round ${roundDoc.roundId} after send process error (attempt ${retryAttempt + 2})...`);
-            if (sendProcessError.eresult === 11) await validateAndRefreshCookies(); // Force session refresh for session issues
-            await new Promise(resolve => setTimeout(resolve, 7000 * (retryAttempt + 1))); // Longer backoff for send errors
+            console.log(`[${errorTimestamp}] Retrying payout (attempt ${retryAttempt + 1} of ${MAX_TRADE_RETRY_ATTEMPTS}) due to send error ${sendProcessError.eresult}...`);
+            if (sendProcessError.eresult === 11) await validateAndRefreshCookies().catch(e => console.error("Error refreshing cookies on retry:", e));
+            await new Promise(resolve => setTimeout(resolve, 7000 * (retryAttempt + 1)));
             return sendWinningTradeOffer(roundDoc, winner, itemsToSend, retryAttempt + 1);
         }
 
-        // Final failure for this attempt or non-retryable error
-        const offerIdWithError = sendProcessError.offerId || offer?.id || null; // Get offer ID if it exists
+        const offerIdWithError = sendProcessError.offerId || offer?.id || null;
         await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferId: offerIdWithError, payoutOfferStatus: offerStatusUpdate } });
         if (io && winner._id) {
             io.to(winner._id.toString()).emit('notification', { type: 'error', message: userMessage });
         }
-        console.log(`[${errorTimestamp}] ========== WINNING TRADE OFFER FAILED for Round ${roundDoc.roundId} - Status: ${offerStatusUpdate} ==========`);
+        console.log(`[${errorTimestamp}] ========== WINNING TRADE OFFER FAILED - Status: ${offerStatusUpdate} ==========`);
+        return { success: false, error: userMessage, offerId: offerIdWithError, payoutOfferStatusUpdate: offerStatusUpdate };
     }
 }
+// END OF REPLACED FUNCTION BLOCK
 
 
 // --- Authentication Routes ---
@@ -1665,7 +1650,10 @@ app.post('/api/round/accept-winnings', ensureAuthenticated, sensitiveActionLimit
 
         console.log(`LOG_INFO: Calling sendWinningTradeOffer for round ${round.roundId}, user ${round.winner.username}. Items: ${round.items.length}`);
         // Call sendWinningTradeOffer. This function will handle setting offer status in DB.
+        // The sendWinningTradeOffer function used here now returns a detailed object,
+        // but this route does not currently use that return object.
         await sendWinningTradeOffer(round, round.winner, round.items);
+
 
         // The response here is just an acknowledgement. Actual offer status is handled by bot events.
         res.json({ success: true, message: 'Winnings accepted. Trade offer processing initiated. Watch for Steam notifications.' });
