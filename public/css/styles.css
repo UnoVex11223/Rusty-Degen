@@ -643,21 +643,22 @@ code { /* General code tag styling */
 
 .roulette-item {
     flex: 0 0 auto;
-    width: 90px; /* Item width */
-    height: 80px; /* Item height */
-    margin: 5px; /* Margin around item */
+    width: 90px;
+    height: 80px;
+    margin: 5px;
     background: rgba(30, 35, 40, 0.8);
     border-radius: 6px;
     box-shadow: var(--shadow-md);
     overflow: hidden;
     transition: transform var(--transition-medium), box-shadow var(--transition-medium);
-    border: 2px solid transparent;
+    border: 2px solid transparent; /* Change this to ensure border is visible */
+    border-width: 2px !important; /* Force border width */
     position: relative;
-    backface-visibility: hidden; /* Improve rendering performance */
+    backface-visibility: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0; /* Remove padding if image is main content */
+    padding: 0;
 }
 
 .roulette-item:hover {
@@ -1103,6 +1104,11 @@ code { /* General code tag styling */
 #faq-page .content-section.active .content-section-title::after { content: '-'; transform: rotate(180deg); }
 
 /* Provably Fair Page */
+#fair-page .content-section-body code {
+    background-color: rgba(255, 255, 255, 0.05); /* Very subtle white background instead of black */
+    color: var(--text-primary); /* White text instead of orange */
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border */
+}
 #fair-page .content-card { padding-bottom: 40px; }
 #fair-page #provably-fair-verification { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 25px; margin-top: 30px; border: 1px solid var(--border-color); }
 #fair-page .verify-form {
