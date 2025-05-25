@@ -2698,7 +2698,7 @@ function setupSocketConnection() {
         console.log('Round rolling event received:', data);
         if (currentRound && currentRound.roundId === data.roundId) {
             timerActive = false; if (roundTimer) { clearInterval(roundTimer); roundTimer = null; }
-            if (DOMElements.jackpot.timerValue) DOMElements.jackpot.timerValue.textContent = "Rolling";
+            if (DOMElements.jackpot.timerValue) DOMElements.jackpot.timerValue.textContent = "R0";
             if (DOMElements.jackpot.timerForeground) updateTimerCircle(0, CONFIG.ROUND_DURATION);
             currentRound.status = 'rolling';
             updateDepositButtonState();
