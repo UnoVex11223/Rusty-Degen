@@ -301,9 +301,8 @@ code { /* General code tag styling */
     display: none;
     position: absolute;
     top: calc(100% + 10px);
-    right: 0; /* Align to right edge of container */
-    left: auto; /* Remove left alignment */
-    transform: none; /* Remove the translateX(-50%) */
+    left: 5px; /* Align with the padded content of user-profile */
+    right: auto;
     z-index: 1000;
     background-color: var(--background-dark);
     border: 1px solid var(--border-color);
