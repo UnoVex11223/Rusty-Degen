@@ -908,7 +908,7 @@ function updateUserUI() {
     }
 }
 
-// main.js - Rust Jackpot Frontend Logic - Part 2 of 2 (placeholder for next part)
+// main.js - Rust Jackpot Frontend Logic - Part 1 of 2 (Inventory Display Change)
 async function loadUserInventory() {
     const { inventoryItemsContainer, selectedItemsContainer, inventoryLoadingIndicator, totalValueDisplay } = DOMElements.deposit;
     if (!inventoryItemsContainer || !selectedItemsContainer || !inventoryLoadingIndicator || !totalValueDisplay) {
@@ -952,11 +952,14 @@ async function loadUserInventory() {
     }
 }
 
-
 function displayInventoryItems() {
     const container = DOMElements.deposit.inventoryItemsContainer;
     if (!container) return;
     container.innerHTML = ''; // Clear previous items
+
+    // Sort userInventory by price in descending order (highest price first)
+    // Ensure price is treated as a number, default to 0 if undefined or NaN
+    userInventory.sort((a, b) => (b.price || 0) - (a.price || 0));
 
     userInventory.forEach(item => {
         if (!item || typeof item.price !== 'number' || isNaN(item.price) || !item.assetId || !item.image) {
@@ -988,7 +991,6 @@ function displayInventoryItems() {
         container.appendChild(itemElement);
     });
 }
-
 
 function toggleItemSelection(element, itemObject) {
     if (typeof itemObject.price !== 'number' || isNaN(itemObject.price)) {
@@ -3106,5 +3108,5 @@ document.addEventListener('DOMContentLoaded', () => {
     updateChatUI(); // Initial chat UI update
 });
 
-console.log("main.js updated with winner boxes logic, findWinnerFromData modified, and initialization calls.");
+console.log("main.js updated with inventory sorting, winner boxes logic, findWinnerFromData modified, and initialization calls.");
 console.log("Chat messages are now limited to 20 and persist in localStorage.");
