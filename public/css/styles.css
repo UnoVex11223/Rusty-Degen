@@ -300,7 +300,7 @@ code { /* General code tag styling */
     display: none;
     position: absolute;
     top: calc(100% + 10px);
-    left: 5px; /* Aligns with the padding of user-profile */
+    left: 0; /* Align with left edge of container */
     right: auto;
     z-index: 1000;
     background-color: var(--background-dark);
