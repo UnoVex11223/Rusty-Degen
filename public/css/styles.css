@@ -296,12 +296,11 @@ code { /* General code tag styling */
 /* --- End Pending Offer Indicator --- */
 
 
-/* --- Dropdown Menu (MODIFIED for centering) --- */
 .dropdown-menu {
     display: none;
     position: absolute;
     top: calc(100% + 10px);
-    left: 0px; /* Align with the padded content of user-profile */
+    left: 5px; /* Aligns with the padding of user-profile */
     right: auto;
     z-index: 1000;
     background-color: var(--background-dark);
@@ -311,7 +310,6 @@ code { /* General code tag styling */
     min-width: 220px;
     overflow: hidden;
 }
-
 .dropdown-actions { padding: 8px 0; }
 
 .dropdown-item {
