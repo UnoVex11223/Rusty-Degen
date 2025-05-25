@@ -1077,7 +1077,7 @@ function updateTimerUI(timeLeft) {
             displayValue = timeToShow.toString();
         }
     } else if (isSpinning || (currentRound && currentRound.status === 'rolling')) {
-        displayValue = "Rolling";
+        displayValue = "0";
     } else if (currentRound && (currentRound.status === 'completed' || currentRound.status === 'completed_pending_acceptance' || currentRound.status === 'error')) {
         displayValue = "Ended";
     } else if (currentRound && currentRound.status === 'pending') {
@@ -2516,9 +2516,7 @@ function setupSocketConnection() {
             // The actual update to winner boxes is now inside handleWinnerAnnouncement
             handleWinnerAnnouncement(data); // This starts roulette and updates winner boxes
 
-            if (currentUser && (data.winner.id === currentUser._id || data.winner.id === currentUser.id)) {
-                showNotification('Congratulations, You Won! Prepare to accept your winnings after the animation.', 'success', 10000);
-            }
+          
         } else {
             console.warn("Received 'roundWinnerPendingAcceptance' for mismatched round ID. Current:", currentRound?.roundId, "Received:", data.roundId);
         }
