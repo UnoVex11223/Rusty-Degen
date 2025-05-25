@@ -20,7 +20,7 @@ const CONFIG = {
     BOUNCE_DAMPING: 0.35,
     BOUNCE_FREQUENCY: 3.5,
     LANDING_POSITION_VARIATION: 0.60, // How much the roulette can vary from perfect center
-    MAX_CHAT_MESSAGES: 100, // Max chat messages to display (Increased from 10 for better history)
+    MAX_CHAT_MESSAGES: 20, // Changed from 100 to 20
     CHAT_SEND_COOLDOWN_MS: 2000,
     HOURS_FOR_HIGHEST_POT: 24, // Duration for "24H Highest Pot"
 };
@@ -344,9 +344,148 @@ function startWinnerBoxTimestampUpdates() {
     //    // Logic to update timestamps in winner boxes if they exist
     // }, 60000); // Update every minute
 }
-
-
 // --- End Winner Box Helper Functions ---
+
+// --- Chat Persistence Helper Functions ---
+function saveChatMessagesToStorage() {
+    const messagesContainer = DOMElements.chat.messagesContainer;
+    if (!messagesContainer) return;
+
+    const messages = [];
+    // querySelectorAll returns elements in document order.
+    // Since messages are prepended, messagesContainer.children[0] is newest.
+    // We want to save them in an array where messages[0] is the newest displayed,
+    // so that when loading, we iterate and prepend, resulting in newest on top.
+    const messageElements = messagesContainer.querySelectorAll('.chat-message');
+
+    // Iterate from newest on screen (last in NodeList from querySelectorAll if prepended)
+    // to oldest on screen (first in NodeList).
+    // This means the 'messages' array will store [NewestOnScreen, ..., OldestOnScreen]
+    for (let i = messageElements.length - 1; i >= 0; i--) {
+        const msgEl = messageElements[i];
+        const isSystem = msgEl.classList.contains('system-message');
+
+        if (isSystem) {
+            messages.unshift({ // unshift to maintain newest at [0] for saving, or push if reversing loop
+                type: 'system',
+                message: msgEl.textContent,
+                timestamp: new Date().toISOString()
+            });
+        } else {
+            const avatar = msgEl.querySelector('.chat-message-avatar')?.src || '/img/default-avatar.png';
+            const username = msgEl.querySelector('.chat-message-user')?.textContent || 'Anonymous';
+            const message = msgEl.querySelector('.chat-message-text')?.textContent || '';
+            const userId = msgEl.dataset.userId || null;
+            const userSteamId = msgEl.dataset.userSteamId || null;
+
+            messages.unshift({ // unshift to build array with oldest first for localStorage
+                type: 'user',
+                username,
+                avatar,
+                message,
+                userId,
+                userSteamId,
+                timestamp: new Date().toISOString()
+            });
+        }
+    }
+    // At this point, 'messages' array has the oldest displayed message at index 0
+    // and the newest displayed message at the last index.
+    // This is the order we want for loading and prepending.
+
+    // Let's re-verify the order logic from the prompt.
+    // Prompt's save: `for (let i = messageElements.length - 1; i >= 0; i--) { messages.push(...) }`
+    // `messageElements` are in DOM order. If prepended, `messageElements[0]` is oldest, `messageElements[length-1]` is newest.
+    // Loop from newest to oldest, `push`ing. So `localStorage` stores `[Newest, SecondNewest, ..., Oldest]`.
+    // Prompt's load: `messages.forEach(msgData => { displayChatMessage(msgData, false); });`
+    // `displayChatMessage(Newest)` (prepends) -> `[Newest]`
+    // `displayChatMessage(SecondNewest)` (prepends) -> `[SecondNewest, Newest]`
+    // This is correct as per the prompt's snippet. I will stick to the prompt's snippet structure.
+    const messagesToStore = [];
+    // const messageElements = messagesContainer.querySelectorAll('.chat-message'); // These are in source order.
+                                                                            // If prepended, messagesContainer.children[0] is newest.
+                                                                            // querySelectorAll returns them in the order they appear in the document.
+                                                                            // So messageElements[0] is the oldest of the current 20.
+                                                                            // messageElements[messageElements.length-1] is the newest.
+
+    const currentMessageNodes = Array.from(messagesContainer.children); // newest is [0], oldest is [length-1]
+
+    for (let i = currentMessageNodes.length - 1; i >= 0; i--) { // Iterate from oldest on screen to newest on screen
+        const msgEl = currentMessageNodes[i];
+        const isSystem = msgEl.classList.contains('system-message');
+
+        if (isSystem) {
+            messagesToStore.push({
+                type: 'system',
+                message: msgEl.textContent,
+                timestamp: msgEl.dataset.timestamp || new Date().toISOString() // Preserve original timestamp if available
+            });
+        } else {
+            const avatar = msgEl.querySelector('.chat-message-avatar')?.src || '/img/default-avatar.png';
+            const username = msgEl.querySelector('.chat-message-user')?.textContent || 'Anonymous';
+            const message = msgEl.querySelector('.chat-message-text')?.textContent || '';
+            const userId = msgEl.dataset.userId || null;
+            const userSteamId = msgEl.dataset.userSteamId || null;
+
+            messagesToStore.push({
+                type: 'user',
+                username,
+                avatar,
+                message,
+                userId,
+                userSteamId,
+                timestamp: msgEl.dataset.timestamp || new Date().toISOString() // Preserve original timestamp
+            });
+        }
+    }
+    // messagesToStore is now [OldestOnScreen, ..., NewestOnScreen]
+    // This is the correct order for localStorage if loading iterates and prepends.
+
+    try {
+        localStorage.setItem('chatMessages', JSON.stringify(messagesToStore));
+    } catch (e) {
+        console.error("Error saving chat messages to localStorage:", e);
+    }
+}
+
+function loadChatMessagesFromStorage() {
+    const messagesContainer = DOMElements.chat.messagesContainer;
+    if (!messagesContainer) return;
+
+    try {
+        const savedMessages = localStorage.getItem('chatMessages');
+        if (savedMessages) {
+            const messages = JSON.parse(savedMessages); // Expected: [Oldest, ..., Newest]
+
+            // Clear existing messages first
+            messagesContainer.innerHTML = '';
+
+            // Load messages. displayChatMessage prepends.
+            // So, iterating from Oldest to Newest and prepending will result in Newest on top.
+            messages.forEach(msgData => {
+                displayChatMessage(msgData, false); // false = don't save while loading
+            });
+        } else {
+            // No saved messages, show welcome message
+            displayChatMessage({
+                type: 'system',
+                message: 'Welcome to Rusty Degen chat! Messages are limited to 20 and persist across sessions.',
+                timestamp: new Date().toISOString()
+            }, true); // Save this initial welcome message
+        }
+    } catch (e) {
+        console.error("Error loading chat messages from localStorage:", e);
+        // Fallback: show a simple welcome/error message if parsing fails
+        messagesContainer.innerHTML = '';
+         displayChatMessage({
+            type: 'system',
+            message: 'Error loading chat history. Welcome!',
+            timestamp: new Date().toISOString()
+        }, false); // Don't save the error message itself
+    }
+}
+// --- End Chat Persistence Helper Functions ---
+
 
 function showModal(modalElement) {
     if (modalElement) modalElement.style.display = 'flex';
@@ -2297,15 +2436,16 @@ function updateChatUI() {
     if (onlineUsers) onlineUsers.textContent = onlineUserCount;
 }
 
-function displayChatMessage(messageData) {
+function displayChatMessage(messageData, shouldSave = true) { // Added shouldSave parameter
     const { messagesContainer } = DOMElements.chat;
     if (!messagesContainer) return;
 
-    const { type = 'user', username, avatar, message, userId, userSteamId } = messageData;
+    const { type = 'user', username, avatar, message, userId, userSteamId, timestamp } = messageData;
     const messageElement = document.createElement('div');
     messageElement.classList.add('chat-message');
     if (userId) messageElement.dataset.userId = userId;
     if (userSteamId) messageElement.dataset.userSteamId = userSteamId;
+    if (timestamp) messageElement.dataset.timestamp = timestamp; // Store timestamp on element
 
     if (type === 'system') {
         messageElement.classList.add('system-message');
@@ -2329,6 +2469,11 @@ function displayChatMessage(messageData) {
     while (messagesContainer.children.length > CONFIG.MAX_CHAT_MESSAGES) {
         messagesContainer.removeChild(messagesContainer.lastChild);
     }
+
+    // Save to localStorage after displaying (only if not loading from storage)
+    if (shouldSave) {
+        saveChatMessagesToStorage();
+    }
 }
 
 
@@ -2338,6 +2483,7 @@ function handleSendMessage() {
 
     const messageText = messageInput.value.trim();
     if (messageText) {
+        // Emit the raw message. The server will construct the full messageData object.
         socket.emit('chatMessage', messageText);
         messageInput.value = '';
         isChatSendOnCooldown = true;
@@ -2360,6 +2506,7 @@ function handleSendMessage() {
                 }
             }, 1000);
         }
+        // setTimeout is still a good fallback if interval logic has issues
         setTimeout(() => {
             isChatSendOnCooldown = false;
             if(currentUser && sendMessageBtn && !sendMessageBtn.textContent.startsWith("Wait")) {
@@ -2691,8 +2838,8 @@ function setupSocketConnection() {
             showNotification(data.message || 'Received notification from server.', data.type || 'info', data.duration || 4000);
         }
     });
-    socket.on('chatMessage', (data) => {
-        displayChatMessage(data);
+    socket.on('chatMessage', (data) => { // Server sends the full messageData object
+        displayChatMessage(data); // defaults to shouldSave = true
     });
     socket.on('updateUserCount', (count) => {
         updateChatOnlineUsers(count);
@@ -2949,6 +3096,9 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeWinnerBoxes();
     startWinnerBoxTimestampUpdates(); // Placeholder for now
 
+    // Load saved chat messages
+    loadChatMessagesFromStorage();
+
     if (!ageVerified && DOMElements.ageVerification.modal) {
         // Age verification modal shown via login button click if not verified
     }
@@ -2957,3 +3107,4 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log("main.js updated with winner boxes logic, findWinnerFromData modified, and initialization calls.");
+console.log("Chat messages are now limited to 20 and persist in localStorage.");
