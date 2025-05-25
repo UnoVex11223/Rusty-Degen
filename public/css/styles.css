@@ -298,12 +298,12 @@ code { /* General code tag styling */
 
 /* --- Dropdown Menu (MODIFIED for centering) --- */
 .dropdown-menu {
-    display: none; /* JS toggles this to 'block' */
+    display: none;
     position: absolute;
-    top: calc(100% + 10px); /* Position 10px below the user-profile-container's bottom edge */
-    left: 50%; /* Start at the horizontal center of the user-profile-container */
-    right: auto; /* Remove explicit right alignment */
-    transform: translateX(-50%); /* Shift left by half its own width to achieve centering */
+    top: calc(100% + 10px);
+    right: 0; /* Align to right edge of container */
+    left: auto; /* Remove left alignment */
+    transform: none; /* Remove the translateX(-50%) */
     z-index: 1000;
     background-color: var(--background-dark);
     border: 1px solid var(--border-color);
@@ -1133,7 +1133,17 @@ code { /* General code tag styling */
 .verification-result h4 { margin-top: 0; margin-bottom: 15px; color: var(--primary-color); }
 .verification-result p { margin-bottom: 8px; word-wrap: break-word; }
 .verification-result strong { color: var(--text-accent); }
-.verification-result code.seed-value { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; display: inline-block; }
+.verification-result code.seed-value { 
+    background-color: var(--background-dark); 
+    padding: 3px 6px; 
+    border-radius: 4px; 
+    font-family: var(--font-mono); 
+    color: var(--text-primary);
+    font-size: 0.9em; 
+    border: 1px solid var(--border-color); 
+    word-break: break-all; 
+    display: inline-block; 
+}
 .verification-result code.wrap-anywhere { word-break: break-all; }
 
 /* Round History Table - Base styles (used for both Provably Fair and Winning History) */
@@ -1275,11 +1285,9 @@ code { /* General code tag styling */
     display: flex;
     flex-direction: column;
     padding: 0;
-    /* MODIFIED: Removed fixed height to allow stretching by parent */
-    /* height: 600px; */
-    /* max-height: 70vh; */ /* Also removed to let stretch dictate */
+    height: 600px; /* Add fixed height */
+    max-height: 600px; /* Ensure it doesn't grow */
 }
-
 .chat-header {
     display: flex;
     justify-content: space-between;
@@ -1436,7 +1444,7 @@ code { /* General code tag styling */
     display: flex;
     flex-direction: column;
     gap: 20px;
-    /* Height will be determined by align-items: stretch from parent */
+    height: 600px; /* Add fixed height to match chat */
 }
 
 .winner-box {
@@ -1447,7 +1455,7 @@ code { /* General code tag styling */
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    flex-grow: 1; /* Allow individual boxes to grow if winner-boxes-container stretches */
+    height: 290px; /* Fixed height instead of flex-grow */
 }
 
 .winner-box-header {
