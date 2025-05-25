@@ -70,7 +70,7 @@ const server = http.createServer(app);
 const io = socketIo(server, { cors: { origin: process.env.SITE_URL || "*", methods: ["GET", "POST"] } });
 
 // --- Security Middleware ---
-app.set('trust proxy', 1);
+app.set('trust proxy', 1); // This tells Express to trust the first hop from a proxy
 app.use(
     helmet.contentSecurityPolicy({
         directives: {
@@ -107,17 +107,23 @@ app.use(
     })
 );
 
+// Rate limiters for HTTP requests
 const generalApiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false });
 const authLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 10, message: 'Too many login attempts from this IP, please try again after 10 minutes', standardHeaders: true, legacyHeaders: false });
 const sensitiveActionLimiter = rateLimit({ windowMs: 5 * 60 * 1000, max: 20, message: 'Too many requests for this action, please try again after 5 minutes', standardHeaders: true, legacyHeaders: false });
 const depositLimiter = rateLimit({ windowMs: 1 * 60 * 1000, max: 10, message: 'Too many deposit attempts, please wait a minute.', standardHeaders: true, legacyHeaders: false });
-const chatLimiter = rateLimit({ windowMs: 60 * 1000, max: 20,
+
+// This chatLimiter is defined but will NOT be used for Socket.IO events directly to prevent the errors.
+// It could be used if you had an HTTP endpoint for submitting chat messages.
+const chatLimiter = rateLimit({
+    windowMs: 60 * 1000, // 1 minute
+    max: 20, // Max 20 chat messages per IP per minute via an HTTP route (if one existed)
     message: 'Too many chat messages from this IP. Please wait a moment.',
     standardHeaders: true,
     legacyHeaders: false
 });
 
-app.use('/api/', generalApiLimiter);
+app.use('/api/', generalApiLimiter); // Apply general limiter to all /api/ HTTP routes
 app.use(cors({ origin: process.env.SITE_URL || "*", credentials: true }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -2276,7 +2282,9 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('chatMessage', chatLimiter, (msg) => { // Added chatLimiter here for socket events if needed, or rely on IP based for HTTP
+    // MODIFIED: Removed chatLimiter from here.
+    // The custom cooldown logic inside this handler will be used.
+    socket.on('chatMessage', (msg) => {
         if (!user || !user._id) {
             socket.emit('notification', {type: 'error', message: 'You must be logged in to chat.'});
             return;
