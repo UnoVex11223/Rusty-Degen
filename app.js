@@ -276,9 +276,17 @@ const roundSchema = new mongoose.Schema({
 roundSchema.index({ 'participants.user': 1 }); // For finding rounds a user participated in
 roundSchema.index({ winner: 1, status: 1, completedTime: -1 }); // For user winning history
 
+// --- NEW: Schema for Price Backup ---
+const priceBackupSchema = new mongoose.Schema({
+    _id: { type: String, default: 'lastKnownPrices' }, // Using a fixed ID for a single document
+    prices: { type: Map, of: Number }, // Store prices as a map: { "itemName": price }
+    lastUpdated: { type: Date }
+});
+
 const User = mongoose.model('User', userSchema);
 const Item = mongoose.model('Item', itemSchema);
 const Round = mongoose.model('Round', roundSchema);
+const PriceBackup = mongoose.model('PriceBackup', priceBackupSchema); // Added PriceBackup model
 
 // --- Steam Bot Setup ---
 const community = new SteamCommunity();
@@ -945,6 +953,7 @@ function getFallbackPrice(marketHashName) {
     return MIN_ITEM_VALUE > 0 ? MIN_ITEM_VALUE : 0;
 }
 
+// --- MODIFIED: refreshPriceCache with fallback logic ---
 async function refreshPriceCache() {
     console.log("PRICE_INFO: Attempting to refresh price cache from rust.scmm.app...");
     const apiUrl = `https://rust.scmm.app/api/item/prices?currency=USD`;
@@ -953,23 +962,42 @@ async function refreshPriceCache() {
         if (response.data && Array.isArray(response.data)) {
             const items = response.data;
             let updatedCount = 0;
-            let newItems = [];
+            const newItemsForCache = []; // For NodeCache mset
+            const pricesToBackup = new Map(); // For MongoDB backup
+
             items.forEach(item => {
                 if (item?.name && typeof item.price === 'number' && item.price >= 0) {
                     const priceInDollars = item.price / 100.0;
-                    newItems.push({ key: item.name, val: priceInDollars });
+                    newItemsForCache.push({ key: item.name, val: priceInDollars });
+                    pricesToBackup.set(item.name, priceInDollars);
                     updatedCount++;
                 }
             });
-            if (newItems.length > 0) {
-                const success = priceCache.mset(newItems);
-                if(success) console.log(`PRICE_SUCCESS: Refreshed price cache with ${updatedCount} items from rust.scmm.app.`);
-                else console.error("PRICE_ERROR: Failed to bulk set price cache (node-cache mset returned false).");
+
+            if (newItemsForCache.length > 0) {
+                const success = priceCache.mset(newItemsForCache);
+                if(success) {
+                    console.log(`PRICE_SUCCESS: Refreshed in-memory price cache with ${updatedCount} items from rust.scmm.app.`);
+                    // Persist these successful prices to MongoDB
+                    try {
+                        await PriceBackup.updateOne(
+                            { _id: 'lastKnownPrices' },
+                            { prices: pricesToBackup, lastUpdated: new Date() },
+                            { upsert: true }
+                        );
+                        console.log("PRICE_DB_SUCCESS: Successfully backed up prices to MongoDB.");
+                    } catch (dbError) {
+                        console.error("PRICE_DB_ERROR: Failed to backup prices to MongoDB:", dbError);
+                    }
+                } else {
+                    console.error("PRICE_ERROR: Failed to bulk set in-memory price cache (node-cache mset returned false).");
+                }
             } else {
                 console.warn("PRICE_WARN: No valid items found in the response from rust.scmm.app price refresh.");
             }
         } else {
-            console.error("PRICE_ERROR: Invalid or empty array response received from rust.scmm.app price refresh. Response Status:", response.status);
+            console.error("PRICE_ERROR: Invalid or empty array response received from rust.scmm.app price refresh. Status:", response.status, ". Attempting to load from backup.");
+            await loadPricesFromBackup();
         }
     } catch (error) {
         console.error(`PRICE_ERROR: Failed to fetch prices from ${apiUrl}.`);
@@ -982,8 +1010,39 @@ async function refreshPriceCache() {
         } else {
             console.error(' -> Error setting up request:', error.message);
         }
+        console.log("PRICE_INFO: API fetch failed. Attempting to load prices from backup...");
+        await loadPricesFromBackup();
     }
 }
+
+// --- NEW: Function to load prices from MongoDB backup to in-memory cache ---
+async function loadPricesFromBackup() {
+    try {
+        const backup = await PriceBackup.findById('lastKnownPrices');
+        if (backup && backup.prices && backup.prices.size > 0) {
+            const priceArrayFromBackup = [];
+            for (const [key, value] of backup.prices) {
+                priceArrayFromBackup.push({ key: key, val: value });
+            }
+
+            if (priceArrayFromBackup.length > 0) {
+                const success = priceCache.mset(priceArrayFromBackup);
+                if (success) {
+                    console.log(`PRICE_FALLBACK_SUCCESS: Successfully loaded ${priceArrayFromBackup.length} items from MongoDB backup into in-memory cache. Last backup: ${backup.lastUpdated}`);
+                } else {
+                    console.error("PRICE_FALLBACK_ERROR: Failed to bulk set in-memory price cache from backup.");
+                }
+            } else {
+                console.warn("PRICE_FALLBACK_WARN: Price backup found but contained no items.");
+            }
+        } else {
+            console.warn("PRICE_FALLBACK_WARN: No price backup found in MongoDB or backup is empty.");
+        }
+    } catch (dbError) {
+        console.error("PRICE_FALLBACK_DB_ERROR: Error loading prices from MongoDB backup:", dbError);
+    }
+}
+
 
 function getItemPrice(marketHashName) {
     if (typeof marketHashName !== 'string' || marketHashName.length === 0) {
@@ -1139,7 +1198,7 @@ async function endRound() {
 
         const round = await Round.findById(roundMongoId)
             .populate('participants.user', 'steamId username avatar tradeUrl')
-            .populate('items')
+            .populate('items') // Ensure items are fully populated with price, assetId, name etc.
             .lean();
 
         if (!round) throw new Error(`Round ${roundIdToEnd} data missing after status update.`);
@@ -1147,7 +1206,7 @@ async function endRound() {
             console.warn(`WARN: Round ${roundIdToEnd} status changed unexpectedly after marking as rolling. Aborting endRound.`);
             isRolling = false; return;
         }
-        currentRound = round;
+        currentRound = round; // Update currentRound with fully populated data
 
         if (round.participants.length === 0 || round.items.length === 0 || round.totalValue <= 0) {
             console.log(`LOG_INFO: Round ${round.roundId} ended with no valid participants or value.`);
@@ -1158,37 +1217,58 @@ async function endRound() {
             return;
         }
 
-        let finalItems = [...round.items];
+        let finalItems = [...round.items]; // Items that will go to the winner
         let originalPotValue = round.totalValue;
         let valueForWinner = originalPotValue;
         let taxAmount = 0;
-        let taxedItemsInfo = [];
-        let itemsToTakeForTaxIds = new Set();
+        let taxedItemsInfo = []; // For storing info about items taken as tax
+        let itemsToTakeForTaxIds = new Set(); // Stores _id of items to be taxed
 
-        if (originalPotValue >= MIN_POT_FOR_TAX) {
-            const targetTaxValue = originalPotValue * (TAX_MIN_PERCENT / 100);
-            const maxTaxValue = originalPotValue * (TAX_MAX_PERCENT / 100);
-            const sortedItemsForTax = [...round.items].sort((a, b) => a.price - b.price);
+        // Calculate potential tax range
+        const targetTaxValue = originalPotValue * (TAX_MIN_PERCENT / 100); // Minimum desired tax (e.g., 5%)
+        const maxTaxValue = originalPotValue * (TAX_MAX_PERCENT / 100);    // Maximum allowed tax (e.g., 10%)
+
+        // Attempt to collect tax if pot has value and items
+        if (originalPotValue > 0 && round.items && round.items.length > 0) {
+            // Sort items by price, ascending, to pick smallest valuable items first for tax
+            const sortedItemsForTax = [...round.items].filter(item => typeof item.price === 'number').sort((a, b) => a.price - b.price);
             let currentTaxValueAccumulated = 0;
 
             for (const item of sortedItemsForTax) {
                 if (currentTaxValueAccumulated + item.price <= maxTaxValue) {
                     itemsToTakeForTaxIds.add(item._id.toString());
-                    taxedItemsInfo.push({ assetId: item.assetId, name: item.name, price: item.price }); // Ensure correct assetId is used if it matters for display
+                    taxedItemsInfo.push({ assetId: item.assetId, name: item.name, price: item.price });
                     currentTaxValueAccumulated += item.price;
-                    if (currentTaxValueAccumulated >= targetTaxValue) break;
+
+                    if (currentTaxValueAccumulated >= targetTaxValue) {
+                        break;
+                    }
                 } else {
                     break;
                 }
             }
 
-            if (itemsToTakeForTaxIds.size > 0) {
+            if (itemsToTakeForTaxIds.size > 0 && currentTaxValueAccumulated >= targetTaxValue) {
                 finalItems = round.items.filter(item => !itemsToTakeForTaxIds.has(item._id.toString()));
                 taxAmount = currentTaxValueAccumulated;
                 valueForWinner = originalPotValue - taxAmount;
                 console.log(`LOG_INFO: Tax Applied for Round ${round.roundId}: $${taxAmount.toFixed(2)} (${itemsToTakeForTaxIds.size} items). Original Value: $${originalPotValue.toFixed(2)}. New Pot Value for Winner: $${valueForWinner.toFixed(2)}`);
+            } else {
+                if (itemsToTakeForTaxIds.size > 0 && currentTaxValueAccumulated < targetTaxValue) {
+                    console.log(`LOG_INFO: Tax not applied for Round ${round.roundId}. Collected $${currentTaxValueAccumulated.toFixed(2)} (${itemsToTakeForTaxIds.size} items), which is less than target ${targetTaxValue.toFixed(2)} (${TAX_MIN_PERCENT}%). Items will not be taxed.`);
+                } else if (itemsToTakeForTaxIds.size === 0) {
+                    console.log(`LOG_INFO: No suitable items found for tax in Round ${round.roundId} that fit within the ${TAX_MIN_PERCENT}-${TAX_MAX_PERCENT}% range of pot value $${originalPotValue.toFixed(2)}.`);
+                }
+                itemsToTakeForTaxIds.clear();
+                taxedItemsInfo = [];
+                taxAmount = 0;
+                valueForWinner = originalPotValue;
+                finalItems = [...round.items];
             }
+        } else {
+            console.log(`LOG_INFO: Tax not applicable for Round ${round.roundId}: Pot value is $${originalPotValue.toFixed(2)} or no items in pot.`);
         }
+
 
         const clientSeed = crypto.randomBytes(16).toString('hex');
         const combinedString = round.serverSeed + clientSeed;
@@ -1221,7 +1301,7 @@ async function endRound() {
             provableHash: provableHash, winningTicket: winningTicket, winner: winnerInfo._id,
             taxAmount: taxAmount, taxedItems: taxedItemsInfo,
             totalValue: valueForWinner,
-            items: finalItems.map(i => i._id), // Store IDs of items won (these items now have the bot's assetIds)
+            items: finalItems.map(i => i._id),
             payoutOfferStatus: 'PendingAcceptanceByWinner'
         };
 
@@ -2575,7 +2655,7 @@ app.post('/api/verify', sensitiveActionLimiter,
 
 async function startApp() {
     console.log("LOG_INFO: Performing initial price cache refresh...");
-    await refreshPriceCache();
+    await refreshPriceCache(); // This will now attempt to load from backup if API fails
     setInterval(async () => {
         try { await refreshPriceCache(); }
         catch (refreshErr) { console.error("Error during scheduled price cache refresh:", refreshErr); }
