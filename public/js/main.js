@@ -2848,17 +2848,28 @@ function setupSocketConnection() {
     });
 
     socket.on('timerUpdate', (data) => {
-        if (data && typeof data.timeLeft === 'number' && currentRound && (currentRound.status === 'active' || currentRound.status === 'pending')) {
-            currentRound.timeLeft = data.timeLeft;
-            if (!timerActive && data.timeLeft > 0 && currentRound.participants?.length > 0 && currentRound.status === 'active') {
-                startClientTimer(data.timeLeft);
-            } else {
+    if (data && typeof data.timeLeft === 'number' && currentRound && (currentRound.status === 'active' || currentRound.status === 'pending')) {
+        // Only sync if we don't have an active timer or if the difference is significant
+        if (!timerActive && data.timeLeft > 0 && currentRound.participants?.length > 0 && currentRound.status === 'active') {
+            startClientTimer(data.timeLeft);
+        } else if (timerActive) {
+            // If timer is active, only update if there's a significant difference (>2 seconds)
+            const currentTimeLeft = currentRound.timeLeft || 0;
+            const timeDifference = Math.abs(currentTimeLeft - data.timeLeft);
+            
+            if (timeDifference > 2) {
+                console.log(`Timer sync: Server says ${data.timeLeft}s, client has ${currentTimeLeft}s. Resyncing.`);
+                currentRound.timeLeft = data.timeLeft;
                 updateTimerUI(data.timeLeft);
             }
+            // Otherwise, let the client timer continue smoothly
+        } else {
+            currentRound.timeLeft = data.timeLeft;
+            updateTimerUI(data.timeLeft);
         }
-    });
-}
-
+    }
+});
+ 
 
 function setupEventListeners() {
     // Navigation Links
