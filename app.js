@@ -1,2685 +1,1604 @@
-// Required dependencies
-const express = require('express');
-const session = require('express-session');
-const passport = require('passport');
-const SteamStrategy = require('passport-steam').Strategy;
-const mongoose = require('mongoose');
-const http = require('http');
-const socketIo = require('socket.io');
-const crypto = require('crypto');
-const SteamCommunity = require('steamcommunity');
-const TradeOfferManager = require('steam-tradeoffer-manager');
-const cors = require('cors');
-const SteamTotp = require('steam-totp');
-const axios = require('axios');
-const NodeCache = require('node-cache');
-const helmet = require('helmet');
-const rateLimit = require('express-rate-limit');
-const { body, query, param, validationResult } = require('express-validator');
-const { v4: uuidv4 } = require('uuid');
-require('dotenv').config();
-const SteamID = require('steamid'); // Make sure to install: npm install steamid
+/* styles.css */
+/*=========================
+ VARIABLES & BASE STYLES
+ =========================*/
 
+:root {
+    --primary-color: #00e676; /* Neon Green */
+    --primary-dark: #00c853;
+    --primary-light: #69f0ae;
+    --secondary-color: #ff9100; /* Orange */
+    --secondary-dark: #ff6d00;
+    --secondary-light: #ffab40;
+    --background-dark: #0d1117; /* Very Dark Blue/Black */
+    --background-medium: #161b22; /* Dark Blue/Grey */
+    --background-light: #21262d; /* Medium Blue/Grey */
+    --text-primary: #ffffff; /* White */
+    --text-secondary: #b3b3b3; /* Light Grey */
+    --text-accent: #69f0ae; /* Light Neon Green */
+    --border-color: #30363d; /* Darker Border Grey */
+    --error-color: #f44336; /* Red */
+    --success-color: #4caf50; /* Green */
+    --info-color: #2196f3; /* Blue */
+    --warning-color: #ffc107; /* Amber/Yellow */
+    --jackpot-tab-color: #00ff8c; /* Bright neon green for jackpot tab */
 
-// --- Enhanced: connect-mongo for persistent sessions ---
-const MongoStore = require('connect-mongo');
+    /* Fonts */
+    --font-primary: 'Rajdhani', sans-serif;
+    --font-secondary: 'Titillium Web', sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
 
-// --- UPDATED: More flexible Trade URL validation ---
-const TRADE_URL_REGEX = /^https?:\/\/(www\.)?steamcommunity\.com\/tradeoffer\/new\/\?(?=.*partner=\d+)(?=.*token=[a-zA-Z0-9_-]+).*$/i;
+    /* Transitions */
+    --transition-fast: all 0.2s ease;
+    --transition-medium: all 0.3s ease;
+    --transition-slow: all 0.5s ease;
 
-// --- Configuration Constants ---
-const requiredEnvVars = [
-    'MONGODB_URI', 'SESSION_SECRET', 'STEAM_API_KEY', 'SITE_URL',
-    'STEAM_USERNAME', 'STEAM_PASSWORD', 'STEAM_SHARED_SECRET', 'BOT_TRADE_URL', 'SITE_NAME', 'STEAM_IDENTITY_SECRET'
-];
-const isBotConfigured = process.env.STEAM_USERNAME && process.env.STEAM_PASSWORD && process.env.STEAM_SHARED_SECRET && process.env.BOT_TRADE_URL;
-let missingVars = requiredEnvVars.filter(v => !process.env[v] && !(v.startsWith('STEAM_') || v === 'BOT_TRADE_URL' || v === 'SITE_NAME') && isBotConfigured);
-if (!isBotConfigured) {
-    console.warn("WARN: Steam Bot credentials/config incomplete in .env file. Trading features will be disabled.");
-} else {
-    missingVars = missingVars.concat(requiredEnvVars.filter(v => (v.startsWith('STEAM_') || v === 'BOT_TRADE_URL' || v === 'SITE_NAME') && !process.env[v]));
+     /* Shadows */
+     --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.2);
+     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+     --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.4);
 }
 
-if (missingVars.length > 0) {
-    console.error(`FATAL: Missing required environment variables: ${missingVars.join(', ')}`);
-    process.exit(1);
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-const RUST_APP_ID = 252490;
-const RUST_CONTEXT_ID = 2;
-const ROUND_DURATION = parseInt(process.env.ROUND_DURATION_SECONDS) || 99;
-const TICKET_VALUE_RATIO = parseFloat(process.env.TICKET_VALUE) || 0.01;
-const PRICE_CACHE_TTL_SECONDS = parseInt(process.env.PRICE_CACHE_TTL_SECONDS) || 15 * 60;
-const PRICE_REFRESH_INTERVAL_MS = (parseInt(process.env.PRICE_REFRESH_MINUTES) || 10) * 60 * 1000;
-const MIN_ITEM_VALUE = parseFloat(process.env.MIN_ITEM_VALUE) || 0.10;
-const PRICE_FETCH_TIMEOUT_MS = 30000;
-const MAX_PARTICIPANTS = 20;
-const MAX_ITEMS_PER_POT = 200;
-const MAX_ITEMS_PER_DEPOSIT = parseInt(process.env.MAX_ITEMS_PER_DEPOSIT) || 20;
-const TAX_MIN_PERCENT = 5;
-const TAX_MAX_PERCENT = 10;
-const MIN_POT_FOR_TAX = parseFloat(process.env.MIN_POT_FOR_TAX) || 100;
-const MAX_CHAT_MESSAGE_LENGTH = 200;
-const CHAT_COOLDOWN_SECONDS = parseInt(process.env.CHAT_COOLDOWN_SECONDS) || 5;
-const COOKIE_REFRESH_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
-const MAX_TRADE_RETRY_ATTEMPTS = 2;
+body {
+    font-family: var(--font-primary); /* Using Rajdhani as base */
+    background-color: var(--background-dark);
+    color: var(--text-primary);
+    line-height: 1.6;
+    overflow-x: hidden; /* Prevent horizontal scrollbars */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
 
-// Initialize Express app
-const app = express();
-const server = http.createServer(app);
-const io = socketIo(server, { cors: { origin: process.env.SITE_URL || "*", methods: ["GET", "POST"] } });
+.container {
+    width: 100%;
+    max-width: 1200px; /* Standard max width - This centers the overall content */
+    margin: 0 auto;    /* This centers the overall content */
+    padding: 0 15px;
+}
 
-// --- Security Middleware ---
-app.set('trust proxy', 1); // This tells Express to trust the first hop from a proxy
-app.use(
-    helmet.contentSecurityPolicy({
-        directives: {
-            ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-            "default-src": ["'self'"],
-            "script-src": ["'self'", "/socket.io/socket.io.js", "'unsafe-inline'"], // Consider making inline scripts hashed if possible
-            "script-src-attr": ["'self'", "'unsafe-inline'"], // For onclick in HTML, consider moving to JS event listeners
-            "style-src": ["'self'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com", "'unsafe-inline'"],
-            "img-src": ["'self'", "data:", "*.steamstatic.com", "*.akamai.steamstatic.com", "steamcdn-a.akamaihd.net"], // Added steamcdn
-            "font-src": ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
-            "connect-src": (() => {
-                const sources = ["'self'"];
-                const siteUrl = process.env.SITE_URL;
-                if (siteUrl) {
-                    try {
-                        const url = new URL(siteUrl);
-                        sources.push(`ws://${url.hostname}${url.port ? `:${url.port}` : ''}`);
-                        sources.push(`wss://${url.hostname}${url.port ? `:${url.port}` : ''}`);
-                        sources.push(siteUrl);
-                    } catch (e) {
-                        console.error("Invalid SITE_URL for CSP connect-src:", siteUrl, e);
-                    }
-                }
-                sources.push("https://rust.scmm.app"); // For price fetching
-                sources.push("https://api.steampowered.com"); // For any direct Steam API calls if used
-                sources.push("https://steamcommunity.com"); // For bot interactions
-                return sources;
-            })(),
-            "frame-src": ["'self'", "https://steamcommunity.com"], // If you embed Steam content
-            "frame-ancestors": ["'self'", "https://steamcommunity.com"],
-            "object-src": ["'none'"],
-            "upgrade-insecure-requests": [],
-        },
-    })
-);
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-secondary); /* Titillium for headings */
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+    line-height: 1.3;
+}
 
-// Rate limiters for HTTP requests
-const generalApiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false });
-const authLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 10, message: 'Too many login attempts from this IP, please try again after 10 minutes', standardHeaders: true, legacyHeaders: false });
-const sensitiveActionLimiter = rateLimit({ windowMs: 5 * 60 * 1000, max: 20, message: 'Too many requests for this action, please try again after 5 minutes', standardHeaders: true, legacyHeaders: false });
-const depositLimiter = rateLimit({ windowMs: 1 * 60 * 1000, max: 10, message: 'Too many deposit attempts, please wait a minute.', standardHeaders: true, legacyHeaders: false });
+h1 { font-size: 2.5rem; }
+h2 { font-size: 2rem; }
+h3 { font-size: 1.5rem; } /* Default h3 size */
 
-// This chatLimiter is defined but will NOT be used for Socket.IO events directly to prevent the errors.
-// It could be used if you had an HTTP endpoint for submitting chat messages.
-const chatLimiter = rateLimit({
-    windowMs: 60 * 1000, // 1 minute
-    max: 20, // Max 20 chat messages per IP per minute via an HTTP route (if one existed)
-    message: 'Too many chat messages from this IP. Please wait a moment.',
-    standardHeaders: true,
-    legacyHeaders: false
-});
+a {
+    text-decoration: none;
+    color: var(--primary-light);
+    transition: var(--transition-medium);
+}
+a:hover {
+    color: var(--primary-color);
+}
 
-app.use('/api/', generalApiLimiter); // Apply general limiter to all /api/ HTTP routes
-app.use(cors({ origin: process.env.SITE_URL || "*", credentials: true }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
+p {
+    margin-bottom: 1rem;
+    color: var(--text-secondary);
+}
 
-// Session Configuration with MongoStore
-const sessionMiddleware = session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-        mongoUrl: process.env.MONGODB_URI,
-        ttl: 14 * 24 * 60 * 60, // 14 days
-        autoRemove: 'native'
-    }),
-    cookie: {
-        maxAge: 3600000 * 24, // 1 day
-        secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-        httpOnly: true,
-        sameSite: 'lax' // Or 'strict' if appropriate
-    }
-});
-app.use(sessionMiddleware);
+code { /* General code tag styling */
+    background-color: var(--background-dark);
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    color: var(--secondary-light);
+    font-size: 0.9em;
+    border: 1px solid var(--border-color);
+    word-break: break-all;
+}
 
-app.use(passport.initialize());
-app.use(passport.session());
+/*=========================
+ UTILITIES & HELPERS
+ =========================*/
 
-// --- Steam Strategy ---
-passport.use(new SteamStrategy({
-    returnURL: `${process.env.SITE_URL}/auth/steam/return`,
-    realm: process.env.SITE_URL,
-    apiKey: process.env.STEAM_API_KEY,
-    providerURL: 'https://steamcommunity.com/openid' // Default, can be omitted
-},
-    async (identifier, profile, done) => {
-        try {
-            const userData = {
-                username: profile.displayName || `User${profile.id.substring(profile.id.length - 5)}`,
-                avatar: profile._json.avatarfull || profile._json.avatar || '/img/default-avatar.png',
-            };
-            const user = await User.findOneAndUpdate(
-                { steamId: profile.id },
-                {
-                    $set: userData,
-                    $setOnInsert: {
-                        steamId: profile.id,
-                        tradeUrl: '', // Initialize with empty trade URL
-                        createdAt: new Date(),
-                        pendingDepositOfferId: null,
-                        totalDepositedValue: 0,
-                        totalWinningsValue: 0
-                    }
-                },
-                { new: true, upsert: true, runValidators: true }
-            );
-            return done(null, user);
-        } catch (err) {
-            console.error('Steam Strategy Error:', err);
-            return done(err);
-        }
-    }
-));
-passport.serializeUser((user, done) => done(null, user.id)); // Store user.id in session
-passport.deserializeUser(async (id, done) => { // Fetch user from DB using id
-    try {
-        const user = await User.findById(id);
-        done(null, user);
-    } catch (err) {
-        console.error("DeserializeUser Error:", err);
-        done(err);
-    }
-});
+/* Visually hidden label */
+.sr-only {
+    position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+    overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;
+}
 
-// --- MongoDB Connection ---
-mongoose.connect(process.env.MONGODB_URI)
-    .then(() => console.log('Successfully connected to MongoDB.'))
-    .catch(err => {
-        console.error('MongoDB Connection Error:', err);
-        process.exit(1);
-    });
+/* Custom Scrollbars (Optional but nice) */
+/* Firefox */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-color) var(--background-dark);
+}
+/* Webkit (Chrome, Safari, Edge) */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--background-dark); border-radius: 4px; }
+::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 4px; border: 2px solid var(--background-dark); }
+::-webkit-scrollbar-thumb:hover { background-color: var(--primary-dark); }
 
-// --- MongoDB Schemas ---
-const userSchema = new mongoose.Schema({
-    steamId: { type: String, required: true, unique: true, index: true },
-    username: { type: String, required: true },
-    avatar: { type: String },
-    tradeUrl: {
-        type: String,
-        default: '',
-        // Ensure validator is only applied if value is not empty
-        validate: {
-            validator: function(v) {
-                if (v === '') return true; // Allow empty string
-                return TRADE_URL_REGEX.test(v);
-            },
-            message: 'Invalid Steam Trade URL format.'
-        }
-    },
-    createdAt: { type: Date, default: Date.now },
-    banned: { type: Boolean, default: false },
-    pendingDepositOfferId: { type: String, default: null, index: true }, // ID of the bot's offer to the user
-    totalDepositedValue: { type: Number, default: 0, min: 0 },
-    totalWinningsValue: { type: Number, default: 0, min: 0 }
-});
+/* Notification Bar */
+.notification-bar {
+    position: fixed;
+    top: -100px; /* Start hidden */
+    left: 50%;
+    transform: translateX(-50%);
+    width: auto;
+    max-width: 90%;
+    padding: 12px 25px;
+    background-color: var(--background-medium);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    box-shadow: var(--shadow-lg);
+    text-align: center;
+    z-index: 2000; /* High z-index */
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: top var(--transition-slow) ease-in-out;
+    white-space: normal; /* Allow wrapping */
+    overflow-wrap: break-word;
+}
+.notification-bar.show { top: 0; /* Slide into view */ }
 
-// MODIFIED itemSchema
-const itemSchema = new mongoose.Schema({
-    assetId: { type: String, required: true, index: true }, // Current asset ID in bot's inventory
-    originalAssetId: { type: String }, // Original asset ID from user's inventory
-    name: { type: String, required: true },
-    image: { type: String, required: true },
-    price: { type: Number, required: true, min: 0 },
-    owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    roundId: { type: mongoose.Schema.Types.ObjectId, ref: 'Round', required: true, index: true },
-    depositedAt: { type: Date, default: Date.now }
-});
+/* Style types */
+.notification-bar.success { background-color: rgba(76, 175, 80, 0.95); border-color: var(--success-color); color: #ffffff; }
+.notification-bar.error { background-color: rgba(244, 67, 54, 0.95); border-color: var(--error-color); color: #ffffff; }
+.notification-bar.info { background-color: rgba(33, 150, 243, 0.95); border-color: var(--info-color); color: #ffffff; }
+.notification-bar.warning { background-color: rgba(255, 193, 7, 0.95); border-color: var(--warning-color); color: var(--background-dark); } /* Updated warning */
 
-const roundSchema = new mongoose.Schema({
-    roundId: { type: Number, required: true, unique: true, index: true }, // Site's internal round number
-    status: { type: String, enum: ['pending', 'active', 'rolling', 'completed', 'completed_pending_acceptance', 'error'], default: 'pending', index: true },
-    startTime: { type: Date },
-    endTime: { type: Date }, // When the timer is set to end
-    completedTime: { type: Date }, // When the round actually completes (winner decided)
-    totalValue: { type: Number, default: 0, min: 0 }, // Value of items in the pot
-    items: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Item' }], // Items currently in the pot
-    participants: [{
-        user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-        itemsValue: { type: Number, required: true, default: 0, min: 0 },
-        tickets: { type: Number, required: true, default: 0, min: 0 }
-    }],
-    winner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
-    winningTicket: { type: Number, min: 0 },
-    serverSeed: { type: String, required: true, match: /^[a-f0-9]{64}$/ },
-    serverSeedHash: { type: String, required: true, match: /^[a-f0-9]{64}$/ },
-    clientSeed: { type: String, match: /^[a-f0-9]+$/ }, // Can be more flexible
-    provableHash: { type: String, match: /^[a-f0-9]{64}$/ }, // Hash of serverSeed + clientSeed
-    taxAmount: { type: Number, default: 0, min: 0 },
-    taxedItems: [{ assetId: String, name: String, price: { type: Number, min: 0 } }], // Details of items taken as tax
-    payoutOfferId: { type: String, index: true }, // Steam trade offer ID for winnings
-    payoutOfferStatus: { type: String, enum: [
-        'PendingAcceptanceByWinner', 'Sent', 'Sent (Confirmed)', 'Accepted', 'Declined', 'Canceled', 'Expired', 'InvalidItems', 'Escrow', 'Failed', 'Unknown',
-        'Failed - No Trade URL', 'No Items Won', 'Pending Confirmation', 'Failed - Bot Not Ready', 'Failed - Offer Creation Error',
-        'Failed - Bad URL', 'Failed - Inventory/Trade Issue', 'Failed - DB Error Post-Send', 'Failed - Synchronous Offer Prep Error',
-        'Failed - Invalid Trade URL Format', 'Failed - Bot Inventory Issue', 'Failed - Bot Session Issue', 'Failed - Manually Cleared',
-        'Failed - Timeout AutoClear', 'Failed - Invalid Trade URL Components', 'Failed - Invalid Partner ID', 'Failed - URL Parse Error',
-        'Failed - Bot Not Configured', 'Failed - Malformed Trade URL', 'Failed - Inventory Private', 'Failed - Trade Banned',
-        'Failed - Rate Limited', 'Failed - System Error', 'Failed - Send Error', 'Processing Winnings', 'Active (Sent to User)'
-    ], default: 'Unknown' }
-});
-roundSchema.index({ 'participants.user': 1 }); // For finding rounds a user participated in
-roundSchema.index({ winner: 1, status: 1, completedTime: -1 }); // For user winning history
-
-const User = mongoose.model('User', userSchema);
-const Item = mongoose.model('Item', itemSchema);
-const Round = mongoose.model('Round', roundSchema);
-
-// --- Steam Bot Setup ---
-const community = new SteamCommunity();
-let manager = null;
-let currentBotCookies = null;
-let cookieRefreshInterval = null;
-let lastCookieValidation = 0;
-
-// ENHANCED: Validate if cookies are still active
-async function validateAndRefreshCookies() {
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] LOG_INFO: Validating bot cookies...`);
-
-    if (!currentBotCookies || currentBotCookies.length === 0) {
-        console.log(`[${timestamp}] LOG_WARN: No cookies available, executing full login...`);
-        return executeBotLogin();
-    }
-
-    // Test if cookies are still valid by checking if we're logged in
-    return new Promise((resolve, reject) => {
-        if (!community.steamID) { // If steamID isn't set on community, cookies are definitely bad
-            console.log(`[${timestamp}] LOG_WARN: No steamID on community object, cookies likely expired. Re-logging in...`);
-            return executeBotLogin().then(resolve).catch(reject);
-        }
-
-        // Try to get our own user info as a test
-        community.getSteamUser(community.steamID, (err, user) => {
-            if (err) { // Error implies cookies might be invalid
-                console.log(`[${timestamp}] LOG_WARN: Cookie validation failed (getSteamUser error), re-logging in...`, err.message);
-                return executeBotLogin().then(resolve).catch(reject);
-            }
-            // Cookies are still valid
-            console.log(`[${timestamp}] LOG_SUCCESS: Cookies validated successfully. User: ${user.name}`);
-            lastCookieValidation = Date.now();
-            resolve();
-        });
-    });
+/* Allow links within notifications */
+.notification-bar a,
+.notification-link { /* Added class for flexibility */
+    color: inherit !important; /* Inherit color from parent */
+    font-weight: bold;
+    text-decoration: underline !important;
+    cursor: pointer;
+    transition: opacity var(--transition-fast);
+}
+.notification-bar a:hover,
+.notification-link:hover {
+    opacity: 0.8;
 }
 
 
-async function ensureValidManager() {
-    const timestamp = new Date().toISOString();
+/*=========================
+ HEADER & NAVIGATION
+ =========================*/
 
-    if (!manager) {
-        console.log(`[${timestamp}] LOG_INFO: Manager doesn't exist, creating new instance...`);
-        if (!currentBotCookies || currentBotCookies.length === 0) {
-            await validateAndRefreshCookies(); // This will login if no cookies
-        }
-        return createTradeOfferManager(currentBotCookies); // Pass current (possibly new) cookies
-    }
+.main-header {
+    background-color: var(--background-medium);
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
 
-    const timeSinceLastValidation = Date.now() - lastCookieValidation;
-    if (timeSinceLastValidation > 5 * 60 * 1000) { // e.g., 5 minutes
-        console.log(`[${timestamp}] LOG_INFO: Time for cookie validation (${Math.floor(timeSinceLastValidation / 1000)}s since last check)`);
-        await validateAndRefreshCookies(); // This may update currentBotCookies
+.header-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 15px;
+}
 
-        // Update cookies on existing manager
-        if (manager && currentBotCookies) {
-            return new Promise((resolve, reject) => {
-                manager.setCookies(currentBotCookies, (err) => {
-                    if (err) {
-                        console.error(`[${timestamp}] LOG_ERROR: Failed to update cookies on existing manager:`, err);
-                        // If updating fails, fall back to recreating the manager
-                        return createTradeOfferManager(currentBotCookies).then(resolve).catch(reject);
-                    } else {
-                        console.log(`[${timestamp}] LOG_SUCCESS: Updated cookies on existing manager`);
-                        resolve();
-                    }
-                });
-            });
-        }
-    }
-    return Promise.resolve(); // Manager exists and cookies recently validated or not due for check
+.header-left, .header-center, .header-right {
+    display: flex;
+    align-items: center;
+}
+
+.header-left { gap: 20px; flex: 1; min-width: 0; justify-content: flex-start; }
+.header-center { flex-grow: 2; justify-content: center; min-width: 0; text-align: center; }
+.header-right { gap: 10px; flex: 1; min-width: 0; justify-content: flex-end; } /* Reduced gap */
+
+.logo h1 {
+    font-family: var(--font-mono);
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(0, 230, 118, 0.5);
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+.logo span { color: var(--primary-color); }
+
+/* Navigation Lists */
+.primary-nav ul, .secondary-nav ul, .main-nav ul {
+    list-style: none; display: flex; padding: 0; margin: 0; gap: 15px;
+}
+.main-nav ul { justify-content: center; width: 100%; }
+
+/* General Nav Link Styles */
+.primary-nav a, .secondary-nav a, .main-nav a {
+    font-weight: 600; font-size: 1rem; font-family: var(--font-primary);
+    padding: 8px 10px; border-radius: 4px; transition: var(--transition-medium);
+    position: relative; color: var(--text-secondary); display: block; white-space: nowrap;
+}
+.primary-nav a:hover, .secondary-nav a:hover, .main-nav a:hover { color: var(--primary-color); }
+.primary-nav a::after, .secondary-nav a::after, .main-nav a::after {
+    content: ''; position: absolute; bottom: 0; left: 50%; width: 0; height: 2px;
+    background-color: var(--primary-color); transition: var(--transition-medium); transform: translateX(-50%);
+}
+.primary-nav a:hover::after, .secondary-nav a:hover::after, .main-nav a:hover::after,
+.primary-nav a.active::after, .secondary-nav a.active::after, .main-nav a.active::after { width: 80%; }
+.primary-nav a.active, .secondary-nav a.active, .main-nav a.active { color: var(--primary-color); }
+
+/* Jackpot Tab Specific Styles */
+.jackpot-tab {
+    font-size: 1.6rem; padding: 10px 15px; color: var(--jackpot-tab-color);
+    text-shadow: 0 0 10px var(--jackpot-tab-color), 0 0 15px var(--jackpot-tab-color);
+    letter-spacing: 1px; font-weight: 700;
+}
+.jackpot-tab::after { background-color: var(--jackpot-tab-color); box-shadow: 0 0 8px var(--jackpot-tab-color); height: 3px; }
+.jackpot-tab:hover { color: var(--jackpot-tab-color); text-shadow: 0 0 15px var(--jackpot-tab-color), 0 0 20px var(--jackpot-tab-color); }
+
+/* User Controls */
+.user-controls { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+
+.user-profile-container {
+    position: relative; /* This is the containing block for the absolute .dropdown-menu */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* --- User Profile Trigger (Simplified) --- */
+.user-profile {
+    display: flex; align-items: center; gap: 10px; cursor: pointer; padding: 5px; /* Add small padding */ border-radius: 4px;
+     transition: background-color var(--transition-fast);
+}
+.user-profile:hover { background-color: rgba(255, 255, 255, 0.05); } /* Subtle hover */
+.user-profile:focus { outline: none; box-shadow: 0 0 0 2px var(--primary-light); } /* Focus style */
+
+.user-avatar-container { position: relative; display: flex; flex-shrink: 0; }
+.user-avatar {
+    width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary-color);
+    object-fit: cover; box-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
+}
+.user-status {
+    position: absolute; bottom: 0; right: 0; width: 10px; height: 10px;
+    border-radius: 50%; border: 2px solid var(--background-medium);
+}
+.user-status.online { background-color: var(--success-color); }
+.user-status.offline { background-color: #9e9e9e; } /* Grey for offline */
+
+.user-name {
+    font-family: var(--font-secondary); font-weight: 600; font-size: 0.95rem;
+    color: var(--text-primary); white-space: nowrap; overflow: hidden;
+    text-overflow: ellipsis; transition: color var(--transition-fast); max-width: 150px; /* Limit name width */
+}
+.user-profile:hover .user-name { color: var(--primary-light); }
+
+/* --- Pending Offer Indicator (Header) --- */
+.pending-offer-indicator {
+    display: inline-block; /* Initially hidden by JS */
+    color: var(--warning-color); /* Use warning color */
+    font-size: 1.1rem;
+    cursor: help; /* Indicate tooltip */
+    animation: pulseWarning 1.5s infinite ease-in-out;
+    vertical-align: middle; /* Align with text/avatar */
+    line-height: 1;
+}
+
+@keyframes pulseWarning {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.15); opacity: 0.7; }
+}
+/* --- End Pending Offer Indicator --- */
+
+
+.dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    left: 0; /* Align with left edge of container */
+    right: auto;
+    z-index: 1000;
+    background-color: var(--background-dark);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    min-width: 220px;
+    overflow: hidden;
+}
+.dropdown-actions { padding: 8px 0; }
+
+.dropdown-item {
+    display: flex; align-items: center; gap: 12px; padding: 12px 20px; background: none;
+    border: none; width: 100%; text-align: left; color: var(--text-secondary);
+    font-size: 0.95rem; font-family: var(--font-primary); font-weight: 500;
+    cursor: pointer; transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+.dropdown-item:hover { background-color: var(--background-light); color: var(--primary-color); }
+.dropdown-item .icon { width: 18px; text-align: center; color: var(--text-accent); flex-shrink: 0; }
+.dropdown-item:hover .icon { color: var(--primary-color); }
+
+/* Logout button specific styling */
+#logoutButton { /* This is an ID, ensure it has '#' */
+    border-top: 1px solid var(--border-color); margin-top: 5px;
+    color: var(--error-color) !important;
+}
+#logoutButton .icon { color: var(--error-color) !important; } /* Ensure this targets .icon inside #logoutButton */
+#logoutButton:hover { background-color: rgba(244, 67, 54, 0.1) !important; color: var(--error-color) !important; }
+#logoutButton:hover .icon { color: var(--error-color) !important; }
+
+
+/*=========================
+ BUTTONS
+ =========================*/
+.btn {
+    display: inline-flex; /* Use flex for easy icon alignment */
+    align-items: center;
+    justify-content: center;
+    gap: 8px; /* Space between icon and text */
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    font-family: var(--font-primary);
+    font-weight: 600;
+    font-size: 1rem;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: var(--transition-medium);
+    background-color: var(--background-light);
+    color: var(--text-primary);
+    text-align: center;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+.btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 230, 118, 0.3);
+}
+.btn:disabled {
+    background-color: var(--background-light) !important;
+    color: var(--text-secondary) !important;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+    opacity: 0.6;
+}
+.btn i { /* Style for icons within buttons */
+     font-size: 1em; /* Match text size */
+     line-height: 1; /* Prevent extra spacing */
+}
+
+/* Login Button */
+#loginButton {
+    padding: 8px 15px; /* Slightly adjusted */
+    font-size: 0.9rem;
+    background-color: var(--success-color); /* Steam green */
+    color: white;
+    box-shadow: var(--shadow-sm);
+}
+#loginButton:hover:not(:disabled) { background-color: #45a049; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+#loginButton i { margin-right: 6px; /* Keep margin for steam icon */ }
+
+/* Primary Button */
+.btn-primary {
+    background-color: var(--primary-color);
+    color: var(--background-dark);
+}
+.btn-primary:hover:not(:disabled) { background-color: var(--primary-dark); }
+
+/* Deposit Button (Main Trigger & Inside Modal Request) */
+.btn-deposit {
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-dark));
+    color: var(--background-dark);
+    font-size: 1.2rem;
+    padding: 12px 30px;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 230, 118, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+.btn-deposit:before { /* Shine effect */
+    content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left var(--transition-slow) ease;
+}
+.btn-deposit:hover:not(:disabled):before { left: 100%; }
+.btn-deposit.deposit-disabled { /* Specific style for disabled state */
+     background: var(--background-light);
+     opacity: 0.6;
+     cursor: not-allowed;
+     box-shadow: none;
+     color: var(--text-secondary);
+}
+.btn-deposit.deposit-disabled:before { display: none; } /* Hide shine */
+
+
+/* Secondary Button */
+.btn-secondary {
+    background-color: var(--background-light);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 0.9rem;
+    padding: 8px 15px;
+}
+.btn-secondary:hover:not(:disabled) {
+    background-color: var(--background-medium);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Small Button Variant */
+.btn-small {
+     padding: 5px 10px;
+     font-size: 0.8rem;
+}
+
+/* Specific Buttons from History/Verify */
+.btn-details { /* Inherits .btn, .btn-secondary, .btn-small */ margin-right: 5px; margin-bottom: 5px; vertical-align: middle; }
+.btn-verify { /* Inherits .btn, .btn-secondary, .btn-small */
+    margin-right: 5px; margin-bottom: 5px; vertical-align: middle;
+    background-color: var(--secondary-color);
+    color: var(--background-dark); border-color: var(--secondary-color);
+}
+.btn-verify:hover:not(:disabled) { background-color: var(--secondary-dark); border-color: var(--secondary-dark); }
+
+/* Success Button (for Accept on Steam) */
+.btn-success { /* Inherits .btn */
+     background-color: var(--success-color);
+     color: white;
+     border-color: var(--success-color);
+}
+.btn-success:hover:not(:disabled) {
+     background-color: #45a049; /* Darker green */
+     border-color: #45a049;
+     box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+}
+
+/*=========================
+ MAIN CONTENT & SECTIONS
+ =========================*/
+
+.main-content {
+    padding: 30px 0;
+}
+
+.content-card {
+    max-width: 900px;
+    margin: 30px auto;
+    background: linear-gradient(135deg, var(--background-medium), var(--background-light));
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+    padding: 30px;
+}
+
+.content-card h1 {
+    color: var(--primary-color);
+    font-size: 2.2rem;
+    margin-bottom: 25px;
+    text-align: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 15px;
+    text-shadow: 0 0 10px rgba(0, 230, 118, 0.3);
+}
+
+/* Jackpot Page Layout */
+#home-page {
+    /* The .container parent of #home-page handles overall centering */
+}
+
+.jackpot-and-chat-container {
+    display: flex;
+    justify-content: center;
+    align-items: stretch; /* MODIFIED: Align items to stretch to the height of the tallest item */
+    gap: 20px;
 }
 
 
-function createTradeOfferManager(cookies) {
-    const timestamp = new Date().toISOString();
-
-    if (manager && manager !== null) {
-        console.log(`[${timestamp}] LOG_INFO: Shutting down existing TradeOfferManager instance before creating a new one.`);
-        try {
-            manager.shutdown();
-        } catch (shutdownErr) {
-            console.error(`[${timestamp}] LOG_ERROR: Error during manager shutdown:`, shutdownErr);
-        }
-        manager = null;
-    }
-
-    manager = new TradeOfferManager({
-        steam: community, // The SteamCommunity instance
-        domain: process.env.SITE_URL ? process.env.SITE_URL.replace(/^https?:\/\//, '') : 'localhost', // Your domain
-        language: 'en', // Prices in English
-        pollInterval: 10000, // Poll for new offers every 10 seconds
-        cancelTime: 10 * 60 * 1000, // Automatically cancel sent offers after 10 minutes
-    });
-
-    setupManagerEventHandlers(); // Attach event handlers to the new manager instance
-
-    return new Promise((resolve, reject) => {
-        if (!cookies || cookies.length === 0) {
-            const errMsg = `[${timestamp}] LOG_ERROR: Attempted to set empty cookies on TradeOfferManager. Login likely failed or cookies are missing.`;
-            console.error(errMsg);
-            return reject(new Error("Empty cookies provided to TradeOfferManager."));
-        }
-        manager.setCookies(cookies, (err) => {
-            if (err) {
-                console.error(`[${timestamp}] LOG_ERROR: Failed to set cookies on new TradeOfferManager:`, err);
-                reject(err);
-            } else {
-                console.log(`[${timestamp}] LOG_SUCCESS: Cookies set on new TradeOfferManager instance.`);
-                lastCookieValidation = Date.now(); // Cookies are fresh
-                resolve();
-            }
-        });
-    });
-}
-
-// --- MODIFIED confirmTradeOffer Function ---
-async function confirmTradeOffer(offerId, offerType = 'trade') {
-    const timestamp = new Date().toISOString();
-
-    if (!process.env.STEAM_IDENTITY_SECRET) {
-        console.log(`[${timestamp}] LOG_WARN: No STEAM_IDENTITY_SECRET configured for auto-confirmation. Trade ${offerId} (${offerType}) will require manual confirmation.`);
-        return { success: false, error: 'No identity secret configured for auto-confirmation' };
-    }
-
-    if (!community || !community.steamID) {
-        console.error(`[${timestamp}] LOG_ERROR: Community not logged in, cannot confirm trade ${offerId} (${offerType}).`);
-        return { success: false, error: 'Bot not logged in' };
-    }
-
-    // Small initial delay for Steam to process, can be adjusted or made conditional
-    await new Promise(resolve => setTimeout(resolve, 1500)); // e.g., 1.5 seconds
-
-    return new Promise((resolve) => {
-        console.log(`[${timestamp}] LOG_INFO: Attempting to auto-confirm ${offerType} offer ${offerId}... (Primary method)`);
-
-        community.acceptConfirmationForObject(
-            process.env.STEAM_IDENTITY_SECRET,
-            offerId, // This should be the trade offer ID
-            (err) => {
-                if (err) {
-                    console.error(`[${timestamp}] LOG_ERROR: Direct confirmation (acceptConfirmationForObject) failed for ${offerType} offer ${offerId}:`, err.message);
-                    console.log(`[${timestamp}] LOG_INFO: Attempting fallback confirmation method for ${offerType} offer ${offerId}.`);
-
-                    const time = Math.floor(Date.now() / 1000);
-                    const confKey = SteamTotp.generateConfirmationKey(process.env.STEAM_IDENTITY_SECRET, time, 'conf'); // Key for listing confirmations
-
-                    community.getConfirmations(time, confKey, (err2, confirmations) => {
-                        if (err2) {
-                            console.error(`[${timestamp}] LOG_ERROR: Failed to get confirmations list for fallback:`, err2.message);
-                            resolve({ success: false, error: `Failed to get confirmations list: ${err2.message} (Original error: ${err.message})` });
-                            return;
-                        }
-
-                        if (!confirmations || confirmations.length === 0) {
-                            console.log(`[${timestamp}] LOG_WARN: No pending confirmations found in the list for fallback (Offer ${offerId}).`);
-                            resolve({ success: false, error: 'No pending confirmations found to check.' });
-                            return;
-                        }
-                        console.log(`[${timestamp}] LOG_DEBUG: Found ${confirmations.length} pending confirmations in list. Searching for offer ${offerId}.`);
-
-                        // Find the specific confirmation for the given trade offer ID
-                        // conf.creator is the ID of the item being confirmed (e.g., trade offer ID)
-                        const conf = confirmations.find(c => c.creator && c.creator.toString() === offerId.toString());
-
-                        if (conf) {
-                            console.log(`[${timestamp}] LOG_INFO: Found matching confirmation (ConfID: ${conf.id}, Creator/OfferID: ${conf.creator}) for offer ${offerId}. Attempting to respond.`);
-                            const allowKey = SteamTotp.generateConfirmationKey(process.env.STEAM_IDENTITY_SECRET, time, 'allow'); // Key for accepting a specific confirmation
-
-                            community.respondToConfirmation(conf.id, conf.key, time, allowKey, true, (err3) => {
-                                if (err3) {
-                                    console.error(`[${timestamp}] LOG_ERROR: Fallback confirmation method (respondToConfirmation) failed for offer ${offerId} (ConfID: ${conf.id}):`, err3.message);
-                                    resolve({ success: false, error: `Fallback confirmation failed: ${err3.message}` });
-                                } else {
-                                    console.log(`[${timestamp}] LOG_SUCCESS: ${offerType} offer ${offerId} (ConfID: ${conf.id}) confirmed via FALLBACK method!`);
-                                    resolve({ success: true });
-                                }
-                            });
-                        } else {
-                            console.log(`[${timestamp}] LOG_WARN: No specific confirmation found for offer ${offerId} in the list after direct failure.`);
-                            confirmations.forEach(c => console.log(`[${timestamp}] LOG_DEBUG_CONF: Available ConfID: ${c.id}, Creator: ${c.creator}, Title: ${c.title}`));
-                            resolve({ success: false, error: 'No specific confirmation found for this offer in the list (fallback).' });
-                        }
-                    });
-                } else {
-                    console.log(`[${timestamp}] LOG_SUCCESS: ${offerType} offer ${offerId} auto-confirmed successfully via PRIMARY method!`);
-                    resolve({ success: true });
-                }
-            }
-        );
-    });
+.jackpot-section {
+    background-color: var(--background-medium);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    position: relative;
+    width: 680px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    /* Height will be determined by its content or by align-items: stretch from parent */
 }
 
 
-if (process.env.STEAM_IDENTITY_SECRET) {
-    community.on('confKeyNeeded', (tag, callback) => {
-        const time = Math.floor(Date.now() / 1000);
-        if (SteamTotp && typeof SteamTotp.generateConfirmationKey === 'function') {
-            const confKey = SteamTotp.generateConfirmationKey(process.env.STEAM_IDENTITY_SECRET, time, tag);
-            callback(null, time, confKey);
-        } else {
-            console.error("FATAL: SteamTotp.generateConfirmationKey is not available for confKeyNeeded. STEAM_IDENTITY_SECRET is set but confirmations may fail.");
-            callback(new Error("Confirmation key generation failed: SteamTotp unavailable"), null, null);
-        }
-    });
+/*=========================
+ JACKPOT HEADER & TIMER
+ =========================*/
+
+.jackpot-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 30px;
+    padding: 25px 20px;
+    background: linear-gradient(135deg, var(--background-medium), var(--background-light));
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 12px 12px 0 0;
+    box-shadow: var(--shadow-sm);
+    min-height: 170px;
+    position: relative;
+    overflow: hidden;
+    z-index: 5;
+    transition: height 0.5s ease, min-height 0.5s ease, background 0.3s ease;
+    flex-wrap: wrap;
+    flex-shrink: 0;
 }
 
-let isBotReady = false;
-const pendingDeposits = new Map(); // In-memory map for pending deposit offers
-
-function generateAuthCode() {
-    const secret = process.env.STEAM_SHARED_SECRET;
-    if (!secret) { console.error("STEAM_SHARED_SECRET missing. Cannot generate 2FA code."); return null; }
-    try {
-        const code = SteamTotp.generateAuthCode(secret);
-        console.log("LOG_DEBUG: Generated 2FA code:", code);
-        return code;
-    }
-    catch (e) { console.error("Error generating 2FA code:", e); return null; }
+.jackpot-header.roulette-mode {
+    background: linear-gradient(135deg, var(--background-dark), var(--background-medium));
+    height: 140px;
+    min-height: 140px;
+    align-items: center;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
-let isLoginInProgress = false;
-const LOGIN_RETRY_COOLDOWN = 60 * 1000; // 1 minute
-let lastLoginAttemptTimestamp = 0;
-
-
-async function executeBotLogin() {
-    if (isLoginInProgress) {
-        console.log("LOG_INFO: Bot login attempt already in progress. Skipping.");
-        return Promise.reject(new Error("Login already in progress."));
-    }
-    const now = Date.now();
-    if (now - lastLoginAttemptTimestamp < LOGIN_RETRY_COOLDOWN) {
-        console.log(`LOG_INFO: Bot login attempt was made recently (within ${LOGIN_RETRY_COOLDOWN / 1000}s). Waiting for cooldown.`);
-        return Promise.reject(new Error("Login attempt cooldown active."));
-    }
-    isLoginInProgress = true;
-    lastLoginAttemptTimestamp = now;
-    isBotReady = false; // Set to false until login completes
-    console.log("LOG_INFO: Attempting to execute bot login/re-login...");
-
-    return new Promise((resolve, reject) => {
-        if (!isBotConfigured) {
-            console.warn("WARN: Bot not configured, cannot login.");
-            isLoginInProgress = false;
-            reject(new Error("Bot not configured."));
-            return;
-        }
-
-        const loginCredentials = {
-            accountName: process.env.STEAM_USERNAME,
-            password: process.env.STEAM_PASSWORD,
-            twoFactorCode: generateAuthCode() // Generate fresh code for each attempt
-        };
-
-        if (!loginCredentials.twoFactorCode) {
-            console.warn("WARN: Could not generate 2FA code for login attempt.");
-            isLoginInProgress = false;
-            reject(new Error("2FA code generation failed for login."));
-            return;
-        }
-
-        console.log(`LOG_INFO: Attempting Steam login for bot: ${loginCredentials.accountName} (via executeBotLogin)...`);
-        community.login(loginCredentials, async (err, sessionID, cookies, steamguard) => {
-            if (err || !community.steamID) { // Check for err OR if steamID is not set after login attempt
-                console.error('STEAM LOGIN ERROR (executeBotLogin):', { message: err?.message, eresult: err?.eresult, steamguard, steamID: community.steamID });
-                if (err?.eresult === 5) console.warn('Login Failure Hint: Invalid Password?');
-                if (err?.eresult === 65) console.warn('Login Failure Hint: Incorrect 2FA Code or Account Rate Limit?');
-                if (err?.eresult === 63) console.warn('Login Failure Hint: Account Logon Denied - Check Email/Steam Guard?');
-                isLoginInProgress = false;
-                currentBotCookies = null; // Clear any stale cookies
-                reject(err || new Error(`Login failed: community.steamID undefined. EResult: ${err?.eresult}`));
-                return;
-            }
-
-            console.log(`LOG_SUCCESS (executeBotLogin): Steam bot ${loginCredentials.accountName} logged in (SteamID: ${community.steamID}). Setting cookies...`);
-            currentBotCookies = cookies; // Store the new cookies
-            community.setCookies(cookies); // Also set on community instance
-
-            try {
-                await createTradeOfferManager(cookies); // Create or recreate manager with new cookies
-                isLoginInProgress = false;
-                isBotReady = true;
-                lastCookieValidation = Date.now(); // Mark validation time
-                console.log("LOG_SUCCESS (executeBotLogin): Steam Bot is fully ready and operational.");
-                resolve(true);
-            } catch (managerErr) {
-                isLoginInProgress = false;
-                currentBotCookies = null; // Clear cookies if manager setup fails
-                console.error('TradeOfferManager Error setting cookies after login (executeBotLogin):', managerErr);
-                reject(managerErr);
-            }
-        });
-    });
-}
-
-async function refreshBotSession() {
-    console.log("LOG_INFO: Refreshing bot session...");
-    if (!isBotConfigured) {
-        isBotReady = false;
-        return Promise.reject(new Error("Bot not configured, cannot refresh session."));
-    }
-
-    try {
-        await ensureValidManager(); // This handles validation and recreation if needed
-        isBotReady = true; // If ensureValidManager resolves, bot should be ready
-        return Promise.resolve();
-    } catch (err) {
-        console.error("LOG_ERROR: Failed to refresh bot session:", err);
-        isBotReady = false; // If it fails, bot is not ready
-        return Promise.reject(err);
-    }
-}
-
-function startPeriodicCookieRefresh() {
-    if (cookieRefreshInterval) {
-        clearInterval(cookieRefreshInterval);
-    }
-
-    cookieRefreshInterval = setInterval(async () => {
-        if (isBotReady && currentBotCookies) { // Only refresh if bot is considered ready and has cookies
-            try {
-                console.log("LOG_INFO: Performing periodic cookie refresh...");
-                await validateAndRefreshCookies(); // This will re-login if validation fails
-            } catch (err) {
-                console.error("LOG_ERROR: Periodic cookie refresh failed:", err);
-                // isBotReady might be set to false within validateAndRefreshCookies -> executeBotLogin on failure
-            }
-        }
-    }, COOKIE_REFRESH_INTERVAL_MS);
+.jackpot-timer, .jackpot-value, .jackpot-stats {
+    min-width: 170px;
+    flex-basis: 0;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 15px 5px;
 }
 
 
-function setupManagerEventHandlers() {
-    if (!manager) return;
+.jackpot-value h2 {
+    font-size: 2.8rem; font-weight: 700; color: var(--primary-color); margin: 0;
+    font-family: var(--font-mono);
+    line-height: 1.1;
+    animation: valueGlow 1.8s infinite ease-in-out;
+}
+@keyframes valueGlow {
+    0%, 100% { text-shadow: 0 0 8px rgba(0, 230, 118, 0.4); }
+    50% { text-shadow: 0 0 20px var(--primary-color), 0 0 10px var(--primary-light); }
+}
 
-    manager.on('newOffer', async (offer) => {
-        console.log(`LOG_DEBUG: manager.on('newOffer') received. Offer ID: ${offer.id}, Partner: ${offer.partner.getSteamID64()}, Our Offer: ${offer.isOurOffer}`);
-        if (!isBotReady || offer.isOurOffer) {
-            if (offer.isOurOffer) console.log(`LOG_DEBUG: Ignoring newOffer event for our own offer #${offer.id} (likely a deposit or payout).`);
-            else console.log(`LOG_DEBUG: Ignoring newOffer event #${offer.id} because bot not ready.`);
-            return;
-        }
-        // If it's not our offer and items are being given to us (potential donation or mistake)
-        if (offer.itemsToReceive.length > 0 && offer.itemsToGive.length === 0) {
-            if (offer.message && offer.message.includes('DepositID:')) { // Should not happen if !offer.isOurOffer
-                console.log(`LOG_WARN: Received a 'newOffer' that looks like a deposit response (ID in message), but it's not our offer. Offer #${offer.id}. Declining.`);
-            } else {
-                console.log(`LOG_WARN: Received unsolicited item offer #${offer.id} from ${offer.partner.getSteamID64()}. Declining.`);
-            }
-            return offer.decline((err) => { if (err) console.error(`LOG_ERROR: Error declining unsolicited/unexpected newOffer ${offer.id}:`, err); });
-        }
-        console.log(`LOG_INFO: Ignoring other unexpected incoming offer #${offer.id} from ${offer.partner.getSteamID64()}. Message: "${offer.message}"`);
-        offer.decline(err => { if(err) console.error(`Error declining other unexpected newOffer ${offer.id}:`, err); });
-    });
+.timer-circle {
+    position: relative; width: 130px; height: 130px; display: flex;
+    justify-content: center; align-items: center; margin: 0 auto 10px auto;
+}
+.timer-progress { width: 100%; height: 100%; transform: rotate(-90deg); }
+.timer-background, .timer-foreground { fill: none; stroke-width: 8px; }
+.timer-background { stroke: var(--background-light); }
+.timer-foreground {
+    stroke: var(--primary-color); stroke-linecap: round; stroke-dashoffset: 0;
+    transition: stroke-dashoffset 1s linear; filter: drop-shadow(0 0 4px var(--primary-color));
+}
+.timer-text {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    font-size: 2.8rem; font-weight: 700; color: var(--primary-color);
+    font-family: var(--font-mono);
+}
+.timer-pulse { animation: timerPulse 2s infinite ease-in-out; }
+.urgent-pulse {
+    animation: urgentPulse 0.6s infinite ease-in-out;
+    color: var(--error-color) !important;
+    text-shadow: 0 0 5px rgba(244, 67, 54, 0.5);
+}
+@keyframes timerPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+@keyframes urgentPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.08); } }
 
-    // MODIFIED sentOfferChanged handler
-    manager.on('sentOfferChanged', async (offer, oldState) => {
-        console.log(`LOG_INFO: Bot's sentOffer #${offer.id} state changed: ${TradeOfferManager.ETradeOfferState[oldState]} -> ${TradeOfferManager.ETradeOfferState[offer.state]} (Partner: ${offer.partner.getSteamID64()}) Msg: "${offer.message}"`);
+.stat-value {
+    font-size: 2.8rem; font-weight: 700; color: var(--text-primary);
+    display: block; line-height: 1.1; margin-top: 10px;
+}
 
-        const depositIdMatch = offer.message.match(/DepositID: ([a-f0-9-]+)/i);
-        const depositIdFromMessage = depositIdMatch ? depositIdMatch[1] : null;
-        let depositData = null;
+.value-label, .timer-label, .stat-label {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    letter-spacing: 1px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    display: block;
+}
 
-        if (depositIdFromMessage && pendingDeposits.has(depositIdFromMessage)) {
-            depositData = pendingDeposits.get(depositIdFromMessage);
-            if (depositData.offerIdAttempted && depositData.offerIdAttempted !== offer.id) {
-                console.warn(`WARN: Offer ID mismatch for DepositID ${depositIdFromMessage}. Tracked: ${depositData.offerIdAttempted}, Event: ${offer.id}. This is unusual. Processing with event offer ID.`);
-            } else if (!depositData.offerIdAttempted) {
-                depositData.offerIdAttempted = offer.id;
-            }
-        }
+/*=========================
+ ROULETTE ANIMATION
+ =========================*/
 
-        // --- Handle DEPOSIT offers ---
-        if (depositData && offer.id === depositData.offerIdAttempted) {
-            console.log(`LOG_DEBUG: Offer #${offer.id} matched pending deposit ${depositIdFromMessage}.`);
+.inline-roulette {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: transparent; z-index: 10; overflow: hidden;
+    border-radius: 12px 12px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.roulette-container {
+    position: relative; width: 90%;
+    max-width: 1000px;
+    height: 90px; overflow: hidden;
+    background-color: rgba(13, 17, 23, 0.7); border-radius: 8px;
+    border: 1px solid var(--border-color);
+    box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6); backdrop-filter: blur(2px);
+}
+.roulette-track {
+    display: flex; position: absolute; left: 0; top: 0; height: 100%;
+    padding-left: calc(50% - 45px); /* Half of item width */
+    padding-right: calc(50% - 45px); /* Half of item width */
+    will-change: transform; transition: none;
+}
 
-            if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
-                pendingDeposits.delete(depositIdFromMessage);
-                console.log(`LOG_SUCCESS: Processing accepted deposit offer #${offer.id} (DepositID: ${depositIdFromMessage}) for user ${depositData.steamId}`);
+.roulette-item {
+    flex: 0 0 auto;
+    width: 90px;
+    height: 80px;
+    margin: 5px;
+    background: rgba(30, 35, 40, 0.8);
+    border-radius: 6px;
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    transition: transform var(--transition-medium), box-shadow var(--transition-medium);
+    border: 2px solid transparent; /* Change this to ensure border is visible */
+    border-width: 2px !important; /* Force border width */
+    position: relative;
+    backface-visibility: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
 
-                User.updateOne({ _id: depositData.userId, pendingDepositOfferId: offer.id }, { $set: { pendingDepositOfferId: null }})
-                    .catch(e => console.error("DB_ERROR: Error clearing user pending flag on deposit accept:", e));
+.roulette-item:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: var(--shadow-lg);
+    z-index: 1; /* Bring to front on hover */
+}
 
-                let createdItemDocuments = [];
-                try {
-                    const roundForDeposit = await Round.findById(depositData.roundId).select('status participants items totalValue roundId');
-                    if (!roundForDeposit || roundForDeposit.status !== 'active' || isRolling) {
-                        console.warn(`WARN: Deposit ${depositIdFromMessage} (Offer ${offer.id}) accepted, but round invalid/rolling. Items NOT added to pot. Round status: ${roundForDeposit?.status}, isRolling: ${isRolling}`);
-                        io.to(depositData.userId.toString()).emit('notification', { type: 'error', message: `Deposit Error: Round for offer #${offer.id} ended/changed before processing. Contact support.` });
-                        return;
-                    }
-                    const isNewP = !roundForDeposit.participants.some(p => p.user?.toString() === depositData.userId.toString());
-                    if (isNewP && roundForDeposit.participants.length >= MAX_PARTICIPANTS) {
-                        console.warn(`WARN: Deposit ${depositIdFromMessage} accepted, but participant limit for round ${roundForDeposit.roundId} reached.`);
-                        io.to(depositData.userId.toString()).emit('notification', { type: 'error', message: `Deposit Error: Participant limit reached for offer #${offer.id}. Contact support.` }); return;
-                    }
-                    if (roundForDeposit.items.length + depositData.items.length > MAX_ITEMS_PER_POT) {
-                        console.warn(`WARN: Deposit ${depositIdFromMessage} accepted, but pot item limit for round ${roundForDeposit.roundId} reached.`);
-                        io.to(depositData.userId.toString()).emit('notification', { type: 'error', message: `Deposit Error: Pot item limit reached for offer #${offer.id}. Contact support.` }); return;
-                    }
+.roulette-avatar {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform var(--transition-medium);
+    border: none; /* Remove border from avatar if item has one */
+    border-radius: 0; /* Remove border-radius if item handles it */
+}
 
-                    // CRITICAL FIX: Get the new asset IDs from bot's inventory after trade
-                    console.log(`LOG_INFO: Fetching bot's inventory to get new asset IDs for deposited items (Offer #${offer.id})...`);
-                    // Wait a moment for Steam to process the trade and inventory update
-                    await new Promise(resolve => setTimeout(resolve, 3000)); // Increased delay slightly
+.roulette-item:hover .roulette-avatar { transform: scale(1.1); }
 
-                    const botInventory = await new Promise((resolve, reject) => {
-                        if (!manager) return reject(new Error("TradeOfferManager not initialized for fetching bot inventory."));
-                        manager.getInventoryContents(RUST_APP_ID, RUST_CONTEXT_ID, true, (err, inventory) => {
-                            if (err) {
-                                console.error(`ERROR: Failed to fetch bot inventory after deposit (Offer #${offer.id}):`, err);
-                                reject(err);
-                            } else {
-                                console.log(`LOG_DEBUG: Bot inventory fetched for Offer #${offer.id}. Found ${inventory?.length || 0} items.`);
-                                resolve(inventory || []);
-                            }
-                        });
-                    });
+.roulette-item.winner-highlight {
+    /* Styles applied via JS in finalizeSpin */
+}
 
-                    const assetIdMap = new Map(); // oldAssetId (user's) -> newAssetId (bot's)
-                    const mappedNewAssetIds = new Set(); // To ensure a new asset ID is used only once
+.roulette-ticker {
+    position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 4px; height: 100%; z-index: 15; pointer-events: none;
+}
+.ticker-line {
+    width: 100%; height: 100%;
+    background: linear-gradient(to bottom, rgba(0,230,118,0), rgba(0,230,118,0.8) 40%, rgba(0,230,118,0.8) 60%, rgba(0,230,118,0));
+    box-shadow: 0 0 10px rgba(0, 230, 118, 0.7);
+}
+.roulette-ticker::before, .roulette-ticker::after {
+    content: ''; position: absolute; left: 50%; transform: translateX(-50%);
+    width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent;
+    filter: drop-shadow(0 0 3px rgba(0, 230, 118, 0.5));
+}
+.roulette-ticker::before { top: -6px; border-bottom: 8px solid rgba(0, 230, 118, 0.8); }
+.roulette-ticker::after { bottom: -6px; border-top: 8px solid rgba(0, 230, 118, 0.8); }
 
-                    for (const depositedItem of depositData.items) { // items from pendingDeposits map
-                        // Find matching item in bot's inventory by name and approximate value.
-                        // This assumes item names are unique enough for this purpose or combined with price.
-                        // Ensure we don't remap an already mapped new assetId from bot's inventory.
-                        const matchingBotItem = botInventory.find(botItem =>
-                            botItem.market_hash_name === depositedItem._name &&
-                            !mappedNewAssetIds.has(botItem.assetid) && // Check if this new asset ID has already been claimed for mapping
-                            Math.abs((getItemPrice(botItem.market_hash_name) || 0) - depositedItem._price) < 0.01 // Price match
-                        );
+.winner-info {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle, rgba(20, 25, 30, 0.95), rgba(13, 17, 23, 0.98));
+    padding: 10px; display: flex; flex-direction: column; justify-content: center;
+    align-items: center; text-align: center; box-sizing: border-box;
+    z-index: 20; opacity: 0; display: none; /* Initially hidden, controlled by JS */
+    backdrop-filter: blur(3px);
+}
+@keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+.winner-header { display: flex; align-items: center; justify-content: center; margin-bottom: 5px; }
+.winner-avatar { width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--primary-color); box-shadow: 0 0 10px rgba(0, 230, 118, 0.5); margin-right: 10px; object-fit: cover; flex-shrink: 0; }
+.winner-header h3 { margin: 0; font-size: 1.1rem; }
+.winner-details { margin-top: 5px; font-size: 0.9rem; }
+.winner-details p { margin: 3px 0; font-size: 0.9rem; color: var(--text-secondary); }
+.winner-details span { color: var(--primary-light); font-weight: bold; }
+.congrats { font-size: 1.2rem !important; color: var(--primary-color); font-weight: 700; margin-top: 5px !important; text-transform: uppercase; letter-spacing: 2px; animation: colorPulse 3s infinite; text-shadow: 0 0 8px currentColor; }
+@keyframes colorPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
 
-                        if (matchingBotItem) {
-                            assetIdMap.set(depositedItem.assetid, matchingBotItem.assetid); // Map old user assetid to new bot assetid
-                            mappedNewAssetIds.add(matchingBotItem.assetid); // Mark this bot asset ID as used for mapping
-                            console.log(`LOG_INFO: Mapped old assetId ${depositedItem.assetid} to new assetId ${matchingBotItem.assetid} for item "${depositedItem._name}" (Offer #${offer.id})`);
-                        } else {
-                            console.warn(`WARN: Could not find unique matching item in bot inventory for "${depositedItem._name}" (Old AssetID: ${depositedItem.assetid}, Price: ${depositedItem._price}). Will use old AssetID as fallback. (Offer #${offer.id})`);
-                        }
-                    }
+.return-btn { display: none !important; /* If not used, can be removed from HTML too */ }
 
-                    // Create Item documents with NEW asset IDs
-                    const itemModelsToSave = depositData.items.map(itemDetail => {
-                        const newAssetId = assetIdMap.get(itemDetail.assetid) || itemDetail.assetid; // Fallback to old ID if mapping failed
-                        if (newAssetId === itemDetail.assetid && assetIdMap.has(itemDetail.assetid)) {
-                            // This case means mapping was successful but for some reason it's same, which is fine.
-                        } else if (newAssetId === itemDetail.assetid) {
-                             console.warn(`LOG_WARN: Using fallback (old) assetId ${itemDetail.assetid} for item "${itemDetail._name}" as it was not mapped. (Offer #${offer.id})`);
-                        }
-                        return new Item({
-                            assetId: newAssetId, // Use the NEW asset ID from bot's inventory (or fallback)
-                            originalAssetId: itemDetail.assetid, // Store original user's asset ID for reference
-                            name: itemDetail._name,
-                            image: itemDetail._image,
-                            price: itemDetail._price,
-                            owner: depositData.userId,
-                            roundId: depositData.roundId
-                        });
-                    });
+.confetti-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: hidden; z-index: 18; }
+.confetti-piece {
+    position: absolute; width: 8px; height: 8px; background-color: var(--color);
+    top: -20px; opacity: 0.9; animation: confettiFall var(--duration, 3s) linear var(--delay, 0s) forwards;
+    transform-origin: center center;
+}
+@keyframes confettiFall {
+    0% { transform: translateY(0) translateX(0) rotateZ(var(--rotation-start, 0deg)) scale(1); opacity: 0.9; }
+    100% { transform: translateY(200px) translateX(var(--fall-x, 0px)) rotateZ(var(--rotation-end, 720deg)) scale(0.5); opacity: 0; }
+}
 
-                    createdItemDocuments = await Item.insertMany(itemModelsToSave, { ordered: false });
-                    const createdItemIds = createdItemDocuments.map(doc => doc._id);
-                    console.log(`LOG_INFO: Deposit ${depositIdFromMessage} (Offer #${offer.id}): Inserted ${createdItemIds.length} items into DB with potentially updated asset IDs.`);
+/*=========================
+ DEPOSIT & PARTICIPANT ITEMS
+ =========================*/
 
-                    // Update user's total deposited value
-                    await User.findByIdAndUpdate(depositData.userId, { $inc: { totalDepositedValue: depositData.totalValue } });
+.deposit-button-container {
+    padding: 25px;
+    background-color: var(--background-medium);
+    z-index: 5;
+    position: relative;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    flex-shrink: 0; /* Prevent shrinking */
+}
 
-                    // Update the round document
-                    const depositTickets = Math.max(1, Math.floor(depositData.totalValue / TICKET_VALUE_RATIO));
-                    let participantUpdateQuery;
-                    const participantExists = roundForDeposit.participants.some(p => p.user.toString() === depositData.userId.toString());
+#showDepositModal {
+    width: 280px;
+    padding: 14px 30px;
+    max-width: none;
+}
 
-                    if (participantExists) {
-                        participantUpdateQuery = {
-                            $inc: {
-                                'participants.$[elem].itemsValue': depositData.totalValue,
-                                'participants.$[elem].tickets': depositTickets,
-                                totalValue: depositData.totalValue
-                            },
-                            $push: { items: { $each: createdItemIds } }
-                        };
-                    } else {
-                        participantUpdateQuery = {
-                            $push: {
-                                participants: { user: depositData.userId, itemsValue: depositData.totalValue, tickets: depositTickets },
-                                items: { $each: createdItemIds }
-                            },
-                            $inc: { totalValue: depositData.totalValue }
-                        };
-                    }
+#showDepositModal.deposit-disabled {
+     background: var(--background-light);
+     opacity: 0.6;
+     cursor: not-allowed;
+     box-shadow: none;
+     color: var(--text-secondary);
+}
+#showDepositModal.deposit-disabled:before { display: none; }
 
-                    const arrayFilters = participantExists ? [{ 'elem.user': depositData.userId }] : [];
-                    const updatedRound = await Round.findByIdAndUpdate(
-                        depositData.roundId,
-                        participantUpdateQuery,
-                        { new: true, arrayFilters: arrayFilters.length > 0 ? arrayFilters : undefined }
-                    ).populate('participants.user', 'steamId username avatar').lean();
 
-                    if (!updatedRound) throw new Error('Failed to update round data after deposit.');
-                    currentRound = updatedRound;
+.current-items-section {
+    padding: 25px;
+    z-index: 5;
+    position: relative;
+    background-color: var(--background-medium);
+    border-radius: 0 0 12px 12px;
+    border-top: 1px solid var(--border-color);
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+}
+.section-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 25px;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 12px;
+    text-align: center;
+    flex-shrink: 0;
+}
+.empty-pot-message {
+    text-align: center; padding: 40px 20px; color: var(--text-secondary); font-size: 1.1rem;
+    background-color: var(--background-light); border-radius: 8px;
+    border: 1px dashed var(--border-color); display: block; margin: 15px 0;
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
-                    const finalParticipantData = updatedRound.participants.find(p => p.user?._id.toString() === depositData.userId.toString());
-                    if (finalParticipantData && finalParticipantData.user) {
-                        io.emit('participantUpdated', {
-                            roundId: updatedRound.roundId,
-                            userId: finalParticipantData.user._id.toString(),
-                            username: finalParticipantData.user.username,
-                            avatar: finalParticipantData.user.avatar,
-                            itemsValue: finalParticipantData.itemsValue,
-                            tickets: finalParticipantData.tickets,
-                            totalValue: updatedRound.totalValue,
-                            depositedItems: depositData.items.map(i => ({ assetId: assetIdMap.get(i.assetid) || i.assetid, name: i._name, image: i._image, price: i._price }))
-                        });
-                        console.log(`LOG_INFO: Emitted 'participantUpdated' for user ${finalParticipantData.user.username} in round ${updatedRound.roundId}.`);
-                    }
+.items-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 10px;
+    min-height: 100px; /* Ensure some min height even if jackpot section is small */
+    flex-grow: 1;
+    overflow-y: auto;
+}
 
-                    if (updatedRound.participants.length === 1 && !roundTimer && updatedRound.status === 'active') {
-                        startRoundTimer();
-                    }
-                    console.log(`LOG_SUCCESS: Deposit success processed for offer #${offer.id}. User: ${finalParticipantData?.user?.username}`);
+.player-deposit-container {
+    background: linear-gradient(to bottom, var(--background-light), var(--background-medium));
+    border-radius: 8px; padding: 15px; border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-md); width: 100%;
+    transition: transform var(--transition-medium), box-shadow var(--transition-medium);
+    flex-shrink: 0;
+}
+.player-deposit-container:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.player-deposit-header { display: flex; align-items: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid rgba(48, 54, 61, 0.5); }
+.player-avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 12px; border: 2px solid var(--primary-color); object-fit: cover; flex-shrink: 0; }
+.player-info { flex: 1; min-width: 0; }
+.player-name { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player-deposit-value {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color var(--transition-fast);
+}
+.player-items-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; justify-content: flex-start; }
+.player-deposit-item {
+    width: 80px; height: 100px; background: rgba(22, 27, 34, 0.7); border-radius: 5px;
+    overflow: hidden; box-shadow: var(--shadow-sm); transition: transform var(--transition-fast);
+    border: 1px solid var(--border-color); flex: 0 0 auto; display: flex; flex-direction: column;
+    border-left-width: 3px; border-left-style: solid;
+}
+.player-deposit-item:hover { transform: translateY(-3px); box-shadow: var(--shadow-md), 0 0 8px rgba(0, 230, 118, 0.2); }
+.player-deposit-item-image { width: 100%; height: 60px; object-fit: contain; background-color: var(--background-medium); border-bottom: 1px solid rgba(48, 54, 61, 0.5); display: block; }
+.player-deposit-item-info { padding: 4px; height: 40px; display: flex; flex-direction: column; justify-content: center; flex-grow: 1; }
+.player-deposit-item-name { font-size: 0.65rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary); margin-bottom: 2px; }
+.player-deposit-item-value { font-size: 0.7rem; font-weight: 700; }
+.player-deposit-item-more { display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 600; padding: 5px; margin-top: 5px; }
+@keyframes newDepositPulse {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+.player-deposit-new { animation: newDepositPulse 0.5s ease-out forwards; }
 
-                } catch (dbErr) {
-                    console.error(`CRITICAL_DB_ERROR processing accepted deposit ${offer.id} (DepositID ${depositIdFromMessage}):`, dbErr);
-                    io.to(depositData.userId.toString()).emit('notification', { type: 'error', message: `CRITICAL Deposit Error for offer #${offer.id}. Items may be held by bot. Contact support.` });
-                    if (createdItemDocuments.length > 0) {
-                        await Item.deleteMany({ _id: { $in: createdItemDocuments.map(d => d._id) } });
-                        console.log(`LOG_INFO: Rolled back ${createdItemDocuments.length} items from DB for failed deposit ${offer.id}.`);
-                    }
-                    if (currentRound && currentRound._id?.toString() === depositData.roundId.toString()) {
-                        console.error(`CRITICAL_ERROR: Marking round ${currentRound.roundId} as 'error' due to deposit processing failure.`);
-                        await Round.updateOne({ _id: currentRound._id }, { $set: { status: 'error' } });
-                        io.emit('roundError', { roundId: currentRound.roundId, error: 'Critical deposit database error led to round error.' });
-                        currentRound.status = 'error';
-                    }
-                }
+/*=========================
+ MODALS
+ =========================*/
 
-            } else if ([
-                TradeOfferManager.ETradeOfferState.Declined,
-                TradeOfferManager.ETradeOfferState.Canceled,
-                TradeOfferManager.ETradeOfferState.Expired,
-                TradeOfferManager.ETradeOfferState.InvalidItems
-                ].includes(offer.state)) {
+.modal {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0, 0, 0, 0.85);
+    display: none; /* Controlled by JS */
+    justify-content: center; align-items: center; z-index: 1000; padding: 20px;
+    backdrop-filter: blur(5px);
+}
+.modal-content {
+    background-color: var(--background-medium);
+    border-radius: 12px;
+    width: 100%;
+    max-width: 700px; /* Default max width */
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    animation: modalIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    overflow: hidden; /* Let modal-body handle scroll */
+}
+.age-verification .modal-content { max-width: 500px; }
+#depositModal .modal-content { max-width: 900px; }
+#tradeUrlModal .modal-content { max-width: 600px; }
+.winning-history-modal .modal-content { max-width: 800px; }
+.accept-winnings-modal .modal-content { max-width: 550px; } /* New: Accept Winnings Modal Size */
 
-                pendingDeposits.delete(depositIdFromMessage);
-                console.warn(`WARN: Deposit offer ${offer.id} (DepositID: ${depositIdFromMessage}) for user ${depositData.steamId} was ${TradeOfferManager.ETradeOfferState[offer.state]}.`);
-                User.updateOne({ _id: depositData.userId, pendingDepositOfferId: offer.id }, { $set: {pendingDepositOfferId: null }})
-                    .catch(e => console.error("DB_ERROR: Error clearing user pending flag on deposit failure/cancellation:", e));
-                const stateMessage = TradeOfferManager.ETradeOfferState[offer.state].toLowerCase().replace(/_/g, ' ');
-                io.to(depositData.userId.toString()).emit('notification', { type: 'error', message: `Your deposit offer (#${offer.id}) was ${stateMessage}.` });
-            } else {
-                console.log(`LOG_DEBUG: Deposit Offer #${offer.id} (DepositID: ${depositIdFromMessage}) changed to unhandled state: ${TradeOfferManager.ETradeOfferState[offer.state]}`);
-            }
-        }
-        // --- Handle PAYOUT offers (winnings) ---
-        else {
-            let payoutStatusUpdate = 'Unknown';
-            switch (offer.state) {
-                case TradeOfferManager.ETradeOfferState.Accepted: payoutStatusUpdate = 'Accepted'; break;
-                case TradeOfferManager.ETradeOfferState.Declined: payoutStatusUpdate = 'Declined'; break;
-                case TradeOfferManager.ETradeOfferState.Canceled: payoutStatusUpdate = 'Canceled'; break;
-                case TradeOfferManager.ETradeOfferState.Expired: payoutStatusUpdate = 'Expired'; break;
-                case TradeOfferManager.ETradeOfferState.InvalidItems: payoutStatusUpdate = 'InvalidItems'; break;
-                case TradeOfferManager.ETradeOfferState.InEscrow: payoutStatusUpdate = 'Escrow'; break;
-                case TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation:
-                     // If this event occurs, it means the bot's auto-confirmation might have failed or is pending.
-                     // The sendWinningTradeOffer function would have already tried to confirm.
-                     // This status here would usually reflect that the offer is *still* needing that confirmation.
-                    payoutStatusUpdate = 'Pending Confirmation';
-                    break;
-                case TradeOfferManager.ETradeOfferState.PendingConfirmation: // This state means bot sent, awaiting user action or auto-confirm (from Steam's perspective)
-                    payoutStatusUpdate = 'Pending Confirmation'; break; // Or could be 'Sent (Confirmed)' if bot confirmed, now awaiting user
-                case TradeOfferManager.ETradeOfferState.Active: // Offer is active, means bot confirmed (if needed) and user can act.
-                    payoutStatusUpdate = 'Sent (Confirmed)'; // Assuming if it's active, bot did its part.
-                     break;
-                default: payoutStatusUpdate = TradeOfferManager.ETradeOfferState[offer.state] || 'Unknown';
-            }
-            console.log(`LOG_INFO: Payout offer #${offer.id} to ${offer.partner.getSteamID64()} changed to ${TradeOfferManager.ETradeOfferState[offer.state]} (mapped to -> ${payoutStatusUpdate}).`);
 
-            try {
-                const updatedRound = await Round.findOneAndUpdate(
-                    { payoutOfferId: offer.id },
-                    // Only update if the new status is different or more informative,
-                    // or if the current status in DB is less "final"
-                    // For example, don't overwrite "Accepted" with "Sent (Confirmed)"
-                    { $set: { payoutOfferStatus: payoutStatusUpdate } },
-                    { new: true }
-                ).populate('winner', 'steamId _id username');
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(0.9) translateY(-20px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
 
-                if (updatedRound && updatedRound.winner) {
-                    const winnerUserIdStr = updatedRound.winner._id.toString();
-                    console.log(`LOG_INFO: Updated payoutOfferStatus to ${payoutStatusUpdate} for round ${updatedRound.roundId}, winner ${updatedRound.winner.username}.`);
+.modal-header {
+    padding: 15px 25px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(135deg, var(--background-medium), var(--background-light));
+    border-radius: 12px 12px 0 0;
+    flex-shrink: 0;
+}
+.modal-header h2 {
+    margin: 0;
+    color: var(--primary-color);
+    font-size: 1.4rem;
+    font-family: var(--font-primary);
+}
+.close-btn {
+    background: none; border: none; color: var(--text-secondary); font-size: 1.8rem;
+    line-height: 1; cursor: pointer; transition: var(--transition-medium); padding: 5px;
+}
+.close-btn:hover { color: var(--primary-color); transform: rotate(90deg); }
 
-                    let notifType = 'info';
-                    let notifMessage = `Winnings offer #${offer.id} (Round #${updatedRound.roundId}) status: ${payoutStatusUpdate}.`;
+.modal-body { padding: 25px; overflow-y: auto; flex-grow: 1; line-height: 1.7; }
+.modal-body p { margin-bottom: 15px; color: var(--text-secondary); }
+.modal-body p:last-child { margin-bottom: 0; }
+.modal-body ul { list-style: disc; margin: 15px 0 15px 25px; padding-left: 15px; }
+.modal-body li { margin-bottom: 8px; color: var(--text-secondary); }
 
-                    if (offer.state === TradeOfferManager.ETradeOfferState.Accepted) {
-                        notifType = 'success';
-                        notifMessage = `Winnings from offer #${offer.id} (Round #${updatedRound.roundId}) successfully accepted by you!`;
-                         // Potentially update user's totalWinningsValue again if it wasn't done predictively
-                    } else if ([TradeOfferManager.ETradeOfferState.Declined, TradeOfferManager.ETradeOfferState.Canceled, TradeOfferManager.ETradeOfferState.Expired].includes(offer.state)) {
-                        notifType = 'error';
-                        notifMessage = `Winnings offer #${offer.id} (Round #${updatedRound.roundId}) was ${payoutStatusUpdate}. Contact support if this was an error or to re-attempt payout.`;
-                        if (offer.state === TradeOfferManager.ETradeOfferState.Expired || offer.state === TradeOfferManager.ETradeOfferState.Canceled) {
-                             // Reset status to allow user to try accepting again from UI
-                             await Round.updateOne({ _id: updatedRound._id }, { $set: { payoutOfferStatus: 'PendingAcceptanceByWinner', payoutOfferId: null }});
-                             notifMessage += " You may be able to try accepting again via your profile/winning history.";
-                        }
-                    } else if (offer.state === TradeOfferManager.ETradeOfferState.InEscrow) {
-                        notifType = 'warning';
-                        notifMessage = `Winnings offer #${offer.id} (Round #${updatedRound.roundId}) is in escrow. This typically means a trade hold on your account.`;
-                    } else if (offer.state === TradeOfferManager.ETradeOfferState.Active && payoutStatusUpdate === 'Sent (Confirmed)') {
-                        notifType = 'success'; // Or 'info'
-                        notifMessage = `Winnings offer #${offer.id} (Round #${updatedRound.roundId}) is now active and confirmed by the bot. Please accept it on Steam.`;
-                    }
-                    io.to(winnerUserIdStr).emit('notification', { type: notifType, message: notifMessage });
-                } else if (!updatedRound) {
-                    console.warn(`WARN: Could not find round associated with payout offer #${offer.id} to update status. Offer message: "${offer.message}"`);
-                }
-            } catch (dbError) {
-                console.error(`DB_ERROR: Error updating payout status for offer #${offer.id} in DB:`, dbError);
-            }
-        }
-    });
+.modal-footer {
+    padding: 15px 25px;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--background-light);
+    border-radius: 0 0 12px 12px;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Form Elements */
+.form-group { margin-bottom: 20px; }
+.form-group label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--text-primary); font-family: var(--font-primary); }
+.form-group input[type="text"], .form-group input[type="url"], .form-group input[type="number"], .form-group input[type="password"], .form-group input[type="email"], .form-group textarea {
+    width: 100%; padding: 12px 15px; border: 1px solid var(--border-color);
+    border-radius: 4px; background-color: var(--background-dark); color: var(--text-primary);
+    font-family: var(--font-primary); font-size: 1rem;
+    transition: border-color var(--transition-medium), box-shadow var(--transition-medium);
+    box-sizing: border-box;
+}
+.form-group input:focus, .form-group textarea:focus {
+    border-color: var(--primary-color); outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 230, 118, 0.2);
+}
+.checkbox-container { display: flex; align-items: center; margin: 15px 0; }
+.checkbox-container input[type="checkbox"] { margin-right: 10px; width: 18px; height: 18px; accent-color: var(--primary-color); cursor: pointer; flex-shrink: 0; }
+.checkbox-container label { cursor: pointer; color: var(--text-primary); line-height: 1.3; }
+.help-text { font-size: 0.9rem; color: var(--text-secondary); margin-top: 10px; }
+.help-text a { color: var(--primary-light); text-decoration: underline; }
+.help-text a:hover { color: var(--primary-color); }
+
+/* Inventory Modal Styles */
+.inventory-container { margin-bottom: 20px; }
+.inventory-container h3 {
+    font-size: 1rem; color: var(--text-secondary); margin-bottom: 10px;
+    text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;
+}
+.inventory-items {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px;
+    max-height: 300px; overflow-y: auto; background-color: var(--background-light);
+    padding: 15px; border-radius: 8px; border: 1px solid var(--border-color);
+}
+.empty-inventory-message, .error-message { grid-column: 1 / -1; text-align: center; color: var(--text-secondary); padding: 20px; }
+.error-message { color: var(--error-color); }
+.inventory-item {
+    background-color: var(--background-medium); border-radius: 4px; overflow: hidden; cursor: pointer;
+    transition: transform var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast);
+    border: 2px solid transparent; display: flex; flex-direction: column;
+}
+.inventory-item:hover { transform: translateY(-3px); border-color: rgba(0, 230, 118, 0.3); }
+.inventory-item.selected { border-color: var(--primary-color); box-shadow: 0 0 15px rgba(0, 230, 118, 0.4); transform: scale(1.03); }
+.inventory-item img { width: 100%; height: 80px; object-fit: contain; background-color: var(--background-dark); display: block; border-bottom: 1px solid var(--border-color); }
+.item-details { padding: 8px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; min-height: 50px; }
+.item-name { font-size: 0.85rem; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 3px; line-height: 1.2; }
+.inventory-item .item-value { font-size: 0.85rem; font-weight: 700; color: var(--primary-color); text-align: right; margin-top: auto; }
+
+/* Selected Items (Deposit Modal) */
+.selected-items { margin-top: 20px; }
+.selected-items h3 { font-size: 1rem; color: var(--text-secondary); margin-bottom: 10px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; }
+.selected-items-container {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    min-height: 80px; max-height: 180px; overflow-y: auto;
+    background-color: var(--background-light); padding: 10px;
+    border-radius: 8px; border: 1px solid var(--border-color); margin-bottom: 15px;
+}
+.selected-item-display {
+    position: relative; width: 80px; border-radius: 4px; overflow: hidden;
+    background-color: var(--background-medium); border: 1px solid var(--border-color);
+    flex-shrink: 0; display: flex; flex-direction: column; cursor: pointer;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+.selected-item-display:hover { transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+.selected-item-display img { width: 100%; height: 60px; object-fit: contain; background-color: var(--background-dark); display: block; }
+.selected-item-display .item-name { font-size: 0.7rem; font-weight: 500; padding: 3px 5px 0 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-secondary); text-align: center; }
+.selected-item-display .item-value { font-size: 0.75rem; font-weight: 600; padding: 0 5px 3px 5px; color: var(--primary-light); text-align: center; }
+.remove-item-btn {
+    position: absolute; top: 3px; right: 3px; width: 18px; height: 18px;
+    background-color: rgba(0, 0, 0, 0.7); color: white; border-radius: 50%; border: none;
+    font-size: 10px; line-height: 18px; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; transition: background-color var(--transition-fast), transform var(--transition-fast);
+    padding: 0; z-index: 1;
+}
+.remove-item-btn:hover { background-color: var(--error-color); transform: scale(1.1); }
+.total-value {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 15px; background-color: var(--background-light); border-radius: 4px;
+    border: 1px solid var(--border-color); margin-top: 10px; font-weight: 600; font-size: 1.1rem;
+}
+.total-value span:last-child { color: var(--primary-color); font-family: var(--font-mono); }
+
+/* Loading indicator */
+.loading-indicator {
+    display: none; flex-direction: column; align-items: center; justify-content: center;
+    padding: 30px; background-color: transparent; border-radius: 8px;
+    margin: 20px 0; color: var(--text-secondary); grid-column: 1 / -1; /* For use in grid layouts */
+}
+.spinner {
+    width: 40px; height: 40px; border: 4px solid rgba(0, 230, 118, 0.3);
+    border-radius: 50%; border-top-color: var(--primary-color);
+    animation: spin 1s linear infinite; margin-bottom: 15px;
+}
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+
+/* --- Profile Modal Styles --- */
+#profileModal .modal-content { max-width: 480px; }
+.profile-modal-body { padding: 30px 35px; }
+.profile-modal-user-info { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-bottom: 25px; text-align: center; }
+.profile-modal-avatar { width: 80px; height: 80px; border-radius: 50%; border: 3px solid var(--primary-color); object-fit: cover; }
+.profile-modal-name { font-family: var(--font-primary); font-size: 1.5em; font-weight: 600; color: var(--text-primary); margin-top: 5px; }
+
+.profile-modal-stats {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 15px;
+    background-color: var(--background-light);
+    border-radius: 5px;
+    border: 1px solid var(--border-color);
+    display: flex; /* Added for side-by-side items */
+    justify-content: space-around; /* Distribute items */
+    gap: 10px; /* Space between items */
+}
+.profile-modal-stat-item {
+    flex: 1; /* Allow items to grow and share space */
+}
+.profile-modal-stat-label {
+    display: block; font-size: 0.9em; color: var(--text-secondary);
+    margin-bottom: 5px; text-transform: uppercase; letter-spacing: 1px;
+}
+.profile-modal-stat-value {
+    font-family: var(--font-mono); font-size: 1.6em; font-weight: 700;
+    color: var(--secondary-light);
+}
+
+.profile-modal-trade-url { margin-bottom: 15px; }
+#profileModalTradeUrl { font-family: var(--font-mono); font-size: 0.95em; }
+.profile-modal-help-text { margin-top: 10px; font-size: 0.8em; }
+.profile-modal-footer { justify-content: space-between; background-color: var(--background-light); padding: 15px 25px; border-top: 1px solid var(--border-color); border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; }
+
+/* --- Profile Modal Pending Offer Status --- */
+.profile-pending-offer-status {
+    margin-bottom: 20px;
+    padding: 12px 15px;
+    background-color: rgba(255, 193, 7, 0.1);
+    border: 1px solid var(--warning-color);
+    border-radius: 4px;
+    text-align: center;
+    font-size: 0.9em;
+}
+.profile-pending-offer-status p { margin: 0; color: var(--warning-color); line-height: 1.5; }
+.profile-pending-offer-status a, .profile-pending-link { color: var(--secondary-light) !important; font-weight: bold; text-decoration: underline !important; }
+.profile-pending-offer-status a:hover, .profile-pending-link:hover { color: var(--secondary-color) !important; opacity: 0.9; }
+.profile-pending-offer-status i { margin-right: 5px; }
+
+
+/*=========================
+ STATIC PAGES (FAQ, FAIR, ABOUT, TOS)
+ =========================*/
+
+.content-section { margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid rgba(48, 54, 61, 0.5); line-height: 1.7; }
+.content-section:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.content-section-title { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); margin-bottom: 15px; padding-left: 12px; border-left: 3px solid var(--primary-color); }
+.content-section-body { padding: 0 15px; }
+.content-section-body p { margin-bottom: 15px; line-height: 1.7; color: var(--text-secondary); }
+.content-section-body p:last-child { margin-bottom: 0; }
+.content-section-body ul, .content-section-body ol { margin: 15px 0 15px 25px; padding-left: 20px; }
+.content-section-body li { margin-bottom: 10px; }
+.content-section-body strong { color: var(--text-accent); font-weight: 600; }
+.content-section-body a { color: var(--primary-light); text-decoration: underline; }
+.content-section-body a:hover { color: var(--primary-color); }
+.content-section-body code { background-color: var(--background-dark); padding: 3px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--secondary-light); font-size: 0.9em; border: 1px solid var(--border-color); word-break: break-all; }
+
+/* About Page */
+#about-page .content-section-body p { text-align: justify; padding: 0 5px; }
+#about-page .content-section-title { color: var(--primary-light); }
+
+/* TOS Page */
+#tos-page .content-section { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 20px; margin-bottom: 25px; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
+#tos-page .content-section:last-child { border-bottom: 1px solid var(--border-color); }
+#tos-page .content-section-title { margin-top: 0; border-left: 3px solid var(--secondary-color); }
+#tos-page ul { margin-left: 20px; margin-bottom: 15px; list-style-type: disc; }
+#tos-page ul li { margin-bottom: 10px; color: var(--text-secondary); }
+
+/* FAQ Page */
+#faq-page .content-section { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 20px; margin-bottom: 20px; transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid var(--border-color); border-bottom: 1px solid var(--border-color); }
+#faq-page .content-section:last-child { border-bottom: 1px solid var(--border-color); }
+#faq-page .content-section-title { color: var(--secondary-color); cursor: pointer; display: flex; align-items: center; justify-content: space-between; border-left: none; padding-left: 0; }
+#faq-page .content-section-title::after { content: '+'; font-size: 1.5rem; color: var(--primary-color); transition: transform 0.3s ease; }
+#faq-page .content-section.active .content-section-title::after { content: '-'; transform: rotate(180deg); }
+
+/* Provably Fair Page */
+#fair-page .content-section-body code {
+    background-color: rgba(255, 255, 255, 0.05); /* Very subtle white background instead of black */
+    color: var(--text-primary); /* White text instead of orange */
+    border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border */
+}
+#fair-page .content-card { padding-bottom: 40px; }
+#fair-page #provably-fair-verification { background-color: rgba(22, 27, 34, 0.4); border-radius: 8px; padding: 25px; margin-top: 30px; border: 1px solid var(--border-color); }
+#fair-page .verify-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* Default two columns for seed inputs */
+    gap: 20px;
+    background-color: transparent; padding: 0; border: none; margin: 0 0 25px 0;
+}
+/* Make Round ID form group span full width */
+#fair-page .verify-form .form-group-full-width {
+    grid-column: 1 / -1; /* Span across all columns */
+}
+
+#fair-page .form-group { margin-bottom: 0; }
+#fair-page .verify-form button { grid-column: 1 / -1; }
+#fair-page .verification-result { margin-top: 20px; padding: 15px; border-radius: 6px; background-color: var(--background-light); border: 1px solid var(--border-color); }
+#fair-page .history-table { width: 100%; border-collapse: collapse; margin-top: 25px; background-color: rgba(22, 27, 34, 0.4); }
+#fair-page .history-table th, #fair-page .history-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); }
+#fair-page .history-table th { background-color: var(--background-light); color: var(--primary-color); font-weight: 600; }
+#fair-page .history-table tr:hover { background-color: var(--background-light); }
+
+/* Provably Fair Verification Form & Result - Base styles */
+.verify-form { background-color: var(--background-light); padding: 20px; border-radius: 8px; margin: 20px 0; border: 1px solid var(--border-color); }
+.verification-result { margin-top: 15px; padding: 15px; border-radius: 4px; background-color: var(--background-light); display: none; border: 1px solid var(--border-color); line-height: 1.5; }
+.verification-result.loading { background-color: var(--background-medium); border-color: var(--secondary-light); color: var(--text-primary); }
+.verification-result.success { background-color: rgba(0, 230, 118, 0.1); border-color: var(--success-color); color: var(--text-primary); }
+.verification-result.error { background-color: rgba(244, 67, 54, 0.1); border-color: var(--error-color); color: var(--text-primary); }
+.verification-result h4 { margin-top: 0; margin-bottom: 15px; color: var(--primary-color); }
+.verification-result p { margin-bottom: 8px; word-wrap: break-word; }
+.verification-result strong { color: var(--text-accent); }
+.verification-result code.seed-value { 
+    background-color: var(--background-dark); 
+    padding: 3px 6px; 
+    border-radius: 4px; 
+    font-family: var(--font-mono); 
+    color: var(--text-primary);
+    font-size: 0.9em; 
+    border: 1px solid var(--border-color); 
+    word-break: break-all; 
+    display: inline-block; 
+}
+.verification-result code.wrap-anywhere { word-break: break-all; }
+
+/* Round History Table - Base styles (used for both Provably Fair and Winning History) */
+.table-container { overflow-x: auto; margin-bottom: 20px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 8px; }
+.history-table { width: 100%; min-width: 600px; border-collapse: collapse; font-size: 0.9rem; }
+.history-table th, .history-table td { padding: 12px 15px; text-align: left; border-bottom: 1px solid var(--border-color); white-space: nowrap; vertical-align: middle; }
+.history-table tr:last-child td { border-bottom: none; }
+.history-table th { background-color: var(--background-medium); color: var(--primary-color); font-weight: 600; text-transform: uppercase; font-size: 0.85rem; position: sticky; top: 0; z-index: 1; }
+.history-table .loading-message, .history-table .no-rounds-message, .history-table .error-message, .empty-history-message {
+    text-align: center; color: var(--text-secondary); padding: 20px; font-style: italic; white-space: normal;
+}
+.history-table .error-message, .empty-history-message.error { color: var(--error-color); font-style: normal; } /* Error style for empty message too */
+.history-table tbody tr:hover { background-color: rgba(255, 255, 255, 0.05); }
+.history-table td:last-child { white-space: normal; text-align: right; } /* Allow wrap and align right for action buttons */
+
+/* Winning History Table Specifics */
+.winning-history-table td { white-space: normal; } /* Allow wrapping for longer statuses */
+.winning-history-table td:nth-child(3) { font-weight: bold; color: var(--primary-light); } /* Amount Won */
+.winning-history-table td:nth-child(4) { text-align: center; } /* Trade Status/Link centered */
+
+.trade-link {
+    color: var(--secondary-light); text-decoration: underline; display: inline-flex; align-items: center; gap: 5px;
+    transition: color var(--transition-fast);
+}
+.trade-link:hover { color: var(--secondary-color); }
+.trade-link.pending i { color: var(--warning-color); }
+.trade-link i { font-size: 0.9em; } /* Icon size for trade links */
+
+.trade-status {
+    font-weight: 600; padding: 4px 10px; border-radius: 12px; /* More pill-like */
+    font-size: 0.8em; display: inline-flex; align-items: center; gap: 6px;
+    text-transform: uppercase; letter-spacing: 0.5px;
+}
+.trade-status.accepted { color: #ffffff; background-color: var(--success-color); border: 1px solid var(--success-color); box-shadow: 0 0 8px rgba(76, 175, 80, 0.3); }
+.trade-status.failed, .trade-status.declined, .trade-status.canceled, .trade-status.expired { color: #ffffff; background-color: var(--error-color); border: 1px solid var(--error-color); box-shadow: 0 0 8px rgba(244, 67, 54, 0.3); }
+.trade-status.sent, .trade-status.escrow, .trade-status.pendingconfirmation, .trade-status.unknown { color: var(--background-dark); background-color: var(--warning-color); border: 1px solid var(--warning-color); box-shadow: 0 0 8px rgba(255, 193, 7, 0.3); }
+.trade-status.info { color: var(--text-primary); background-color: var(--info-color); border: 1px solid var(--info-color); box-shadow: 0 0 8px rgba(33, 150, 243, 0.3); }
+.trade-status i { font-size: 1em; /* Slightly larger icon within status */ }
+
+
+/* Pagination */
+.pagination-container { display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 20px; flex-wrap: wrap; }
+.page-button { padding: 6px 10px; background-color: var(--background-light); border: 1px solid var(--border-color); border-radius: 4px; color: var(--text-primary); cursor: pointer; transition: var(--transition-fast); font-size: 0.9rem; }
+.page-button:hover:not(:disabled) { background-color: var(--primary-dark); color: var(--background-dark); border-color: var(--primary-dark); }
+.page-button.active { background-color: var(--primary-color); color: var(--background-dark); border-color: var(--primary-color); cursor: default; }
+.page-button:disabled { opacity: 0.5; cursor: not-allowed; }
+.page-ellipsis { color: var(--text-secondary); padding: 6px 0; margin: 0 2px; }
+
+
+/* --- ADDED: Deposit Modal Footer Enhancements --- */
+#acceptDepositOfferBtn { /* Also used for Accept Winnings button */
+    background-color: var(--success-color);
+    color: white;
+    border: 1px solid var(--success-color);
+    padding: 10px 15px;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#acceptDepositOfferBtn:hover:not(:disabled),
+#acceptWinningsOnSteamBtn:hover:not(:disabled) { /* Apply hover to both */
+    background-color: #45a049;
+    border-color: #45a049;
+    box-shadow: 0 5px 15px rgba(76, 175, 80, 0.4);
+    transform: translateY(-2px);
+}
+
+#acceptDepositOfferBtn i,
+#acceptWinningsOnSteamBtn i { /* Apply icon style to both */
+    margin-left: 8px;
+    font-size: 0.9em;
+}
+
+.deposit-status-text { /* Reused for acceptWinningsStatusText */
+    flex-grow: 1;
+    text-align: left;
+    padding: 0 10px;
+    font-size: 0.9em;
+    line-height: 1.4;
+    color: var(--text-secondary);
+    transition: color 0.3s ease;
+    display: flex;
+    align-items: center;
+}
+
+.deposit-status-text.info { color: var(--info-color); }
+.deposit-status-text.success { color: var(--success-color); }
+.deposit-status-text.warning { color: var(--warning-color); }
+.deposit-status-text.error { color: var(--error-color); }
+
+
+/* --- ADDED: Pending Offer Indicators --- */
+.pending-offer-indicator {
+    display: inline-block;
+    color: var(--warning-color);
+    font-size: 1.1rem;
+    cursor: help;
+    animation: pulseWarning 1.5s infinite ease-in-out;
+    vertical-align: middle;
+    line-height: 1;
+}
+
+/* --- ADDED: Footer --- */
+.main-footer {
+    background-color: var(--background-dark);
+    color: var(--text-secondary);
+    padding: 20px 0;
+    margin-top: 40px;
+    text-align: center;
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.main-footer p {
+    margin-bottom: 8px;
+    line-height: 1.5;
+}
+.main-footer a {
+    color: var(--text-secondary);
+    text-decoration: underline;
+    margin: 0 5px;
+}
+.main-footer a:hover {
+    color: var(--primary-light);
+}
+
+/*=========================
+ CHAT STYLES - REVISED
+ =========================*/
+.chat-container {
+    width: 280px;
+    flex-shrink: 0;
+    background-color: var(--background-light);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    height: 600px; /* Add fixed height */
+    max-height: 600px; /* Ensure it doesn't grow */
+}
+.chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: var(--background-medium);
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 12px 12px 0 0;
+    flex-shrink: 0;
+}
+
+.chat-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.chat-online-status {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+#chatOnlineUsers {
+    font-weight: bold;
+    color: var(--primary-light);
+}
+
+.chat-messages-container {
+    flex-grow: 1; /* This is key for the chat messages to fill available stretched space */
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 12px;
+    background-color: var(--background-dark);
 }
 
 
-if (isBotConfigured) {
-    console.log("LOG_INFO: Bot is configured. Attempting initial login via executeBotLogin.");
-    executeBotLogin()
-        .then(() => {
-            console.log("LOG_SUCCESS: Initial bot login successful.");
-            community.on('friendRelationship', (steamID, relationship) => {
-                if (relationship === SteamCommunity.EFriendRelationship.RequestRecipient) {
-                    console.log(`LOG_INFO: Received friend request from ${steamID}. Accepting...`);
-                    community.addFriend(steamID, (friendErr) => {
-                        if (friendErr) console.error(`LOG_ERROR: Error accepting friend request from ${steamID}:`, friendErr);
-                        else console.log(`LOG_SUCCESS: Accepted friend request from ${steamID}.`);
-                    });
-                }
-            });
+.chat-messages-container::-webkit-scrollbar {
+    width: 6px;
+}
+.chat-messages-container::-webkit-scrollbar-track {
+    background: var(--background-medium);
+    border-radius: 3px;
+}
+.chat-messages-container::-webkit-scrollbar-thumb {
+    background-color: var(--primary-dark);
+    border-radius: 3px;
+}
 
-            startPeriodicCookieRefresh();
-            ensureInitialRound();
-        })
-        .catch(err => {
-            console.error("CRITICAL_ERROR: Initial bot login failed:", err.message);
-        });
-} else {
-    console.warn("WARN: Steam Bot not configured. Trading features will be disabled.");
-    isBotReady = false;
+.chat-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 6px;
+    background-color: var(--background-light);
+    border: 1px solid var(--border-color);
+    max-width: 95%;
+    word-wrap: break-word;
+    box-shadow: var(--shadow-sm);
+    animation: chatMessageFadeIn 0.3s ease-out;
+}
+@keyframes chatMessageFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.chat-message.system-message {
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    color: var(--text-secondary);
+    font-style: italic;
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 5px 0;
+    max-width: 100%;
+    animation: none;
+}
+
+.chat-message-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 2px solid transparent;
+}
+
+.chat-message-content {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.chat-message-user {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.chat-message-text {
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-primary);
+    margin: 0;
+    white-space: pre-wrap;
+}
+
+.chat-input-area {
+    display: flex;
+    padding: 12px 15px;
+    border-top: 1px solid var(--border-color);
+    background-color: var(--background-medium);
+    gap: 10px;
+    border-radius: 0 0 12px 12px;
+    flex-shrink: 0;
+}
+
+#chatMessageInput {
+    flex-grow: 1;
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--background-dark);
+    color: var(--text-primary);
+    font-family: var(--font-primary);
+    font-size: 0.9rem;
+}
+#chatMessageInput:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 230, 118, 0.15);
+}
+#chatMessageInput::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.7;
+}
+
+#chatSendMessageBtn {
+    padding: 10px 15px;
+    font-size: 0.9rem;
+}
+
+/*=========================
+ WINNER BOXES STYLES
+ =========================*/
+
+.winner-boxes-container {
+    width: 280px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    height: 600px; /* Add fixed height to match chat */
+}
+
+.winner-box {
+    background-color: var(--background-light);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    height: 290px; /* Fixed height instead of flex-grow */
+}
+
+.winner-box-header {
+    padding: 10px 15px;
+    background: var(--background-medium);
+    border-bottom: 1px solid var(--border-color);
+    border-radius: 12px 12px 0 0;
+    flex-shrink: 0;
+}
+
+.winner-box-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--primary-color); /* Header color is neon green */
+    font-weight: 600;
+    text-align: center;
+}
+
+.winner-box-content {
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-height: 150px; /* Base min height for content */
+    justify-content: center; /* Center placeholder text */
+    flex-grow: 1; /* Allow content area to expand within the box */
+}
+
+.winner-box-avatar {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--primary-color);
+    margin-bottom: 10px;
+    box-shadow: 0 0 15px rgba(0, 230, 118, 0.3);
+}
+
+.winner-box-name {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 5px;
+    word-break: break-all;
+}
+
+.winner-box-details {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+.winner-box-details .value {
+    font-weight: bold;
+    color: var(--primary-light);
+}
+.winner-box-details .pot-value {
+    font-weight: bold;
+    color: var(--secondary-light); /* Orange for pot value, as per original design for values */
 }
 
 
-let currentRound = null;
-let roundTimer = null;
-let isRolling = false;
-
-const priceCache = new NodeCache({ stdTTL: PRICE_CACHE_TTL_SECONDS, checkperiod: PRICE_CACHE_TTL_SECONDS * 0.2, useClones: false });
-
-function getFallbackPrice(marketHashName) {
-    return MIN_ITEM_VALUE > 0 ? MIN_ITEM_VALUE : 0;
+.no-winner-message p {
+    color: var(--text-secondary);
+    font-style: italic;
+    font-size: 0.9rem;
+    margin: 0;
 }
 
-async function refreshPriceCache() {
-    console.log("PRICE_INFO: Attempting to refresh price cache from rust.scmm.app...");
-    const apiUrl = `https://rust.scmm.app/api/item/prices?currency=USD`;
-    try {
-        const response = await axios.get(apiUrl, { timeout: PRICE_FETCH_TIMEOUT_MS });
-        if (response.data && Array.isArray(response.data)) {
-            const items = response.data;
-            let updatedCount = 0;
-            let newItems = [];
-            items.forEach(item => {
-                if (item?.name && typeof item.price === 'number' && item.price >= 0) {
-                    const priceInDollars = item.price / 100.0;
-                    newItems.push({ key: item.name, val: priceInDollars });
-                    updatedCount++;
-                }
-            });
-            if (newItems.length > 0) {
-                const success = priceCache.mset(newItems);
-                if(success) console.log(`PRICE_SUCCESS: Refreshed price cache with ${updatedCount} items from rust.scmm.app.`);
-                else console.error("PRICE_ERROR: Failed to bulk set price cache (node-cache mset returned false).");
-            } else {
-                console.warn("PRICE_WARN: No valid items found in the response from rust.scmm.app price refresh.");
-            }
-        } else {
-            console.error("PRICE_ERROR: Invalid or empty array response received from rust.scmm.app price refresh. Response Status:", response.status);
-        }
-    } catch (error) {
-        console.error(`PRICE_ERROR: Failed to fetch prices from ${apiUrl}.`);
-        if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
-            console.error(` -> Error: Request timed out after ${PRICE_FETCH_TIMEOUT_MS}ms.`);
-        } else if (error.response) {
-            console.error(` -> Status: ${error.response.status}, Response:`, error.response.data || error.message);
-        } else if (error.request) {
-            console.error(` -> Error: No response received (Network issue?).`, error.message);
-        } else {
-            console.error(' -> Error setting up request:', error.message);
-        }
-    }
-}
-
-function getItemPrice(marketHashName) {
-    if (typeof marketHashName !== 'string' || marketHashName.length === 0) {
-        console.warn("getItemPrice called with invalid marketHashName:", marketHashName);
-        return 0;
-    }
-    const cachedPrice = priceCache.get(marketHashName);
-    return (cachedPrice !== undefined) ? cachedPrice : getFallbackPrice(marketHashName);
-}
-
-async function createNewRound() {
-    if (isRolling) {
-        console.log("LOG_INFO: Cannot create new round: Current round is rolling.");
-        return null;
-    }
-    if (currentRound && currentRound.status === 'active') {
-        console.log(`LOG_INFO: Cannot create new round: Round ${currentRound.roundId} is already active.`);
-        return currentRound;
-    }
-
-    try {
-        isRolling = false;
-        const serverSeed = crypto.randomBytes(32).toString('hex');
-        const serverSeedHash = crypto.createHash('sha256').update(serverSeed).digest('hex');
-
-        const lastRound = await Round.findOne().sort('-roundId');
-        const nextRoundId = lastRound ? lastRound.roundId + 1 : 1;
-
-        const newRound = new Round({
-            roundId: nextRoundId,
-            status: 'active',
-            startTime: new Date(),
-            serverSeed: serverSeed,
-            serverSeedHash: serverSeedHash,
-            items: [],
-            participants: [],
-            totalValue: 0,
-            payoutOfferStatus: 'Unknown'
-        });
-        await newRound.save();
-        currentRound = newRound.toObject();
-
-        io.emit('roundCreated', {
-            roundId: newRound.roundId,
-            serverSeedHash: newRound.serverSeedHash,
-            timeLeft: ROUND_DURATION,
-            totalValue: 0,
-            participants: [],
-            items: []
-        });
-        console.log(`LOG_SUCCESS: --- Round ${newRound.roundId} created and active ---`);
-        return newRound.toObject();
-    } catch (err) {
-        console.error('FATAL_ERROR: Error creating new round:', err);
-        setTimeout(createNewRound, 10000);
-        return null;
-    }
-}
-
-async function ensureInitialRound() {
-    if (isBotConfigured && isBotReady) {
-        if (!currentRound) {
-            try {
-                const existingActive = await Round.findOne({ status: 'active' })
-                    .populate('participants.user', 'steamId username avatar')
-                    .populate('items')
-                    .populate('winner', 'steamId username avatar').lean();
-
-                if (existingActive) {
-                    console.log(`LOG_INFO: Found existing active round ${existingActive.roundId} on startup.`);
-                    currentRound = existingActive;
-                    if (currentRound.participants.length > 0 && currentRound.endTime && new Date(currentRound.endTime) > Date.now() && !roundTimer) {
-                        startRoundTimer(true);
-                    } else if (currentRound.participants.length > 0 && !currentRound.endTime && !roundTimer) {
-                        console.warn(`WARN: Active round ${currentRound.roundId} found without endTime. Starting timer now.`);
-                        startRoundTimer(false);
-                    }
-                } else {
-                    console.log("LOG_INFO: No active round found, creating initial round...");
-                    await createNewRound();
-                }
-            } catch (dbErr) {
-                console.error("DB_ERROR: Error ensuring initial round:", dbErr);
-            }
-        }
-    } else if (isBotConfigured && !isBotReady) {
-        console.log("LOG_INFO: Bot configured but not ready, skipping initial round check until bot is ready.");
-    } else {
-        console.log("LOG_INFO: Bot not configured, skipping initial round check.");
-    }
+.winner-box-spacer {
+    height: 20px;
+    flex-shrink: 0;
 }
 
 
-function startRoundTimer(useRemainingTime = false) {
-    if (roundTimer) clearInterval(roundTimer);
-    if (!currentRound || currentRound.status !== 'active') {
-        console.warn("WARN: Cannot start timer: No active round or round status invalid.");
-        return;
+/* Media Queries */
+@media (max-width: 1270px) {
+    .jackpot-and-chat-container {
+        flex-direction: column;
+        align-items: center; /* Center items when stacked */
+        /* align-items: stretch; /* If you want them to stretch full width of container when stacked */
+    }
+    .winner-boxes-container {
+        width: 100%;
+        max-width: 600px;
+        margin-bottom: 20px;
+        flex-direction: row; /* Side-by-side for winner boxes */
+        justify-content: space-around;
+        align-items: flex-start; /* Align to their own top */
+    }
+    .winner-boxes-container .winner-box {
+        width: 48%; /* Approx half */
+        flex-grow: 0; /* Prevent stretching when side-by-side in this view */
+    }
+    .winner-box-spacer {
+        display: none;
     }
 
-    let timeLeft;
-    let calculatedEndTime;
-
-    if (useRemainingTime && currentRound.endTime) {
-        calculatedEndTime = new Date(currentRound.endTime);
-        timeLeft = Math.max(0, Math.floor((calculatedEndTime.getTime() - Date.now()) / 1000));
-        console.log(`LOG_INFO: Resuming timer for round ${currentRound.roundId} with ${timeLeft}s remaining.`);
-    } else {
-        timeLeft = ROUND_DURATION;
-        calculatedEndTime = new Date(Date.now() + ROUND_DURATION * 1000);
-        currentRound.endTime = calculatedEndTime;
-        Round.updateOne({ _id: currentRound._id }, { $set: { endTime: calculatedEndTime }})
-            .catch(e => console.error(`DB_ERROR: Error saving round end time for round ${currentRound?.roundId}:`, e));
-        console.log(`LOG_INFO: Starting timer for round ${currentRound.roundId} (${ROUND_DURATION}s). End time: ${calculatedEndTime.toISOString()}`);
+    .jackpot-section {
+        width: 100%;
+        max-width: 680px;
+        margin-bottom: 20px;
+    }
+    .chat-container {
+        width: 100%;
+        max-width: 600px;
+        /* Re-introduce a sensible height for stacked mobile view as stretch might not be ideal here */
+        height: 500px;
+        max-height: 60vh;
+    }
+    .main-header .container {
+        flex-direction: column;
+        gap: 5px;
+    }
+    .header-left, .header-center, .header-right {
+        width: 100%;
+        justify-content: center;
+        gap: 5px;
+    }
+    .primary-nav ul, .secondary-nav ul {
+        flex-wrap: wrap;
+        justify-content: center;
     }
 
-    io.emit('timerUpdate', { timeLeft });
-
-    roundTimer = setInterval(async () => {
-        if (!currentRound || currentRound.status !== 'active' || !currentRound.endTime) {
-            clearInterval(roundTimer); roundTimer = null;
-            console.warn("WARN: Timer stopped: Round state became invalid during countdown.");
-            return;
-        }
-
-        const now = Date.now();
-        let currenttimeLeft = Math.max(0, Math.floor((new Date(currentRound.endTime).getTime() - now) / 1000));
-
-        io.emit('timerUpdate', { timeLeft: currenttimeLeft });
-
-        if (currenttimeLeft <= 0) {
-            clearInterval(roundTimer); roundTimer = null;
-            console.log(`LOG_INFO: Round ${currentRound.roundId} timer reached zero.`);
-            await endRound();
-        }
-    }, 1000);
 }
 
-
-async function endRound() {
-    if (!currentRound || isRolling || currentRound.status !== 'active') {
-        console.warn(`WARN: Attempted to end round ${currentRound?.roundId}, but state is invalid (Status: ${currentRound?.status}, Rolling: ${isRolling})`);
-        return;
+@media (max-width: 980px) {
+    .winner-boxes-container {
+        flex-direction: column; /* Stack winner boxes vertically again */
+        align-items: center;
     }
-    isRolling = true;
-    const roundIdToEnd = currentRound.roundId;
-    const roundMongoId = currentRound._id;
-    console.log(`LOG_INFO: --- Ending round ${roundIdToEnd}... ---`);
-
-    try {
-        await Round.updateOne({ _id: roundMongoId }, { $set: { status: 'rolling', endTime: new Date() } });
-        io.emit('roundRolling', { roundId: roundIdToEnd });
-
-        const round = await Round.findById(roundMongoId)
-            .populate('participants.user', 'steamId username avatar tradeUrl')
-            .populate('items')
-            .lean();
-
-        if (!round) throw new Error(`Round ${roundIdToEnd} data missing after status update.`);
-        if (round.status !== 'rolling') {
-            console.warn(`WARN: Round ${roundIdToEnd} status changed unexpectedly after marking as rolling. Aborting endRound.`);
-            isRolling = false; return;
-        }
-        currentRound = round;
-
-        if (round.participants.length === 0 || round.items.length === 0 || round.totalValue <= 0) {
-            console.log(`LOG_INFO: Round ${round.roundId} ended with no valid participants or value.`);
-            await Round.updateOne({ _id: roundMongoId }, { $set: { status: 'completed', completedTime: new Date() } });
-            io.emit('roundCompleted', { roundId: round.roundId, message: "No participants or value." });
-            isRolling = false;
-            setTimeout(createNewRound, 5000);
-            return;
-        }
-
-        let finalItems = [...round.items];
-        let originalPotValue = round.totalValue;
-        let valueForWinner = originalPotValue;
-        let taxAmount = 0;
-        let taxedItemsInfo = [];
-        let itemsToTakeForTaxIds = new Set();
-
-        if (originalPotValue >= MIN_POT_FOR_TAX) {
-            const targetTaxValue = originalPotValue * (TAX_MIN_PERCENT / 100);
-            const maxTaxValue = originalPotValue * (TAX_MAX_PERCENT / 100);
-            const sortedItemsForTax = [...round.items].sort((a, b) => a.price - b.price);
-            let currentTaxValueAccumulated = 0;
-
-            for (const item of sortedItemsForTax) {
-                if (currentTaxValueAccumulated + item.price <= maxTaxValue) {
-                    itemsToTakeForTaxIds.add(item._id.toString());
-                    taxedItemsInfo.push({ assetId: item.assetId, name: item.name, price: item.price }); // Ensure correct assetId is used if it matters for display
-                    currentTaxValueAccumulated += item.price;
-                    if (currentTaxValueAccumulated >= targetTaxValue) break;
-                } else {
-                    break;
-                }
-            }
-
-            if (itemsToTakeForTaxIds.size > 0) {
-                finalItems = round.items.filter(item => !itemsToTakeForTaxIds.has(item._id.toString()));
-                taxAmount = currentTaxValueAccumulated;
-                valueForWinner = originalPotValue - taxAmount;
-                console.log(`LOG_INFO: Tax Applied for Round ${round.roundId}: $${taxAmount.toFixed(2)} (${itemsToTakeForTaxIds.size} items). Original Value: $${originalPotValue.toFixed(2)}. New Pot Value for Winner: $${valueForWinner.toFixed(2)}`);
-            }
-        }
-
-        const clientSeed = crypto.randomBytes(16).toString('hex');
-        const combinedString = round.serverSeed + clientSeed;
-        const provableHash = crypto.createHash('sha256').update(combinedString).digest('hex');
-        const decimalFromHash = parseInt(provableHash.substring(0, 8), 16);
-        const totalTickets = round.participants.reduce((sum, p) => sum + (p?.tickets || 0), 0);
-
-        if (totalTickets <= 0) throw new Error(`Cannot determine winner: Total tickets is zero for round ${round.roundId}.`);
-        const winningTicket = decimalFromHash % totalTickets;
-        let cumulativeTickets = 0;
-        let winnerInfo = null;
-
-        for (const participant of round.participants) {
-            if (!participant?.tickets || !participant.user) continue;
-            cumulativeTickets += participant.tickets;
-            if (winningTicket < cumulativeTickets) {
-                winnerInfo = participant.user;
-                break;
-            }
-        }
-
-        if (!winnerInfo || !winnerInfo._id) throw new Error(`Winner selection failed for round ${round.roundId}.`);
-
-        await User.findByIdAndUpdate(winnerInfo._id, { $inc: { totalWinningsValue: valueForWinner } });
-        console.log(`LOG_INFO: Updated winnings stats for ${winnerInfo.username}: added $${valueForWinner.toFixed(2)}`);
-
-        const finalUpdateData = {
-            status: 'completed_pending_acceptance',
-            completedTime: new Date(), clientSeed: clientSeed,
-            provableHash: provableHash, winningTicket: winningTicket, winner: winnerInfo._id,
-            taxAmount: taxAmount, taxedItems: taxedItemsInfo,
-            totalValue: valueForWinner,
-            items: finalItems.map(i => i._id), // Store IDs of items won (these items now have the bot's assetIds)
-            payoutOfferStatus: 'PendingAcceptanceByWinner'
-        };
-
-        const completedRound = await Round.findOneAndUpdate({ _id: roundMongoId }, { $set: finalUpdateData }, { new: true });
-        if (!completedRound) throw new Error("Failed to save completed round data.");
-
-        console.log(`LOG_SUCCESS: Round ${round.roundId} completed. Winner: ${winnerInfo.username} (Ticket: ${winningTicket}/${totalTickets}, Value Won: $${valueForWinner.toFixed(2)})`);
-
-        io.emit('roundWinnerPendingAcceptance', {
-            roundId: round.roundId,
-            winner: { id: winnerInfo._id, steamId: winnerInfo.steamId, username: winnerInfo.username, avatar: winnerInfo.avatar },
-            winningTicket: winningTicket,
-            totalValue: valueForWinner,
-            totalTickets: totalTickets,
-            serverSeed: round.serverSeed,
-            clientSeed: clientSeed,
-            provableHash: provableHash,
-            serverSeedHash: round.serverSeedHash
-        });
-
-    } catch (err) {
-        console.error(`CRITICAL_ERROR: Error during endRound for round ${roundIdToEnd}:`, err);
-        await Round.updateOne({ _id: roundMongoId }, { $set: { status: 'error', payoutOfferStatus: 'Failed' }})
-            .catch(e => console.error("DB_ERROR: Error marking round as error after endRound failure:", e));
-        io.emit('roundError', { roundId: roundIdToEnd, error: 'Internal server error during round finalization.' });
-    } finally {
-        isRolling = false;
-        console.log(`LOG_INFO: Scheduling next round creation after round ${roundIdToEnd} finalization.`);
-        setTimeout(createNewRound, 10000);
+    .winner-boxes-container .winner-box {
+        width: 100%;
+        max-width: 280px; /* Limit width when stacked vertically */
+        margin-bottom: 15px;
+    }
+    .winner-boxes-container .winner-box:last-child {
+        margin-bottom: 0;
+    }
+     .chat-container {
+        height: 450px; /* Further adjust chat height for smaller screens */
+        max-height: 50vh;
     }
 }
-
-
-async function checkOfferStatus(offerId) {
-    return new Promise((resolve) => {
-        if (!isBotReady || !manager) {
-            console.warn(`LOG_WARN: Cannot check offer status for ${offerId}: Bot not ready or manager unavailable.`);
-            return resolve(null);
-        }
-        manager.getOffer(offerId, (err, offer) => {
-            if (err) {
-                console.log(`LOG_WARN: Could not fetch offer ${offerId} for status check:`, err.message);
-                if (err.eresult === 25) {
-                    return resolve({ state: -1, stateName: 'NotFoundOrNotOwned' });
-                }
-                return resolve(null);
-            }
-            resolve({
-                state: offer.state,
-                stateName: TradeOfferManager.ETradeOfferState[offer.state]
-            });
-        });
-    });
-}
-
-function parseTradeURL(tradeUrl) {
-    try {
-        const regex = /https?:\/\/(www\.)?steamcommunity\.com\/tradeoffer\/new\/\?partner=(\d+)(&|&amp;)token=([a-zA-Z0-9_-]+)/i;
-        const match = tradeUrl.match(regex);
-
-        if (!match) {
-            return { valid: false, error: 'Invalid trade URL format' };
-        }
-
-        const [, , partnerId, , token] = match;
-        const steamId = new SteamID();
-        steamId.universe = SteamID.Universe.PUBLIC;
-        steamId.type = SteamID.Type.INDIVIDUAL;
-        steamId.instance = SteamID.Instance.DESKTOP;
-        steamId.accountid = parseInt(partnerId);
-
-        return {
-            valid: true,
-            partnerId: partnerId,
-            token: token,
-            steamId64: steamId.getSteamID64(),
-            steamIdObject: steamId
-        };
-    } catch (error) {
-        return { valid: false, error: error.message };
-    }
-}
-
-// Original sendWinningTradeOffer (kept for reference, but alternative is used)
-async function sendWinningTradeOffer(roundDoc, winner, itemsToSend) {
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] Starting winning trade offer for Round ${roundDoc.roundId}, Winner: ${winner.username}`);
-
-    if (!roundDoc || !winner || !itemsToSend) {
-        console.error(`[${timestamp}] PAYOUT_ERROR: Missing required parameters for round ${roundDoc?._id}, winner ${winner?._id}`);
-        if (roundDoc && roundDoc._id) await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - System Error' } });
-        return { success: false, error: 'Missing required parameters', botConfirmed: false };
-    }
-    if (!winner.tradeUrl) {
-        console.error(`[${timestamp}] PAYOUT_ERROR: Winner ${winner.username} has no trade URL for round ${roundDoc.roundId}`);
-        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - No Trade URL' } });
-        io.to(winner._id.toString()).emit('notification', {
-            type: 'error',
-            message: 'Please set your Steam Trade URL in your profile to receive winnings.'
-        });
-        return { success: false, error: 'No trade URL', botConfirmed: false };
-    }
-    if (!itemsToSend || itemsToSend.length === 0) {
-        console.log(`[${timestamp}] PAYOUT_INFO: No items to send for round ${roundDoc.roundId} (all consumed by tax or empty pot).`);
-        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'No Items Won' } });
-        io.to(winner._id.toString()).emit('notification', {
-            type: 'info',
-            message: `Congratulations on winning round #${roundDoc.roundId}! No items were sent as the pot was empty or consumed by fees.`
-        });
-        return { success: true, message: 'No items to send', botConfirmed: true }; // Considered 'confirmed' as no action needed
-    }
-    let offer = null; // Define offer here
-    try {
-        await ensureValidManager();
-        offer = manager.createOffer(winner.tradeUrl);
-
-        const itemsForOffer = itemsToSend.map(itemDoc => {
-            if (!itemDoc.assetId) {
-                console.error(`[${timestamp}] PAYOUT_CRITICAL: Item document in itemsToSend is missing assetId! Item ID: ${itemDoc._id}, Name: ${itemDoc.name}. Skipping this item.`);
-                return null;
-            }
-            return {
-                assetid: String(itemDoc.assetId),
-                appid: RUST_APP_ID,
-                contextid: String(RUST_CONTEXT_ID)
-            };
-        }).filter(item => item !== null);
-
-        if (itemsForOffer.length === 0 && itemsToSend.length > 0) {
-             console.error(`[${timestamp}] PAYOUT_ERROR: No valid items could be prepared for offer to ${winner.username} for round ${roundDoc.roundId}, though items were expected.`);
-             await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - Inventory/Trade Issue' } });
-             io.to(winner._id.toString()).emit('notification', { type: 'error', message: 'Winnings payout failed due to an internal inventory issue. Contact support.' });
-             return { success: false, error: 'Internal inventory item preparation error for payout.', botConfirmed: false };
-        }
-        if (itemsForOffer.length === 0 && itemsToSend.length === 0) { // Should be caught by earlier check
-             console.log(`[${timestamp}] PAYOUT_INFO: Double check - no items to send for round ${roundDoc.roundId}.`);
-             return { success: true, message: 'No items to send (confirmed)', botConfirmed: true };
-        }
-
-        offer.addMyItems(itemsForOffer);
-        const offerMessage = `脂 Round #${roundDoc.roundId} Winnings - ${process.env.SITE_NAME || 'YourSite'} - Value: $${roundDoc.totalValue.toFixed(2)} 脂`;
-        offer.setMessage(offerMessage);
-
-        console.log(`[${timestamp}] Sending winnings offer (${itemsForOffer.length} items) to ${winner.username} for round ${roundDoc.roundId}...`);
-        
-        const sendStatus = await new Promise((resolve, reject) => {
-            offer.send((err, sStatus) => {
-                if (err) return reject(err);
-                resolve(sStatus);
-            });
-        });
-
-        const offerId = offer.id;
-        const offerURL = `https://steamcommunity.com/tradeoffer/${offerId}/`;
-        console.log(`[${timestamp}] SUCCESS: Winnings offer ${offerId} sent to ${winner.username}. Initial send Status: ${sendStatus}, Offer State: ${TradeOfferManager.ETradeOfferState[offer.state]}`);
-
-        let initialPayoutStatus = 'Sent';
-        if (offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation || sendStatus === 'pending' || sendStatus === 'createdNeedsConfirmation') {
-            initialPayoutStatus = 'Pending Confirmation';
-        } else if (sendStatus === 'sent') {
-            initialPayoutStatus = 'Sent';
-        }
-        
-        await Round.updateOne( { _id: roundDoc._id }, { $set: { payoutOfferId: offerId, payoutOfferStatus: initialPayoutStatus } });
-
-        io.to(winner._id.toString()).emit('tradeOfferSent', {
-            roundId: roundDoc.roundId, userId: winner._id.toString(), offerId: offerId, offerURL: offerURL,
-            status: initialPayoutStatus, type: 'winning'
-        });
-        io.to(winner._id.toString()).emit('notification', {
-            type: 'info',
-            message: `Your winnings for round #${roundDoc.roundId} (Offer ID: ${offerId}) have been sent by the bot. Awaiting bot's mobile confirmation if needed. URL: ${offerURL}`
-        });
-
-        let finalStatusForResponse = initialPayoutStatus;
-        let botConfirmedSuccessfully = false;
-
-        if (offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation ||
-            offer.state === TradeOfferManager.ETradeOfferState.PendingConfirmation ||
-            sendStatus === 'pending' || sendStatus === 'createdNeedsConfirmation') {
-            
-            console.log(`[${timestamp}] Offer ${offerId} requires bot confirmation. Attempting auto-confirmation now.`);
-            const confirmResult = await confirmTradeOffer(offerId, 'winnings');
-
-            if (confirmResult.success) {
-                console.log(`[${timestamp}] Winnings offer ${offerId} auto-confirmed by bot for ${winner.username} on first attempt.`);
-                await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Sent (Confirmed)' } });
-                finalStatusForResponse = 'Sent (Confirmed)';
-                botConfirmedSuccessfully = true;
-                io.to(winner._id.toString()).emit('notification', {
-                    type: 'success',
-                    message: `Winnings offer #${offerId} (Round #${roundDoc.roundId}) has been confirmed by the bot and is ready for you on Steam!`
-                });
-            } else {
-                console.warn(`[${timestamp}] Failed to auto-confirm winnings offer ${offerId} by bot on first attempt: ${confirmResult.error}. Scheduling retry.`);
-                io.to(winner._id.toString()).emit('notification', {
-                    type: 'warning',
-                    message: `Winnings offer #${offerId} sent. Bot's first auto-confirmation attempt failed. Retrying shortly.`
-                });
-                setTimeout(async () => {
-                    const retryConfirmResult = await confirmTradeOffer(offerId, 'winnings-retry');
-                    if (retryConfirmResult.success) {
-                        console.log(`[${timestamp}] Winnings offer ${offerId} auto-confirmed by bot for ${winner.username} on RETRY.`);
-                        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Sent (Confirmed)' } });
-                        io.to(winner._id.toString()).emit('notification', {
-                            type: 'success',
-                            message: `Winnings offer #${offerId} (Round #${roundDoc.roundId}) has now been successfully confirmed by the bot after a retry!`
-                        });
-                    } else {
-                        console.error(`[${timestamp}] FAILED to auto-confirm winnings offer ${offerId} by bot on retry: ${confirmResult.error}. Offer will require manual confirmation by bot admin.`);
-                        io.to(winner._id.toString()).emit('notification', {
-                            type: 'error',
-                            message: `Offer ${offerId} sent, but auto-confirmation by bot failed after retry. Bot admin will confirm it manually.`
-                        });
-                    }
-                }, 10000); // 10-second delay for retry
-            }
-        } else if (initialPayoutStatus === 'Sent' && offer.state === TradeOfferManager.ETradeOfferState.Active) {
-            console.log(`[${timestamp}] Offer ${offerId} is active and ready for user. Status: ${sendStatus}, Offer State: ${TradeOfferManager.ETradeOfferState[offer.state]}`);
-            finalStatusForResponse = 'Active (Sent to User)';
-            botConfirmedSuccessfully = true;
-            io.to(winner._id.toString()).emit('notification', {
-                type: 'success',
-                message: `Winnings offer #${offerId} (Round #${roundDoc.roundId}) has been sent and is active on Steam. Please accept it.`
-            });
-        } else {
-            console.log(`[${timestamp}] Offer ${offerId} status is '${sendStatus}' / state '${TradeOfferManager.ETradeOfferState[offer.state]}', does not require explicit bot confirmation step here or already handled.`);
-        }
-        
-        return { success: true, offerId: offerId, offerURL: offerURL, status: finalStatusForResponse, botConfirmed: botConfirmedSuccessfully };
-
-    } catch (error) {
-        console.error(`[${timestamp}] Error sending winnings offer for round ${roundDoc.roundId} to ${winner.username}:`, error.message, error.eresult);
-        let userMessage = 'Failed to send winnings. Please try again or contact support.';
-        let dbStatus = 'Failed - Send Error';
-
-        if (error.eresult === 26 || error.message?.toLowerCase().includes('trade url') || error.message?.toLowerCase().includes('invalid for sending an offer')) {
-            userMessage = 'Your Steam Trade URL appears to be invalid or has expired. Please update it in your profile and try accepting winnings again, or contact support.';
-            dbStatus = 'Failed - Invalid Trade URL';
-        } else if (error.eresult === 15) {
-            userMessage = 'Your inventory appears to be private. Please make it public to receive winnings and contact support if issues persist.';
-            dbStatus = 'Failed - Inventory Private';
-        } else if (error.eresult === 16) {
-            userMessage = 'You (or the bot) appear to be trade banned. Contact Steam support.';
-            dbStatus = 'Failed - Trade Banned';
-        } else if (error.eresult === 25 || error.message?.toLowerCase().includes('items_unavailable')) {
-            userMessage = 'Some items for your winnings were unavailable at the time of sending. Please contact support.';
-            dbStatus = 'Failed - Inventory/Trade Issue';
-        } else if (error.message?.includes("No matching items found in bot inventory")) {
-            userMessage = 'Winnings payout failed: Could not find specified items in bot inventory. Please contact support.';
-            dbStatus = 'Failed - Bot Inventory Issue';
-        } else if (error.eresult) {
-            userMessage = `Failed to send winnings due to a Steam error (Code: ${error.eresult}). Please try again or contact support.`;
-            dbStatus = `Failed - Steam Error ${error.eresult}`;
-        }
-
-        // Ensure payoutOfferId is cleared if the offer object was created but send failed or was problematic
-        const offerIdToClear = offer && offer.id ? offer.id : null;
-        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: dbStatus, payoutOfferId: offerIdToClear ? null : undefined } }); // Clear offerId if it was set then failed
-        io.to(winner._id.toString()).emit('notification', { type: 'error', message: userMessage });
-        return { success: false, error: userMessage, errorCode: error.eresult, botConfirmed: false };
-    }
-}
-
-
-// MODIFIED sendWinningTradeOfferAlternative
-async function sendWinningTradeOfferAlternative(roundDoc, winner, itemsToSend) {
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] (Alternative) Starting winning trade offer for Round ${roundDoc.roundId}, Winner: ${winner.username}`);
-
-    if (!roundDoc || !winner || !itemsToSend) {
-        console.error(`[${timestamp}] (Alternative) PAYOUT_ERROR: Missing required parameters`);
-        if (roundDoc && roundDoc._id) await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - System Error' } });
-        return { success: false, error: 'Missing required parameters', botConfirmed: false };
-    }
-    if (!winner.tradeUrl) {
-        console.error(`[${timestamp}] (Alternative) PAYOUT_ERROR: Winner ${winner.username} has no trade URL`);
-        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - No Trade URL' } });
-        io.to(winner._id.toString()).emit('notification', {
-            type: 'error',
-            message: 'Please set your Steam Trade URL in your profile to receive winnings.'
-        });
-        return { success: false, error: 'No trade URL', botConfirmed: false };
-    }
-    if (!itemsToSend || itemsToSend.length === 0) {
-        console.log(`[${timestamp}] (Alternative) PAYOUT_INFO: No items to send (all consumed by tax)`);
-        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'No Items Won' } });
-        io.to(winner._id.toString()).emit('notification', {
-            type: 'info',
-            message: `Congratulations on winning round #${roundDoc.roundId}! No items were sent as the pot was consumed by fees.`
-        });
-        return { success: true, message: 'No items to send', botConfirmed: true }; // No bot action needed, so "confirmed"
-    }
-
-    let offer = null; // Define offer here
-    try {
-        await ensureValidManager();
-        console.log(`[${timestamp}] (Alternative) Fetching bot's current inventory to match items...`);
-        const botInventory = await new Promise((resolve, reject) => {
-            if (!manager) return reject(new Error("TradeOfferManager not initialized."));
-            manager.getInventoryContents(RUST_APP_ID, RUST_CONTEXT_ID, true, (err, inventory) => {
-                if (err) {
-                    console.error(`[${timestamp}] (Alternative) ERROR: Failed to fetch bot inventory for winnings:`, err);
-                    reject(err);
-                } else {
-                    resolve(inventory || []);
-                }
-            });
-        });
-
-        offer = manager.createOffer(winner.tradeUrl);
-        const itemsForOffer = [];
-        const usedBotAssetIds = new Set();
-
-        for (const itemDocFromRound of itemsToSend) {
-            const matchingBotItem = botInventory.find(botItem =>
-                botItem.market_hash_name === itemDocFromRound.name &&
-                !usedBotAssetIds.has(botItem.assetid) &&
-                Math.abs((getItemPrice(botItem.market_hash_name) || 0) - itemDocFromRound.price) < 0.01
-            );
-
-            if (matchingBotItem) {
-                itemsForOffer.push({
-                    assetid: String(matchingBotItem.assetid),
-                    appid: RUST_APP_ID,
-                    contextid: String(RUST_CONTEXT_ID)
-                });
-                usedBotAssetIds.add(matchingBotItem.assetid);
-                console.log(`[${timestamp}] (Alternative) Matched round item "${itemDocFromRound.name}" to bot inventory assetId: ${matchingBotItem.assetid}`);
-            } else {
-                console.error(`[${timestamp}] (Alternative) ERROR: Could not find matching item for "${itemDocFromRound.name}" (Price: ${itemDocFromRound.price}) in bot's live inventory for round ${roundDoc.roundId}! This item will be skipped.`);
-                // Do not throw error here, try to send what can be matched. The user will get fewer items.
-                // This should be logged and potentially flagged for admin review.
-            }
-        }
-
-        if (itemsForOffer.length === 0 && itemsToSend.length > 0) {
-            console.error(`[${timestamp}] (Alternative) PAYOUT_ERROR: No items could be matched in bot inventory for round ${roundDoc.roundId} to ${winner.username}. Expected ${itemsToSend.length} items.`);
-            await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Failed - Bot Inventory Issue' } });
-            io.to(winner._id.toString()).emit('notification', { type: 'error', message: 'Winnings payout failed: Critical item mismatch in bot inventory. Contact support.' });
-            return { success: false, error: "No matching items found in bot inventory for payout.", botConfirmed: false };
-        }
-        if (itemsForOffer.length < itemsToSend.length) {
-            console.warn(`[${timestamp}] (Alternative) PAYOUT_WARN: Matched only ${itemsForOffer.length} out of ${itemsToSend.length} expected items for round ${roundDoc.roundId} to ${winner.username}. Some items may be missing from the offer.`);
-            // Notify user that some items might be missing
-             io.to(winner._id.toString()).emit('notification', {
-                type: 'warning',
-                message: `(Alt) Winnings for round #${roundDoc.roundId}: Some items could not be matched in the bot's inventory and are missing from the offer. Please contact support if this seems incorrect.`
-            });
-        }
-
-
-        offer.addMyItems(itemsForOffer);
-        const offerMessage = `脂 Round #${roundDoc.roundId} Winnings (Alternative) - ${process.env.SITE_NAME || 'YourSite'} - Value: $${roundDoc.totalValue.toFixed(2)} 脂`;
-        offer.setMessage(offerMessage);
-
-        console.log(`[${timestamp}] (Alternative) Sending winnings offer (${itemsForOffer.length} items) to ${winner.username}...`);
-        const sendStatus = await new Promise((resolve, reject) => { // Renamed 'status' to 'sendStatus'
-            offer.send((err, sStatus) => {
-                if (err) return reject(err);
-                resolve(sStatus);
-            });
-        });
-
-        const offerId = offer.id;
-        const offerURL = `https://steamcommunity.com/tradeoffer/${offerId}/`;
-        console.log(`[${timestamp}] (Alternative) SUCCESS: Winnings offer ${offerId} sent to ${winner.username}. Initial send Status: ${sendStatus}, Offer State: ${TradeOfferManager.ETradeOfferState[offer.state]}`);
-
-
-        let initialPayoutStatus = 'Sent';
-        // Check offer.state after send, as it's more reliable from TradeOfferManager
-        if (offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation || sendStatus === 'pending' || sendStatus === 'createdNeedsConfirmation') {
-            initialPayoutStatus = 'Pending Confirmation';
-        } else if (offer.state === TradeOfferManager.ETradeOfferState.Active) { // Active usually means it's good to go for user
-            initialPayoutStatus = 'Active (Sent to User)';
-        } else if (sendStatus === 'sent') { // Fallback if offer.state is not yet defined or still indicative
-            initialPayoutStatus = 'Sent';
-        }
-
-
-        await Round.updateOne(
-            { _id: roundDoc._id },
-            { $set: { payoutOfferId: offerId, payoutOfferStatus: initialPayoutStatus } }
-        );
-
-        io.to(winner._id.toString()).emit('tradeOfferSent', {
-            roundId: roundDoc.roundId,
-            userId: winner._id.toString(),
-            offerId: offerId,
-            offerURL: offerURL,
-            status: initialPayoutStatus,
-            type: 'winning'
-        });
-        io.to(winner._id.toString()).emit('notification', {
-            type: 'info',
-            message: `(Alt) Your winnings for round #${roundDoc.roundId} (Offer ID: ${offerId}) have been sent by the bot. Awaiting bot's mobile confirmation if needed. URL: ${offerURL}`
-        });
-
-        let finalStatusForResponse = initialPayoutStatus;
-        let botConfirmedSuccessfully = false;
-
-        if (offer.state === TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation ||
-            sendStatus === 'pending' || // TOM uses 'pending' for needs confirmation
-            sendStatus === 'createdNeedsConfirmation') { // Another possible status string
-
-            console.log(`[${timestamp}] (Alternative) Offer ${offerId} requires bot confirmation. Attempting auto-confirmation now.`);
-            const confirmResult = await confirmTradeOffer(offerId, 'winnings-alt');
-
-            if (confirmResult.success) {
-                console.log(`[${timestamp}] (Alternative) Winnings offer ${offerId} auto-confirmed by bot for ${winner.username} on first attempt.`);
-                await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Sent (Confirmed)' } });
-                finalStatusForResponse = 'Sent (Confirmed)';
-                botConfirmedSuccessfully = true;
-                io.to(winner._id.toString()).emit('notification', {
-                    type: 'success',
-                    message: `(Alt) Winnings offer #${offerId} (Round #${roundDoc.roundId}) has been confirmed by the bot and is ready for you on Steam!`
-                });
-            } else {
-                console.warn(`[${timestamp}] (Alternative) Failed to auto-confirm winnings offer ${offerId} by bot on first attempt: ${confirmResult.error}. Scheduling retry.`);
-                // Status in DB is already 'Pending Confirmation' or similar from initialPayoutStatus
-                // finalStatusForResponse remains initialPayoutStatus which should be 'Pending Confirmation'
-                io.to(winner._id.toString()).emit('notification', {
-                    type: 'warning',
-                    message: `(Alt) Winnings offer #${offerId} sent. Bot's first auto-confirmation attempt failed. Retrying shortly.`
-                });
-
-                setTimeout(async () => {
-                    const retryConfirmResult = await confirmTradeOffer(offerId, 'winnings-alt-retry');
-                    if (retryConfirmResult.success) {
-                        console.log(`[${timestamp}] (Alternative) Winnings offer ${offerId} auto-confirmed by bot for ${winner.username} on RETRY.`);
-                        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: 'Sent (Confirmed)' } });
-                        io.to(winner._id.toString()).emit('notification', {
-                            type: 'success',
-                            message: `(Alt) Winnings offer #${offerId} (Round #${roundDoc.roundId}) has now been successfully confirmed by the bot after a retry!`
-                        });
-                    } else {
-                        console.error(`[${timestamp}] (Alternative) FAILED to auto-confirm winnings offer ${offerId} by bot on retry: ${retryConfirmResult.error}. Offer will require manual confirmation by bot admin.`);
-                         io.to(winner._id.toString()).emit('notification', {
-                            type: 'error',
-                            message: `(Alt) Offer ${offerId} sent, but auto-confirmation by bot failed after retry. Bot admin will confirm it manually. Please check Steam periodically.`
-                        });
-                    }
-                }, 10000); // 10-second delay for retry
-            }
-        } else if (initialPayoutStatus === 'Active (Sent to User)' || offer.state === TradeOfferManager.ETradeOfferState.Active) {
-            // If the offer is already active, it means it's sent and doesn't need further bot confirmation (or it was already done)
-            console.log(`[${timestamp}] (Alternative) Offer ${offerId} is active and ready for user. Status: ${sendStatus}, Offer State: ${TradeOfferManager.ETradeOfferState[offer.state]}`);
-            finalStatusForResponse = 'Active (Sent to User)'; // More descriptive
-            botConfirmedSuccessfully = true; // Considered confirmed as it's ready for user
-            // Notification already sent or will be handled by sentOfferChanged if it becomes 'Accepted'
-            // Can send a specific "it's active" notification if not already covered
-             io.to(winner._id.toString()).emit('notification', { // Ensure user knows it's good to go
-                type: 'success',
-                message: `(Alt) Winnings offer #${offerId} (Round #${roundDoc.roundId}) has been sent and is active on Steam. Please accept it.`
-            });
-        }
-         else {
-            console.log(`[${timestamp}] (Alternative) Offer ${offerId} with sendStatus '${sendStatus}' and offer.state '${TradeOfferManager.ETradeOfferState[offer.state]}' does not require explicit bot confirmation step here or is already handled.`);
-            // If not needing confirmation (e.g. already accepted, declined, error state from sendStatus)
-            // finalStatusForResponse remains initialPayoutStatus
-            // botConfirmedSuccessfully remains false unless proven otherwise.
-        }
-        
-        return { success: true, offerId: offerId, offerURL: offerURL, status: finalStatusForResponse, botConfirmed: botConfirmedSuccessfully };
-
-    } catch (error) {
-        console.error(`[${timestamp}] (Alternative) Error sending winnings offer for round ${roundDoc.roundId} to ${winner.username}:`, error.message, error.eresult);
-        let userMessage = 'Failed to send winnings (Alt). Please try again or contact support.';
-        let dbStatus = 'Failed - Send Error';
-
-        if (error.eresult === 26 || error.message?.toLowerCase().includes('trade url')) {
-            userMessage = 'Your Steam Trade URL appears to be invalid (Alt). Please update it and contact support.';
-            dbStatus = 'Failed - Invalid Trade URL';
-        } else if (error.eresult === 15) {
-            userMessage = 'Your inventory appears to be private (Alt). Please make it public.';
-            dbStatus = 'Failed - Inventory Private';
-        } else if (error.eresult === 16) {
-            userMessage = 'You appear to be trade banned (Alt). Contact Steam support.';
-            dbStatus = 'Failed - Trade Banned';
-        }  else if (error.eresult === 25 || error.message?.toLowerCase().includes('items_unavailable')) { // Added from original function
-            userMessage = 'Some items for your winnings were unavailable at the time of sending. Please contact support.';
-            dbStatus = 'Failed - Inventory/Trade Issue';
-        } else if (error.message?.includes("No matching items found in bot inventory for payout.")) {
-             dbStatus = 'Failed - Bot Inventory Issue';
-             userMessage = error.message; // Use the specific error message
-        } else if (error.eresult) {
-            userMessage += ` (Steam Error Code: ${error.eresult})`;
-            dbStatus = `Failed - Steam Error ${error.eresult}`;
-        }
-
-        // Ensure payoutOfferId is cleared if the offer object was created but send failed.
-        const offerIdToClear = offer && offer.id ? offer.id : null;
-        await Round.updateOne({ _id: roundDoc._id }, { $set: { payoutOfferStatus: dbStatus, payoutOfferId: offerIdToClear ? null : undefined } });
-        io.to(winner._id.toString()).emit('notification', { type: 'error', message: userMessage });
-        return { success: false, error: userMessage, errorCode: error.eresult, botConfirmed: false };
-    }
-}
-
-
-// --- Authentication Routes ---
-app.get('/auth/steam', authLimiter, passport.authenticate('steam', { failureRedirect: '/' }));
-app.get('/auth/steam/return',
-    passport.authenticate('steam', { failureRedirect: '/' }),
-    (req, res) => { res.redirect('/'); }
-);
-app.post('/logout', (req, res, next) => {
-    req.logout(err => {
-        if (err) { return next(err); }
-        req.session.destroy(err => {
-            if (err) {
-                console.error("Error destroying session during logout:", err);
-                return res.status(500).json({ error: 'Logout failed due to session error.' });
-            }
-            res.clearCookie('connect.sid');
-            res.json({ success: true, message: "Logged out successfully." });
-        });
-    });
-});
-
-
-// --- Middleware & API Routes ---
-function ensureAuthenticated(req, res, next) {
-    if (req.isAuthenticated()) { return next(); }
-    res.status(401).json({ error: 'Not authenticated. Please log in.' });
-}
-const handleValidationErrors = (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-        console.warn("Validation Errors:", errors.array());
-        return res.status(400).json({ error: errors.array()[0].msg });
-    }
-    next();
-};
-
-app.get('/api/user', ensureAuthenticated, (req, res) => {
-    const { _id, steamId, username, avatar, tradeUrl, createdAt, pendingDepositOfferId, totalDepositedValue, totalWinningsValue } = req.user;
-    res.json({ _id, steamId, username, avatar, tradeUrl, createdAt, pendingDepositOfferId, totalDepositedValue, totalWinningsValue });
-});
-
-app.post('/api/user/tradeurl',
-    sensitiveActionLimiter, ensureAuthenticated,
-    [
-        body('tradeUrl').trim().custom((value) => {
-            if (value === '') return true;
-            if (!TRADE_URL_REGEX.test(value)) throw new Error('Invalid Steam Trade URL format. Ensure it includes partner and token parameters.');
-            return true;
-        })
-    ],
-    handleValidationErrors,
-    async (req, res) => {
-        const { tradeUrl } = req.body;
-        try {
-            const updatedUser = await User.findByIdAndUpdate(req.user._id, { tradeUrl: tradeUrl }, { new: true, runValidators: true });
-            if (!updatedUser) return res.status(404).json({ error: 'User not found.' });
-
-            console.log(`LOG_INFO: Trade URL updated for user: ${updatedUser.username} to "${tradeUrl}"`);
-            res.json({ success: true, tradeUrl: updatedUser.tradeUrl });
-        } catch (err) {
-            if (err.name === 'ValidationError') {
-                console.error(`Trade URL Validation Error for user ${req.user._id}:`, err.message);
-                const messages = Object.values(err.errors).map(e => e.message);
-                return res.status(400).json({ error: messages.join(', ') || 'Invalid Trade URL.' });
-            }
-            console.error(`Error updating trade URL for user ${req.user._id}:`, err);
-            res.status(500).json({ error: 'Server error saving Trade URL.' });
-        }
-    }
-);
-
-app.post('/api/admin/clear-stuck-round', ensureAuthenticated, async (req, res) => {
-    if (!process.env.ADMIN_STEAM_IDS || !process.env.ADMIN_STEAM_IDS.split(',').includes(req.user.steamId)) {
-        return res.status(403).json({ error: 'Forbidden: Admin access required.' });
-    }
-
-    try {
-        const stuckRound = await Round.findOneAndUpdate(
-            { status: 'completed_pending_acceptance' },
-            { $set: { status: 'completed', payoutOfferStatus: 'Failed - Manually Cleared' }},
-            { new: true }
-        );
-        const clearedUsers = await User.updateMany(
-            { pendingDepositOfferId: { $ne: null } },
-            { $set: { pendingDepositOfferId: null } }
-        );
-
-        console.log('LOG_INFO (Admin): Cleared stuck round:', stuckRound?.roundId || 'None found');
-        console.log('LOG_INFO (Admin): Cleared pending offers for users:', clearedUsers.modifiedCount);
-
-        if (currentRound && stuckRound && currentRound._id.toString() === stuckRound._id.toString()) {
-            currentRound = null;
-            await ensureInitialRound();
-        }
-
-        res.json({ success: true, clearedRoundId: stuckRound?.roundId, clearedUserOffers: clearedUsers.modifiedCount });
-    } catch (error) {
-        console.error('Error (Admin) clearing stuck round:', error);
-        res.status(500).json({ error: 'Failed to clear stuck round' });
-    }
-});
-
-// --- NEW Admin Endpoint for Testing Confirmations ---
-app.get('/api/admin/test-confirmations', ensureAuthenticated, async (req, res) => {
-    if (!process.env.ADMIN_STEAM_IDS || !process.env.ADMIN_STEAM_IDS.split(',').includes(req.user.steamId)) {
-        return res.status(403).json({ error: 'Forbidden: Admin access required.' });
-    }
-
-    if (!isBotConfigured || !isBotReady || !community || !community.steamID) {
-        return res.status(503).json({ error: 'Bot is not configured, not ready, or not logged in.' });
-    }
-    if (!process.env.STEAM_IDENTITY_SECRET) {
-        return res.status(400).json({ error: 'STEAM_IDENTITY_SECRET is not configured.' });
-    }
-
-    const timestamp = new Date().toISOString();
-    console.log(`[${timestamp}] ADMIN_ACTION: User ${req.user.username} testing confirmations.`);
-
-    try {
-        const time = Math.floor(Date.now() / 1000);
-        const confKey = SteamTotp.generateConfirmationKey(process.env.STEAM_IDENTITY_SECRET, time, 'conf');
-
-        community.getConfirmations(time, confKey, (err, confirmations) => {
-            if (err) {
-                console.error(`[${timestamp}] ADMIN_TEST_CONF_ERROR: Failed to get confirmations:`, err.message);
-                return res.status(500).json({ error: 'Failed to get confirmations from Steam.', details: err.message, eresult: err.eresult });
-            }
-
-            console.log(`[${timestamp}] ADMIN_TEST_CONF_SUCCESS: Found ${confirmations.length} confirmations.`);
-            res.json({
-                success: true,
-                message: `Found ${confirmations.length} confirmations.`,
-                confirmationCount: confirmations.length,
-                confirmations: confirmations.map(c => ({
-                    id: c.id, // Confirmation ID
-                    key: c.key, // Nonce to accept
-                    creator: c.creator, // ID of object being confirmed (e.g., trade offer ID)
-                    type: c.type, // Type of confirmation (e.g., trade)
-                    typeName: SteamCommunity.EConfirmationType[c.type] || 'Unknown',
-                    title: c.title, // Human-readable title
-                    receiving: c.receiving, // Human-readable of what's being received
-                    time: c.time, // Creation time
-                    icon: c.icon,
-                    summary: c.summary,
-                }))
-            });
-        });
-    } catch (e) {
-        console.error(`[${timestamp}] ADMIN_TEST_CONF_EXCEPTION: Exception during test:`, e);
-        res.status(500).json({ error: 'Server exception during confirmation test.', details: e.message });
-    }
-});
-
-
-app.get('/api/user/winning-history', ensureAuthenticated, async (req, res) => {
-    try {
-        const winnings = await Round.find({ winner: req.user._id, status: { $in: ['completed', 'completed_pending_acceptance', 'error'] } })
-            .sort({ completedTime: -1 })
-            .select('roundId completedTime totalValue payoutOfferId payoutOfferStatus taxAmount')
-            .limit(25)
-            .lean();
-
-        const history = winnings.map(win => ({
-            gameId: win.roundId,
-            amountWon: win.totalValue,
-            dateWon: win.completedTime,
-            tradeOfferId: win.payoutOfferId,
-            tradeStatus: win.payoutOfferStatus || 'Unknown'
-        }));
-        res.json(history);
-    } catch (error) {
-        console.error(`Error fetching winning history for user ${req.user._id}:`, error);
-        res.status(500).json({ error: 'Server error fetching winning history.' });
-    }
-});
-
-// MODIFIED /api/round/accept-winnings
-app.post('/api/round/accept-winnings', ensureAuthenticated, sensitiveActionLimiter, async (req, res) => {
-    console.log(`LOG_INFO: Received POST /api/round/accept-winnings for user ${req.user.username}`);
-    let roundBeingProcessed = null; // To store round._id for potential reset in catch block
-
-    try {
-        const user = req.user;
-
-        const round = await Round.findOne({
-            winner: user._id,
-            status: 'completed_pending_acceptance',
-            payoutOfferStatus: 'PendingAcceptanceByWinner'
-        }).sort({ completedTime: -1 })
-          .populate('winner', 'steamId username avatar tradeUrl')
-          .populate('items');
-
-        if (!round) {
-            console.warn(`LOG_WARN: No winnings pending acceptance found for user ${user.username} or round not in correct state.`);
-            return res.status(404).json({ error: 'No winnings currently pending your acceptance or round already processed.' });
-        }
-        roundBeingProcessed = round._id; // Store for catch block
-
-        console.log(`LOG_INFO: Found round ${round.roundId} for user ${user.username} to accept winnings. Items in round.items: ${round.items.length}`);
-
-        if (!round.winner || !round.winner.tradeUrl) {
-            console.warn(`LOG_WARN: User ${user.username} (or populated winner) has no trade URL for round ${round.roundId}.`);
-            await Round.updateOne({ _id: round._id }, { $set: { payoutOfferStatus: 'Failed - No Trade URL' } });
-            return res.status(400).json({ error: 'Please set your Steam Trade URL in your profile to accept winnings.' });
-        }
-        if (!TRADE_URL_REGEX.test(round.winner.tradeUrl)) {
-            console.error(`LOG_ERROR: Invalid trade URL format for user ${user.username} (pre-check): "${round.winner.tradeUrl}"`);
-            await Round.updateOne({ _id: round._id }, { $set: { payoutOfferStatus: 'Failed - Invalid Trade URL Format' } });
-            return res.status(400).json({ error: 'Your Steam Trade URL format is invalid. Please update it.' });
-        }
-
-        console.log(`LOG_INFO: Calling sendWinningTradeOfferAlternative for round ${round.roundId}, user ${round.winner.username}. Items to send: ${round.items.length}`);
-        
-        await Round.updateOne({ _id: round._id }, { $set: { payoutOfferStatus: 'Processing Winnings' }});
-
-        const result = await sendWinningTradeOfferAlternative(round, round.winner, round.items);
-
-        if (result.success) {
-            let clientMessage = `Winnings acceptance for round #${round.roundId} (Offer ID: ${result.offerId}) processed. `;
-            if (result.botConfirmed) {
-                clientMessage += `The offer has been confirmed by the bot and should be ready on Steam. Status: ${result.status}.`;
-            } else {
-                // If botConfirmed is false, it means either confirmation is not needed OR it failed the first attempt.
-                // The result.status should reflect this (e.g., 'Pending Confirmation' or an error status from send).
-                clientMessage += `The offer has been sent. Bot's mobile confirmation status: ${result.status}. Please check Steam.`;
-                 if (result.status === 'Pending Confirmation') {
-                    clientMessage += " A retry for bot confirmation is scheduled if the first attempt failed.";
-                }
-            }
-            clientMessage += ` Offer URL: ${result.offerURL}`;
-
-            res.json({
-                success: true,
-                message: clientMessage,
-                offerId: result.offerId,
-                offerURL: result.offerURL,
-                status: result.status,
-                botConfirmed: result.botConfirmed
-            });
-        } else {
-            // Error is already logged and DB status updated within sendWinningTradeOfferAlternative.
-            // We might want to reset to 'PendingAcceptanceByWinner' if the error was very early (e.g. bad trade URL before sending)
-            // but sendWinningTradeOfferAlternative now handles its own DB status updates on error.
-            // Let's check the current status in DB. If it's still 'Processing Winnings', it implies an unexpected error before sendWinningTradeOfferAlternative could set a final error status.
-            const currentRoundStatusDoc = await Round.findById(round._id).select('payoutOfferStatus').lean();
-            if (currentRoundStatusDoc && currentRoundStatusDoc.payoutOfferStatus === 'Processing Winnings') {
-                 console.warn(`WARN: Round ${round._id} was still 'Processing Winnings' after sendWinningTradeOfferAlternative failed. Resetting to 'PendingAcceptanceByWinner'. Error from send: ${result.error}`);
-                 await Round.updateOne({ _id: round._id }, { $set: { payoutOfferStatus: 'PendingAcceptanceByWinner' } });
-            }
-            res.status(result.errorCode === 26 || result.errorCode === 15 || result.errorCode === 16 ? 400 : 500) // Common client-side errors
-               .json({ error: result.error || 'Failed to process winnings acceptance.', botConfirmed: result.botConfirmed || false });
-        }
-
-    } catch (error) {
-        console.error('CRITICAL_ERROR: Error in /api/round/accept-winnings:', error);
-        if (roundBeingProcessed) { // If we know which round was being processed
-            await Round.findOneAndUpdate(
-                { _id: roundBeingProcessed, status: 'completed_pending_acceptance', payoutOfferStatus: 'Processing Winnings' }, // Only if it's still stuck in 'Processing'
-                { $set: { payoutOfferStatus: 'PendingAcceptanceByWinner' } } // Reset for another try
-            ).catch(e => console.error("Error trying to reset round status after accept-winnings exception:", e));
-        }
-        res.status(500).json({ error: 'Server error while accepting winnings. Please try again or contact support.' });
-    }
-});
-
-
-app.get('/api/inventory', ensureAuthenticated, async (req, res) => {
-    if (!isBotConfigured) return res.status(503).json({ error: "Trading service is currently offline." });
-    if (!isBotReady) {
-        console.warn(`Inventory fetch failed for ${req.user.username}: Bot service is unavailable (isBotReady: false).`);
-        return res.status(503).json({ error: "Steam service temporarily unavailable. Please try again later." });
-    }
-    try {
-        await ensureValidManager();
-
-        const inventory = await new Promise((resolve, reject) => {
-            manager.getUserInventoryContents(req.user.steamId, RUST_APP_ID, RUST_CONTEXT_ID, true, (err, inv, currency) => {
-                if (err) {
-                    if (err.message?.includes('profile is private') || err.eresult === 15) {
-                        return reject(new Error('Your Steam inventory is private. Please set it to public.'));
-                    }
-                    console.error(`Inventory Fetch Error (Manager): User ${req.user.steamId}: EResult ${err.eresult}, Message: ${err.message || err}`);
-                    return reject(new Error(`Could not fetch inventory. Steam might be busy (EResult: ${err.eresult || 'N/A'}) or inventory private.`));
-                }
-                resolve(inv || []);
-            });
-        });
-
-        if (!inventory?.length) return res.json([]);
-
-        const validItems = inventory.map(item => {
-                const itemName = item.market_hash_name;
-                let price = 0;
-                if (itemName) price = getItemPrice(itemName);
-                else console.warn(`Inventory item missing market_hash_name: assetId ${item.assetid}`);
-
-                const finalPrice = (typeof price === 'number' && !isNaN(price)) ? price : 0;
-
-                if (!item.assetid || !item.icon_url || !itemName) {
-                    console.warn(`Inventory item missing required properties: assetId ${item?.assetid}, Name ${itemName}, Icon ${item?.icon_url}`);
-                    return null;
-                }
-                const imageUrl = `https://community.akamai.steamstatic.com/economy/image/${item.icon_url}`;
-                return { assetId: item.assetid, name: itemName, image: imageUrl, price: finalPrice, tradable: item.tradable };
-            })
-            .filter(item => item && item.tradable && item.price >= MIN_ITEM_VALUE);
-
-        res.json(validItems);
-    } catch (err) {
-        console.error(`Error in /api/inventory for ${req.user?.username || req.user?.steamId}:`, err.message);
-        const clientErrorMessage = (err.message === 'Your Steam inventory is private. Please set it to public.')
-                                 ? err.message
-                                 : 'Server error fetching inventory.';
-        res.status(err.message.includes('private') ? 403 : 500).json({ error: clientErrorMessage });
-    }
-});
-
-app.post('/api/deposit', depositLimiter, ensureAuthenticated,
-    [
-        body('assetIds').isArray({ min: 1, max: MAX_ITEMS_PER_DEPOSIT }).withMessage(`You can deposit between 1 and ${MAX_ITEMS_PER_DEPOSIT} items.`),
-        body('assetIds.*').isString().isLength({ min: 5, max: 30 }).withMessage('Invalid asset ID format.')
-    ],
-    handleValidationErrors,
-    async (req, res) => {
-        const user = req.user;
-        const requestedAssetIds = req.body.assetIds;
-
-        if (!isBotConfigured) return res.status(503).json({ error: "Trading service is currently offline." });
-        if (!isBotReady) {
-            console.warn(`Deposit attempt by ${user.username} while bot not ready.`);
-            return res.status(503).json({ error: "Deposit service temporarily unavailable (Bot not ready)." });
-        }
-        if (!user.tradeUrl || !TRADE_URL_REGEX.test(user.tradeUrl)) {
-            return res.status(400).json({ error: 'Valid Steam Trade URL required in profile for deposits.' });
-        }
-
-        if (user.pendingDepositOfferId) {
-            try {
-                const offerStatus = await checkOfferStatus(user.pendingDepositOfferId);
-                if (offerStatus && [
-                       TradeOfferManager.ETradeOfferState.Active,
-                       TradeOfferManager.ETradeOfferState.Sent, // Bot sent to user for deposit confirmation
-                       TradeOfferManager.ETradeOfferState.CreatedNeedsConfirmation // Bot sent, needs confirmation
-                    ].includes(offerStatus.state)) {
-                    console.log(`User ${user.username} already has pending deposit offer ${user.pendingDepositOfferId}. State: ${offerStatus.stateName}`);
-                    const offerURL = `https://steamcommunity.com/tradeoffer/${user.pendingDepositOfferId}/`;
-                    return res.status(409).json({ error: 'You have an active deposit offer pending. Please accept or decline it on Steam first.', offerId: user.pendingDepositOfferId, offerURL });
-                } else {
-                    console.log(`Clearing stale/non-active pending offer ${user.pendingDepositOfferId} for user ${user.username} (State: ${offerStatus?.stateName || 'Unknown/Error'}).`);
-                    await User.findByIdAndUpdate(user._id, { pendingDepositOfferId: null });
-                }
-            } catch (offerFetchError) {
-                console.warn(`Error checking pending offer ${user.pendingDepositOfferId}, clearing flag:`, offerFetchError.message);
-                await User.findByIdAndUpdate(user._id, { pendingDepositOfferId: null });
-            }
-        }
-
-        if (!currentRound || currentRound.status !== 'active' || isRolling) {
-            return res.status(400).json({ error: 'Deposits are currently closed for this round.' });
-        }
-
-        let latestRoundData;
-        try {
-            latestRoundData = await Round.findById(currentRound._id).select('participants items').lean();
-            if (!latestRoundData) throw new Error('Could not fetch current round data for deposit.');
-            const isNewParticipant = !latestRoundData.participants.some(p => p.user?.toString() === user._id.toString());
-            if (isNewParticipant && latestRoundData.participants.length >= MAX_PARTICIPANTS) {
-                return res.status(400).json({ error: `Participant limit (${MAX_PARTICIPANTS}) reached for this round.` });
-            }
-            if (latestRoundData.items.length + requestedAssetIds.length > MAX_ITEMS_PER_POT) {
-                const slotsLeft = MAX_ITEMS_PER_POT - latestRoundData.items.length;
-                return res.status(400).json({ error: `Depositing these items would exceed the pot limit (${MAX_ITEMS_PER_POT} items). ${slotsLeft > 0 ? slotsLeft + ' slots left.' : 'Pot is full.'}` });
-            }
-        } catch (dbErr) {
-            console.error(`Error fetching round data during deposit for ${user.username}:`, dbErr);
-            return res.status(500).json({ error: 'Internal server error checking round limits.' });
-        }
-
-        let itemsToRequestDetails = [];
-        let depositTotalValue = 0;
-
-        try {
-            console.log(`Verifying inventory for ${user.username} (SteamID: ${user.steamId}) to confirm ${requestedAssetIds.length} deposit items...`);
-            await ensureValidManager();
-
-            const userInventory = await new Promise((resolve, reject) => {
-                manager.getUserInventoryContents(user.steamId, RUST_APP_ID, RUST_CONTEXT_ID, true, (err, inv) => {
-                    if (err) {
-                        if (err.message?.includes('profile is private') || err.eresult === 15) return reject(new Error('Your Steam inventory is private.'));
-                        console.error(`Inventory Fetch Error (Deposit): User ${user.steamId}: EResult ${err.eresult}`, err);
-                        return reject(new Error(`Could not fetch your inventory (EResult: ${err.eresult}). Ensure it's public and tradable.`));
-                    }
-                    resolve(inv || []);
-                });
-            });
-            const userInventoryMap = new Map(userInventory.map(item => [item.assetid, item]));
-
-            for (const assetId of requestedAssetIds) {
-                const inventoryItem = userInventoryMap.get(assetId);
-                if (!inventoryItem) throw new Error(`Item (Asset ID ${assetId}) not found in your inventory or already in a trade.`);
-                if (!inventoryItem.tradable) throw new Error(`Item '${inventoryItem.market_hash_name}' is not tradable.`);
-
-                const price = getItemPrice(inventoryItem.market_hash_name);
-                if (price < MIN_ITEM_VALUE) throw new Error(`Item '${inventoryItem.market_hash_name}' ($${price.toFixed(2)}) is below the minimum deposit value of $${MIN_ITEM_VALUE.toFixed(2)}.`);
-
-                itemsToRequestDetails.push({ // These details are stored in pendingDeposits
-                    assetid: inventoryItem.assetid, // This is the user's original assetid
-                    appid: RUST_APP_ID, contextid: RUST_CONTEXT_ID,
-                    _price: price, _name: inventoryItem.market_hash_name,
-                    _image: `https://community.akamai.steamstatic.com/economy/image/${inventoryItem.icon_url}`
-                });
-                depositTotalValue += price;
-            }
-            if (itemsToRequestDetails.length === 0) throw new Error("No valid items could be verified for deposit.");
-            console.log(`Verified ${itemsToRequestDetails.length} items for deposit for ${user.username}. Total Value: $${depositTotalValue.toFixed(2)}`);
-        } catch (verificationError) {
-            console.warn(`Deposit item verification failed for ${user.username}:`, verificationError.message);
-            return res.status(400).json({ error: verificationError.message });
-        }
-
-        const depositId = uuidv4();
-        const offerMessage = `Deposit for ${process.env.SITE_NAME || 'Our Site'} | Round: ${currentRound.roundId} | DepositID: ${depositId}`;
-        let cleanupTimeout = null;
-        let offer = null; // Define offer here to access offer.id in catch block if send fails early
-
-        try {
-            offer = manager.createOffer(user.tradeUrl);
-            offer.addTheirItems(itemsToRequestDetails.map(item => ({ assetid: item.assetid, appid: item.appid, contextid: item.contextid })));
-            offer.setMessage(offerMessage);
-
-            pendingDeposits.set(depositId, {
-                userId: user._id, roundId: currentRound._id, items: itemsToRequestDetails,
-                totalValue: depositTotalValue, steamId: user.steamId, offerIdAttempted: null // Will be set after send
-            });
-            console.log(`Stored pending deposit ${depositId} for user ${user.steamId}.`);
-
-            const offerCancelTime = manager.cancelTime || 10 * 60 * 1000;
-            cleanupTimeout = setTimeout(() => {
-                if(pendingDeposits.has(depositId)) {
-                    const pendingData = pendingDeposits.get(depositId);
-                    console.log(`Deposit attempt ${depositId} (Offer: ${pendingData.offerIdAttempted || 'N/A'}) expired or timed out from internal cleanup.`);
-                    pendingDeposits.delete(depositId);
-                    if (pendingData.offerIdAttempted) { // If an offer ID was recorded
-                        User.updateOne({ _id: user._id, pendingDepositOfferId: pendingData.offerIdAttempted }, { $set: { pendingDepositOfferId: null }})
-                            .catch(e => console.error("Error clearing user pending flag on deposit expiry/timeout:", e));
-                    } else { // If no offer ID was recorded (e.g. failed before send or before ID was known)
-                         User.updateOne({ _id: user._id }, { $set: { pendingDepositOfferId: null }}) // Clear any potentially stale flag
-                            .catch(e => console.error("Error clearing user pending flag on deposit timeout (no offer id):", e));
-                    }
-                }
-            }, offerCancelTime + 5000); // Cleanup slightly after Steam would cancel
-
-            console.log(`Sending deposit offer to ${user.username} (Trade URL: ${user.tradeUrl}). DepositID: ${depositId}`);
-            const status = await new Promise((resolve, reject) => {
-                offer.send((err, sendStatus) => {
-                    if (err) return reject(err);
-                    resolve(sendStatus);
-                });
-            });
-            const actualOfferId = offer.id; // Now offer.id is available
-            console.log(`Deposit offer ${actualOfferId} sent to ${user.username}. Status: ${status}. DepositID: ${depositId}`);
-
-            if (pendingDeposits.has(depositId)) {
-                pendingDeposits.get(depositId).offerIdAttempted = actualOfferId;
-            }
-
-            try {
-                await User.findByIdAndUpdate(user._id, { pendingDepositOfferId: actualOfferId });
-                console.log(`Set pendingDepositOfferId=${actualOfferId} for user ${user.username}.`);
-            } catch (dbUpdateError) {
-                console.error(`CRITICAL: Failed to set pendingDepositOfferId for user ${user.username} after sending offer ${actualOfferId}.`, dbUpdateError);
-            }
-
-            if (status === 'sent' || status === 'pending' || status === 'CreatedNeedsConfirmation') {
-                 console.log(`Deposit offer ${actualOfferId} status: ${status}. User ${user.username} needs to accept/confirm it on Steam.`);
-            }
-
-            const offerURL = `https://steamcommunity.com/tradeoffer/${actualOfferId}/`;
-            res.json({ success: true, message: 'Deposit offer created! Please accept it on Steam.', offerId: actualOfferId, offerURL: offerURL });
-
-        } catch (error) {
-            console.error(`Error sending deposit offer for ${user.username} (DepositID: ${depositId}): EResult ${error.eresult}, Msg: ${error.message}`);
-            pendingDeposits.delete(depositId);
-            if (cleanupTimeout) clearTimeout(cleanupTimeout);
-
-            const offerIdToClear = offer && offer.id ? offer.id : null;
-            if (offerIdToClear) { // Only if an offer ID was actually generated
-                User.updateOne({ _id: user._id, pendingDepositOfferId: offerIdToClear }, { $set: { pendingDepositOfferId: null }})
-                    .catch(e => console.error("Error clearing user flag on deposit offer send fail (with offerId):", e));
-            } else { // If offer.id was never set (e.g. createOffer failed or error before send)
-                 User.updateOne({ _id: user._id }, { $set: { pendingDepositOfferId: null }}) // Clear any potentially stale ID
-                    .catch(e => console.error("Error clearing user flag on deposit offer send fail (no offerId):", e));
-            }
-
-
-            let userMessage = 'Failed to create deposit trade offer. Please try again later.';
-            if (error.eresult === 26 || error.message?.toLowerCase().includes('trade url')) {
-                userMessage = 'Your Steam Trade URL might be invalid or expired. Please check your profile.';
-            } else if (error.eresult === 15 || error.eresult === 16) { // Inventory private or trade ban
-                userMessage = `Could not create deposit offer. Ensure you can trade and your inventory is accessible (Error: ${error.eresult}).`;
-            } else if (error.eresult === 25) { // Items unavailable (user might have traded them away)
-                userMessage = `Some items selected for deposit are no longer available in your inventory (Error: ${error.eresult}). Please refresh your inventory.`;
-            } else if (error.eresult) {
-                userMessage += ` (Steam Error Code: ${error.eresult})`;
-            }
-            res.status(500).json({ error: userMessage });
-        }
-    }
-);
-
-
-io.use((socket, next) => { sessionMiddleware(socket.request, socket.request.res || {}, next); });
-io.use((socket, next) => { passport.initialize()(socket.request, socket.request.res || {}, next); });
-io.use((socket, next) => { passport.session()(socket.request, socket.request.res || {}, next); });
-
-let connectedChatUsers = 0;
-const userLastMessageTime = new Map();
-
-io.on('connection', (socket) => {
-    connectedChatUsers++;
-    io.emit('updateUserCount', connectedChatUsers);
-
-    const user = socket.request.user;
-    if (user && user.username) {
-        console.log(`LOG_INFO: User ${user.username} (Socket ID: ${socket.id}) connected.`);
-        // Join a room specific to the user's ID for targeted notifications
-        socket.join(user._id.toString());
-    } else {
-        console.log(`LOG_INFO: Anonymous client (Socket ID: ${socket.id}) connected.`);
-    }
-
-    socket.on('requestRoundData', async () => {
-        let roundToFormat = null;
-        try {
-            if (currentRound?._id && ['active', 'rolling', 'pending', 'completed_pending_acceptance'].includes(currentRound.status)) {
-                if ( (currentRound.participants && currentRound.participants.length > 0 && typeof currentRound.participants[0]?.user === 'string') ||
-                     (currentRound.winner && typeof currentRound.winner === 'string') ) {
-                    currentRound = await Round.findById(currentRound._id)
-                          .populate('participants.user', 'steamId username avatar')
-                          .populate('items') 
-                          .populate('winner', 'steamId username avatar').lean();
-                }
-                roundToFormat = currentRound;
-            }
-            if (!roundToFormat) {
-                roundToFormat = await Round.findOne({ status: { $in: ['active', 'rolling', 'pending', 'completed_pending_acceptance'] } })
-                      .sort({ startTime: -1 })
-                      .populate('participants.user', 'steamId username avatar')
-                      .populate('items')
-                      .populate('winner', 'steamId username avatar').lean();
-                if (roundToFormat) currentRound = roundToFormat;
-            }
-
-            const formattedData = formatRoundForClient(roundToFormat);
-            if (formattedData) socket.emit('roundData', formattedData);
-            else socket.emit('noActiveRound');
-        } catch (err) {
-            console.error(`Error fetching round data for socket ${socket.id}:`, err);
-            socket.emit('roundError', { error: 'Failed to load round data.' });
-        }
-    });
-
-    // MODIFIED: Removed chatLimiter from here.
-    // The custom cooldown logic inside this handler will be used.
-    socket.on('chatMessage', (msg) => {
-        if (!user || !user._id) {
-            socket.emit('notification', {type: 'error', message: 'You must be logged in to chat.'});
-            return;
-        }
-        const userId = user._id.toString();
-        const now = Date.now();
-        const lastMsgTime = userLastMessageTime.get(userId) || 0;
-
-        if (now - lastMsgTime < CHAT_COOLDOWN_SECONDS * 1000) {
-            const timeLeft = Math.ceil((CHAT_COOLDOWN_SECONDS * 1000 - (now - lastMsgTime)) / 1000);
-            socket.emit('notification', {type: 'warning', message: `Please wait ${timeLeft}s before sending another message.`});
-            return;
-        }
-
-        const trimmedMsg = msg.trim();
-        if (typeof trimmedMsg !== 'string' || trimmedMsg.length === 0 || trimmedMsg.length > MAX_CHAT_MESSAGE_LENGTH) {
-            socket.emit('notification', {type: 'error', message: `Invalid message. Max ${MAX_CHAT_MESSAGE_LENGTH} chars, not empty.`});
-            return;
-        }
-
-        userLastMessageTime.set(userId, now);
-
-        const messageData = {
-            type: 'user',
-            username: user.username,
-            avatar: user.avatar || '/img/default-avatar.png',
-            message: trimmedMsg,
-            userId: userId,
-            userSteamId: user.steamId,
-            timestamp: new Date()
-        };
-        io.emit('chatMessage', messageData);
-        console.log(`Chat (User: ${user.username}, ID: ${userId}): ${trimmedMsg}`);
-    });
-
-    socket.on('disconnect', (reason) => {
-        connectedChatUsers--;
-        io.emit('updateUserCount', connectedChatUsers);
-        if (user && user.username) {
-            console.log(`LOG_INFO: User ${user.username} disconnected. Reason: ${reason}`);
-        } else {
-            console.log(`LOG_INFO: Anonymous client disconnected. Reason: ${reason}`);
-        }
-    });
-});
-
-function formatRoundForClient(round) {
-    if (!round) return null;
-
-    const timeLeft = (round.status === 'active' && round.endTime)
-        ? Math.max(0, Math.floor((new Date(round.endTime).getTime() - Date.now()) / 1000))
-        : (round.status === 'pending' ? ROUND_DURATION : 0);
-
-    const participantsFormatted = (round.participants || []).map(p => {
-        if (!p.user) return null;
-        const userObj = p.user._id ? p.user : { _id: p.user.toString() }; // Handle if not populated
-        return {
-            user: { _id: userObj._id, steamId: userObj.steamId, username: userObj.username, avatar: userObj.avatar },
-            itemsValue: p.itemsValue || 0,
-            tickets: p.tickets || 0
-        };
-    }).filter(p => p !== null && p.user && p.user._id); // Ensure user object is valid
-
-    const itemsFormatted = (round.items || []).map(i => {
-        if (!i || typeof i.price !== 'number' || !i.assetId || !i.name || !i.image) { 
-            console.warn("formatRoundForClient: Skipping malformed item:", i);
-            return null;
-        }
-        return {
-            assetId: i.assetId, 
-            originalAssetId: i.originalAssetId, 
-            name: i.name, image: i.image, price: i.price,
-            owner: i.owner?._id || i.owner?.toString() // Handle if owner not populated
-        };
-    }).filter(item => item !== null);
-
-    let winnerDetails = null;
-    if (round.winner && round.winner.steamId) { // Check if winner is populated
-        winnerDetails = {
-            id: round.winner._id, steamId: round.winner.steamId,
-            username: round.winner.username, avatar: round.winner.avatar
-        };
-    } else if (round.winner) { // If winner is just an ID
-        winnerDetails = { id: round.winner.toString() };
-    }
-
-    return {
-        roundId: round.roundId,
-        status: round.status,
-        startTime: round.startTime,
-        endTime: round.endTime,
-        timeLeft: timeLeft,
-        totalValue: round.totalValue || 0,
-        serverSeedHash: round.serverSeedHash,
-        participants: participantsFormatted,
-        items: itemsFormatted, 
-        winner: winnerDetails,
-        winningTicket: (round.status === 'completed' || round.status === 'completed_pending_acceptance') ? round.winningTicket : undefined,
-        serverSeed: (round.status === 'completed' || round.status === 'completed_pending_acceptance') ? round.serverSeed : undefined,
-        clientSeed: (round.status === 'completed' || round.status === 'completed_pending_acceptance') ? round.clientSeed : undefined,
-        provableHash: (round.status === 'completed' || round.status === 'completed_pending_acceptance') ? round.provableHash : undefined,
-        taxAmount: round.taxAmount,
-        payoutOfferId: round.payoutOfferId,
-        payoutOfferStatus: round.payoutOfferStatus
-    };
-}
-
-app.get('/api/round/current', async (req, res) => {
-    let roundToFormat = null;
-    try {
-        // Prioritize using the in-memory currentRound if it's likely valid and populated
-        if (currentRound?._id && ['active', 'rolling', 'pending', 'completed_pending_acceptance'].includes(currentRound.status)) {
-            // Check if critical fields that need population are actually populated
-            const needsRepopulate =
-                (currentRound.participants && currentRound.participants.length > 0 && (typeof currentRound.participants[0]?.user === 'string' || !currentRound.participants[0]?.user?._id)) ||
-                (currentRound.winner && (typeof currentRound.winner === 'string' || !currentRound.winner?._id)) ||
-                (currentRound.items && currentRound.items.length > 0 && (typeof currentRound.items[0] === 'string' || !currentRound.items[0]?.assetId));
-
-            if (needsRepopulate) {
-                console.log("LOG_DEBUG: Current round in memory needs repopulation for API.");
-                currentRound = await Round.findById(currentRound._id)
-                    .populate('participants.user', 'steamId username avatar')
-                    .populate('items')
-                    .populate('winner', 'steamId username avatar').lean();
-            }
-            roundToFormat = currentRound;
-        }
-
-
-        if (!roundToFormat) { // If not using in-memory or it was invalid, fetch from DB
-            console.log("LOG_DEBUG: No valid in-memory currentRound, fetching from DB for API.");
-            roundToFormat = await Round.findOne({ status: { $in: ['active', 'rolling', 'pending', 'completed_pending_acceptance'] } })
-                .sort({ startTime: -1 }) // Get the most recent one if multiple (shouldn't happen for 'active')
-                .populate('participants.user', 'steamId username avatar')
-                .populate('items')
-                .populate('winner', 'steamId username avatar').lean();
-
-            if (roundToFormat) {
-                currentRound = roundToFormat; // Update in-memory currentRound
-                // If fetched round is active and has participants, ensure timer logic is running
-                if (currentRound.status === 'active' && currentRound.participants?.length > 0 && !isRolling) {
-                    if (currentRound.endTime && new Date(currentRound.endTime) > Date.now() && !roundTimer) {
-                        console.log("LOG_DEBUG: Starting timer for fetched active round (API).");
-                        startRoundTimer(true); // Resume timer
-                    } else if (!currentRound.endTime && !roundTimer) {
-                         console.log("LOG_DEBUG: Starting new timer for fetched active round without endTime (API).");
-                        startRoundTimer(false); // Start new timer
-                    }
-                }
-            }
-        }
-
-        const formattedData = formatRoundForClient(roundToFormat);
-        if (formattedData) {
-            res.json(formattedData);
-        } else {
-            if (isBotReady && !isRolling) { // Only try to create new if bot is ready and not currently rolling a round
-                console.log("LOG_INFO: No current round found for API, attempting to create one as bot is ready.");
-                const newRound = await createNewRound(); // createNewRound updates currentRound and emits
-                const newFormattedData = formatRoundForClient(newRound); // newRound from createNewRound is already an object
-                if (newFormattedData) return res.json(newFormattedData);
-            }
-            // If still no data (e.g., bot not ready, or createNewRound failed)
-            res.status(404).json({ error: 'No active or pending round found. System might be initializing or between rounds.' });
-        }
-    } catch (err) {
-        console.error('Error fetching/formatting current round data for API:', err);
-        res.status(500).json({ error: 'Server error retrieving round details.' });
-    }
-});
-
-
-app.get('/api/rounds',
-    [
-        query('page').optional().isInt({ min: 1 }).toInt().default(1),
-        query('limit').optional().isInt({ min: 1, max: 50 }).toInt().default(10)
-    ], handleValidationErrors, async (req, res) => {
-    try {
-        const { page, limit } = req.query;
-        const skip = (page - 1) * limit;
-        const queryFilter = { status: { $in: ['completed', 'completed_pending_acceptance', 'error'] } };
-
-        const rounds = await Round.find(queryFilter)
-            .sort('-roundId')
-            .skip(skip)
-            .limit(limit)
-            .populate('winner', 'username avatar steamId')
-            .populate('items', 'name price image assetId originalAssetId') 
-            .select('roundId startTime endTime completedTime totalValue winner serverSeed serverSeedHash clientSeed winningTicket provableHash status taxAmount taxedItems payoutOfferId payoutOfferStatus items')
-            .lean();
-
-        const totalRounds = await Round.countDocuments(queryFilter);
-        const totalPages = Math.ceil(totalRounds / limit);
-
-        res.json({
-            rounds, 
-            totalPages,
-            currentPage: page,
-            totalRounds
-        });
-    } catch (err) {
-        console.error('Error fetching past rounds:', err);
-        res.status(500).json({ error: 'Server error fetching round history.' });
-    }
-});
-
-
-app.post('/api/verify', sensitiveActionLimiter,
-    [
-        body('roundId').notEmpty().withMessage('Round ID is required.').isInt({ min: 1 }).withMessage('Round ID must be a positive integer.').toInt(),
-        body('serverSeed').trim().notEmpty().withMessage('Server Seed is required.').isHexadecimal().withMessage('Server Seed must be hexadecimal.').isLength({ min: 64, max: 64 }).withMessage('Server Seed must be 64 characters.'),
-        body('clientSeed').trim().notEmpty().withMessage('Client Seed is required.').isString().isLength({ min: 1, max: 128 }).withMessage('Client Seed is too long.')
-    ],
-    handleValidationErrors, async (req, res) => {
-    const { roundId, serverSeed, clientSeed } = req.body;
-    try {
-        const round = await Round.findOne({ roundId: roundId, status: { $in: ['completed', 'completed_pending_acceptance'] } })
-            .populate('participants.user', 'username').populate('winner', 'username').lean();
-
-        if (!round) return res.status(404).json({ error: `Completed round #${roundId} not found or not yet verifiable.` });
-
-        if (!round.serverSeedHash) return res.json({ verified: false, reason: 'Server Seed Hash for this round is not available (round might be too old or errored before hashing).'});
-        const providedServerSeedHash = crypto.createHash('sha256').update(serverSeed).digest('hex');
-        if (providedServerSeedHash !== round.serverSeedHash) {
-            return res.json({ verified: false, reason: 'Server Seed Hash mismatch. The provided Server Seed does not match the hash published before the round.', expectedServerSeedHash: round.serverSeedHash, providedServerSeed: serverSeed, calculatedHashOfProvidedSeed: providedServerSeedHash });
-        }
-
-        // Use the round's actual serverSeed and clientSeed for verification if they exist,
-        // otherwise, use the user-provided ones (though this path implies the user is testing before official reveal)
-        const effectiveServerSeed = round.serverSeed || serverSeed;
-        const effectiveClientSeed = round.clientSeed || clientSeed; // If round.clientSeed is null/undefined, use provided
-
-        // If the round is completed and has its own seeds, use them primarily for official verification
-        if (round.serverSeed && round.serverSeed !== serverSeed) {
-             console.warn(`Verification for round ${roundId}: User provided server seed ${serverSeed} differs from stored ${round.serverSeed}. Using stored for official calc.`);
-        }
-        if (round.clientSeed && round.clientSeed !== clientSeed) {
-             console.warn(`Verification for round ${roundId}: User provided client seed ${clientSeed} differs from stored ${round.clientSeed}. Using stored for official calc.`);
-        }
-
-
-        const combinedString = effectiveServerSeed + effectiveClientSeed;
-        const calculatedProvableHash = crypto.createHash('sha256').update(combinedString).digest('hex');
-
-        if (round.provableHash && calculatedProvableHash !== round.provableHash) {
-            return res.json({ verified: false, reason: 'Calculated Provable Hash mismatch with the official provable hash stored for the round.', expectedProvableHash: round.provableHash, calculatedProvableHashFromInputs: calculatedProvableHash, combinedStringUsed: combinedString });
-        }
-
-        const decimalFromHash = parseInt(calculatedProvableHash.substring(0, 8), 16);
-        const totalTickets = round.participants?.reduce((sum, p) => sum + (p?.tickets || 0), 0) ?? 0;
-
-        if (totalTickets <= 0) return res.json({ verified: false, reason: 'Round had zero total tickets, cannot verify winner selection mechanics.' });
-        const calculatedWinningTicket = decimalFromHash % totalTickets;
-
-        if (round.winningTicket !== undefined && calculatedWinningTicket !== round.winningTicket) {
-            return res.json({
-                verified: false,
-                reason: 'Calculated winning ticket number does not match the official winning ticket for the round.',
-                calculatedWinningTicket: calculatedWinningTicket,
-                officialWinningTicket: round.winningTicket,
-                provableHashUsedForCalculation: calculatedProvableHash, // Use the hash from effective seeds
-                totalTicketsInRound: totalTickets
-            });
-        }
-
-        // If we reach here, the user-provided seeds (if they differ from stored ones) produce the same outcome, or the stored seeds were used and verified.
-        res.json({
-            verified: true,
-            roundId: round.roundId,
-            serverSeedUsedForVerification: effectiveServerSeed,
-            serverSeedHashExpected: round.serverSeedHash,
-            clientSeedUsedForVerification: effectiveClientSeed,
-            combinedStringUsed: combinedString,
-            finalHashCalculated: calculatedProvableHash,
-            winningTicketCalculated: calculatedWinningTicket,
-            officialWinningTicketRecorded: round.winningTicket, // This is the definitive one from the round
-            totalTicketsInRound: totalTickets,
-            finalPotValueWon: round.totalValue, // Value corresponding to the winner
-            winnerUsername: round.winner?.username || 'N/A'
-        });
-
-    } catch (err) {
-        console.error(`Error verifying round ${roundId}:`, err);
-        res.status(500).json({ error: 'Server error during verification process.' });
-    }
-});
-
-
-async function startApp() {
-    console.log("LOG_INFO: Performing initial price cache refresh...");
-    await refreshPriceCache();
-    setInterval(async () => {
-        try { await refreshPriceCache(); }
-        catch (refreshErr) { console.error("Error during scheduled price cache refresh:", refreshErr); }
-    }, PRICE_REFRESH_INTERVAL_MS);
-    console.log(`LOG_INFO: Scheduled price cache refresh every ${PRICE_REFRESH_INTERVAL_MS / 60000} minutes.`);
-
-    setInterval(async () => {
-        try {
-            const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
-            const updateResult = await Round.updateMany(
-                {
-                    status: 'completed_pending_acceptance',
-                    completedTime: { $lt: thirtyMinutesAgo },
-                    payoutOfferStatus: { $in: ['PendingAcceptanceByWinner', 'Failed - No Trade URL', 'Failed - Invalid Trade URL Format', 'Unknown', 'Failed - Offer Creation Error', 'Failed - Send Error', 'Failed - Invalid Trade URL', 'Failed - Inventory Private', 'Failed - Trade Banned', 'Failed - Bot Inventory Issue', 'Pending Confirmation'] } 
-                },
-                {
-                    $set: {
-                        status: 'completed', // Mark as completed if user didn't accept in time
-                        payoutOfferStatus: 'Failed - Timeout AutoClear' // Items would be considered forfeit or returned to house
-                    }
-                }
-            );
-            if (updateResult.modifiedCount > 0) {
-                console.log(`LOG_INFO (AutoClear): Cleared ${updateResult.modifiedCount} stuck rounds to 'completed' (Timeout AutoClear) due to user not accepting winnings.`);
-            }
-        } catch (err) {
-            console.error("Error during stuck round auto-cleanup:", err);
-        }
-    }, 5 * 60 * 1000); // Run every 5 minutes
-
-    const PORT = process.env.PORT || 3000;
-    server.listen(PORT, () => {
-        console.log(`LOG_SUCCESS: Server listening on port ${PORT}`);
-        console.log(`LOG_INFO: Site URL configured as: ${process.env.SITE_URL}`);
-        if (!isBotConfigured) {
-            console.log("INFO: Steam Bot not configured. Trade features disabled.");
-        } else if (!isBotReady) {
-            console.log("WARN: Steam Bot initial login may have failed or is pending. Check logs. isBotReady is false.");
-        } else {
-            console.log("LOG_SUCCESS: Steam Bot is ready (isBotReady is true).");
-        }
-    });
-}
-
-startApp();
-
-function gracefulShutdown() {
-    console.log('LOG_INFO: Received shutdown signal. Closing server...');
-
-    if (cookieRefreshInterval) {
-        clearInterval(cookieRefreshInterval);
-        cookieRefreshInterval = null;
-    }
-    if (roundTimer) {
-        clearInterval(roundTimer);
-        roundTimer = null;
-    }
-
-    io.close(() => {
-        console.log('LOG_INFO: Socket.IO connections closed.');
-        server.close(async () => {
-            console.log('LOG_INFO: HTTP server closed.');
-            try {
-                await mongoose.connection.close();
-                console.log('LOG_INFO: MongoDB connection closed.');
-                if (manager && typeof manager.shutdown === 'function') {
-                    console.log('LOG_INFO: Stopping TradeOfferManager polling...');
-                    manager.shutdown();
-                }
-                console.log('LOG_INFO: Graceful shutdown complete. Exiting.');
-                process.exit(0);
-            } catch (e) {
-                console.error("Error during resource cleanup in shutdown:", e);
-                process.exit(1);
-            }
-        });
-    });
-
-    setTimeout(() => {
-        console.error('CRITICAL_ERROR: Could not close connections gracefully in time, forcing shutdown.');
-        process.exit(1);
-    }, 10000); // 10 seconds timeout
-}
-process.on('SIGTERM', gracefulShutdown);
-process.on('SIGINT', gracefulShutdown);
-
-app.use((err, req, res, next) => {
-    console.error("Unhandled Error at Express level:", err.stack || err);
-    const status = err.status || 500;
-    const message = process.env.NODE_ENV === 'production' ? 'An unexpected server error occurred.' : (err.message || 'Unknown server error.');
-    if (res.headersSent) {
-        return next(err);
-    }
-    res.status(status).json({ error: message });
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  // Optionally: Implement more robust error tracking/reporting here
-});
-
-process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
-  // Optionally: Implement more robust error tracking/reporting here
-  // For uncaught exceptions, it's often recommended to gracefully shutdown
-  // process.exit(1); // After logging, consider exiting if state is corrupt
-});
