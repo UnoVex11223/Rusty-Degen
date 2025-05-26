@@ -2869,7 +2869,9 @@ function setupSocketConnection() {
         }
     }
 });
- 
+   
+}
+
 
 function setupEventListeners() {
     // Navigation Links
