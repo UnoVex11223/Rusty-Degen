@@ -585,7 +585,7 @@ code { /* General code tag styling */
 }
 .timer-text {
     position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    font-size: 3.8rem; font-weight: 700; color: var(--primary-color);
+    font-size: 2.8rem; font-weight: 700; color: var(--primary-color);
     font-family: var(--font-mono);
 }
 .timer-pulse { animation: timerPulse 2s infinite ease-in-out; }
@@ -598,7 +598,7 @@ code { /* General code tag styling */
 @keyframes urgentPulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.08); } }
 
 .stat-value {
-    font-size: 3.8rem; font-weight: 700; color: var(--text-primary);
+    font-size: 2.8rem; font-weight: 700; color: var(--text-primary);
     display: block; line-height: 1.1; margin-top: 10px;
 }
 
