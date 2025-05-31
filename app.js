@@ -283,10 +283,51 @@ const priceBackupSchema = new mongoose.Schema({
     lastUpdated: { type: Date }
 });
 
+// --- NEW: Schema for Winner History ---
+const winnerHistorySchema = new mongoose.Schema({
+    type: { type: String, enum: ['lastWinner', 'highestPot24h'], required: true, unique: true },
+    roundId: { type: Number, required: true },
+    winner: {
+        userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        username: { type: String, required: true },
+        avatar: { type: String },
+        steamId: { type: String }
+    },
+    chance: { type: Number, required: true },
+    potValue: { type: Number, required: true },
+    timestamp: { type: Date, default: Date.now }, // When this winner record was created/achieved
+    updatedAt: { type: Date, default: Date.now } // When this specific DB record was last updated
+});
+const WinnerHistory = mongoose.model('WinnerHistory', winnerHistorySchema);
+
+// --- NEW: Schema for Chat Messages ---
+const chatMessageSchema = new mongoose.Schema({
+    type: { type: String, enum: ['user', 'system'], default: 'user' },
+    username: { type: String }, // For user messages, or "System" for system messages
+    avatar: { type: String }, // User avatar, or system icon
+    message: { type: String, required: true, maxlength: MAX_CHAT_MESSAGE_LENGTH },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Null for system messages
+    userSteamId: { type: String }, // Null for system messages
+    timestamp: { type: Date, default: Date.now, index: true }
+});
+chatMessageSchema.index({ timestamp: -1 }); // For sorting and efficient cleanup
+const ChatMessage = mongoose.model('ChatMessage', chatMessageSchema);
+
+
 const User = mongoose.model('User', userSchema);
 const Item = mongoose.model('Item', itemSchema);
 const Round = mongoose.model('Round', roundSchema);
-const PriceBackup = mongoose.model('PriceBackup', priceBackupSchema); // Added PriceBackup model
+const PriceBackup = mongoose.model('PriceBackup', priceBackupSchema);
+
+// Helper functions for MongoDB key sanitization
+function sanitizeKeyForMongoDB(key) {
+    return key.replace(/\./g, '___DOT___');
+}
+
+function restoreKeyFromMongoDB(key) {
+    return key.replace(/___DOT___/g, '.');
+}
+
 
 // --- Steam Bot Setup ---
 const community = new SteamCommunity();
@@ -969,7 +1010,10 @@ async function refreshPriceCache() {
                 if (item?.name && typeof item.price === 'number' && item.price >= 0) {
                     const priceInDollars = item.price / 100.0;
                     newItemsForCache.push({ key: item.name, val: priceInDollars });
-                    pricesToBackup.set(item.name, priceInDollars);
+                    // --- CHANGE 1 Start: Sanitize key for MongoDB ---
+                    const sanitizedKey = sanitizeKeyForMongoDB(item.name);
+                    pricesToBackup.set(sanitizedKey, priceInDollars);
+                    // --- CHANGE 1 End ---
                     updatedCount++;
                 }
             });
@@ -1022,7 +1066,10 @@ async function loadPricesFromBackup() {
         if (backup && backup.prices && backup.prices.size > 0) {
             const priceArrayFromBackup = [];
             for (const [key, value] of backup.prices) {
-                priceArrayFromBackup.push({ key: key, val: value });
+                // --- CHANGE 1 Start: Restore key from MongoDB ---
+                const originalKey = restoreKeyFromMongoDB(key); // Restore original name
+                priceArrayFromBackup.push({ key: originalKey, val: value });
+                // --- CHANGE 1 End ---
             }
 
             if (priceArrayFromBackup.length > 0) {
@@ -1197,8 +1244,8 @@ async function endRound() {
         io.emit('roundRolling', { roundId: roundIdToEnd });
 
         const round = await Round.findById(roundMongoId)
-            .populate('participants.user', 'steamId username avatar tradeUrl')
-            .populate('items') // Ensure items are fully populated with price, assetId, name etc.
+            .populate('participants.user', 'steamId username avatar tradeUrl _id') // Ensure _id is populated for winnerInfo
+            .populate('items')
             .lean();
 
         if (!round) throw new Error(`Round ${roundIdToEnd} data missing after status update.`);
@@ -1206,7 +1253,7 @@ async function endRound() {
             console.warn(`WARN: Round ${roundIdToEnd} status changed unexpectedly after marking as rolling. Aborting endRound.`);
             isRolling = false; return;
         }
-        currentRound = round; // Update currentRound with fully populated data
+        currentRound = round; 
 
         if (round.participants.length === 0 || round.items.length === 0 || round.totalValue <= 0) {
             console.log(`LOG_INFO: Round ${round.roundId} ended with no valid participants or value.`);
@@ -1217,20 +1264,17 @@ async function endRound() {
             return;
         }
 
-        let finalItems = [...round.items]; // Items that will go to the winner
+        let finalItems = [...round.items]; 
         let originalPotValue = round.totalValue;
         let valueForWinner = originalPotValue;
         let taxAmount = 0;
-        let taxedItemsInfo = []; // For storing info about items taken as tax
-        let itemsToTakeForTaxIds = new Set(); // Stores _id of items to be taxed
+        let taxedItemsInfo = []; 
+        let itemsToTakeForTaxIds = new Set(); 
 
-        // Calculate potential tax range
-        const targetTaxValue = originalPotValue * (TAX_MIN_PERCENT / 100); // Minimum desired tax (e.g., 5%)
-        const maxTaxValue = originalPotValue * (TAX_MAX_PERCENT / 100);    // Maximum allowed tax (e.g., 10%)
+        const targetTaxValue = originalPotValue * (TAX_MIN_PERCENT / 100); 
+        const maxTaxValue = originalPotValue * (TAX_MAX_PERCENT / 100);   
 
-        // Attempt to collect tax if pot has value and items
         if (originalPotValue > 0 && round.items && round.items.length > 0) {
-            // Sort items by price, ascending, to pick smallest valuable items first for tax
             const sortedItemsForTax = [...round.items].filter(item => typeof item.price === 'number').sort((a, b) => a.price - b.price);
             let currentTaxValueAccumulated = 0;
 
@@ -1280,12 +1324,14 @@ async function endRound() {
         const winningTicket = decimalFromHash % totalTickets;
         let cumulativeTickets = 0;
         let winnerInfo = null;
+        let winnerParticipant = null; // Store the whole participant object
 
         for (const participant of round.participants) {
             if (!participant?.tickets || !participant.user) continue;
             cumulativeTickets += participant.tickets;
             if (winningTicket < cumulativeTickets) {
-                winnerInfo = participant.user;
+                winnerInfo = participant.user; // User object: { _id, steamId, username, avatar, tradeUrl }
+                winnerParticipant = participant; // Full participant object: { user, itemsValue, tickets }
                 break;
             }
         }
@@ -1295,13 +1341,60 @@ async function endRound() {
         await User.findByIdAndUpdate(winnerInfo._id, { $inc: { totalWinningsValue: valueForWinner } });
         console.log(`LOG_INFO: Updated winnings stats for ${winnerInfo.username}: added $${valueForWinner.toFixed(2)}`);
 
+        // --- CHANGE 2 Start: Store Winner History ---
+        const winnerChance = (winnerParticipant && round.totalValue > 0) ? (winnerParticipant.itemsValue / originalPotValue) * 100 : 0;
+
+        await WinnerHistory.findOneAndUpdate(
+            { type: 'lastWinner' },
+            {
+                roundId: round.roundId,
+                winner: {
+                    userId: winnerInfo._id,
+                    username: winnerInfo.username,
+                    avatar: winnerInfo.avatar,
+                    steamId: winnerInfo.steamId
+                },
+                chance: winnerChance,
+                potValue: valueForWinner,
+                timestamp: new Date(), // Time of win
+                updatedAt: new Date()  // Time DB record updated
+            },
+            { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+
+        const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        const currentHighest = await WinnerHistory.findOne({ type: 'highestPot24h' });
+
+        if (!currentHighest || currentHighest.updatedAt < twentyFourHoursAgo || valueForWinner > currentHighest.potValue) {
+            await WinnerHistory.findOneAndUpdate(
+                { type: 'highestPot24h' },
+                {
+                    roundId: round.roundId,
+                    winner: {
+                        userId: winnerInfo._id,
+                        username: winnerInfo.username,
+                        avatar: winnerInfo.avatar,
+                        steamId: winnerInfo.steamId
+                    },
+                    chance: winnerChance,
+                    potValue: valueForWinner,
+                    timestamp: new Date(), // Time of win
+                    updatedAt: new Date() // Time DB record updated
+                },
+                { upsert: true, new: true, setDefaultsOnInsert: true }
+            );
+            console.log(`LOG_INFO: Updated highestPot24h winner to ${winnerInfo.username} for round ${round.roundId}.`);
+        }
+        // --- CHANGE 2 End ---
+
+
         const finalUpdateData = {
             status: 'completed_pending_acceptance',
             completedTime: new Date(), clientSeed: clientSeed,
             provableHash: provableHash, winningTicket: winningTicket, winner: winnerInfo._id,
             taxAmount: taxAmount, taxedItems: taxedItemsInfo,
-            totalValue: valueForWinner,
-            items: finalItems.map(i => i._id),
+            totalValue: valueForWinner, // This is value for winner AFTER tax
+            items: finalItems.map(i => i._id), // Store only IDs of items going to winner
             payoutOfferStatus: 'PendingAcceptanceByWinner'
         };
 
@@ -1310,16 +1403,17 @@ async function endRound() {
 
         console.log(`LOG_SUCCESS: Round ${round.roundId} completed. Winner: ${winnerInfo.username} (Ticket: ${winningTicket}/${totalTickets}, Value Won: $${valueForWinner.toFixed(2)})`);
 
-        io.emit('roundWinnerPendingAcceptance', {
+        io.emit('roundWinnerPendingAcceptance', { // Send populated winner info
             roundId: round.roundId,
             winner: { id: winnerInfo._id, steamId: winnerInfo.steamId, username: winnerInfo.username, avatar: winnerInfo.avatar },
             winningTicket: winningTicket,
-            totalValue: valueForWinner,
+            totalValue: valueForWinner, // Value for winner
             totalTickets: totalTickets,
             serverSeed: round.serverSeed,
             clientSeed: clientSeed,
             provableHash: provableHash,
-            serverSeedHash: round.serverSeedHash
+            serverSeedHash: round.serverSeedHash,
+            payoutOfferStatus: 'PendingAcceptanceByWinner' // Add this for client if needed
         });
 
     } catch (err) {
@@ -1330,7 +1424,7 @@ async function endRound() {
     } finally {
         isRolling = false;
         console.log(`LOG_INFO: Scheduling next round creation after round ${roundIdToEnd} finalization.`);
-        setTimeout(createNewRound, 10000);
+        setTimeout(createNewRound, 10000); // Give some time before new round
     }
 }
 
@@ -2073,6 +2167,12 @@ app.get('/api/inventory', ensureAuthenticated, async (req, res) => {
         return res.status(503).json({ error: "Steam service temporarily unavailable. Please try again later." });
     }
     try {
+        // --- CHANGE 4 Start: Validate Steam ID format ---
+        if (!req.user.steamId || !/^\d{17}$/.test(req.user.steamId)) {
+            console.warn(`Invalid Steam ID format for user ${req.user.username}: ${req.user.steamId}`);
+            return res.status(400).json({ error: 'Invalid Steam ID format' });
+        }
+        // --- CHANGE 4 End ---
         await ensureValidManager();
 
         const inventory = await new Promise((resolve, reject) => {
@@ -2310,6 +2410,51 @@ app.post('/api/deposit', depositLimiter, ensureAuthenticated,
     }
 );
 
+// --- CHANGE 5 Start: Add /api/winner-history endpoint ---
+app.get('/api/winner-history', async (req, res) => {
+    try {
+        const [lastWinner, highestPot] = await Promise.all([
+            WinnerHistory.findOne({ type: 'lastWinner' }).lean(),
+            WinnerHistory.findOne({ type: 'highestPot24h' }).lean()
+        ]);
+
+        res.json({
+            lastWinner: lastWinner ? {
+                user: lastWinner.winner, // winner field already contains { userId, username, avatar, steamId }
+                chance: lastWinner.chance,
+                potValue: lastWinner.potValue,
+                timestamp: lastWinner.timestamp // This is the timestamp of the win
+            } : null,
+            highestPot24h: highestPot ? {
+                user: highestPot.winner,
+                chance: highestPot.chance,
+                potValue: highestPot.potValue,
+                timestamp: highestPot.timestamp // This is the timestamp of the win
+            } : null
+        });
+    } catch (err) {
+        console.error('Error fetching winner history:', err);
+        res.status(500).json({ error: 'Failed to fetch winner history' });
+    }
+});
+// --- CHANGE 5 End ---
+
+// --- CHANGE 3 Start: Add /api/chat/history endpoint ---
+app.get('/api/chat/history', async (req, res) => {
+    try {
+        const messages = await ChatMessage.find()
+            .sort({ timestamp: -1 }) // Fetch newest first
+            .limit(20) // Limit to last 20 for initial load
+            .lean(); // Use .lean() for performance if not modifying docs
+
+        res.json(messages.reverse()); // Return in chronological order (oldest first) for frontend
+    } catch (err) {
+        console.error('Error fetching chat history:', err);
+        res.status(500).json({ error: 'Failed to fetch chat history' });
+    }
+});
+// --- CHANGE 3 End ---
+
 
 io.use((socket, next) => { sessionMiddleware(socket.request, socket.request.res || {}, next); });
 io.use((socket, next) => { passport.initialize()(socket.request, socket.request.res || {}, next); });
@@ -2362,14 +2507,13 @@ io.on('connection', (socket) => {
         }
     });
 
-    // MODIFIED: Removed chatLimiter from here.
-    // The custom cooldown logic inside this handler will be used.
-    socket.on('chatMessage', (msg) => {
+    // --- CHANGE 3 Start: Modify Socket.IO chat handler ---
+    socket.on('chatMessage', async (msg) => { // msg is just the text content from client
         if (!user || !user._id) {
             socket.emit('notification', {type: 'error', message: 'You must be logged in to chat.'});
             return;
         }
-        const userId = user._id.toString();
+        const userId = user._id.toString(); // Ensure it's a string for map key
         const now = Date.now();
         const lastMsgTime = userLastMessageTime.get(userId) || 0;
 
@@ -2392,13 +2536,40 @@ io.on('connection', (socket) => {
             username: user.username,
             avatar: user.avatar || '/img/default-avatar.png',
             message: trimmedMsg,
-            userId: userId,
+            userId: user._id, // Use ObjectId here for DB ref
             userSteamId: user.steamId,
             timestamp: new Date()
         };
-        io.emit('chatMessage', messageData);
+
+        // Save to database
+        try {
+            await ChatMessage.create(messageData);
+            // Keep only last 100 messages in DB
+            const messageCount = await ChatMessage.countDocuments();
+            if (messageCount > 100) {
+                // Find the 100th newest message (skip 99, take the next one's timestamp)
+                const oldestToKeep = await ChatMessage.findOne()
+                    .sort({ timestamp: -1 }) // Newest first
+                    .skip(99) // Skip the 99 newest (0-indexed, so 100th is at index 99)
+                    .select('timestamp'); // We only need its timestamp
+
+                if (oldestToKeep) {
+                    // Delete all messages older than the 100th newest message
+                    await ChatMessage.deleteMany({ timestamp: { $lt: oldestToKeep.timestamp } });
+                }
+            }
+        } catch (err) {
+            console.error('Error saving chat message:', err);
+            // Don't block chat functionality if DB save fails, but log it
+        }
+        
+        // Emit to all clients (including sender for confirmation)
+        // The client will receive the same messageData structure
+        io.emit('chatMessage', messageData); 
         console.log(`Chat (User: ${user.username}, ID: ${userId}): ${trimmedMsg}`);
     });
+    // --- CHANGE 3 End ---
+
 
     socket.on('disconnect', (reason) => {
         connectedChatUsers--;
